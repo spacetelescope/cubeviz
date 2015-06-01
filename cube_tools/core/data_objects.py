@@ -1,17 +1,92 @@
 import numpy as np
+import numpy.ma as ma
 from astropy.nddata import (NDData, NDSlicingMixin, NDArithmeticMixin)
-from astropy.wcs import WCS
-from astropy.units import Unit
-from specutils import Spectrum1D
+import astropy.units as u
+import custom_registry
+import numbers
 
 
-class CubeData(NDData, NDArithmeticMixin):
+class BaseData(NDData, NDArithmeticMixin, NDSlicingMixin):
+    """
+    Base class for all CubeData objects and their slices.
+    """
+    def __init__(self, *args, **kwargs):
+        super(BaseData, self).__init__(*args, **kwargs)
+
+    # TODO: self.data cannot be set directly in NDData objects; a round
+    # about way for arithmetic to work on the data itself is to create NDData
+    # objects. This seems hackneyed: should investigate.
+    def __add__(self, other):
+        if not issubclass(type(other), NDData):
+            if isinstance(other, numbers.Number):
+                new = np.empty(shape=self.data.shape)
+                new.fill(other)
+                other = new
+
+            other = NDData(other, wcs=self.wcs, unit=self.unit)
+            return self.add(other)
+
+        other = NDData(other.data, wcs=self.wcs, unit=other.unit,
+                       uncertainty=other.uncertainty, mask=other.mask)
+
+        return self.add(other)
+
+    def __sub__(self, other):
+        if not issubclass(type(other), NDData):
+            if isinstance(other, numbers.Number):
+                new = np.empty(shape=self.data.shape)
+                new.fill(other)
+                other = new
+
+            other = NDData(other, wcs=self.wcs, unit=self.unit)
+            return self.add(other)
+
+        other = NDData(other.data, wcs=self.wcs, unit=other.unit,
+                       uncertainty=other.uncertainty, mask=other.mask)
+
+        return self.subtract(other)
+
+    def __mul__(self, other):
+        if not issubclass(type(other), NDData):
+            if isinstance(other, numbers.Number):
+                new = np.empty(shape=self.data.shape)
+                new.fill(other)
+                other = new
+
+            other = NDData(other, wcs=self.wcs, unit=self.unit)
+            return self.add(other)
+
+        other = NDData(other.data, wcs=self.wcs, unit=other.unit,
+                       uncertainty=other.uncertainty, mask=other.mask)
+
+        return self.multiply(other)
+
+    def __div__(self, other):
+        if not issubclass(type(other), NDData):
+            if isinstance(other, numbers.Number):
+                new = np.empty(shape=self.data.shape)
+                new.fill(other)
+                other = new
+
+            other = NDData(other, wcs=self.wcs, unit=self.unit)
+            return self.add(other)
+
+        other = NDData(other.data, wcs=self.wcs, unit=other.unit,
+                       uncertainty=other.uncertainty, mask=other.mask)
+
+        return self.divide(other)
+
+
+class CubeData(BaseData):
     """
     Container object for IFU cube data.
     """
 
     def __init__(self, *args, **kwargs):
         super(CubeData, self).__init__(*args, **kwargs)
+
+        self.spatial_unit = None
+        self.spectral_unit = None
 
     def __getitem__(self, item):
         new_data = self.data[item]
@@ -27,58 +102,77 @@ class CubeData(NDData, NDArithmeticMixin):
             new_mask = None
 
         if self.wcs is not None:
-            new_wcs = self.wcs[item]
+            # TODO: this errors with "Cannot downsample a WCS with indexing.
+            # Use wcs.sub or wcs.dropaxis if you want to remove axes."
+            # need to investigate
+            # new_wcs = self.wcs[item]
+            new_wcs = self.wcs
         else:
             new_wcs = None
 
-        if not isinstance(item[2], slice):
+        if not isinstance(item[0], slice) and (isinstance(item[1], slice) or
+                                                   isinstance(item[2], slice)):
             return ImageData(new_data, uncertainty=new_uncertainty,
                              mask=new_mask, wcs=new_wcs,
-                             meta=self.meta, unit=self.unit)
-        elif not isinstance(item[0], slice) or not isinstance(item[1], slice):
-            return SpectrumData(new_data, new_wcs, unit=self.unit,
-                                uncertainty=new_uncertainty, mask=new_mask,
-                                meta=self.meta, indexer=None)
-        else:
+                             meta=self.meta, unit=self.spatial_unit)
+        elif isinstance(item[0], slice) and (not isinstance(item[1], slice)
+                                             or not isinstance(item[2], slice)):
+            return SpectrumData(new_data, uncertainty=new_uncertainty,
+                                mask=new_mask, wcs=new_wcs,
+                                meta=self.meta, unit=self.spectral_unit)
+        elif all([isinstance(x, slice) for x in item]):
             return self.__class__(new_data, uncertainty=new_uncertainty,
                                   mask=new_mask, wcs=new_wcs,
                                   meta=self.meta, unit=self.unit)
+        else:
+            return u.Quantity(new_data, self.unit)
 
-    def __add__(self, other):
-        return self.add(other, propagate_uncertainties=True)
+    @classmethod
+    def read(cls, *args, **kwargs):
+        """
+        Weirdly, this must have a docstring or astropy crashes.
+        """
+        return custom_registry.registry.read(cls, *args, **kwargs)
 
-    def __sub__(self, other):
-        return self.subtract(other, propagate_uncertainties=True)
+    def collapse(self, wavelength_range=None, method="mean", axis=0):
+        mdata = ma.masked_array(self.data, mask=self.mask)
 
-    def __mul__(self, other):
-        return self.multiply(other, propagate_uncertainties=True)
+        # TODO: extend this to be *actual* wavelengths
+        if wavelength_range is not None:
+            mdata = mdata[slice(*wavelength_range), :, :]
 
-    def __div__(self, other):
-        return self.divide(other, propagate_uncertainties=True)
+        if method == "mean":
+            new_data = mdata.mean(axis=axis)
+        elif method == "median":
+            new_data = np.ma.median(mdata, axis=axis)
+        elif method == "mode":
+            # TODO: requires a more eligant solution; scipy's mode is too
+            # slow and doesn't really make sense for a bunch of floats
+            pass
+        else:
+            raise NotImplementedError("No such method {}".format(method))
+
+        return ImageData(new_data.data, uncertainty=None, mask=mdata.mask,
+                         wcs=self.wcs, meta=self.meta, unit=self.unit)
 
 
-class SpectrumData(Spectrum1D, NDSlicingMixin, NDArithmeticMixin):
+class SpectrumData(BaseData):
     """
-    Inheritance wrapper to include the NDData mixins with the Spectrum1D object.
+    Container object for spectra data included within the Cube data object.
     """
 
     def __init__(self, *args, **kwargs):
         super(SpectrumData, self).__init__(*args, **kwargs)
 
-    def __add__(self, other):
-        return self.add(other, propagate_uncertainties=True)
+    @property
+    def flux(self):
+        return u.Quantity(self.data, self.unit, copy=False)
 
-    def __sub__(self, other):
-        return self.subtract(other, propagate_uncertainties=True)
-
-    def __mul__(self, other):
-        return self.multiply(other, propagate_uncertainties=True)
-
-    def __div__(self, other):
-        return self.divide(other, propagate_uncertainties=True)
+    def __getitem__(self, item):
+        return u.Quantity(self.data[item], self.unit, copy=False)
 
 
-class ImageData(NDData, NDSlicingMixin, NDArithmeticMixin):
+class ImageData(BaseData):
     """
     Container object for image data included within the Cube data object.
     """
@@ -86,23 +180,5 @@ class ImageData(NDData, NDSlicingMixin, NDArithmeticMixin):
     def __init__(self, *args, **kwargs):
         super(ImageData, self).__init__(*args, **kwargs)
 
-    def __add__(self, other):
-        return self.add(other, propagate_uncertainties=True)
-
-    def __sub__(self, other):
-        return self.subtract(other, propagate_uncertainties=True)
-
-    def __mul__(self, other):
-        return self.multiply(other, propagate_uncertainties=True)
-
-    def __div__(self, other):
-        return self.divide(other, propagate_uncertainties=True)
-
-
-if __name__ == "__main__":
-    cube_data1 = CubeData(np.random.sample(size=(3, 3, 3)))
-    cube_data2 = CubeData(np.random.sample(size=(3, 3, 3)))
-
-    print(type(cube_data1[:, 0, 0]))
-    print(cube_data2)
-    print(cube_data1 + cube_data2)
+    def __getitem__(self, item):
+        return u.Quantity(self.data[item], self.unit, copy=False)
