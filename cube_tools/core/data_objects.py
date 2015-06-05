@@ -10,8 +10,13 @@ class BaseData(NDData, NDArithmeticMixin, NDSlicingMixin):
     """
     Base class for all CubeData objects and their slices.
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, header=None, *args, **kwargs):
         super(BaseData, self).__init__(*args, **kwargs)
+
+        self.header = header
+
+    def __len__(self):
+        return self.data.size
 
     # TODO: self.data cannot be set directly in NDData objects; a round
     # about way for arithmetic to work on the data itself is to create NDData
@@ -39,7 +44,7 @@ class BaseData(NDData, NDArithmeticMixin, NDSlicingMixin):
                 other = new
 
             other = NDData(other, wcs=self.wcs, unit=self.unit)
-            return self.add(other)
+            return self.subtract(other)
 
         other = NDData(other.data, wcs=self.wcs, unit=other.unit,
                        uncertainty=other.uncertainty, mask=other.mask)
@@ -54,7 +59,7 @@ class BaseData(NDData, NDArithmeticMixin, NDSlicingMixin):
                 other = new
 
             other = NDData(other, wcs=self.wcs, unit=self.unit)
-            return self.add(other)
+            return self.multiply(other)
 
         other = NDData(other.data, wcs=self.wcs, unit=other.unit,
                        uncertainty=other.uncertainty, mask=other.mask)
@@ -69,7 +74,7 @@ class BaseData(NDData, NDArithmeticMixin, NDSlicingMixin):
                 other = new
 
             other = NDData(other, wcs=self.wcs, unit=self.unit)
-            return self.add(other)
+            return self.divide(other)
 
         other = NDData(other.data, wcs=self.wcs, unit=other.unit,
                        uncertainty=other.uncertainty, mask=other.mask)
@@ -82,11 +87,8 @@ class CubeData(BaseData):
     Container object for IFU cube data.
     """
 
-    def __init__(self, *args, **kwargs):
-        super(CubeData, self).__init__(*args, **kwargs)
-
-        self.spatial_unit = None
-        self.spectral_unit = None
+    def __init__(self, header=None, *args, **kwargs):
+        super(CubeData, self).__init__(header, *args, **kwargs)
 
     def __getitem__(self, item):
         new_data = self.data[item]
@@ -109,6 +111,11 @@ class CubeData(BaseData):
             new_wcs = self.wcs
         else:
             new_wcs = None
+
+        if not hasattr(item, '__getitem__'):
+            return self.__class__(new_data, uncertainty=new_uncertainty,
+                                  mask=new_mask, wcs=new_wcs,
+                                  meta=self.meta, unit=self.unit)
 
         if not isinstance(item[0], slice) and (isinstance(item[1], slice) or
                                                    isinstance(item[2], slice)):
@@ -161,12 +168,30 @@ class SpectrumData(BaseData):
     Container object for spectra data included within the Cube data object.
     """
 
-    def __init__(self, *args, **kwargs):
-        super(SpectrumData, self).__init__(*args, **kwargs)
+    def __init__(self, header=None, *args, **kwargs):
+        super(SpectrumData, self).__init__(header, *args, **kwargs)
+
+        self.convert_flux_unit = None
+        self.convert_disp_unit = None
 
     @property
     def flux(self):
-        return u.Quantity(self.data, self.unit, copy=False)
+        flux_data = u.Quantity(self.data, self.unit, copy=False)
+
+        if self.convert_flux_unit is None:
+            return flux_data
+
+        return flux_data.to(self.convert_flux_unit)
+
+    @property
+    def dispersion(self):
+        disp_data = u.Quantity(np.arange(self.data.shape[0]), u.Angstrom,
+                               copy=False)
+
+        if self.convert_disp_unit is None:
+            return disp_data
+
+        return disp_data.to(self.convert_disp_unit)
 
     def __getitem__(self, item):
         return u.Quantity(self.data[item], self.unit, copy=False)
