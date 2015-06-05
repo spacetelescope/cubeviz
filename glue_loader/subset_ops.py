@@ -6,9 +6,9 @@ from glue.core import Data
 
 def collapse_to_1d(subset, data_collection):
     mask = subset.to_mask()
-    md = np.ma.masked_array(subset.data['FLUX'], mask=mask)
+    md = np.ma.masked_array(subset.data['FLUX'], mask=~mask)
     mdd = md.reshape((-1, md.shape[1] * md.shape[2]))
-    spec = np.sum(mdd, axis=1)
+    spec = np.ma.median(mdd, axis=1)
     spec_data = Data(flux=spec, label=':'.join((subset.label,
                                                 subset.data.label,
                                                 'collapsed')))
