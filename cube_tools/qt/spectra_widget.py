@@ -65,8 +65,8 @@ class SpectraWindow(DataViewer):
     def add_subset(self, subset):
         return True
 
-    def layer_view(self):
-        return self.layer_dock
+    # def layer_view(self):
+    #     return self.layer_dock
 
     def options_widget(self):
         return self.model_editor_dock
