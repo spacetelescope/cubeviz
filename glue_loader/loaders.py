@@ -11,6 +11,7 @@ from glue.external.astro import fits
 
 import numpy as np
 from cube_tools.core import CubeData
+import astropy.units as u
 
 
 @data_factory('Generic FITS', has_extension('fits fit'))
@@ -38,16 +39,46 @@ def _load_fits_generic(filename, **kwargs):
 
 @data_factory("Cube Data", has_extension("fits fit"))
 def read_cube(filename, **kwargs):
-    cdata = CubeData.read(filename)
+    # cdata = CubeData.read(filename)
+    cdata = fits.open(filename)
+    print(cdata.info())
+
+    flux = cdata['FLUX'].data
+
+    try:
+        flux_unit = u.Quantity(cdata['FLUX'].header['BUNIT']).unit
+    except:
+        flux_unit = u.Unit('erg/s/cm^2/Angstrom/voxel')
+
+    disp = np.empty(shape=flux.shape)
+    disp[:, 0, 0] = cdata['WAVE'].data
+    disp_unit = u.Unit(cdata['FLUX'].header['CUNIT3'])
+    uncert = cdata['IVAR'].data
+    mask = cdata['MASK'].data
+
     data = Data()
-    data.add_component(component=Component(data=cdata.data,
-                                           units=cdata.unit.to_string()),
-                       label="data")
-    data.add_component(component=Component(data=cdata.uncertainty.array,
-                                           units=cdata.unit.to_string()),
-                       label="uncertainty")
-    data.add_component(component=np.empty(shape=cdata.data.shape),  # np.resize(cdata.header, cdata.data.shape),
+    data.add_component(component=Component(data=flux,
+                                           units=flux_unit.to_string()),
+                                           label="flux")
+    data.add_component(component=Component(data=disp,
+                                           units=disp_unit.to_string()),
+                                           label="disp")
+    data.add_component(component=Component(data=uncert,
+                                           units=flux_unit.to_string()),
+                                           label="uncertainty")
+    # data.add_component(component=Component(data=cdata))
+
+    header_info = np.empty(shape=flux.shape)
+
+    try:
+        header_info[0] = cdata.wcs.wcs['CRVAL3']
+        header_info[1] = cdata.wcs.wcs['CD3_3']
+        header_info[2] = cdata.wcs.wcs['CRPIX3']
+    except:
+        pass
+
+    data.add_component(component=header_info,  # np.resize(cdata.header, cdata.data.shape),
                        label="header")
-    data.add_component(component=cdata.mask,
+    data.add_component(component=mask,
                        label="mask")
     return data

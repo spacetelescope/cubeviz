@@ -10,10 +10,8 @@ class BaseData(NDData, NDArithmeticMixin, NDSlicingMixin):
     """
     Base class for all CubeData objects and their slices.
     """
-    def __init__(self, header=None, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(BaseData, self).__init__(*args, **kwargs)
-
-        self.header = header
 
     def __len__(self):
         return self.data.size
@@ -87,8 +85,11 @@ class CubeData(BaseData):
     Container object for IFU cube data.
     """
 
-    def __init__(self, header=None, *args, **kwargs):
-        super(CubeData, self).__init__(header, *args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super(CubeData, self).__init__(*args, **kwargs)
+
+        self.spatial_unit = None
+        self.spectral_unit = None
 
     def __getitem__(self, item):
         new_data = self.data[item]
@@ -168,8 +169,8 @@ class SpectrumData(BaseData):
     Container object for spectra data included within the Cube data object.
     """
 
-    def __init__(self, header=None, *args, **kwargs):
-        super(SpectrumData, self).__init__(header, *args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super(SpectrumData, self).__init__(*args, **kwargs)
 
         self.convert_flux_unit = None
         self.convert_disp_unit = None

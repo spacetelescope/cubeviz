@@ -3,15 +3,12 @@ from qtpy import QtGui, QtCore
 from glue.qt.widgets.data_viewer import DataViewer
 from cube_tools.clients.spectra_client import SpectraClient
 
-from cube_tools.core import SpectrumData as NewSpectrumData
-import astropy.units as u
-import numpy as np
-
 from specview.ui.qt.subwindows import SpectraMdiSubWindow
 from specview.ui.models import DataTreeModel
-from specview.ui.items import LayerDataTreeItem
-from specview.core import SpectrumData, SpectrumArray
 from specview.ui.qt.docks import ModelDockWidget, DataDockWidget
+from specview.ui.qt.views import LayerDataTree
+from specview.core import SpectrumData, SpectrumArray
+from specview.ui.items import LayerDataTreeItem
 from specview.analysis import model_fitting
 
 
@@ -20,53 +17,41 @@ class SpectraWindow(DataViewer):
 
     def __init__(self, session, parent=None):
         super(SpectraWindow, self).__init__(session, parent)
-        self.client = SpectraClient(self._data)
         self.sub_window = SpectraMdiSubWindow()
         self.sub_window.setWindowFlags(QtCore.Qt.FramelessWindowHint)
         self.setCentralWidget(self.sub_window)
 
-        self.model = DataTreeModel()
-
-        # Setup model dock
-        self.model_editor_dock = ModelDockWidget()
-
-        # Setup layers view
-        self.layer_dock = DataDockWidget()
-
         self.current_layer_item = None
+
+        self.model = DataTreeModel()
+        self.model_editor_dock = ModelDockWidget()
+        self.layer_dock = LayerDataTree()
+
+        self.client = SpectraClient(self._data, self.model,
+                                    self.sub_window.graph)
         self._connect()
 
+    def register_to_hub(self, hub):
+       super(SpectraWindow, self).register_to_hub(hub)
+       self.client.register_to_hub(hub)
+
     def add_data(self, data):
-        data_comp = data.get_component(data.id['data'])
-        uncert_comp = data.get_component(data.id['uncertainty'])
-        mask_comp = data.get_component(data.id['mask'])
-        # wcs_comp = data.get_component(data.id['wcs'])
-
-        self.client.add_data(data)
-
-        spdata = NewSpectrumData(data=data_comp.data[:,
-                                      data_comp.data.shape[1] // 2,
-                                      data_comp.data.shape[2] // 2],
-                                      unit=u.Unit(data_comp.units))
-
-        spectrum = SpectrumData()
-        spectrum.set_x(spdata.dispersion.value, unit=spdata.dispersion.unit)
-        spectrum.set_y(spdata.flux.value, unit=spdata.flux.unit)
-
-        spec_data_item = self.model.create_data_item(spectrum, "Data")
-        layer_data_item = self.model.create_layer_item(spec_data_item)
+        layer_data_item = self.client.add_data(data)
 
         self.current_layer_item = layer_data_item
-        self.display_graph(self.current_layer_item)
+
+        # Set root items
         self.model_editor_dock.wgt_model_tree.set_root_item(layer_data_item)
+        self.layer_dock.set_root_item(layer_data_item.parent)
 
         return True
 
     def add_subset(self, subset):
+        print("adding subset")
         return True
 
-    # def layer_view(self):
-    #     return self.layer_dock
+    def layer_view(self):
+        return self.layer_dock
 
     def options_widget(self):
         return self.model_editor_dock
@@ -74,6 +59,12 @@ class SpectraWindow(DataViewer):
     def _connect(self):
         # Set model editor's model
         self.model_editor_dock.wgt_model_tree.setModel(self.model)
+
+        # Set view model
+        self.layer_dock.setModel(self.model)
+
+        self.layer_dock.sig_current_changed.connect(
+            self.set_selected_item)
 
         # Get the model selector combobox
         model_selector = self.model_editor_dock.wgt_model_selector
@@ -88,8 +79,11 @@ class SpectraWindow(DataViewer):
         self.model_editor_dock.btn_perform_fit.clicked.connect(
             self._perform_fit)
 
+        # Connect removing layers
+        self.model.sig_removed_item.connect(self.sub_window.graph.remove_item)
+
     def _perform_fit(self):
-        layer_data_item = self.current_layer_item
+        layer_data_item = self.layer_dock.current_item
 
         if len(layer_data_item._model_items) == 0:
             return
@@ -101,6 +95,7 @@ class SpectraWindow(DataViewer):
 
         x, y, x_unit, y_unit = self.sub_window.graph.get_roi_data(
             layer_data_item)
+        mask = self.sub_window.graph.get_roi_mask(layer_data_item)
 
         fit_model = fitter(init_model, x, y)
         new_y = fit_model(x)
@@ -113,12 +108,15 @@ class SpectraWindow(DataViewer):
                             unit=y_unit)
 
         # Add data object to model
-        spec_data_item = self.model.create_data_item(
-            fit_spec_data, name="Model Fit ({}: {})".format(
-                layer_data_item.parent.text(), layer_data_item.text()))
+        # spec_data_item = self.model.create_data_item(
+        #     fit_spec_data, name="Model Fit ({}: {})".format(
+        #         layer_data_item.parent.text(), layer_data_item.text()))
 
         # Display
-        self.display_graph(spec_data_item)
+        # self.display_graph(spec_data_item)
+        self.client.add_layer(new_y, mask=mask, name="Model Fit ({}: {" \
+                                                    "})".format(
+                layer_data_item.parent.text(), layer_data_item.text()))
 
         # Update using model approach
         for model_idx in range(layer_data_item.rowCount()):
@@ -141,3 +139,11 @@ class SpectraWindow(DataViewer):
 
         self.sub_window.graph.add_item(layer_data_item, style=style,
                                        set_active=False)
+
+    @QtCore.Slot(QtCore.QModelIndex)
+    def set_selected_item(self, index):
+        layer_data_item = self.model.itemFromIndex(index)
+        print("Setting new root item {}".format(layer_data_item))
+
+        self.model_editor_dock.wgt_model_tree.set_root_item(layer_data_item)
+        self.current_layer_item = layer_data_item

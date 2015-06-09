@@ -9,14 +9,21 @@ import numpy as np
 def fits_cube_reader(filename):
     from astropy.io import fits
     hdulist = fits.open(filename)
+    header = hdulist[1].header
+
+    try:
+        unit = u.Unit(hdulist[1].header['BUNIT'].split(' ')[-1])
+    except:
+        # TODO this is MaNGA-specific
+        unit = u.Unit('erg/s/cm^2/Angstrom/voxel')
 
     # TODO: read in proper units from header.
     return CubeData(data=hdulist[1].data,
-                    header=np.array(hdulist[0].header.__repr__().split('\n')),
+                    #header=np.array(hdulist[0].header.__repr__().split('\n')),
                     uncertainty=StdDevUncertainty(hdulist[3].data),
                     mask=hdulist[2].data.astype(int),
-                    wcs=WCS(hdulist[0].header),
-                    unit=u.Jy / u.Angstrom)
+                    wcs=None, #WCS(hdulist[1].header),
+                    unit=unit)
 
 
 def fits_identify(origin, *args, **kwargs):
