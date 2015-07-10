@@ -10,7 +10,6 @@ from glue.core.data_factories.helpers import has_extension
 from glue.external.astro import fits
 
 import numpy as np
-from cube_tools.core import CubeData
 import astropy.units as u
 from astropy.table import Table
 
@@ -68,7 +67,6 @@ def _load_fits_generic(filename, **kwargs):
 def read_cube(filename, **kwargs):
     # cdata = CubeData.read(filename)
     cdata = fits.open(filename)
-    print(cdata.info())
 
     flux = cdata['FLUX'].data
 

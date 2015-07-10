@@ -30,6 +30,3 @@ You must copy the contents of the `glue_loader` directory into your `~/.glue` di
 you can create it using `mkdir ~/.glue`).
 
 With that finished, you can launch Glue by simply typing `glue` at the command line.
-
-
-

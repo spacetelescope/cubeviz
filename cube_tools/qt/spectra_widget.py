@@ -5,7 +5,7 @@ from cube_tools.clients.spectra_client import SpectraClient
 
 from specview.ui.qt.subwindows import SpectraMdiSubWindow
 from specview.ui.models import DataTreeModel
-from specview.ui.qt.docks import ModelDockWidget, DataDockWidget
+from specview.ui.qt.docks import ModelDockWidget, EquivalentWidthDockWidget, MeasurementDockWidget
 from specview.ui.qt.views import LayerDataTree
 from specview.core import SpectrumData, SpectrumArray
 from specview.ui.items import LayerDataTreeItem
@@ -24,7 +24,25 @@ class SpectraWindow(DataViewer):
         self.current_layer_item = None
 
         self.model = DataTreeModel()
+
+        # Define main options widget as a tabbed widget
+        self.wgt_options = QtGui.QToolBox()
+
+        # Get the model editor dock widget and remove header
         self.model_editor_dock = ModelDockWidget()
+        self.model_editor_dock.setTitleBarWidget(QtGui.QWidget(None))
+
+        # Get equivalent width and measurement info docks, remove headers
+        self.equiv_width_dock = EquivalentWidthDockWidget()
+        self.equiv_width_dock.setTitleBarWidget(QtGui.QWidget(None))
+        self.measurement_dock = MeasurementDockWidget()
+        self.measurement_dock.setTitleBarWidget(QtGui.QWidget(None))
+
+        # Add docks to the tabbed widget
+        self.wgt_options.addItem(self.model_editor_dock, 'Model Editor')
+        self.wgt_options.addItem(self.equiv_width_dock, 'Equivalent Width')
+        self.wgt_options.addItem(self.measurement_dock, 'Measurements')
+
         self.layer_dock = LayerDataTree()
 
         self.client = SpectraClient(self._data, self.model,
@@ -32,8 +50,8 @@ class SpectraWindow(DataViewer):
         self._connect()
 
     def register_to_hub(self, hub):
-       super(SpectraWindow, self).register_to_hub(hub)
-       self.client.register_to_hub(hub)
+        super(SpectraWindow, self).register_to_hub(hub)
+        self.client.register_to_hub(hub)
 
     def add_data(self, data):
         layer_data_item = self.client.add_data(data)
@@ -54,7 +72,7 @@ class SpectraWindow(DataViewer):
         return self.layer_dock
 
     def options_widget(self):
-        return self.model_editor_dock
+        return self.wgt_options
 
     def _connect(self):
         # Set model editor's model
@@ -81,6 +99,10 @@ class SpectraWindow(DataViewer):
 
         # Connect removing layers
         self.model.sig_removed_item.connect(self.sub_window.graph.remove_item)
+
+        # Connect toggling layer visibility on graphs
+        self.model.sig_set_visibility.connect(
+            self.sub_window.graph.set_visibility)
 
     def _perform_fit(self):
         layer_data_item = self.layer_dock.current_item
