@@ -39,33 +39,22 @@ class SpectraClient(Client):
         print("Updating subset")
         subset = message.sender
 
-        # if subset in self.artists and subset['flux'] == self.artists[
-        #     subset]['flux']:
-        #     return
-        # spectrum = Extractor.subset_spectrum(subset, 'flux', (0, 'y', 'x'), 0)
-        # print(spectrum[0].shape)
-        # print(spectrum[1].shape)
-
         tstart = time.time()
         mask = subset.to_mask()
-        print("Time to convert to mask {}".format(time.time() - tstart))
 
         tstart = time.time()
         data = subset.data['flux']
         mdata = np.ma.array(data, mask=~mask)
 
-        clp_data = np.sum(np.sum(mdata, axis=1), axis=1)
-        print("Time for summing: {}".format(time.time() - tstart))
+        clp_data = np.nanmean(np.nanmean(mdata, axis=1), axis=1)
 
         if subset in self.artists:
-            print("... updating graph")
             layer_data_item = self.artists[subset]
-            layer_data_item.update_data(clp_data.data)
+            layer_data_item.update_data(clp_data)
 
             self.update_graph(layer_data_item)
         else:
-            print("... creating new")
-            self.artists[subset] = self.add_layer(data=clp_data.data,
+            self.artists[subset] = self.add_layer(data=clp_data,
                                                   name="{} ({})".format(
                                                       subset.label,
                                                       subset.data.label))
@@ -73,14 +62,6 @@ class SpectraClient(Client):
     def _add_subset(self, message):
         print("Adding subset")
         subset = message.sender
-        # mask = subset.to_mask()
-        # data = subset.data['data']
-        #
-        # mdata = np.ma.array(data, mask=mask)
-        # clp_data = np.sum(np.sum(mdata, axis=1), axis=1)
-        #
-        # self.artists[subset] = self.add_layer(data=clp_data.data,
-        #                                       name=subset.label)
 
     def add_layer(self, data=None, mask=None, name='Layer', set_active=True,
                   style='line'):
@@ -137,25 +118,11 @@ class SpectraClient(Client):
         mask_comp = data.get_component(data.id['mask'])
         wcs_comp = data.get_component(data.id['header'])
 
-        # spdata = NewSpectrumData(data=np.sum(np.sum(data_comp.data, axis=1),
-        #                                      axis=1),
-        #                               unit=u.Unit(data_comp.units))
-
-        flux_sum = np.sum(np.sum(flux_comp.data, axis=1), axis=1)
+        flux_sum = np.nanmean(np.nanmean(flux_comp.data, axis=1), axis=1)
 
         spectrum = SpectrumData()
         spectrum.set_x(disp_comp.data[:, 0, 0], unit=u.Unit(disp_comp.units))
         spectrum.set_y(flux_sum, unit=u.Unit(flux_comp.units))
-
-        # start = wcs_comp.data[0]
-        # step = wcs_comp.data[0] * np.exp(wcs_comp.data[1] * \
-        #                                  (np.arange(data_comp.data.shape[0]) -
-        #                                   wcs_comp[2])
-        #                                  / wcs_comp[0])
-        # stop = start + step * data_comp.data.shape[0]
-        # lambda=CRVALi*exp(CDi_i*(p-CRPIXi)/CRVALi)
-        # disp = np.arange(start, stop, step)
-        # spectrum.set_y(spdata.flux.value, unit=spdata.flux.unit)
 
         # Create data and layer items
         self.spec_data_item = self.model.create_data_item(spectrum, "Data")
