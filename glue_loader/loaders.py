@@ -6,34 +6,61 @@ from collections import defaultdict
 from glue.core import Data, Component
 from glue.core.coordinates import coordinates_from_header
 from glue.config import data_factory
-from glue.core.data_factories import has_extension
+from glue.core.data_factories.helpers import has_extension
 from glue.external.astro import fits
 
 import numpy as np
 from cube_tools.core import CubeData
 import astropy.units as u
+from astropy.table import Table
 
 
 @data_factory('Generic FITS', has_extension('fits fit'))
 def _load_fits_generic(filename, **kwargs):
     hdulist = fits.open(filename)
-    groups = defaultdict(Data)
+    groups = dict()
+    label_base = '{}'.format(
+        basename(filename).split('.', 1)[0],
+    )
     for extnum, hdu in enumerate(hdulist):
-        if not isinstance(hdu, fits.TableHDU) and\
-           hdu.data is not None:
-            shape = hdu.data.shape
-            if shape not in groups:
-                label = '{}[{}]'.format(
-                    basename(filename).split('.', 1)[0],
-                    'x'.join((str(x) for x in shape))
-                )
-                data = Data(label=label)
-                data.coords = coordinates_from_header(hdu.header)
-                groups[shape] = data
+        if hdu.data is not None:
+            hdu_name = hdu.name if hdu.name else str(extnum)
+            if isinstance(hdu, fits.ImageHDU):
+                shape = hdu.data.shape
+                try:
+                    data = groups[shape]
+                except KeyError:
+                    label = '{}[{}]'.format(
+                        label_base,
+                        'x'.join(str(x) for x in shape)
+                    )
+                    data = Data(label=label)
+                    data.coords = coordinates_from_header(hdu.header)
+                    groups[shape] = data
+                data.add_component(component=hdu.data,
+                                   label=hdu_name)
             else:
-                data = groups[shape]
-            data.add_component(component=hdu.data,
-                               label=hdu.header.get('EXTNAME', 'EXT[{}]'.format(str(extnum))))
+                # Loop through columns and make component list
+                table = Table(hdu.data)
+                table_name = '{}[{}]'.format(
+                    label_base,
+                    hdu_name
+                )
+                for column_name in table.columns:
+                    column = table[column_name]
+                    shape = column.shape
+                    data_label = '{}[{}]'.format(
+                        table_name,
+                        'x'.join(str(x) for x in shape)
+                    )
+                    try:
+                        data = groups[data_label]
+                    except KeyError:
+                        data = Data(label=data_label)
+                        groups[data_label] = data
+                    component = Component.autotyped(column, units=column.unit)
+                    data.add_component(component=component,
+                                       label=column_name)
     return [data for data in groups.itervalues()]
 
 
