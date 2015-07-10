@@ -19,13 +19,13 @@ from astropy.table import Table
 def _load_fits_generic(filename, **kwargs):
     hdulist = fits.open(filename)
     groups = dict()
-    label_base = '{}'.format(
-        basename(filename).split('.', 1)[0],
-    )
+    label_base =  basename(filename).rpartition('.')[0]
+    if not label_base:
+        label_base = basename(filename)
     for extnum, hdu in enumerate(hdulist):
         if hdu.data is not None:
             hdu_name = hdu.name if hdu.name else str(extnum)
-            if isinstance(hdu, fits.ImageHDU):
+            if is_image_hdu(hdu):
                 shape = hdu.data.shape
                 try:
                     data = groups[shape]
@@ -39,7 +39,7 @@ def _load_fits_generic(filename, **kwargs):
                     groups[shape] = data
                 data.add_component(component=hdu.data,
                                    label=hdu_name)
-            else:
+            elif is_table_hdu(hdu):
                 # Loop through columns and make component list
                 table = Table(hdu.data)
                 table_name = '{}[{}]'.format(
@@ -109,3 +109,14 @@ def read_cube(filename, **kwargs):
     data.add_component(component=mask,
                        label="mask")
     return data
+
+
+# Utilities
+def is_image_hdu(hdu):
+    from astropy.io.fits.hdu import PrimaryHDU, ImageHDU
+    return reduce(lambda x, y: x | isinstance(hdu, y), (PrimaryHDU, ImageHDU), False)
+
+
+def is_table_hdu(hdu):
+    from astropy.io.fits.hdu import TableHDU, BinTableHDU
+    return reduce(lambda x, y: x | isinstance(hdu, y), (TableHDU, BinTableHDU), False)
