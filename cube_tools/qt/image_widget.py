@@ -1,4 +1,4 @@
-from PyQt4 import QtGui
+from specview.external.qt import QtGui
 
 from glue.qt.widgets.data_viewer import DataViewer
 

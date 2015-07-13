@@ -1,4 +1,4 @@
-from qtpy import QtGui, QtCore
+from specview.external.qt import QtGui, QtCore
 
 from glue.qt.widgets.data_viewer import DataViewer
 from cube_tools.clients.spectra_client import SpectraClient
