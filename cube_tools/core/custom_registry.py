@@ -1,35 +1,56 @@
 from astropy.io import registry
-from data_objects import CubeData
+from astropy.io import fits
+from cube_tools.core.data_objects import CubeData, SpectrumData, ImageData
 from astropy.wcs import WCS
 from astropy.nddata import StdDevUncertainty
 import astropy.units as u
-import numpy as np
+from warnings import warn
 
 
 def fits_cube_reader(filename):
-    from astropy.io import fits
     hdulist = fits.open(filename)
     header = hdulist[1].header
 
     try:
         unit = u.Unit(hdulist[1].header['BUNIT'].split(' ')[-1])
-    except:
+    except (KeyError, ValueError):
+        warn("Could not find 'BUNIT' in WCS header; assuming"
+                "'erg/s/cm^2/Angstrom/voxel'")
         # TODO this is MaNGA-specific
         unit = u.Unit('erg/s/cm^2/Angstrom/voxel')
 
-    # TODO: read in proper units from header.
     return CubeData(data=hdulist[1].data,
-                    #header=np.array(hdulist[0].header.__repr__().split('\n')),
-                    uncertainty=StdDevUncertainty(hdulist[3].data),
-                    mask=hdulist[2].data.astype(int),
-                    wcs=None, #WCS(hdulist[1].header),
+                    uncertainty=StdDevUncertainty(hdulist[2].data),
+                    mask=hdulist[3].data.astype(int),
+                    wcs=WCS(header),
                     unit=unit)
+
+
+def fits_spectrum_reader(filename):
+    hdulist = fits.open(filename)
+    header = hdulist[1].header
+
+    try:
+        unit = u.Unit(hdulist[1].header['CUNIT'].split(' ')[-1])
+    except KeyError:
+        warn("Could not find 'CUNIT' in WCS header; assuming 'Jy'")
+        unit = u.Unit('Jy')
+
+    return SpectrumData(data=hdulist[1].data,
+                        uncertainty=StdDevUncertainty(hdulist[3].data),
+                        mask=hdulist[2].data.astype(int),
+                        wcs=WCS(header),
+                        unit=unit)
 
 
 def fits_identify(origin, *args, **kwargs):
     return isinstance(args[0], basestring) and \
            args[0].lower().split('.')[-1] in ['fits', 'fit']
 
-
-registry.register_reader('fits', CubeData, fits_cube_reader)
-registry.register_identifier('fits', CubeData, fits_identify)
+try:
+    registry.register_reader('fits', CubeData, fits_cube_reader)
+    registry.register_reader('fits', SpectrumData, fits_spectrum_reader)
+    registry.register_identifier('fits', CubeData, fits_identify)
+    registry.register_identifier('fits', SpectrumData, fits_identify)
+except Exception:
+    warn('Items already exist in IO registry.')
