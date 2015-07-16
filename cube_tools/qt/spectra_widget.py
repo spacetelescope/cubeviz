@@ -2,12 +2,12 @@ from specview.external.qt import QtGui, QtCore
 
 from glue.qt.widgets.data_viewer import DataViewer
 from cube_tools.clients.spectra_client import SpectraClient
+from cube_tools.core.data_objects import SpectrumData
 
 from specview.ui.qt.subwindows import SpectraMdiSubWindow
 from specview.ui.models import DataTreeModel
 from specview.ui.qt.docks import ModelDockWidget, EquivalentWidthDockWidget, MeasurementDockWidget
 from specview.ui.qt.views import LayerDataTree
-from specview.core import SpectrumData, SpectrumArray
 from specview.ui.items import LayerDataTreeItem
 from specview.analysis import model_fitting
 
@@ -104,6 +104,15 @@ class SpectraWindow(DataViewer):
         self.model.sig_set_visibility.connect(
             self.sub_window.graph.set_visibility)
 
+        # Connect toggling error display in plot
+        self.sub_window.plot_toolbar.atn_toggle_errs.triggered.connect(
+            self._toggle_show_errs)
+
+    def _toggle_show_errs(self):
+        self.sub_window.graph.show_errors = \
+            self.sub_window.plot_toolbar.atn_toggle_errs.isChecked()
+        self.sub_window.graph.update_all()
+
     def _perform_fit(self):
         layer_data_item = self.layer_dock.current_item
 
@@ -115,19 +124,23 @@ class SpectraWindow(DataViewer):
 
         init_model = layer_data_item.model
 
-        x, y, x_unit, y_unit = self.sub_window.graph.get_roi_data(
-            layer_data_item)
+        # x, y, x_unit, y_unit = self.sub_window.graph.get_roi_data(
+        #     layer_data_item)
+        x, y = layer_data_item.item.dispersion, layer_data_item.item.flux
         mask = self.sub_window.graph.get_roi_mask(layer_data_item)
 
-        fit_model = fitter(init_model, x, y)
-        new_y = fit_model(x)
+        print(x.shape, y.shape, layer_data_item.item.dispersion.shape,
+              layer_data_item.item.flux.shape)
+
+        fit_model = fitter(init_model, x.value[~mask], y.value[~mask])
+        new_y = fit_model(x.value[~mask])
 
         # Create new data object
-        fit_spec_data = SpectrumData()
-        fit_spec_data.set_x(x, wcs=layer_data_item.item.x.wcs,
-                            unit=x_unit)
-        fit_spec_data.set_y(new_y, wcs=layer_data_item.item.y.wcs,
-                            unit=y_unit)
+        fit_spec_data = SpectrumData(new_y, unit=layer_data_item.item.unit,
+                                     mask=layer_data_item.item.mask,
+                                     wcs=layer_data_item.item.wcs,
+                                     meta=layer_data_item.item.meta,
+                                     uncertainty=layer_data_item.item.uncertainty)
 
         # Add data object to model
         # spec_data_item = self.model.create_data_item(
@@ -136,8 +149,8 @@ class SpectraWindow(DataViewer):
 
         # Display
         # self.display_graph(spec_data_item)
-        self.client.add_layer(new_y, mask=mask, name="Model Fit ({}: {" \
-                                                    "})".format(
+        self.client.add_layer(fit_spec_data, mask=mask,
+                              name="Model Fit ({}: {})".format(
                 layer_data_item.parent.text(), layer_data_item.text()))
 
         # Update using model approach

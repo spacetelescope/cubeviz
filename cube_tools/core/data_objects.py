@@ -6,12 +6,23 @@ import custom_registry
 import numbers
 
 
-class BaseData(NDData, NDArithmeticMixin, NDSlicingMixin):
+class BaseData(NDData, NDArithmeticMixin):
     """
     Base class for all CubeData objects and their slices.
     """
     def __init__(self, *args, **kwargs):
         super(BaseData, self).__init__(*args, **kwargs)
+
+    @property
+    def shape(self):
+        return self.data.shape
+
+    @classmethod
+    def read(cls, *args, **kwargs):
+        """
+        Weirdly, this must have a docstring or astropy crashes.
+        """
+        return custom_registry.registry.read(cls, *args, **kwargs)
 
     def __len__(self):
         return self.data.size
@@ -88,10 +99,10 @@ class CubeData(BaseData):
     def __init__(self, *args, **kwargs):
         super(CubeData, self).__init__(*args, **kwargs)
 
-        self.spatial_unit = None
-        self.spectral_unit = None
-
     def __getitem__(self, item):
+        return self.data[item]
+
+    def get_slice(self, item):
         new_data = self.data[item]
 
         if self.uncertainty is not None:
@@ -104,45 +115,43 @@ class CubeData(BaseData):
         else:
             new_mask = None
 
-        if self.wcs is not None:
-            # TODO: this errors with "Cannot downsample a WCS with indexing.
-            # Use wcs.sub or wcs.dropaxis if you want to remove axes."
-            # need to investigate
-            # new_wcs = self.wcs[item]
-            new_wcs = self.wcs
-        else:
-            new_wcs = None
-
         if not hasattr(item, '__getitem__'):
-            return self.__class__(new_data, uncertainty=new_uncertainty,
-                                  mask=new_mask, wcs=new_wcs,
-                                  meta=self.meta, unit=self.unit)
+            return super(CubeData, self).__getitem__(item).data
 
         if not isinstance(item[0], slice) and (isinstance(item[1], slice) or
-                                                   isinstance(item[2], slice)):
+                                               isinstance(item[2], slice)):
             return ImageData(new_data, uncertainty=new_uncertainty,
-                             mask=new_mask, wcs=new_wcs,
-                             meta=self.meta, unit=self.spatial_unit)
-        elif isinstance(item[0], slice) and (not isinstance(item[1], slice)
-                                             or not isinstance(item[2], slice)):
+                             mask=new_mask, wcs=self.wcs,
+                             meta=self.meta, unit=self.unit)
+
+        elif isinstance(item[0], slice) and not isinstance(item[1], slice) \
+                and not isinstance(item[2], slice):
             return SpectrumData(new_data, uncertainty=new_uncertainty,
-                                mask=new_mask, wcs=new_wcs,
-                                meta=self.meta, unit=self.spectral_unit)
+                                mask=new_mask, wcs=self.wcs,
+                                meta=self.meta, unit=self.unit)
+
         elif all([isinstance(x, slice) for x in item]):
             return self.__class__(new_data, uncertainty=new_uncertainty,
-                                  mask=new_mask, wcs=new_wcs,
+                                  mask=new_mask, wcs=self.wcs,
                                   meta=self.meta, unit=self.unit)
+
         else:
             return u.Quantity(new_data, self.unit)
 
-    @classmethod
-    def read(cls, *args, **kwargs):
-        """
-        Weirdly, this must have a docstring or astropy crashes.
-        """
-        return custom_registry.registry.read(cls, *args, **kwargs)
+    def collapse_to_spectrum(self, method='mean'):
+        # mdata = ma.masked_array(self.data, mask=self.mask)
+        udata = ma.masked_array(self.uncertainty.array, mask=self.mask)
 
-    def collapse(self, wavelength_range=None, method="mean", axis=0):
+        if method == 'mean':
+            new_mdata = self.data.mean(axis=1).mean(axis=1)
+            new_udata = udata.mean(axis=1).mean(axis=1)
+
+        return SpectrumData(new_mdata,
+                            uncertainty=self.uncertainty.__class__(new_udata),
+                            mask=self.mask,
+                            wcs=self.wcs, meta=self.meta, unit=self.unit)
+
+    def collapse_to_image(self, wavelength_range=None, method="mean", axis=0):
         mdata = ma.masked_array(self.data, mask=self.mask)
 
         # TODO: extend this to be *actual* wavelengths
@@ -154,13 +163,13 @@ class CubeData(BaseData):
         elif method == "median":
             new_data = np.ma.median(mdata, axis=axis)
         elif method == "mode":
-            # TODO: requires a more eligant solution; scipy's mode is too
+            # TODO: requires a more elegant solution; scipy's mode is too
             # slow and doesn't really make sense for a bunch of floats
             pass
         else:
             raise NotImplementedError("No such method {}".format(method))
 
-        return ImageData(new_data.data, uncertainty=None, mask=mdata.mask,
+        return ImageData(new_data.data, uncertainty=None, mask=self.mask,
                          wcs=self.wcs, meta=self.meta, unit=self.unit)
 
 
@@ -168,43 +177,66 @@ class SpectrumData(BaseData):
     """
     Container object for spectra data included within the Cube data object.
     """
-
     def __init__(self, *args, **kwargs):
         super(SpectrumData, self).__init__(*args, **kwargs)
 
-        self.convert_flux_unit = None
-        self.convert_disp_unit = None
+        disp_data = np.arange(self.wcs.wcs.crpix[2],
+                              self.wcs.wcs.crpix[2] + self.data.shape[0])
+        disp_unit = u.Unit(self.wcs.wcs.cunit[2])
 
-    @property
-    def flux(self):
-        flux_data = u.Quantity(self.data, self.unit, copy=False)
+        if self.wcs.wcs.ctype[2] == 'WAVE-LOG':
+            disp_data = self.wcs.wcs.crval[2] * \
+                        np.exp(self.wcs.wcs.cd[2][2] * (disp_data -
+                                                    self.wcs.wcs.crpix[2])
+                               / self.wcs.wcs.crval[2])
 
-        if self.convert_flux_unit is None:
-            return flux_data
-
-        return flux_data.to(self.convert_flux_unit)
-
-    @property
-    def dispersion(self):
-        disp_data = u.Quantity(np.arange(self.data.shape[0]), u.Angstrom,
-                               copy=False)
-
-        if self.convert_disp_unit is None:
-            return disp_data
-
-        return disp_data.to(self.convert_disp_unit)
+        self._dispersion = u.Quantity(disp_data, disp_unit, copy=False)
+        self._flux = u.Quantity(self.data, self.unit, copy=False)
+        self._error = u.Quantity(self.uncertainty.array, self.unit)
 
     def __getitem__(self, item):
         return u.Quantity(self.data[item], self.unit, copy=False)
+
+    @property
+    def flux(self):
+        return self._flux
+
+    @property
+    def dispersion(self):
+        return self._dispersion
+
+    @property
+    def error(self):
+        return self._error
+
+    def get_flux(self, convert_unit=None):
+        if convert_unit is None:
+            return self._flux
+
+        return self._flux.to(convert_unit)
+
+    def get_error(self, convert_unit=None):
+        if convert_unit is None:
+            return self._error
+
+        return self._error.to(convert_unit)
+
+    def get_dispersion(self, convert_unit=None):
+        if convert_unit is None:
+            return self._dispersion
+
+        return self._dispersion.to(convert_unit)
 
 
 class ImageData(BaseData):
     """
     Container object for image data included within the Cube data object.
     """
-
     def __init__(self, *args, **kwargs):
         super(ImageData, self).__init__(*args, **kwargs)
 
     def __getitem__(self, item):
         return u.Quantity(self.data[item], self.unit, copy=False)
+
+    def ravel(self):
+        return self.data.ravel()

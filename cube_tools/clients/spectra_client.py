@@ -3,8 +3,7 @@ import time
 from glue.core.client import Client
 from glue.core import message as msg
 
-from specview.core import SpectrumData, SpectrumArray
-from cube_tools.core import SpectrumData as NewSpectrumData
+from cube_tools.core.data_objects import SpectrumData
 import astropy.units as u
 from glue.plugins.tools.spectrum_tool import Extractor
 
@@ -43,8 +42,9 @@ class SpectraClient(Client):
         mask = subset.to_mask()
 
         tstart = time.time()
-        data = subset.data['flux']
+        data = subset.data['cube']
         mdata = np.ma.array(data, mask=~mask)
+        print("Created mdata")
 
         clp_data = np.nanmean(np.nanmean(mdata, axis=1), axis=1)
 
@@ -67,7 +67,6 @@ class SpectraClient(Client):
                   style='line'):
         print("Adding layer {}".format(name))
         layer_data_item = self.model.create_layer_item(self.spec_data_item,
-                                                       raw_data=data,
                                                        mask=mask,
                                                        name=name)
 
@@ -110,25 +109,16 @@ class SpectraClient(Client):
     def data(self):
         return super(SpectraClient, self).data()
 
-    def add_data(self, data):
-        flux_comp = data.get_component(data.id['flux'])
-        self.main_data = flux_comp.data
-        disp_comp = data.get_component(data.id['disp'])
-        uncert_comp = data.get_component(data.id['uncertainty'])
-        mask_comp = data.get_component(data.id['mask'])
-        wcs_comp = data.get_component(data.id['header'])
-
-        flux_sum = np.nanmean(np.nanmean(flux_comp.data, axis=1), axis=1)
-
-        spectrum = SpectrumData()
-        spectrum.set_x(disp_comp.data[:, 0, 0], unit=u.Unit(disp_comp.units))
-        spectrum.set_y(flux_sum, unit=u.Unit(flux_comp.units))
+    def add_data(self, cube_data):
+        spec_data = cube_data.data['cube'].collapse_to_spectrum()
+        print("RIGHT HERE", spec_data.shape)
 
         # Create data and layer items
-        self.spec_data_item = self.model.create_data_item(spectrum, "Data")
+        self.spec_data_item = self.model.create_data_item(spec_data, "Data")
 
-        layer_data_item = self.add_layer(name=data.label,
-                                         set_active=True, style='line')
+        layer_data_item = self.add_layer(name=cube_data.label,
+                                         set_active=True,
+                                         style='line')
 
         return layer_data_item
 
