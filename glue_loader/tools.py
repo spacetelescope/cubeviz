@@ -29,7 +29,7 @@ class SpectrumExtractorMode(RoiMode):
 
     def __init__(self, axes, **kwargs):
         super(SpectrumExtractorMode, self).__init__(axes, **kwargs)
-        self.icon = QIcon('./icons/cube_spectrum')
+        self.icon = QIcon('cube_spectrum')
         self.mode_id = 'MySpectrum'
         self.action_text = 'MySpectrum'
         self.tool_tip = 'Extract a spectrum from the selection'
