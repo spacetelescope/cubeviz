@@ -44,9 +44,12 @@ class SpectraWindow(DataViewer):
         self.wgt_options.addItem(self.measurement_dock, 'Measurements')
 
         self.layer_dock = LayerDataTree()
+        self.layer_dock.setModel(self.model)
 
-        self.client = SpectraClient(self._data, self.model,
-                                    self.sub_window.graph)
+        self.client = SpectraClient(data=self._data, model=self.model,
+                                    graph=self.sub_window.graph)
+        self.layer_dock.set_root_item(self.client._node_parent)
+
         self._connect()
 
     def register_to_hub(self, hub):
@@ -60,7 +63,6 @@ class SpectraWindow(DataViewer):
 
         # Set root items
         self.model_editor_dock.wgt_model_tree.set_root_item(layer_data_item)
-        self.layer_dock.set_root_item(layer_data_item.parent)
 
         return True
 
@@ -122,17 +124,11 @@ class SpectraWindow(DataViewer):
 
         init_model = layer_data_item.model
 
-        # x, y, x_unit, y_unit = self.sub_window.graph.get_roi_data(
-        #     layer_data_item)
         x, y = layer_data_item.item.dispersion, layer_data_item.item.flux
         mask = self.sub_window.graph.get_roi_mask(layer_data_item)
 
-        print(x.shape, y.shape, layer_data_item.item.dispersion.shape,
-              layer_data_item.item.flux.shape)
-
-        fit_model = fitter(init_model, x.value[~mask], y.value[~mask])
-        print(fit_model)
-        new_y = fit_model(x.value[~mask])
+        fit_model = fitter(init_model, x.value[mask], y.value[mask])
+        new_y = fit_model(x.value[mask])
 
         # Create new data object
         fit_spec_data = SpectrumData(new_y, unit=layer_data_item.item.unit,
@@ -141,16 +137,14 @@ class SpectraWindow(DataViewer):
                                      meta=layer_data_item.item.meta,
                                      uncertainty=layer_data_item.item.uncertainty)
 
-        # Add data object to model
-        # spec_data_item = self.model.create_data_item(
-        #     fit_spec_data, name="Model Fit ({}: {})".format(
-        #         layer_data_item.parent.text(), layer_data_item.text()))
+        new_spec_data_item = self.model.create_spec_data_item(fit_spec_data)
 
+        print(fit_spec_data.shape, mask.shape)
         # Display
-        # self.display_graph(spec_data_item)
-        self.client.add_layer(fit_spec_data, mask=mask,
+        self.client.add_layer(new_spec_data_item, mask=mask,
                               name="Model Fit ({}: {})".format(
-                layer_data_item.parent.text(), layer_data_item.text()))
+                                  layer_data_item.parent.text(),
+                                  layer_data_item.text()))
 
         # Update using model approach
         for model_idx in range(layer_data_item.rowCount()):

@@ -148,8 +148,8 @@ class CubeData(BaseData):
 
         return SpectrumData(new_mdata,
                             uncertainty=self.uncertainty.__class__(new_udata),
-                            mask=self.mask,
-                            wcs=self.wcs, meta=self.meta, unit=self.unit)
+                            mask=udata.mask, wcs=self.wcs, meta=self.meta,
+                            unit=self.unit)
 
     def collapse_to_image(self, wavelength_range=None, method="mean", axis=0):
         mdata = ma.masked_array(self.data, mask=self.mask)
@@ -196,7 +196,12 @@ class SpectrumData(BaseData):
         self._error = u.Quantity(self.uncertainty.array, self.unit)
 
     def __getitem__(self, item):
+        print(item)
         return u.Quantity(self.data[item], self.unit, copy=False)
+
+    @property
+    def shape(self):
+        return self.data.shape
 
     @property
     def flux(self):

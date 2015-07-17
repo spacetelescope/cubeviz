@@ -3,7 +3,7 @@ import time
 from glue.core.client import Client
 from glue.core import message as msg
 
-from cube_tools.core.data_objects import SpectrumData
+from cube_tools.core.data_objects import SpectrumData, CubeData
 import astropy.units as u
 from glue.plugins.tools.spectrum_tool import Extractor
 
@@ -16,9 +16,9 @@ class SpectraClient(Client):
         self.graph = graph
         self.model = model
         self.artists = {}
-        self.spec_data_item = None
         self.main_data = None
         self.current_item = None
+        self._node_parent = self.model.create_cube_data_item(None, name='Node')
 
     def unregister(self, hub):
         super(SpectraClient, self).unregister(hub)
@@ -41,35 +41,41 @@ class SpectraClient(Client):
         mask = subset.to_mask()
         print("Finished creating mask")
 
-        data = subset.data['cube']
-        print("Retrieved data")
-
-        mdata = np.ma.array(data.data, mask=~mask)
-        print("Created mdata")
-
-        clp_data = mdata.mean(axis=1).mean(axis=1)
-        # np.nanmean(np.nanmean(mdata, axis=1), axis=1)
-
         if subset in self.artists:
             layer_data_item = self.artists[subset]
-            layer_data_item.update_data(clp_data)
+            layer_data_item.update_data(mask)
 
             self.update_graph(layer_data_item)
         else:
-            self.artists[subset] = self.add_layer(data=clp_data,
+            self.artists[subset] = self.add_layer(mask=mask,
                                                   name="{} ({})".format(
-                                                      subset.label,
-                                                      subset.data.label))
+                                                      subset.label, subset.data.label))
 
     def _add_subset(self, message):
         print("Adding subset")
         subset = message.sender
 
-    def add_layer(self, data=None, mask=None, name='Layer', set_active=True,
-                  style='line'):
+    def add_data(self, data):
+        cube_data = data.data['cube']
+
+        # Create data and layer items
+        cube_data_item = self.model.create_cube_data_item(cube_data)
+
+        layer_data_item = self.add_layer(parent=cube_data_item,
+                                         name=data.label,
+                                         set_active=True,
+                                         style='line')
+
+        return layer_data_item
+
+    def add_layer(self, parent, mask=None, collapse='mean', name='Layer',
+                  set_active=True, style='line'):
         print("Adding layer {}".format(name))
-        layer_data_item = self.model.create_layer_item(self.spec_data_item,
+
+        layer_data_item = self.model.create_layer_item(parent,
+                                                       node_parent=self._node_parent,
                                                        mask=mask,
+                                                       collapse=collapse,
                                                        name=name)
 
         self.graph.add_item(layer_data_item, style=style,
@@ -110,19 +116,6 @@ class SpectraClient(Client):
 
     def data(self):
         return super(SpectraClient, self).data()
-
-    def add_data(self, cube_data):
-        spec_data = cube_data.data['cube'].collapse_to_spectrum()
-        print("RIGHT HERE", spec_data.shape)
-
-        # Create data and layer items
-        self.spec_data_item = self.model.create_data_item(spec_data, "Data")
-
-        layer_data_item = self.add_layer(name=cube_data.label,
-                                         set_active=True,
-                                         style='line')
-
-        return layer_data_item
 
     def _numerical_data_changed(self, message):
         pass
