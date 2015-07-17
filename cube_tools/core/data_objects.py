@@ -190,6 +190,7 @@ class SpectrumData(BaseData):
                                                     self.wcs.wcs.crpix[2])
                                / self.wcs.wcs.crval[2])
 
+        # disp_data = np.linspace(disp_data[0], disp_data[-1], self.data.size)
         self._dispersion = u.Quantity(disp_data, disp_unit, copy=False)
         self._flux = u.Quantity(self.data, self.unit, copy=False)
         self._error = u.Quantity(self.uncertainty.array, self.unit)

@@ -105,13 +105,11 @@ class SpectraWindow(DataViewer):
             self.sub_window.graph.set_visibility)
 
         # Connect toggling error display in plot
-        self.sub_window.plot_toolbar.atn_toggle_errs.triggered.connect(
-            self._toggle_show_errs)
-
-    def _toggle_show_errs(self):
-        self.sub_window.graph.show_errors = \
-            self.sub_window.plot_toolbar.atn_toggle_errs.isChecked()
-        self.sub_window.graph.update_all()
+        self.sub_window.plot_toolbar.atn_toggle_errs.triggered.connect(lambda:
+            self.sub_window.graph.set_visibility(
+                self.layer_dock.current_item,
+                self.sub_window.plot_toolbar.atn_toggle_errs.isChecked(),
+                errors_only=True))
 
     def _perform_fit(self):
         layer_data_item = self.layer_dock.current_item
@@ -133,6 +131,7 @@ class SpectraWindow(DataViewer):
               layer_data_item.item.flux.shape)
 
         fit_model = fitter(init_model, x.value[~mask], y.value[~mask])
+        print(fit_model)
         new_y = fit_model(x.value[~mask])
 
         # Create new data object

@@ -36,9 +36,10 @@ def fits_spectrum_reader(filename):
         warn("Could not find 'CUNIT' in WCS header; assuming 'Jy'")
         unit = u.Unit('Jy')
 
-    return SpectrumData(data=hdulist[1].data,
-                        uncertainty=StdDevUncertainty(hdulist[3].data),
-                        mask=hdulist[2].data.astype(int),
+    return SpectrumData(data=hdulist[1].data[:,25,25],
+                        uncertainty=StdDevUncertainty(hdulist[2].data[:,25,
+                                                      25]),
+                        mask=hdulist[3].data[:,25,25].astype(int),
                         wcs=WCS(header),
                         unit=unit)
 

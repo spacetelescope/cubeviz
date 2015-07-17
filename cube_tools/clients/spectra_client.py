@@ -38,15 +38,17 @@ class SpectraClient(Client):
         print("Updating subset")
         subset = message.sender
 
-        tstart = time.time()
         mask = subset.to_mask()
+        print("Finished creating mask")
 
-        tstart = time.time()
         data = subset.data['cube']
-        mdata = np.ma.array(data, mask=~mask)
+        print("Retrieved data")
+
+        mdata = np.ma.array(data.data, mask=~mask)
         print("Created mdata")
 
-        clp_data = np.nanmean(np.nanmean(mdata, axis=1), axis=1)
+        clp_data = mdata.mean(axis=1).mean(axis=1)
+        # np.nanmean(np.nanmean(mdata, axis=1), axis=1)
 
         if subset in self.artists:
             layer_data_item = self.artists[subset]
