@@ -16,6 +16,7 @@ class SpectraClient(Client):
         self.graph = graph
         self.model = model
         self.artists = {}
+        self._data_dict = {}
         self.main_data = None
         self.current_item = None
         self._node_parent = self.model.create_cube_data_item(None, name='Node')
@@ -37,19 +38,23 @@ class SpectraClient(Client):
     def _update_subset(self, message):
         print("Updating subset")
         subset = message.sender
+        cube_data = subset.data['cube']
 
-        mask = subset.to_mask()
+        filter_mask_cube = subset.to_mask()
+        # mask = np.invert(mask)
         print("Finished creating mask")
 
         if subset in self.artists:
             layer_data_item = self.artists[subset]
-            layer_data_item.update_data(mask)
+            layer_data_item.update_data(filter_mask=filter_mask_cube)
 
             self.update_graph(layer_data_item)
         else:
-            self.artists[subset] = self.add_layer(mask=mask,
-                                                  name="{} ({})".format(
-                                                      subset.label, subset.data.label))
+            print("this parent item", self._data_dict[subset.data])
+            self.artists[subset] = self.add_layer(
+                parent=self._data_dict[subset.data],
+                filter_mask=filter_mask_cube,
+                name="{} ({})".format(subset.label, subset.data.label))
 
     def _add_subset(self, message):
         print("Adding subset")
@@ -60,6 +65,8 @@ class SpectraClient(Client):
 
         # Create data and layer items
         cube_data_item = self.model.create_cube_data_item(cube_data)
+        print("this cube data item", cube_data_item)
+        self._data_dict[data] = cube_data_item
 
         layer_data_item = self.add_layer(parent=cube_data_item,
                                          name=data.label,
@@ -68,16 +75,17 @@ class SpectraClient(Client):
 
         return layer_data_item
 
-    def add_layer(self, parent, mask=None, collapse='mean', name='Layer',
+    def add_layer(self, parent, filter_mask=None, collapse='mean',
+                  name='Layer',
                   set_active=True, style='line'):
         print("Adding layer {}".format(name))
 
         layer_data_item = self.model.create_layer_item(parent,
                                                        node_parent=self._node_parent,
-                                                       mask=mask,
+                                                       filter_mask=filter_mask,
                                                        collapse=collapse,
                                                        name=name)
-
+        print("in add layer", filter_mask, layer_data_item._filter_mask)
         self.graph.add_item(layer_data_item, style=style,
                             set_active=set_active)
 

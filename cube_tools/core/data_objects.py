@@ -104,6 +104,7 @@ class CubeData(BaseData):
 
     def get_slice(self, item):
         new_data = self.data[item]
+        print("item", item.shape, new_data.shape, len(new_data.shape))
 
         if self.uncertainty is not None:
             new_uncertainty = self.uncertainty[item]
@@ -116,7 +117,28 @@ class CubeData(BaseData):
             new_mask = None
 
         if not hasattr(item, '__getitem__'):
-            return super(CubeData, self).__getitem__(item).data
+            return super(CubeData, self).__getitem__(item)
+
+        if len(new_data.shape) == 3:
+            return self.__class__(new_data, uncertainty=new_uncertainty,
+                                  mask=new_mask, wcs=self.wcs,
+                                  meta=self.meta, unit=self.unit)
+        elif len(new_data.shape) == 2:
+            if not all(item[0]):
+                return ImageData(new_data, uncertainty=new_uncertainty,
+                                 mask=new_mask, wcs=self.wcs,
+                                 meta=self.meta, unit=self.unit)
+            else:
+                return SpectrumData(new_data, uncertainty=new_uncertainty,
+                                    mask=new_mask, wcs=self.wcs,
+                                    meta=self.meta, unit=self.unit)
+        elif len(new_data.shape) == 1:
+            if new_data.size > 1:
+                return SpectrumData(new_data, uncertainty=new_uncertainty,
+                                    mask=new_mask, wcs=self.wcs,
+                                    meta=self.meta, unit=self.unit)
+            else:
+                return u.Quantity(new_data, self.unit)
 
         if not isinstance(item[0], slice) and (isinstance(item[1], slice) or
                                                isinstance(item[2], slice)):
@@ -138,18 +160,18 @@ class CubeData(BaseData):
         else:
             return u.Quantity(new_data, self.unit)
 
-    def collapse_to_spectrum(self, method='mean'):
-        # mdata = ma.masked_array(self.data, mask=self.mask)
-        udata = ma.masked_array(self.uncertainty.array, mask=self.mask)
+    def collapse_to_spectrum(self, method='mean', filter_mask=None):
+        mdata = ma.masked_array(self.data, mask=~filter_mask)
+        udata = ma.masked_array(self.uncertainty.array, mask=~filter_mask)
 
         if method == 'mean':
-            new_mdata = self.data.mean(axis=1).mean(axis=1)
+            new_mdata = mdata.mean(axis=1).mean(axis=1)
             new_udata = udata.mean(axis=1).mean(axis=1)
 
         return SpectrumData(new_mdata,
                             uncertainty=self.uncertainty.__class__(new_udata),
                             mask=udata.mask, wcs=self.wcs, meta=self.meta,
-                            unit=self.unit)
+                            unit=self.unit), ~new_mdata.mask
 
     def collapse_to_image(self, wavelength_range=None, method="mean", axis=0):
         mdata = ma.masked_array(self.data, mask=self.mask)
@@ -193,7 +215,8 @@ class SpectrumData(BaseData):
         # disp_data = np.linspace(disp_data[0], disp_data[-1], self.data.size)
         self._dispersion = u.Quantity(disp_data, disp_unit, copy=False)
         self._flux = u.Quantity(self.data, self.unit, copy=False)
-        self._error = u.Quantity(self.uncertainty.array, self.unit)
+        self._error = u.Quantity(self.uncertainty.array, self.unit) if \
+            self.uncertainty is not None else None
 
     def __getitem__(self, item):
         print(item)

@@ -11,6 +11,8 @@ from specview.ui.qt.views import LayerDataTree
 from specview.ui.items import LayerDataTreeItem
 from specview.analysis import model_fitting
 
+import numpy as np
+
 
 class SpectraWindow(DataViewer):
     LABEL = "Spectra Plot"
@@ -127,21 +129,35 @@ class SpectraWindow(DataViewer):
         x, y = layer_data_item.item.dispersion, layer_data_item.item.flux
         mask = self.sub_window.graph.get_roi_mask(layer_data_item)
 
+        print(x.shape, mask.shape, mask[mask == True].size, mask.size)
+
         fit_model = fitter(init_model, x.value[mask], y.value[mask])
         new_y = fit_model(x.value[mask])
+
+        print(new_y.shape)
+
+        # It was decided not to carry around dispersion data, instead
+        # letting it be calculated. This means we have to maintain the same
+        # array shape because we don't always know at what dispersion value
+        # a flux array starts
+        tran_y = np.empty(shape=x.value.shape)
+        tran_y[mask] = new_y
+        tran_y[~mask] = 0.0
+        new_y = tran_y
 
         # Create new data object
         fit_spec_data = SpectrumData(new_y, unit=layer_data_item.item.unit,
                                      mask=layer_data_item.item.mask,
                                      wcs=layer_data_item.item.wcs,
                                      meta=layer_data_item.item.meta,
-                                     uncertainty=layer_data_item.item.uncertainty)
+                                     uncertainty=None)
 
         new_spec_data_item = self.model.create_spec_data_item(fit_spec_data)
 
         print(fit_spec_data.shape, mask.shape)
         # Display
-        self.client.add_layer(new_spec_data_item, mask=mask,
+        self.client.add_layer(new_spec_data_item,
+                              filter_mask=mask,
                               name="Model Fit ({}: {})".format(
                                   layer_data_item.parent.text(),
                                   layer_data_item.text()))
