@@ -2,9 +2,10 @@
 Data analysis package for cubes.
 
 ## Installation
-Cube Tools itself is pretty straight forward: simply clone or download and run the `setup.py` file. Cube Tools 
-currently requires the development version of SpecView, along with Glue. 
 
+Cube Tools itself is pretty straight forward: simply clone or download and run
+the `setup.py` file. Cube Tools currently requires the development version of
+SpecView, along with Glue.
 
 ### Installing SpecView
 You can get this version using the git commands:
@@ -26,7 +27,20 @@ python setup.py install
 ```
 
 ### Setting up Glue
-You must copy the contents of the `glue_loader` directory into your `~/.glue` directory (if `~/.glue` doesn't exist, 
-you can create it using `mkdir ~/.glue`).
 
-With that finished, you can launch Glue by simply typing `glue` at the command line.
+This plugin requires Glue 0.5.1 or later. Once the plugin is installed, it will
+automatically be registered with Glue. If the plugin does not not appear in
+Glue, you can start up glue with:
+
+    glue --verbose
+    
+You should normally see:
+
+    INFO:glue:Loading plugin cube_tools succeeded
+
+but if there is an issue, you might see something like:
+
+    INFO:glue:Loading plugin cube_tools failed (Exception: No module named models)
+
+**Note:** if you installed this package by copying its contents to the
+``~/.glue`` folder in the past, be sure to remove these files now.
