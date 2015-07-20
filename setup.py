@@ -1,4 +1,9 @@
-from distutils.core import setup
+from setuptools import setup
+
+entry_points = """
+[glue.plugins]
+cube_tools=cube_tools:setup
+"""
 
 setup(
     name='Cube Tools',
@@ -9,5 +14,6 @@ setup(
     license='',
     author='STScI',
     author_email='nearl@stsci.edu',
-    description='Data analysis package for cubes.'
+    description='Data analysis package for cubes.',
+    entry_points=entry_points
 )
