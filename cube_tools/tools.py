@@ -91,4 +91,4 @@ class SpectrumExtractorMode(RoiMode):
 
 
 # tool_registry.add(MySpectrumTool, widget_cls=ImageWidget)
-tool_registry.add(SpecViewTool, widget_cls=ImageWidget)
+# tool_registry.add(SpecViewTool, widget_cls=ImageWidget)
