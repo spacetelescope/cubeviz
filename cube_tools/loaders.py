@@ -12,7 +12,7 @@ from glue.external.astro import fits
 import numpy as np
 from astropy.table import Table
 
-from cube_tools.core.data_objects import CubeData
+from .core.data_objects import CubeData
 
 
 @data_factory('Generic FITS', has_extension('fits fit'))

@@ -1,9 +1,10 @@
+import numbers
+
 import numpy as np
 import numpy.ma as ma
 from astropy.nddata import (NDData, NDSlicingMixin, NDArithmeticMixin)
 import astropy.units as u
-import custom_registry
-import numbers
+
 
 
 class BaseData(NDData, NDArithmeticMixin):
@@ -22,6 +23,7 @@ class BaseData(NDData, NDArithmeticMixin):
         """
         Weirdly, this must have a docstring or astropy crashes.
         """
+        from . import custom_registry
         return custom_registry.registry.read(cls, *args, **kwargs)
 
     def __len__(self):

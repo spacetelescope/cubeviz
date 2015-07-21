@@ -1,5 +1,8 @@
-from cube_tools.core.data_objects import CubeData, SpectrumData
+from __future__ import print_function
+
 import numpy as np
+
+from .core.data_objects import CubeData, SpectrumData
 
 if __name__ == '__main__':
     cube_data = CubeData.read("/Users/nearl/Desktop/cube_tools_demo_data/manga-7443-12703-LOGCUBE.fits",

@@ -1,10 +1,13 @@
+from __future__ import print_function
+
 from astropy.io import registry
 from astropy.io import fits
-from cube_tools.core.data_objects import CubeData, SpectrumData, ImageData
 from astropy.wcs import WCS
 from astropy.nddata import StdDevUncertainty
 import astropy.units as u
 from warnings import warn
+
+from .data_objects import CubeData, SpectrumData, ImageData
 
 
 def fits_cube_reader(filename):
