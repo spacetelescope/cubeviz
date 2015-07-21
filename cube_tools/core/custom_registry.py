@@ -4,11 +4,12 @@ from collections import OrderedDict
 
 from astropy.io import registry
 from astropy.io import fits
-from cube_tools.core.data_objects import CubeData, SpectrumData, ImageData
 from astropy.wcs import WCS
 from astropy.nddata import StdDevUncertainty
 import astropy.units as u
 from warnings import warn
+
+from .data_objects import CubeData, SpectrumData
 
 fits_configs = OrderedDict()
 fits_configs.update(
@@ -102,10 +103,11 @@ def fits_spectrum_reader(filename):
         warn("Could not find 'CUNIT' in WCS header; assuming 'Jy'")
         unit = u.Unit('Jy')
 
-    return SpectrumData(data=hdulist[1].data[:,25,25],
-                        uncertainty=StdDevUncertainty(hdulist[2].data[:,25,
-                                                      25]),
-                        mask=hdulist[3].data[:,25,25].astype(int),
+    return SpectrumData(data=hdulist[1].data[:, 25, 25],
+                        uncertainty=StdDevUncertainty(
+                            hdulist[2].data[:, 25, 25]
+                        ),
+                        mask=hdulist[3].data[:, 25, 25].astype(int),
                         wcs=WCS(header),
                         unit=unit)
 
