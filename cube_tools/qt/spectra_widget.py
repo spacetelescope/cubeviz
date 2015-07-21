@@ -1,11 +1,9 @@
 from __future__ import print_function
 
 import numpy as np
-
-from specview.external.qt import QtGui, QtCore
-
 from glue.qt.widgets.data_viewer import DataViewer
 
+from specview.external.qt import QtGui, QtCore
 from specview.ui.qt.subwindows import SpectraMdiSubWindow
 from specview.ui.models import DataTreeModel
 from specview.ui.qt.docks import ModelDockWidget, EquivalentWidthDockWidget, MeasurementDockWidget
@@ -13,8 +11,8 @@ from specview.ui.qt.views import LayerDataTree
 from specview.ui.items import LayerDataTreeItem
 from specview.analysis import model_fitting
 
-from .clients.spectra_client import SpectraClient
-from .core.data_objects import SpectrumData
+from ..clients.spectra_client import SpectraClient
+from ..core.data_objects import SpectrumData
 
 
 class SpectraWindow(DataViewer):
@@ -101,8 +99,8 @@ class SpectraWindow(DataViewer):
                 str(model_selector.currentText())))
 
         # Connect perform fit button
-        self.model_editor_dock.btn_perform_fit.clicked.connect(
-            self._perform_fit)
+        self.model_editor_dock.btn_perform_fit.clicked.connect(lambda:
+            self._perform_fit(self.layer_dock.current_item))
 
         # Connect removing layers
         self.model.sig_removed_item.connect(self.sub_window.graph.remove_item)
@@ -118,42 +116,15 @@ class SpectraWindow(DataViewer):
                 self.sub_window.plot_toolbar.atn_toggle_errs.isChecked(),
                 errors_only=True))
 
-    def _perform_fit(self):
-        layer_data_item = self.layer_dock.current_item
-
-        if len(layer_data_item._model_items) == 0:
-            return
-
-        fitter = model_fitting.get_fitter(
-            str(self.model_editor_dock.wgt_fit_selector.currentText()))
-
-        init_model = layer_data_item.model
-
-        x, y = layer_data_item.item.dispersion, layer_data_item.item.flux
+    def _perform_fit(self, layer_data_item):
         mask = self.sub_window.graph.get_roi_mask(layer_data_item)
 
-        print(x.shape, mask.shape, mask[mask == True].size, mask.size)
-
-        fit_model = fitter(init_model, x.value[mask], y.value[mask])
-        new_y = fit_model(x.value[mask])
-
-        print(new_y.shape)
-
-        # It was decided not to carry around dispersion data, instead
-        # letting it be calculated. This means we have to maintain the same
-        # array shape because we don't always know at what dispersion value
-        # a flux array starts
-        tran_y = np.empty(shape=x.value.shape)
-        tran_y[mask] = new_y
-        tran_y[~mask] = 0.0
-        new_y = tran_y
-
-        # Create new data object
-        fit_spec_data = SpectrumData(new_y, unit=layer_data_item.item.unit,
-                                     mask=layer_data_item.item.mask,
-                                     wcs=layer_data_item.item.wcs,
-                                     meta=layer_data_item.item.meta,
-                                     uncertainty=None)
+        fit_spec_data = model_fitting.fit_model(
+            layer_data_item,
+            fit_method=str(
+                self.model_editor_dock.wgt_fit_selector.currentText()),
+            roi_mask=mask
+        )
 
         new_spec_data_item = self.model.create_spec_data_item(fit_spec_data)
 
@@ -164,20 +135,6 @@ class SpectraWindow(DataViewer):
                               name="Model Fit ({}: {})".format(
                                   layer_data_item.parent.text(),
                                   layer_data_item.text()))
-
-        # Update using model approach
-        for model_idx in range(layer_data_item.rowCount()):
-            model_data_item = layer_data_item.child(model_idx)
-
-            for param_idx in range(model_data_item.rowCount()):
-                parameter_data_item = model_data_item.child(param_idx, 1)
-
-                if layer_data_item.rowCount() > 1:
-                    value = fit_model[model_idx].parameters[param_idx]
-                else:
-                    value = fit_model.parameters[param_idx]
-                parameter_data_item.setData(value)
-                parameter_data_item.setText(str(value))
 
     def display_graph(self, layer_data_item, sub_window=None, set_active=True,
                       style='line'):

@@ -1,10 +1,7 @@
 import numbers
-
 import numpy as np
-import numpy.ma as ma
 from astropy.nddata import (NDData, NDSlicingMixin, NDArithmeticMixin)
 import astropy.units as u
-
 
 
 class BaseData(NDData, NDArithmeticMixin):
@@ -163,12 +160,15 @@ class CubeData(BaseData):
             return u.Quantity(new_data, self.unit)
 
     def collapse_to_spectrum(self, method='mean', filter_mask=None):
-        mdata = ma.masked_array(self.data, mask=~filter_mask)
-        udata = ma.masked_array(self.uncertainty.array, mask=~filter_mask)
+        mdata = np.ma.masked_array(self.data, mask=~filter_mask)
+        udata = np.ma.masked_array(self.uncertainty.array, mask=~filter_mask)
 
         if method == 'mean':
             new_mdata = mdata.mean(axis=1).mean(axis=1)
             new_udata = udata.mean(axis=1).mean(axis=1)
+        elif method == 'median':
+            new_mdata = mdata.median(axis=1).median(axis=1)
+            new_udata = udata.median(axis=1).median(axis=1)
 
         return SpectrumData(new_mdata,
                             uncertainty=self.uncertainty.__class__(new_udata),
@@ -176,7 +176,7 @@ class CubeData(BaseData):
                             unit=self.unit), ~new_mdata.mask
 
     def collapse_to_image(self, wavelength_range=None, method="mean", axis=0):
-        mdata = ma.masked_array(self.data, mask=self.mask)
+        mdata = np.ma.masked_array(self.data, mask=self.mask)
 
         # TODO: extend this to be *actual* wavelengths
         if wavelength_range is not None:

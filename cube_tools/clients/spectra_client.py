@@ -1,15 +1,13 @@
 from __future__ import print_function
 
 import time
-
 import numpy as np
 import astropy.units as u
-
 from glue.core.client import Client
 from glue.core import message as msg
 from glue.plugins.tools.spectrum_tool import Extractor
 
-from .core.data_objects import SpectrumData, CubeData
+from ..core.data_objects import SpectrumData, CubeData
 
 
 class SpectraClient(Client):
