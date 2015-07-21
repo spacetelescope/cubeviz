@@ -1,4 +1,7 @@
 """Definte cube subset operations"""
+
+from __future__ import print_function
+
 import numpy as np
 
 from glue.config import single_subset_action

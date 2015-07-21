@@ -1,8 +1,10 @@
+from __future__ import print_function
+
+import numpy as np
+
 from specview.external.qt import QtGui, QtCore
 
 from glue.qt.widgets.data_viewer import DataViewer
-from cube_tools.clients.spectra_client import SpectraClient
-from cube_tools.core.data_objects import SpectrumData
 
 from specview.ui.qt.subwindows import SpectraMdiSubWindow
 from specview.ui.models import DataTreeModel
@@ -11,7 +13,8 @@ from specview.ui.qt.views import LayerDataTree
 from specview.ui.items import LayerDataTreeItem
 from specview.analysis import model_fitting
 
-import numpy as np
+from .clients.spectra_client import SpectraClient
+from .core.data_objects import SpectrumData
 
 
 class SpectraWindow(DataViewer):

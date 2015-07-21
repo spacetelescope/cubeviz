@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from glue.plugins.tools.spectrum_tool import SpectrumTool
 from glue.qt.mouse_mode import RoiMode, qt_roi
 from glue.config import tool_registry
@@ -10,7 +12,7 @@ class MySpectrumTool(SpectrumTool):
     """Just making another one"""
 
     def _setup_mouse_mode(self):
-        print 'setting up my own mouse mode'
+        print('setting up my own mouse mode')
         # This will be added to the ImageWidget's toolbar
         mode = SpectrumExtractorMode(self.image_widget.client.axes,
                                      release_callback=self._update_profile,

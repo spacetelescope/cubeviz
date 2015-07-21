@@ -1,13 +1,14 @@
-from specview.external.qt import QtGui
+from __future__ import print_function
 
+import numpy as np
+import astropy.units as u
 from glue.qt.widgets.data_viewer import DataViewer
 
-from cube_tools.qt.custom.graphs import ImageGraph
-from cube_tools.qt.custom.toolbars import ImageToolBar
+from specview.external.qt import QtGui
 
-from cube_tools.core import CubeData, SpectrumData
-import astropy.units as u
-import numpy as np
+from .qt.custom.graphs import ImageGraph
+from .qt.custom.toolbars import ImageToolBar
+from .core import CubeData, SpectrumData
 
 
 class ImageWindow(DataViewer):
