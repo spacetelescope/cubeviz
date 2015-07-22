@@ -1,6 +1,6 @@
 from __future__ import print_function
-import six
 
+import os.path
 from collections import OrderedDict
 
 from astropy.io import registry
@@ -137,8 +137,11 @@ def fits_spectrum_reader(filename):
 
 
 def fits_identify(origin, *args, **kwargs):
-    return isinstance(args[0], six.string_types) and \
-           args[0].lower().split('.')[-1] in ['fits', 'fit']
+    try:
+        result = has_extension('fits fit')(args[0])
+    except Exception:
+        result = False
+    return result
 
 try:
     registry.register_reader('fits', CubeData, fits_cube_reader)
@@ -147,3 +150,44 @@ try:
     registry.register_identifier('fits', SpectrumData, fits_identify)
 except Exception:
     warn('Items already exist in IO registry.')
+
+
+# Utilities
+def _extension(path):
+    # extract the extension type from a path
+    #  test.fits -> fits
+    #  test.gz -> fits.gz (special case)
+    #  a.b.c.fits -> fits
+    _, path = os.path.split(path)
+    if '.' not in path:
+        return ''
+    stems = path.split('.')[1:]
+
+    # special case: test.fits.gz -> fits.gz
+    if len(stems) > 1 and any(x == stems[-1]
+                              for x in ['gz', 'gzip', 'bz', 'bz2']):
+        return stems[-2]
+    return stems[-1]
+
+
+def has_extension(exts):
+    """
+    A simple default filetype identifier function
+
+    It returns a function that tests whether its input
+    filename contains a particular extension
+
+    Inputs
+    ------
+    exts : str
+      A space-delimited string listing the extensions
+      (e.g., 'txt', or 'txt csv fits')
+
+    Returns
+    -------
+    A function suitable as a factory identifier function
+    """
+
+    def tester(x, **kwargs):
+        return _extension(x) in set(exts.split())
+    return tester
