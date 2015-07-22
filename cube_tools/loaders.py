@@ -1,4 +1,5 @@
 from __future__ import print_function
+import six
 
 from os.path import basename
 
@@ -72,17 +73,15 @@ def _load_fits_generic(filename, **kwargs):
                     component = Component(column, units=column.unit)
                     data.add_component(component=component,
                                        label=column_name)
-    return [data for data in groups.itervalues()]
+    return [data for data in six.itervalues(groups)]
 
 
 # Utilities
 def is_image_hdu(hdu):
     from astropy.io.fits.hdu import PrimaryHDU, ImageHDU
-    return reduce(lambda x, y: x | isinstance(hdu, y),
-                  (PrimaryHDU, ImageHDU), False)
+    return isinstance(hdu, (PrimaryHDU, ImageHDU))
 
 
 def is_table_hdu(hdu):
     from astropy.io.fits.hdu import TableHDU, BinTableHDU
-    return reduce(lambda x, y: x | isinstance(hdu, y),
-                  (TableHDU, BinTableHDU), False)
+    return isinstance(hdu, (TableHDU, BinTableHDU))

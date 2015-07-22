@@ -1,4 +1,5 @@
 from __future__ import print_function
+import six
 
 from collections import OrderedDict
 
@@ -132,7 +133,7 @@ def fits_spectrum_reader(filename):
 
 
 def fits_identify(origin, *args, **kwargs):
-    return isinstance(args[0], basestring) and \
+    return isinstance(args[0], six.string_types) and \
            args[0].lower().split('.')[-1] in ['fits', 'fit']
 
 try:
