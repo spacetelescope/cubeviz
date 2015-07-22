@@ -17,6 +17,7 @@ fits_configs.update(
         'flux': {
             'ext': 0,
             'required': True,
+            'wcs': True,
         },
         'error': {
             'ext': 1,
@@ -77,6 +78,24 @@ def cube_from_config(hdulist, config):
                 raise RuntimeError(
                     'Required extension "{}" not found.'.format(ext_type)
                 )
+
+    try:
+        flux_value = hdu_by_type['flux'].data
+        wcs_header = hdu_by_type['flux'].header
+        wcs = WCS(wcs_header)
+    except KeyError:
+        flux_value = None
+        wcs_header = None
+        wcs = None
+    try:
+        err_value = StdDevUncertainty(hdu_by_type['error'].data)
+    except KeyError:
+        err_value = None
+    try:
+        mask_value = hdu_by_type['mask'].data.astype(int)
+    except KeyError:
+        mask_value = None
+
     try:
         unit = u.Unit(hdu_by_type['flux'].header['BUNIT'].split(' ')[-1])
     except (KeyError, ValueError):
@@ -85,10 +104,10 @@ def cube_from_config(hdulist, config):
         # TODO this is MaNGA-specific
         unit = u.Unit('erg/s/cm^2/Angstrom/voxel')
 
-    data = CubeData(data=hdu_by_type['flux'].data,
-                    uncertainty=StdDevUncertainty(hdu_by_type['error'].data),
-                    mask=hdu_by_type['mask'].data.astype(int),
-                    wcs=WCS(hdu_by_type['flux'].header),
+    data = CubeData(data=flux_value,
+                    uncertainty=err_value,
+                    mask=mask_value,
+                    wcs=wcs,
                     unit=unit)
     return data
 

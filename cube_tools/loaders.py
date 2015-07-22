@@ -7,7 +7,7 @@ from astropy.table import Table
 from glue.core import Data, Component
 from glue.config import data_factory
 from glue.core.data_factories.helpers import has_extension
-from glue.core.coordinates import WCSCoordinates, coordinates_from_header
+from glue.core.coordinates import coordinates_from_header, coordinates_from_wcs
 from glue.external.astro import fits
 
 from .core.data_objects import CubeData
@@ -18,8 +18,8 @@ def read_cube(filename, **kwargs):
     cube_data = CubeData.read(filename)
 
     data = Data()
+    data.coords = coordinates_from_wcs(cube_data.wcs)
     data.add_component(Component(cube_data), label="cube")
-    data.coords = WCSCoordinates('', wcs=cube_data.wcs)
 
     return data
 
