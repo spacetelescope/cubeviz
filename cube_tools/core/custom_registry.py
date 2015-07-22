@@ -29,10 +29,11 @@ fits_configs.update(
     }}
 )
 fits_configs.update(
-    {'MaNGA': {
+    {'Keyword Defined': {
         'flux': {
             'ext': 0,
             'ext_card': 'FLUXEXT',
+            'wcs': True,
             'required': True,
         },
         'error': {
@@ -67,6 +68,7 @@ def fits_cube_reader(filename, config=None):
 
 def cube_from_config(hdulist, config):
     hdu_ids = dict()
+    wcs = None
     def hdu_by_type(ext_type):
         return hdulist[hdu_ids[ext_type]]
 
@@ -77,6 +79,8 @@ def cube_from_config(hdulist, config):
             if 'ext_card' in params:
                 ext = hdulist[ext].header[params['ext_card']]
             hdu_ids[ext_type] = ext
+            if params.get('wcs'):
+                wcs = WCS(hdulist[ext].header)
         except KeyError:
             if params.get('required'):
                 raise RuntimeError(
@@ -85,12 +89,8 @@ def cube_from_config(hdulist, config):
 
     try:
         flux_value = hdu_by_type('flux').data
-        wcs_header = hdu_by_type('flux').header
-        wcs = WCS(wcs_header)
     except KeyError:
         flux_value = None
-        wcs_header = None
-        wcs = None
     try:
         err_value = StdDevUncertainty(hdu_by_type('error').data)
     except KeyError:
