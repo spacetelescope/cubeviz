@@ -22,11 +22,29 @@ def read_cube(filename, **kwargs):
     data.coords = coordinates_from_wcs(cube_data.wcs)
     data.add_component(Component(cube_data), label="cube")
 
-    return data
+    data_collection = [data]
+    exclude_exts = cube_data.meta.get('hdu_ids')
+    data_collection += _load_fits_generic(filename,
+                                          exclude_exts=exclude_exts)
+
+    return data_collection
 
 
 @data_factory('Generic FITS', has_extension('fits fit'))
-def _load_fits_generic(filename, **kwargs):
+def _load_fits_generic(filename, exclude_exts=None, **kwargs):
+    """Read in all extensions from a FITS file.
+
+    Parameters
+    ----------
+    filename: str
+        The pathanme to the FITS file.
+
+    exclude_exts: [hdu, ] or [index, ]
+        List of HDU's to exclude from reading.
+        This can be a list of HDU's or a list
+        of HDU indexes.
+    """
+    exclude_exts = exclude_exts or []
     hdulist = fits.open(filename)
     groups = dict()
     label_base = basename(filename).rpartition('.')[0]
@@ -35,8 +53,10 @@ def _load_fits_generic(filename, **kwargs):
         label_base = basename(filename)
 
     for extnum, hdu in enumerate(hdulist):
-        if hdu.data is not None:
-            hdu_name = hdu.name if hdu.name else str(extnum)
+        hdu_name = hdu.name if hdu.name else str(extnum)
+        if hdu.data is not None and \
+           hdu_name not in exclude_exts and \
+           extnum not in exclude_exts:
             if is_image_hdu(hdu):
                 shape = hdu.data.shape
                 try:
