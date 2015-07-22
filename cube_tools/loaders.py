@@ -1,18 +1,28 @@
 from __future__ import print_function
+import six
 
 from os.path import basename
-from collections import defaultdict
 
-from glue.core import Data, Component
-from glue.core.coordinates import coordinates_from_header
-from glue.config import data_factory
-from glue.core.data_factories.helpers import has_extension
-from glue.external.astro import fits
-
-import numpy as np
 from astropy.table import Table
 
+from glue.core import Data, Component
+from glue.config import data_factory
+from glue.core.data_factories.helpers import has_extension
+from glue.core.coordinates import coordinates_from_header, coordinates_from_wcs
+from glue.external.astro import fits
+
 from .core.data_objects import CubeData
+
+
+@data_factory("STcube", has_extension("fits fit"))
+def read_cube(filename, **kwargs):
+    cube_data = CubeData.read(filename)
+
+    data = Data()
+    data.coords = coordinates_from_wcs(cube_data.wcs)
+    data.add_component(Component(cube_data), label="cube")
+
+    return data
 
 
 @data_factory('Generic FITS', has_extension('fits fit'))
@@ -60,29 +70,18 @@ def _load_fits_generic(filename, **kwargs):
                     except KeyError:
                         data = Data(label=data_label)
                         groups[data_label] = data
-                    component = Component.autotyped(column, units=column.unit)
+                    component = Component(column, units=column.unit)
                     data.add_component(component=component,
                                        label=column_name)
-    return [data for data in groups.itervalues()]
-
-
-@data_factory("Cube Data", has_extension("fits fit"))
-def read_cube(filename, **kwargs):
-    cube_data = CubeData.read(filename)
-
-    data = Data()
-    data.add_component(Component(cube_data), label="cube")
-    print("Loaded successfully")
-
-    return data
+    return [data for data in six.itervalues(groups)]
 
 
 # Utilities
 def is_image_hdu(hdu):
     from astropy.io.fits.hdu import PrimaryHDU, ImageHDU
-    return reduce(lambda x, y: x | isinstance(hdu, y), (PrimaryHDU, ImageHDU), False)
+    return isinstance(hdu, (PrimaryHDU, ImageHDU))
 
 
 def is_table_hdu(hdu):
     from astropy.io.fits.hdu import TableHDU, BinTableHDU
-    return reduce(lambda x, y: x | isinstance(hdu, y), (TableHDU, BinTableHDU), False)
+    return isinstance(hdu, (TableHDU, BinTableHDU))
