@@ -46,6 +46,21 @@ fits_configs.update(
         },
     }}
 )
+fits_configs.update(
+    {'CALIFA': {
+        'flux': {
+            'ext': 'PRIMARY',
+            'wcs': True,
+            'required': True,
+        },
+        'error': {
+            'ext': 'ERROR',
+        },
+        'mask': {
+            'ext': 'BADPIX',
+        },
+    }}
+)
 
 
 def fits_cube_reader(filename, config=None):
@@ -55,10 +70,12 @@ def fits_cube_reader(filename, config=None):
         data = cube_from_config(hdulist, fits_configs[config])
     else:
         for config in reversed(fits_configs):
+            print('fits_cube_reader: trying config "{}"'.format(config))
             try:
                 data = cube_from_config(hdulist, fits_configs[config])
                 break
-            except Exception:
+            except Exception as e:
+                print('fits_cube_reader: error: "{}"'.format(e))
                 continue
     if not data:
         raise RuntimeError('Cannot find cube in fits file.')
@@ -80,7 +97,10 @@ def cube_from_config(hdulist, config):
                 ext = hdulist[ext].header[params['ext_card']]
             hdu_ids[ext_type] = ext
             if params.get('wcs'):
-                wcs = WCS(hdulist[ext].header)
+                try:
+                    wcs = WCS(hdulist[ext].header)
+                except Exception:
+                    pass
         except KeyError:
             if params.get('required'):
                 raise RuntimeError(

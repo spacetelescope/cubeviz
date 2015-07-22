@@ -19,7 +19,10 @@ def read_cube(filename, **kwargs):
     cube_data = CubeData.read(filename)
 
     data = Data()
-    data.coords = coordinates_from_wcs(cube_data.wcs)
+    try:
+        data.coords = coordinates_from_wcs(cube_data.wcs)
+    except AttributeError:
+        pass
     data.add_component(Component(cube_data), label="cube")
 
     data_collection = [data]
