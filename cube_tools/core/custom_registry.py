@@ -66,14 +66,17 @@ def fits_cube_reader(filename, config=None):
 
 
 def cube_from_config(hdulist, config):
-    hdu_by_type = dict()
+    hdu_ids = dict()
+    def hdu_by_type(ext_type):
+        return hdulist[hdu_ids[ext_type]]
+
     for ext_type in config:
         params = config[ext_type]
         try:
             ext = params['ext']
             if 'ext_card' in params:
                 ext = hdulist[ext].header[params['ext_card']]
-            hdu_by_type[ext_type] = hdulist[ext]
+            hdu_ids[ext_type] = ext
         except KeyError:
             if params.get('required'):
                 raise RuntimeError(
@@ -81,24 +84,24 @@ def cube_from_config(hdulist, config):
                 )
 
     try:
-        flux_value = hdu_by_type['flux'].data
-        wcs_header = hdu_by_type['flux'].header
+        flux_value = hdu_by_type('flux').data
+        wcs_header = hdu_by_type('flux').header
         wcs = WCS(wcs_header)
     except KeyError:
         flux_value = None
         wcs_header = None
         wcs = None
     try:
-        err_value = StdDevUncertainty(hdu_by_type['error'].data)
+        err_value = StdDevUncertainty(hdu_by_type('error').data)
     except KeyError:
         err_value = None
     try:
-        mask_value = hdu_by_type['mask'].data.astype(int)
+        mask_value = hdu_by_type('mask').data.astype(int)
     except KeyError:
         mask_value = None
 
     try:
-        unit = u.Unit(hdu_by_type['flux'].header['BUNIT'].split(' ')[-1])
+        unit = u.Unit(hdu_by_type('flux').header['BUNIT'].split(' ')[-1])
     except (KeyError, ValueError):
         warn("Could not find 'BUNIT' in WCS header; assuming"
              "'erg/s/cm^2/Angstrom/voxel'")
@@ -110,6 +113,7 @@ def cube_from_config(hdulist, config):
                     mask=mask_value,
                     wcs=wcs,
                     unit=unit)
+    data.meta['hdu_ids'] = hdu_ids.values()
     return data
 
 
