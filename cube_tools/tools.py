@@ -1,4 +1,4 @@
-from __future__ import print_function
+from __future__ import print_function, division
 
 from specview.external.qt import QtGui, QtCore
 from glue.plugins.tools.spectrum_tool import SpectrumTool
@@ -34,23 +34,35 @@ class SpecViewTool(object):
         self.widget = SpectraWindow(self.image_widget.session)
         self.mouse_mode = self._setup_mouse_mode()
 
-        w = self.image_widget.session.application.add_widget(self)
-        w.close()
+        self.w = self.image_widget.session.application.add_widget(self)
+        self.widget.set_data(
+            self.data.get_spectrum(
+                self.data.shape[1] // 2, self.data.shape[2] // 2))
+        self.show()
+        self.w.show()
 
-        pos = self.image_widget.central_widget.canvas.mapFromGlobal(
-            QtGui.QCursor.pos())
-        x, y = pos.x(), self.image_widget.central_widget.canvas.height() - \
-               pos.y()
-        print(x, y)
+    @property
+    def data(self):
+        return self.client.data[0].data['cube']
 
-        info = self.client.point_details(x, y)
-        print(info)
+    @property
+    def enabled(self):
+        """Return whether the window is visible and active"""
+        return self.widget.isVisible()
 
     def close(self):
         if hasattr(self, '_mdi_wrapper'):
             self._mdi_wrapper.close()
         else:
             self.widget.close()
+
+    def show(self):
+        if self.widget.isVisible():
+            return
+        self.widget.show()
+
+    def hide(self):
+        self.widget.close()
 
     def mdi_wrap(self):
         sub = GlueMdiSubWindow()
@@ -62,7 +74,8 @@ class SpecViewTool(object):
 
     def _setup_mouse_mode(self):
         # This will be added to the ImageWidget's toolbar
-        mode = SpectrumExtractorMode(self.image_widget.client.axes)
+        mode = SpectrumUpdateMode(self.image_widget.client.axes,
+                                  move_callback=self._move_update)
         return mode
 
     def _get_modes(self, axes):
@@ -71,6 +84,29 @@ class SpecViewTool(object):
     def _display_data_hook(self, data):
         pass
 
+    def _move_update(self, *args):
+        mode = args[0]
+        x, y = mode._event_xdata, mode._event_ydata
+        print(x, y)
+        self.widget.set_data(self.data.get_spectrum(x, y))
+
+    def _mouse_move(self, event):
+        if not event.inaxes:
+            return
+
+        x, y = event.xdata, event.ydata
+        self.widget.set_data(self.data.get_spectrum(x, y))
+
+
+class SpectrumUpdateMode(RoiMode):
+    persistent = True
+
+    def __init__(self, axes, **kwargs):
+        super(SpectrumUpdateMode, self).__init__(axes, **kwargs)
+        self.icon = QIcon('')
+        self.mode_id = 'Spectrum Update'
+        self.action_text = 'Spectrum Update'
+        self.tool_tip = 'Enable live updating of spectrum'
 
 
 class SpectrumExtractorMode(RoiMode):
@@ -84,11 +120,17 @@ class SpectrumExtractorMode(RoiMode):
 
     def __init__(self, axes, **kwargs):
         super(SpectrumExtractorMode, self).__init__(axes, **kwargs)
-        self.icon = QIcon('cube_spectrum.png')
+        self.icon = QIcon('cube_spectrum')
         self.mode_id = 'MySpectrum'
         self.action_text = 'MySpectrum'
         self.tool_tip = 'Extract a spectrum from the selection'
+        self._roi_tool = qt_roi.QtRectangularROI(self._axes)
+        self._roi_tool.plot_opts.update(edgecolor='#00ff00',
+                                        facecolor=None,
+                                        edgewidth=3,
+                                        alpha=1.0)
+        self.shortcut = 'S'
 
 
 # tool_registry.add(MySpectrumTool, widget_cls=ImageWidget)
-# tool_registry.add(SpecViewTool, widget_cls=ImageWidget)
+tool_registry.add(SpecViewTool, widget_cls=ImageWidget)

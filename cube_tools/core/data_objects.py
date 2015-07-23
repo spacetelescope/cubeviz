@@ -101,63 +101,22 @@ class CubeData(BaseData):
     def __getitem__(self, item):
         return self.data[item]
 
-    def get_slice(self, item):
-        new_data = self.data[item]
-        print("item", item.shape, new_data.shape, len(new_data.shape))
+    def get_spectrum(self, x, y):
+        new_data = self.data[:, y, x]
 
         if self.uncertainty is not None:
-            new_uncertainty = self.uncertainty[item]
+            new_uncertainty = self.uncertainty[:, x, y]
         else:
             new_uncertainty = None
 
         if self.mask is not None:
-            new_mask = self.mask[item]
+            new_mask = self.mask[:, x, y]
         else:
             new_mask = None
 
-        if not hasattr(item, '__getitem__'):
-            return super(CubeData, self).__getitem__(item)
-
-        if len(new_data.shape) == 3:
-            return self.__class__(new_data, uncertainty=new_uncertainty,
-                                  mask=new_mask, wcs=self.wcs,
-                                  meta=self.meta, unit=self.unit)
-        elif len(new_data.shape) == 2:
-            if not all(item[0]):
-                return ImageData(new_data, uncertainty=new_uncertainty,
-                                 mask=new_mask, wcs=self.wcs,
-                                 meta=self.meta, unit=self.unit)
-            else:
-                return SpectrumData(new_data, uncertainty=new_uncertainty,
-                                    mask=new_mask, wcs=self.wcs,
-                                    meta=self.meta, unit=self.unit)
-        elif len(new_data.shape) == 1:
-            if new_data.size > 1:
-                return SpectrumData(new_data, uncertainty=new_uncertainty,
-                                    mask=new_mask, wcs=self.wcs,
-                                    meta=self.meta, unit=self.unit)
-            else:
-                return u.Quantity(new_data, self.unit)
-
-        if not isinstance(item[0], slice) and (isinstance(item[1], slice) or
-                                               isinstance(item[2], slice)):
-            return ImageData(new_data, uncertainty=new_uncertainty,
-                             mask=new_mask, wcs=self.wcs,
-                             meta=self.meta, unit=self.unit)
-
-        elif isinstance(item[0], slice) and not isinstance(item[1], slice) \
-                and not isinstance(item[2], slice):
-            return SpectrumData(new_data, uncertainty=new_uncertainty,
-                                mask=new_mask, wcs=self.wcs,
-                                meta=self.meta, unit=self.unit)
-
-        elif all([isinstance(x, slice) for x in item]):
-            return self.__class__(new_data, uncertainty=new_uncertainty,
-                                  mask=new_mask, wcs=self.wcs,
-                                  meta=self.meta, unit=self.unit)
-
-        else:
-            return u.Quantity(new_data, self.unit)
+        return SpectrumData(new_data, uncertainty=new_uncertainty,
+                            mask=new_mask, wcs=self.wcs,
+                            meta=self.meta, unit=self.unit)
 
     def collapse_to_spectrum(self, method='mean', filter_mask=None):
         mdata = np.ma.masked_array(self.data, mask=~filter_mask)

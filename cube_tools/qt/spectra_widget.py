@@ -6,13 +6,15 @@ from glue.qt.widgets.data_viewer import DataViewer
 from specview.external.qt import QtGui, QtCore
 from specview.ui.qt.subwindows import SpectraMdiSubWindow
 from specview.ui.models import DataTreeModel
-from specview.ui.qt.docks import ModelDockWidget, EquivalentWidthDockWidget, MeasurementDockWidget
+from specview.ui.qt.docks import ModelDockWidget, EquivalentWidthDockWidget,\
+    MeasurementDockWidget, SmoothingDockWidget
 from specview.ui.qt.views import LayerDataTree
 from specview.ui.items import LayerDataTreeItem
 from specview.analysis import model_fitting
+from specview.analysis.smoothing import spectral_smoothing
 
 from ..clients.spectra_client import SpectraClient
-from ..core.data_objects import SpectrumData
+from ..core.data_objects import SpectrumData, BaseData
 
 
 class SpectraWindow(DataViewer):
@@ -40,11 +42,14 @@ class SpectraWindow(DataViewer):
         self.equiv_width_dock.setTitleBarWidget(QtGui.QWidget(None))
         self.measurement_dock = MeasurementDockWidget()
         self.measurement_dock.setTitleBarWidget(QtGui.QWidget(None))
+        self.smoothing_dock = SmoothingDockWidget()
+        self.smoothing_dock.setTitleBarWidget(QtGui.QWidget(None))
 
         # Add docks to the tabbed widget
         self.wgt_options.addItem(self.model_editor_dock, 'Model Editor')
         self.wgt_options.addItem(self.equiv_width_dock, 'Equivalent Width')
         self.wgt_options.addItem(self.measurement_dock, 'Measurements')
+        self.wgt_options.addItem(self.smoothing_dock, 'Smoothing')
 
         self.layer_dock = LayerDataTree()
         self.layer_dock.setModel(self.model)
@@ -60,14 +65,31 @@ class SpectraWindow(DataViewer):
         self.client.register_to_hub(hub)
 
     def add_data(self, data):
-        layer_data_item = self.client.add_data(data)
+        print("[Debug] Adding data.")
+        for id in data.components:
+            print("[Debug] Checking {}".format(type(data.data)))
+            print(type(data.data[id]))
+            if not issubclass(type(data.data[id]), BaseData):
+                continue
 
-        self.current_layer_item = layer_data_item
 
-        # Set root items
-        self.model_editor_dock.wgt_model_tree.set_root_item(layer_data_item)
+            layer_data_item = self.client.add_data(data.data[id],
+                                                   data.label)
+
+            self.current_layer_item = layer_data_item
+            self.model_editor_dock.wgt_model_tree.set_root_item(layer_data_item)
 
         return True
+
+    def set_data(self, data):
+        print("[Debug] Setting data {}".format(type(data)))
+        if self.current_layer_item is None:
+            layer_data_item = self.client.add_data(data, "Hover spectrum")
+            self.current_layer_item = layer_data_item
+            self.model_editor_dock.wgt_model_tree.set_root_item(layer_data_item)
+        else:
+            self.current_layer_item.update_data(item=data)
+            self.sub_window.graph.update_item(self.current_layer_item)
 
     def add_subset(self, subset):
         print("adding subset")
@@ -116,6 +138,10 @@ class SpectraWindow(DataViewer):
                 self.sub_window.plot_toolbar.atn_toggle_errs.isChecked(),
                 errors_only=True))
 
+        # Connect smoothing functionality
+        self.smoothing_dock.btn_perform.clicked.connect(lambda:
+            self._perform_smoothing(self.layer_dock.current_item))
+
     def _perform_fit(self, layer_data_item):
         mask = self.sub_window.graph.get_roi_mask(layer_data_item)
 
@@ -135,6 +161,18 @@ class SpectraWindow(DataViewer):
                               name="Model Fit ({}: {})".format(
                                   layer_data_item.parent.text(),
                                   layer_data_item.text()))
+
+    def _perform_smoothing(self, layer_data_item):
+        new_spec_data = spectral_smoothing(
+            layer_data_item.item,
+            self.smoothing_dock.wgt_method_select.currentText(),
+            stddev=float(self.smoothing_dock.wgt_sigma.text()))
+
+        new_spec_data_item = self.model.create_spec_data_item(new_spec_data)
+
+        self.client.add_layer(new_spec_data_item,
+                              name="Smoothed" +
+        self.current_layer_item.parent.text())
 
     def display_graph(self, layer_data_item, sub_window=None, set_active=True,
                       style='line'):

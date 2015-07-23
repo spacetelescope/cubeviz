@@ -5,7 +5,7 @@ import numpy as np
 import astropy.units as u
 from glue.core.client import Client
 from glue.core import message as msg
-from glue.plugins.tools.spectrum_tool import Extractor
+from ..core.utils import MaskExtractor
 
 from ..core.data_objects import SpectrumData, CubeData
 
@@ -39,8 +39,9 @@ class SpectraClient(Client):
         print("Updating subset")
         subset = message.sender
         cube_data = subset.data['cube']
+        filter_mask_cube = MaskExtractor.subset_mask(subset, 'cube', (0, 'y', 'x'), 0)
 
-        filter_mask_cube = subset.to_mask()
+        # filter_mask_cube = subset.to_mask()
         # mask = np.invert(mask)
         print("Finished creating mask")
 
@@ -50,9 +51,9 @@ class SpectraClient(Client):
 
             self.update_graph(layer_data_item)
         else:
-            print("this parent item", self._data_dict[subset.data])
+            print("this parent item", self._data_dict[cube_data])
             self.artists[subset] = self.add_layer(
-                parent=self._data_dict[subset.data],
+                parent=self._data_dict[cube_data],
                 filter_mask=filter_mask_cube,
                 name="{} ({})".format(subset.label, subset.data.label))
 
@@ -60,24 +61,25 @@ class SpectraClient(Client):
         print("Adding subset")
         subset = message.sender
 
-    def add_data(self, data):
-        cube_data = data.data['cube']
-
+    def add_data(self, data, label="Cube Data"):
+        print("[Debug.spectra_client] Checking {}".format(type(data)))
         # Create data and layer items
-        cube_data_item = self.model.create_cube_data_item(cube_data)
-        print("this cube data item", cube_data_item)
-        self._data_dict[data] = cube_data_item
+        if len(data.shape) == 3:
+            data_item = self.model.create_cube_data_item(data)
+        else:
+            data_item = self.model.create_spec_data_item(data)
 
-        layer_data_item = self.add_layer(parent=cube_data_item,
-                                         name=data.label,
+        self._data_dict[data] = data_item
+
+        layer_data_item = self.add_layer(parent=data_item,
+                                         name=label,
                                          set_active=True,
                                          style='line')
 
         return layer_data_item
 
     def add_layer(self, parent, filter_mask=None, collapse='mean',
-                  name='Layer',
-                  set_active=True, style='line'):
+                  name='Layer', set_active=True, style='line'):
         print("Adding layer {}".format(name))
 
         layer_data_item = self.model.create_layer_item(parent,
@@ -85,7 +87,7 @@ class SpectraClient(Client):
                                                        filter_mask=filter_mask,
                                                        collapse=collapse,
                                                        name=name)
-        print("in add layer", filter_mask, layer_data_item._filter_mask)
+
         self.graph.add_item(layer_data_item, style=style,
                             set_active=set_active)
 
