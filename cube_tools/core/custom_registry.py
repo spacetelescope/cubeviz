@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 import os.path
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict, namedtuple
 
 from astropy.io import registry
 from astropy.io import fits
@@ -19,32 +19,136 @@ fits_configs.update(
             'ext': 0,
             'required': True,
             'wcs': True,
+            'value': lambda hdu: hdu.data,
         },
         'error': {
             'ext': 1,
+            'value': lambda hdu: StdDevUncertainty(hdu.data),
         },
         'mask': {
             'ext': 2,
+            'value': lambda hdu: hdu.data.astype(int),
         },
     }}
 )
 fits_configs.update(
-    {'MaNGA': {
+    {'Keyword Defined': {
         'flux': {
             'ext': 0,
             'ext_card': 'FLUXEXT',
+            'wcs': True,
             'required': True,
+            'value': lambda hdu: hdu.data,
         },
         'error': {
             'ext': 0,
             'ext_card': 'ERREXT',
+            'value': lambda hdu: StdDevUncertainty(hdu.data),
         },
         'mask': {
             'ext': 0,
             'ext_card': 'MASKEXT',
+            'value': lambda hdu: hdu.data.astype(int),
         },
     }}
 )
+fits_configs.update(
+    {'CALIFA': {
+        'flux': {
+            'ext': 'PRIMARY',
+            'wcs': True,
+            'required': True,
+            'value': lambda hdu: hdu.data,
+        },
+        'error': {
+            'ext': 'ERROR',
+            'required': True,
+            'value': lambda hdu: StdDevUncertainty(hdu.data),
+        },
+        'mask': {
+            'ext': 'BADPIX',
+            'required': True,
+            'value': lambda hdu: hdu.data.astype(int),
+        },
+    }}
+)
+fits_configs.update(
+    {'MIRI Engineering': {
+        'flux': {
+            'ext': 'SCI',
+            'wcs': True,
+            'required': True,
+            'value': lambda hdu: hdu.data,
+        },
+        'error': {
+            'ext': 'UNC',
+            'required': True,
+            'value': lambda hdu: StdDevUncertainty(hdu.data),
+        },
+        'mask': {
+            'ext': 'FLAG',
+            'required': True,
+            'value': lambda hdu: hdu.data.astype(int),
+        },
+    }}
+)
+fits_configs.update(
+    {'NIRSpec Engineering': {
+        'flux': {
+            'ext': 'DATA',
+            'wcs': True,
+            'required': True,
+            'value': lambda hdu: hdu.data,
+        },
+        'error': {
+            'ext': 'VAR',
+            'required': True,
+            'value': lambda hdu: StdDevUncertainty(hdu.data),
+        },
+        'mask': {
+            'ext': 'QUALITY',
+            'required': True,
+            'value': lambda hdu: hdu.data.astype(int),
+        },
+    }}
+)
+fits_configs.update(
+    {'MUSE': {
+        'flux': {
+            'ext': 'DATA',
+            'wcs': True,
+            'required': True,
+            'value': lambda hdu: hdu.data,
+        },
+        'error': {
+            'ext': 'STAT',
+            'required': True,
+            'value': lambda hdu: StdDevUncertainty(hdu.data),
+        },
+        'mask': {
+            'ext': 'DQ',
+            'required': True,
+            'value': lambda hdu: hdu.data.astype(int),
+        },
+    }}
+)
+fits_configs.update(
+    {'KMOS': {
+        'flux': {
+            'ext': '018.DATA',
+            'wcs': True,
+            'required': True,
+            'value': lambda hdu: hdu.data,
+        },
+        'error': {
+            'ext': '018.NOISE',
+            'required': True,
+            'value': lambda hdu: StdDevUncertainty(hdu.data),
+        },
+    }}
+)
+
+Values = namedtuple('Values', 'ext value')
 
 
 def fits_cube_reader(filename, config=None):
@@ -66,9 +170,8 @@ def fits_cube_reader(filename, config=None):
 
 
 def cube_from_config(hdulist, config):
-    hdu_ids = dict()
-    def hdu_by_type(ext_type):
-        return hdulist[hdu_ids[ext_type]]
+    values = defaultdict(lambda: Values(None, None))
+    wcs = None
 
     for ext_type in config:
         params = config[ext_type]
@@ -76,44 +179,34 @@ def cube_from_config(hdulist, config):
             ext = params['ext']
             if 'ext_card' in params:
                 ext = hdulist[ext].header[params['ext_card']]
-            hdu_ids[ext_type] = ext
-        except KeyError:
+            values[ext_type] = Values(ext, params['value'](hdulist[ext]))
+            if params.get('wcs'):
+                try:
+                    wcs = WCS(hdulist[ext].header)
+                except Exception:
+                    pass
+        except (KeyError, IndexError):
             if params.get('required'):
                 raise RuntimeError(
                     'Required extension "{}" not found.'.format(ext_type)
                 )
 
     try:
-        flux_value = hdu_by_type('flux').data
-        wcs_header = hdu_by_type('flux').header
-        wcs = WCS(wcs_header)
-    except KeyError:
-        flux_value = None
-        wcs_header = None
-        wcs = None
-    try:
-        err_value = StdDevUncertainty(hdu_by_type('error').data)
-    except KeyError:
-        err_value = None
-    try:
-        mask_value = hdu_by_type('mask').data.astype(int)
-    except KeyError:
-        mask_value = None
-
-    try:
-        unit = u.Unit(hdu_by_type('flux').header['BUNIT'].split(' ')[-1])
+        unit = u.Unit(hdulist[values['flux'].ext].header['BUNIT'].split(' ')[-1])
     except (KeyError, ValueError):
         warn("Could not find 'BUNIT' in WCS header; assuming"
              "'erg/s/cm^2/Angstrom/voxel'")
         # TODO this is MaNGA-specific
         unit = u.Unit('erg/s/cm^2/Angstrom/voxel')
 
-    data = CubeData(data=flux_value,
-                    uncertainty=err_value,
-                    mask=mask_value,
+    data = CubeData(data=values['flux'].value,
+                    uncertainty=values['error'].value,
+                    mask=values['mask'].value,
                     wcs=wcs,
                     unit=unit)
-    data.meta['hdu_ids'] = hdu_ids.values()
+    data.meta['hdu_ids'] = [values[ext_type].ext
+                            for ext_type in values
+                            if values[ext_type].ext is not None]
     return data
 
 
