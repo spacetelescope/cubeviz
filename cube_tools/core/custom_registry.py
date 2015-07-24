@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 import os.path
-from collections import OrderedDict, defaultdict, namedtuple
+from collections import defaultdict, namedtuple
 
 from astropy.io import registry
 from astropy.io import fits
@@ -11,155 +11,26 @@ import astropy.units as u
 from warnings import warn
 
 from .data_objects import CubeData, SpectrumData
+from .fits_registry import fits_registry
 
-fits_configs = OrderedDict()
-fits_configs.update(
-    {'default': {
-        'flux': {
-            'ext': 0,
-            'required': True,
-            'wcs': True,
-            'value': lambda hdu: hdu.data,
-        },
-        'error': {
-            'ext': 1,
-            'value': lambda hdu: StdDevUncertainty(hdu.data),
-        },
-        'mask': {
-            'ext': 2,
-            'value': lambda hdu: hdu.data.astype(int),
-        },
-    }}
-)
-fits_configs.update(
-    {'Keyword Defined': {
-        'flux': {
-            'ext': 0,
-            'ext_card': 'FLUXEXT',
-            'wcs': True,
-            'required': True,
-            'value': lambda hdu: hdu.data,
-        },
-        'error': {
-            'ext': 0,
-            'ext_card': 'ERREXT',
-            'value': lambda hdu: StdDevUncertainty(hdu.data),
-        },
-        'mask': {
-            'ext': 0,
-            'ext_card': 'MASKEXT',
-            'value': lambda hdu: hdu.data.astype(int),
-        },
-    }}
-)
-fits_configs.update(
-    {'CALIFA': {
-        'flux': {
-            'ext': 'PRIMARY',
-            'wcs': True,
-            'required': True,
-            'value': lambda hdu: hdu.data,
-        },
-        'error': {
-            'ext': 'ERROR',
-            'required': True,
-            'value': lambda hdu: StdDevUncertainty(hdu.data),
-        },
-        'mask': {
-            'ext': 'BADPIX',
-            'required': True,
-            'value': lambda hdu: hdu.data.astype(int),
-        },
-    }}
-)
-fits_configs.update(
-    {'MIRI Engineering': {
-        'flux': {
-            'ext': 'SCI',
-            'wcs': True,
-            'required': True,
-            'value': lambda hdu: hdu.data,
-        },
-        'error': {
-            'ext': 'UNC',
-            'required': True,
-            'value': lambda hdu: StdDevUncertainty(hdu.data),
-        },
-        'mask': {
-            'ext': 'FLAG',
-            'required': True,
-            'value': lambda hdu: hdu.data.astype(int),
-        },
-    }}
-)
-fits_configs.update(
-    {'NIRSpec Engineering': {
-        'flux': {
-            'ext': 'DATA',
-            'wcs': True,
-            'required': True,
-            'value': lambda hdu: hdu.data,
-        },
-        'error': {
-            'ext': 'VAR',
-            'required': True,
-            'value': lambda hdu: StdDevUncertainty(hdu.data),
-        },
-        'mask': {
-            'ext': 'QUALITY',
-            'required': True,
-            'value': lambda hdu: hdu.data.astype(int),
-        },
-    }}
-)
-fits_configs.update(
-    {'MUSE': {
-        'flux': {
-            'ext': 'DATA',
-            'wcs': True,
-            'required': True,
-            'value': lambda hdu: hdu.data,
-        },
-        'error': {
-            'ext': 'STAT',
-            'required': True,
-            'value': lambda hdu: StdDevUncertainty(hdu.data),
-        },
-        'mask': {
-            'ext': 'DQ',
-            'required': True,
-            'value': lambda hdu: hdu.data.astype(int),
-        },
-    }}
-)
-fits_configs.update(
-    {'KMOS': {
-        'flux': {
-            'ext': '018.DATA',
-            'wcs': True,
-            'required': True,
-            'value': lambda hdu: hdu.data,
-        },
-        'error': {
-            'ext': '018.NOISE',
-            'required': True,
-            'value': lambda hdu: StdDevUncertainty(hdu.data),
-        },
-    }}
-)
 
-Values = namedtuple('Values', 'ext value')
+default_value = {
+    'flux': lambda hdu: hdu.data,
+    'error': lambda hdu: StdDevUncertainty(hdu.data),
+    'mask': lambda hdu: hdu.data.astype(int),
+}
+Value = namedtuple('Value', 'ext value')
 
 
 def fits_cube_reader(filename, config=None):
     hdulist = fits.open(filename)
     data = None
     if config:
-        data = cube_from_config(hdulist, fits_configs[config])
+        data = cube_from_config(hdulist, fits_registry[config])
     else:
-        for config in reversed(fits_configs):
+        for config in reversed(fits_registry):
             try:
-                data = cube_from_config(hdulist, fits_configs[config])
+                data = cube_from_config(hdulist, fits_registry[config])
                 break
             except Exception:
                 continue
@@ -170,7 +41,7 @@ def fits_cube_reader(filename, config=None):
 
 
 def cube_from_config(hdulist, config):
-    values = defaultdict(lambda: Values(None, None))
+    values = defaultdict(lambda: Value(None, None))
     wcs = None
 
     for ext_type in config:
@@ -179,7 +50,14 @@ def cube_from_config(hdulist, config):
             ext = params['ext']
             if 'ext_card' in params:
                 ext = hdulist[ext].header[params['ext_card']]
-            values[ext_type] = Values(ext, params['value'](hdulist[ext]))
+
+            try:
+                values[ext_type] = Value(ext,
+                                         params['value'](hdulist[ext]))
+            except KeyError:
+                values[ext_type] = Value(ext,
+                                         default_value[ext_type](hdulist[ext]))
+
             if params.get('wcs'):
                 try:
                     wcs = WCS(hdulist[ext].header)
