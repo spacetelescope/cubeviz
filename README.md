@@ -1,6 +1,9 @@
 # Cube Tools
 Data analysis package for cubes.
 
+## More info
+For more information, such as demos and tutorials, see the [wiki](https://github.com/spacetelescope/cube-tools/wiki)
+
 ## Installation
 
 Cube Tools itself is pretty straight forward: simply clone or download and run
