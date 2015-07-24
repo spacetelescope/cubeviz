@@ -148,7 +148,7 @@ fits_configs.update(
     }}
 )
 
-Values = namedtuple('Values', 'ext value')
+Value = namedtuple('Value', 'ext value')
 
 
 def fits_cube_reader(filename, config=None):
@@ -170,7 +170,7 @@ def fits_cube_reader(filename, config=None):
 
 
 def cube_from_config(hdulist, config):
-    values = defaultdict(lambda: Values(None, None))
+    values = defaultdict(lambda: Value(None, None))
     wcs = None
 
     for ext_type in config:
@@ -179,7 +179,7 @@ def cube_from_config(hdulist, config):
             ext = params['ext']
             if 'ext_card' in params:
                 ext = hdulist[ext].header[params['ext_card']]
-            values[ext_type] = Values(ext, params['value'](hdulist[ext]))
+            values[ext_type] = Value(ext, params['value'](hdulist[ext]))
             if params.get('wcs'):
                 try:
                     wcs = WCS(hdulist[ext].header)
