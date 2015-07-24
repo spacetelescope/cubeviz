@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 import os.path
-from collections import OrderedDict, defaultdict, namedtuple
+from collections import defaultdict, namedtuple
 
 from astropy.io import registry
 from astropy.io import fits
@@ -11,124 +11,8 @@ import astropy.units as u
 from warnings import warn
 
 from .data_objects import CubeData, SpectrumData
+from .fits_registry import fits_registry
 
-fits_configs = OrderedDict()
-fits_configs.update(
-    {'default': {
-        'flux': {
-            'ext': 0,
-            'required': True,
-            'wcs': True,
-        },
-        'error': {
-            'ext': 1,
-        },
-        'mask': {
-            'ext': 2,
-        },
-    }}
-)
-fits_configs.update(
-    {'Keyword Defined': {
-        'flux': {
-            'ext': 0,
-            'ext_card': 'FLUXEXT',
-            'wcs': True,
-            'required': True,
-        },
-        'error': {
-            'ext': 0,
-            'ext_card': 'ERREXT',
-        },
-        'mask': {
-            'ext': 0,
-            'ext_card': 'MASKEXT',
-        },
-    }}
-)
-fits_configs.update(
-    {'CALIFA': {
-        'flux': {
-            'ext': 'PRIMARY',
-            'wcs': True,
-            'required': True,
-        },
-        'error': {
-            'ext': 'ERROR',
-            'required': True,
-        },
-        'mask': {
-            'ext': 'BADPIX',
-            'required': True,
-        },
-    }}
-)
-fits_configs.update(
-    {'MIRI Engineering': {
-        'flux': {
-            'ext': 'SCI',
-            'wcs': True,
-            'required': True,
-        },
-        'error': {
-            'ext': 'UNC',
-            'required': True,
-        },
-        'mask': {
-            'ext': 'FLAG',
-            'required': True,
-        },
-    }}
-)
-fits_configs.update(
-    {'NIRSpec Engineering': {
-        'flux': {
-            'ext': 'DATA',
-            'wcs': True,
-            'required': True,
-        },
-        'error': {
-            'ext': 'VAR',
-            'required': True,
-        },
-        'mask': {
-            'ext': 'QUALITY',
-            'required': True,
-        },
-    }}
-)
-fits_configs.update(
-    {'MUSE': {
-        'flux': {
-            'ext': 'DATA',
-            'wcs': True,
-            'required': True,
-        },
-        'error': {
-            'ext': 'STAT',
-            'required': True,
-        },
-        'mask': {
-            'ext': 'DQ',
-            'required': True,
-        },
-    }}
-)
-fits_configs.update(
-    {'KMOS': {
-        'flux': {
-            'ext': '018.DATA',
-            'wcs': True,
-            'required': True,
-            'value': lambda hdu: hdu.data,
-        },
-        'error': {
-            'ext': '018.NOISE',
-            'required': True,
-            'value': lambda hdu: StdDevUncertainty(hdu.data),
-        },
-    }}
-)
 
 default_value = {
     'flux': lambda hdu: hdu.data,
@@ -142,11 +26,11 @@ def fits_cube_reader(filename, config=None):
     hdulist = fits.open(filename)
     data = None
     if config:
-        data = cube_from_config(hdulist, fits_configs[config])
+        data = cube_from_config(hdulist, fits_registry[config])
     else:
-        for config in reversed(fits_configs):
+        for config in reversed(fits_registry):
             try:
-                data = cube_from_config(hdulist, fits_configs[config])
+                data = cube_from_config(hdulist, fits_registry[config])
                 break
             except Exception:
                 continue
