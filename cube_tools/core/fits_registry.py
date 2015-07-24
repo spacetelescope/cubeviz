@@ -117,12 +117,10 @@ fits_registry.update(
             'ext': '018.DATA',
             'wcs': True,
             'required': True,
-            'value': lambda hdu: hdu.data,
         },
         'error': {
             'ext': '018.NOISE',
             'required': True,
-            'value': lambda hdu: StdDevUncertainty(hdu.data),
         },
     }}
 )
