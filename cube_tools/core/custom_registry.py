@@ -19,15 +19,12 @@ fits_configs.update(
             'ext': 0,
             'required': True,
             'wcs': True,
-            'value': lambda hdu: hdu.data,
         },
         'error': {
             'ext': 1,
-            'value': lambda hdu: StdDevUncertainty(hdu.data),
         },
         'mask': {
             'ext': 2,
-            'value': lambda hdu: hdu.data.astype(int),
         },
     }}
 )
@@ -38,17 +35,14 @@ fits_configs.update(
             'ext_card': 'FLUXEXT',
             'wcs': True,
             'required': True,
-            'value': lambda hdu: hdu.data,
         },
         'error': {
             'ext': 0,
             'ext_card': 'ERREXT',
-            'value': lambda hdu: StdDevUncertainty(hdu.data),
         },
         'mask': {
             'ext': 0,
             'ext_card': 'MASKEXT',
-            'value': lambda hdu: hdu.data.astype(int),
         },
     }}
 )
@@ -58,17 +52,14 @@ fits_configs.update(
             'ext': 'PRIMARY',
             'wcs': True,
             'required': True,
-            'value': lambda hdu: hdu.data,
         },
         'error': {
             'ext': 'ERROR',
             'required': True,
-            'value': lambda hdu: StdDevUncertainty(hdu.data),
         },
         'mask': {
             'ext': 'BADPIX',
             'required': True,
-            'value': lambda hdu: hdu.data.astype(int),
         },
     }}
 )
@@ -78,17 +69,14 @@ fits_configs.update(
             'ext': 'SCI',
             'wcs': True,
             'required': True,
-            'value': lambda hdu: hdu.data,
         },
         'error': {
             'ext': 'UNC',
             'required': True,
-            'value': lambda hdu: StdDevUncertainty(hdu.data),
         },
         'mask': {
             'ext': 'FLAG',
             'required': True,
-            'value': lambda hdu: hdu.data.astype(int),
         },
     }}
 )
@@ -98,17 +86,14 @@ fits_configs.update(
             'ext': 'DATA',
             'wcs': True,
             'required': True,
-            'value': lambda hdu: hdu.data,
         },
         'error': {
             'ext': 'VAR',
             'required': True,
-            'value': lambda hdu: StdDevUncertainty(hdu.data),
         },
         'mask': {
             'ext': 'QUALITY',
             'required': True,
-            'value': lambda hdu: hdu.data.astype(int),
         },
     }}
 )
@@ -118,17 +103,14 @@ fits_configs.update(
             'ext': 'DATA',
             'wcs': True,
             'required': True,
-            'value': lambda hdu: hdu.data,
         },
         'error': {
             'ext': 'STAT',
             'required': True,
-            'value': lambda hdu: StdDevUncertainty(hdu.data),
         },
         'mask': {
             'ext': 'DQ',
             'required': True,
-            'value': lambda hdu: hdu.data.astype(int),
         },
     }}
 )
@@ -148,6 +130,11 @@ fits_configs.update(
     }}
 )
 
+default_value = {
+    'flux': lambda hdu: hdu.data,
+    'error': lambda hdu: StdDevUncertainty(hdu.data),
+    'mask': lambda hdu: hdu.data.astype(int),
+}
 Value = namedtuple('Value', 'ext value')
 
 
@@ -179,7 +166,14 @@ def cube_from_config(hdulist, config):
             ext = params['ext']
             if 'ext_card' in params:
                 ext = hdulist[ext].header[params['ext_card']]
-            values[ext_type] = Value(ext, params['value'](hdulist[ext]))
+
+            try:
+                values[ext_type] = Value(ext,
+                                         params['value'](hdulist[ext]))
+            except KeyError:
+                values[ext_type] = Value(ext,
+                                         default_value[ext_type](hdulist[ext]))
+
             if params.get('wcs'):
                 try:
                     wcs = WCS(hdulist[ext].header)
