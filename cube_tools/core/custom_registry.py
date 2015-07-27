@@ -22,8 +22,12 @@ default_value = {
 Value = namedtuple('Value', 'ext value')
 
 
-def fits_cube_reader(filename, config=None):
-    hdulist = fits.open(filename)
+def fits_cube_reader(source, config=None):
+    if not isinstance(source, fits.hdu.hdulist.HDUList):
+        hdulist = fits.open(source)
+    else:
+        hdulist = source
+
     data = None
     if config:
         data = cube_from_config(hdulist, fits_registry[config])
@@ -108,6 +112,8 @@ def fits_spectrum_reader(filename):
 
 
 def fits_identify(origin, *args, **kwargs):
+    if args[0] is None and isinstance(args[2], fits.hdu.hdulist.HDUList):
+        return True
     try:
         result = has_extension('fits fit')(args[0])
     except Exception:
