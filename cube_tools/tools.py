@@ -96,13 +96,15 @@ class SpecViewTool(object):
                             print("SpectraWindow already exists; using that.")
                             self.widget = l
                             break
-            else:
-                self.widget = SpectraWindow(self.image_widget.session)
+                    else:
+                        self.widget = SpectraWindow(self.image_widget.session)
 
-                self.w = self.image_widget.session.application.add_widget(self)
-                self.w.show()
+                        self.w = self.image_widget.session.application.add_widget(self)
+                        self.w.show()
+                        break
 
             self.widget.destroyed.connect(self.close_widget)
+            self._move_update(mode)
 
         self.show()
 
@@ -125,7 +127,7 @@ class SpectrumUpdateMode(RoiMode):
 
     def __init__(self, axes, **kwargs):
         super(SpectrumUpdateMode, self).__init__(axes, **kwargs)
-        self.icon = QIcon('')
+        self.icon = QIcon('cube_spectrum.png')
         self.mode_id = 'Spectrum Update'
         self.action_text = 'Spectrum Update'
         self.tool_tip = 'Enable live updating of spectrum'

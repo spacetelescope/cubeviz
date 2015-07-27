@@ -13,10 +13,11 @@ from ..core.data_objects import SpectrumData, CubeData
 class SpectraClient(Client):
     def __init__(self, data=None, model=None, graph=None):
         super(SpectraClient, self).__init__(data)
-        self._hub = None
+        self._data = data
         self.graph = graph
         self.model = model
-        self.artists = {}
+        self._subsets = []
+        self._artists = {}
         self._data_dict = {}
         self.main_data = None
         self.current_item = None
@@ -39,8 +40,9 @@ class SpectraClient(Client):
 
     def _update_subset(self, message):
         subset = message.sender
-
-        if 'cube' not in [x.label for x in subset.data.components]:
+        print(message)
+        return
+        if subset not in self._subsets or subset.data.ndim != 3:
             return
 
         print("Updating subset")
@@ -51,20 +53,22 @@ class SpectraClient(Client):
         # mask = np.invert(mask)
         print("Finished creating mask")
 
-        if subset in self.artists:
-            layer_data_item = self.artists[subset]
+        if subset in self._artists:
+            layer_data_item = self._artists[subset]
             layer_data_item.update_data(filter_mask=filter_mask_cube)
 
             self.update_graph(layer_data_item)
         else:
-            self.artists[subset] = self.add_layer(
+            self._artists[subset] = self.add_layer(
                 parent=self._data_dict[cube_data],
                 filter_mask=filter_mask_cube,
                 name="{} ({})".format(subset.label, subset.data.label))
 
     def _add_subset(self, message):
-        print("Adding subset")
         subset = message.sender
+        if 'cube' in [x.label for x in subset.data.components] \
+                and subset not in self._subsets:
+            self._subsets.append(subset)
 
     def add_data(self, data, label="Cube Data"):
         # Create data and layer items
@@ -102,32 +106,26 @@ class SpectraClient(Client):
         self._hub = hub
         dfilter = lambda x: self.data
         dcfilter = lambda x: self.data
-        subfilter = lambda x: self.data
+        subfilter = lambda x: x.subset in self._artists.keys()
 
         hub.subscribe(self,
                       msg.SubsetCreateMessage,
-                      handler=self._add_subset,
-                      filter=dfilter)
+                      handler=self._add_subset)
         hub.subscribe(self,
                       msg.SubsetUpdateMessage,
-                      handler=self._update_subset,
-                      filter=subfilter)
+                      handler=self._update_subset)
         hub.subscribe(self,
                       msg.SubsetDeleteMessage,
                       handler=self._remove_subset)
         hub.subscribe(self,
                       msg.DataUpdateMessage,
-                      handler=self._update_data,
-                      filter=dfilter)
+                      handler=self._update_data)
         hub.subscribe(self,
                       msg.DataCollectionDeleteMessage,
                       handler=self._remove_data)
         hub.subscribe(self,
                       msg.NumericalDataChangedMessage,
                       handler=self._numerical_data_changed)
-        # hub.subscribe(self,
-        #               msg.ComponentReplacedMessage,
-        #               handler=self._on_component_replaced)
 
     def data(self):
         return super(SpectraClient, self).data()
@@ -141,9 +139,11 @@ class SpectraClient(Client):
     def _remove_subset(self, message):
         print("Removing subsets")
         subset = message.sender
+        if subset in self._subsets:
+            self._subsets.remove(subset)
 
-        if subset in self.artists:
-            layer_data_item = self.artists[subset]
+        if subset in self._artists:
+            layer_data_item = self._artists[subset]
             self.graph.remove_item(layer_data_item)
             index = self.model.indexFromItem(layer_data_item)
             parent_index = self.model.indexFromItem(layer_data_item.parent)
@@ -151,7 +151,7 @@ class SpectraClient(Client):
                 layer_data_item.node_parent)
             self.model.remove_data_item(index, parent_index)
             self.model.remove_data_item(index, node_parent_index)
-            del self.artists[subset]
+            del self._artists[subset]
 
     def update_graph(self, layer_data_item):
         self.graph.update_item(layer_data_item)

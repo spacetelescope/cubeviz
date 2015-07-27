@@ -1,7 +1,7 @@
 import numpy as np
 
 from glue.plugins.tools.spectrum_tool import Extractor
-
+import time
 
 class MaskExtractor(Extractor):
     def __init__(self, *args, **kwargs):
@@ -19,7 +19,11 @@ class MaskExtractor(Extractor):
                 if s not in ['x', 'y'] else slice(None)
                 for s in slc]
 
+        t1 = time.time()
         full_mask = subset.to_mask(view)
+        print("Mask time: {}".format(time.time() - t1))
+        t1 = time.time()
         full_mask = np.tile(full_mask, (data.shape[0], 1, 1))
+        print("Full mask time: {}".format(time.time() - t1))
 
         return full_mask

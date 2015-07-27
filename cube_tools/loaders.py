@@ -29,7 +29,7 @@ def read_cube(filename, **kwargs):
     exclude_exts = cube_data.meta.get('hdu_ids')
     data_collection += _load_fits_generic(filename,
                                           exclude_exts=exclude_exts)
-
+    print(data_collection)
     return data_collection
 
 
