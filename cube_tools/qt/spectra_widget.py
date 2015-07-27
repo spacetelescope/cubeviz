@@ -66,14 +66,16 @@ class SpectraWindow(DataViewer):
 
     def add_data(self, data):
         print("[Debug] Adding data.")
-        for id in data.components:
-            print("[Debug] Checking {}".format(type(data.data)))
-            print(type(data.data[id]))
-            if not issubclass(type(data.data[id]), BaseData):
-                continue
+        data_components = data.components
+        # print(data_components)
+        if True:
+        # for id in range(len(data_components)):
+        #     print(type(data.data[id]))
+        #     print(id)
+        #     if not issubclass(type(data.data[id]), BaseData):
+        #         continue
 
-
-            layer_data_item = self.client.add_data(data.data[id],
+            layer_data_item = self.client.add_data(data.data['cube'],
                                                    data.label)
 
             self.current_layer_item = layer_data_item
@@ -81,15 +83,15 @@ class SpectraWindow(DataViewer):
 
         return True
 
-    def set_data(self, data):
-        print("[Debug] Setting data {}".format(type(data)))
-        if self.current_layer_item is None:
-            layer_data_item = self.client.add_data(data, "Hover spectrum")
-            self.current_layer_item = layer_data_item
-            self.model_editor_dock.wgt_model_tree.set_root_item(layer_data_item)
-        else:
-            self.current_layer_item.update_data(item=data)
-            self.sub_window.graph.update_item(self.current_layer_item)
+    def set_data(self, data, layer_data_item=None):
+        if layer_data_item is None:
+            return self.client.add_data(data, "Hover spectrum")
+
+        layer_data_item.update_data(item=data)
+        self.sub_window.graph.update_item(layer_data_item)
+
+    def update_data(self, data):
+        pass
 
     def add_subset(self, subset):
         print("adding subset")
@@ -147,14 +149,12 @@ class SpectraWindow(DataViewer):
 
         fit_spec_data = model_fitting.fit_model(
             layer_data_item,
-            fit_method=str(
+            fitter_name=str(
                 self.model_editor_dock.wgt_fit_selector.currentText()),
-            roi_mask=mask
-        )
+            roi_mask=mask)
 
         new_spec_data_item = self.model.create_spec_data_item(fit_spec_data)
 
-        print(fit_spec_data.shape, mask.shape)
         # Display
         self.client.add_layer(new_spec_data_item,
                               filter_mask=mask,
@@ -163,16 +163,15 @@ class SpectraWindow(DataViewer):
                                   layer_data_item.text()))
 
     def _perform_smoothing(self, layer_data_item):
+        name, kwargs = self.smoothing_dock.get_kwargs()
+
         new_spec_data = spectral_smoothing(
-            layer_data_item.item,
-            self.smoothing_dock.wgt_method_select.currentText(),
-            stddev=float(self.smoothing_dock.wgt_sigma.text()))
+            layer_data_item.item, method=name, kwargs=kwargs)
 
         new_spec_data_item = self.model.create_spec_data_item(new_spec_data)
 
         self.client.add_layer(new_spec_data_item,
-                              name="Smoothed" +
-        self.current_layer_item.parent.text())
+                              name="Smoothed " + layer_data_item.text())
 
     def display_graph(self, layer_data_item, sub_window=None, set_active=True,
                       style='line'):

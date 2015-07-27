@@ -13,6 +13,7 @@ from ..core.data_objects import SpectrumData, CubeData
 class SpectraClient(Client):
     def __init__(self, data=None, model=None, graph=None):
         super(SpectraClient, self).__init__(data)
+        self._hub = None
         self.graph = graph
         self.model = model
         self.artists = {}
@@ -95,6 +96,7 @@ class SpectraClient(Client):
 
     def register_to_hub(self, hub):
         super(SpectraClient, self).register_to_hub(hub)
+        self._hub = hub
         dfilter = lambda x: self.data
         dcfilter = lambda x: self.data
         subfilter = lambda x: self.data
@@ -138,11 +140,11 @@ class SpectraClient(Client):
 
         if subset in self.artists:
             layer_data_item = self.artists[subset]
-            self.graph.remove_item(self.artists[message.sender])
+            self.graph.remove_item(layer_data_item)
             index = self.model.indexFromItem(layer_data_item)
             parent_index = self.model.indexFromItem(layer_data_item.parent)
             self.model.remove_data_item(index, parent_index)
-            del self.artists[message.sender]
+            del self.artists[subset]
 
     def update_graph(self, layer_data_item):
         self.graph.update_item(layer_data_item)

@@ -10,5 +10,5 @@ def setup():
     from .qt.spectra_widget import SpectraWindow
     qt_client.add(SpectraWindow)
 
-    from cube_tools.qt.table_widget import TableWindow
+    from .qt.table_widget import TableWindow
     qt_client.add(TableWindow)

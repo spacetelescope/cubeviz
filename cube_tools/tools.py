@@ -31,15 +31,28 @@ class SpecViewTool(object):
     def __init__(self, image_widget):
         self.image_widget = image_widget
         self.client = self.image_widget.client
-        self.widget = SpectraWindow(self.image_widget.session)
+        self.widget = None
+        self.layer_data_item = None
+
+        for viewers in self.image_widget.session.application.viewers:
+            print(viewers)
+            if len(viewers) > 0:
+                for l in viewers:
+                    print(type(l))
+                    if isinstance(l, SpectraWindow):
+                        print("SpectraWindow already exists; using that.")
+                        self.widget = l
+                        break
+
+        if self.widget is None:
+            self.widget = SpectraWindow(self.image_widget.session)
+
+            self.w = self.image_widget.session.application.add_widget(self)
+            self.w.show()
+
         self.mouse_mode = self._setup_mouse_mode()
 
-        self.w = self.image_widget.session.application.add_widget(self)
-        self.widget.set_data(
-            self.data.get_spectrum(
-                self.data.shape[1] // 2, self.data.shape[2] // 2))
         self.show()
-        self.w.show()
 
     @property
     def data(self):
@@ -50,11 +63,11 @@ class SpecViewTool(object):
         """Return whether the window is visible and active"""
         return self.widget.isVisible()
 
-    def close(self):
-        if hasattr(self, '_mdi_wrapper'):
-            self._mdi_wrapper.close()
-        else:
-            self.widget.close()
+    # def close(self):
+    #     if hasattr(self, '_mdi_wrapper'):
+    #         self._mdi_wrapper.close()
+    #     else:
+    #         self.widget.close()
 
     def show(self):
         if self.widget.isVisible():
@@ -84,18 +97,18 @@ class SpecViewTool(object):
     def _display_data_hook(self, data):
         pass
 
-    def _move_update(self, *args):
-        mode = args[0]
-        x, y = mode._event_xdata, mode._event_ydata
-        print(x, y)
-        self.widget.set_data(self.data.get_spectrum(x, y))
-
-    def _mouse_move(self, event):
-        if not event.inaxes:
+    def _move_update(self, mode):
+        if not mode.dragging:
             return
 
-        x, y = event.xdata, event.ydata
-        self.widget.set_data(self.data.get_spectrum(x, y))
+        x, y = mode._event_xdata, mode._event_ydata
+
+        if self.layer_data_item is None:
+            self.layer_data_item = self.widget.set_data(
+                self.data.get_spectrum(x, y))
+        else:
+            self.widget.set_data(self.data.get_spectrum(x, y),
+                                 self.layer_data_item)
 
 
 class SpectrumUpdateMode(RoiMode):
@@ -107,6 +120,23 @@ class SpectrumUpdateMode(RoiMode):
         self.mode_id = 'Spectrum Update'
         self.action_text = 'Spectrum Update'
         self.tool_tip = 'Enable live updating of spectrum'
+        self._dragging = False
+
+    def press(self, event):
+        self._dragging = True
+        super(SpectrumUpdateMode, self).press(event)
+
+    def release(self, event):
+        self._dragging = False
+        super(SpectrumUpdateMode, self).release(event)
+
+    @property
+    def dragging(self):
+        return self._dragging
+
+    def _update_drag(self, event):
+        if self._drag or self._start_event is None:
+            return
 
 
 class SpectrumExtractorMode(RoiMode):
