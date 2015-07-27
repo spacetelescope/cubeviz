@@ -16,7 +16,8 @@ from .core.data_objects import CubeData
 
 @data_factory("STcube", has_extension("fits fit"))
 def read_cube(filename, **kwargs):
-    cube_data = CubeData.read(filename)
+    hdulist = fits.open(filename)
+    cube_data = CubeData.read(hdulist)
 
     data = Data()
     try:
@@ -27,20 +28,21 @@ def read_cube(filename, **kwargs):
 
     data_collection = [data]
     exclude_exts = cube_data.meta.get('hdu_ids')
-    data_collection += _load_fits_generic(filename,
+    data_collection += _load_fits_generic(hdulist,
                                           exclude_exts=exclude_exts)
     print(data_collection)
     return data_collection
 
 
 @data_factory('Generic FITS', has_extension('fits fit'))
-def _load_fits_generic(filename, exclude_exts=None, **kwargs):
+def _load_fits_generic(source, exclude_exts=None, **kwargs):
     """Read in all extensions from a FITS file.
 
     Parameters
     ----------
-    filename: str
-        The pathanme to the FITS file.
+    source: str or HDUList
+        The pathname to the FITS file.
+        If and HDUList is passed in, simply use that.
 
     exclude_exts: [hdu, ] or [index, ]
         List of HDU's to exclude from reading.
@@ -48,12 +50,15 @@ def _load_fits_generic(filename, exclude_exts=None, **kwargs):
         of HDU indexes.
     """
     exclude_exts = exclude_exts or []
-    hdulist = fits.open(filename)
+    if not isinstance(source, fits.hdu.hdulist.HDUList):
+        hdulist = fits.open(source)
+    else:
+        hdulist = source
     groups = dict()
-    label_base = basename(filename).rpartition('.')[0]
+    label_base = basename(hdulist.filename()).rpartition('.')[0]
 
     if not label_base:
-        label_base = basename(filename)
+        label_base = basename(hdulist.filename())
 
     for extnum, hdu in enumerate(hdulist):
         hdu_name = hdu.name if hdu.name else str(extnum)
