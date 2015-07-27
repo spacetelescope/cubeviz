@@ -60,28 +60,28 @@ class SpectraWindow(DataViewer):
 
         self._connect()
 
+        print("New spectra widget has been created.")
+
     def register_to_hub(self, hub):
         super(SpectraWindow, self).register_to_hub(hub)
         self.client.register_to_hub(hub)
 
+    def unregister(self, hub):
+        super(SpectraWindow, self).unregister(hub)
+        self.client.unregister(hub)
+
     def add_data(self, data):
         print("[Debug] Adding data.")
-        data_components = data.components
-        # print(data_components)
-        if True:
-        # for id in range(len(data_components)):
-        #     print(type(data.data[id]))
-        #     print(id)
-        #     if not issubclass(type(data.data[id]), BaseData):
-        #         continue
 
+        if 'cube' in [x.label for x in data.components]:
             layer_data_item = self.client.add_data(data.data['cube'],
                                                    data.label)
 
             self.current_layer_item = layer_data_item
             self.model_editor_dock.wgt_model_tree.set_root_item(layer_data_item)
+            return True
 
-        return True
+        return False
 
     def set_data(self, data, layer_data_item=None):
         if layer_data_item is None:
@@ -91,10 +91,11 @@ class SpectraWindow(DataViewer):
         self.sub_window.graph.update_item(layer_data_item)
 
     def update_data(self, data):
+        print("Updating data")
         pass
 
     def add_subset(self, subset):
-        print("adding subset")
+        print("Adding subset")
         return True
 
     def layer_view(self):

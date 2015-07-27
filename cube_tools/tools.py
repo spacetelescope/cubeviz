@@ -51,7 +51,9 @@ class SpecViewTool(object):
         else:
             self.widget.close()
 
+    def close_widget(self):
         self.widget = None
+        self.layer_data_item = None
 
     def show(self):
         if self.widget.isVisible():
@@ -83,6 +85,7 @@ class SpecViewTool(object):
         pass
 
     def _press_update(self, mode):
+        print("[cube_tools.tools] Check for existing spectra widget.")
         if self.widget is None:
             for viewers in self.image_widget.session.application.viewers:
                 print(viewers)
@@ -93,12 +96,13 @@ class SpecViewTool(object):
                             print("SpectraWindow already exists; using that.")
                             self.widget = l
                             break
+            else:
+                self.widget = SpectraWindow(self.image_widget.session)
 
-        if self.widget is None:
-            self.widget = SpectraWindow(self.image_widget.session)
+                self.w = self.image_widget.session.application.add_widget(self)
+                self.w.show()
 
-            self.w = self.image_widget.session.application.add_widget(self)
-            self.w.show()
+            self.widget.destroyed.connect(self.close_widget)
 
         self.show()
 
@@ -142,6 +146,9 @@ class SpectrumUpdateMode(RoiMode):
     def _update_drag(self, event):
         if self._drag or self._start_event is None:
             return
+
+    def activate(self):
+        return
 
 
 class SpectrumExtractorMode(RoiMode):

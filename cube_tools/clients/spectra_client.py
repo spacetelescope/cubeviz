@@ -21,6 +21,7 @@ class SpectraClient(Client):
         self.main_data = None
         self.current_item = None
         self._node_parent = self.model.create_cube_data_item(None, name='Node')
+        print("New spectra client has been created.")
 
     def unregister(self, hub):
         super(SpectraClient, self).unregister(hub)
@@ -37,8 +38,12 @@ class SpectraClient(Client):
         print("Updating data")
 
     def _update_subset(self, message):
-        print("Updating subset")
         subset = message.sender
+
+        if 'cube' not in [x.label for x in subset.data.components]:
+            return
+
+        print("Updating subset")
         cube_data = subset.data['cube']
         filter_mask_cube = MaskExtractor.subset_mask(subset, 'cube', (0, 'y', 'x'), 0)
 
@@ -52,7 +57,6 @@ class SpectraClient(Client):
 
             self.update_graph(layer_data_item)
         else:
-            print("this parent item", self._data_dict[cube_data])
             self.artists[subset] = self.add_layer(
                 parent=self._data_dict[cube_data],
                 filter_mask=filter_mask_cube,
@@ -63,7 +67,6 @@ class SpectraClient(Client):
         subset = message.sender
 
     def add_data(self, data, label="Cube Data"):
-        print("[Debug.spectra_client] Checking {}".format(type(data)))
         # Create data and layer items
         if len(data.shape) == 3:
             data_item = self.model.create_cube_data_item(data)
@@ -136,6 +139,7 @@ class SpectraClient(Client):
         print("Apply roi")
 
     def _remove_subset(self, message):
+        print("Removing subsets")
         subset = message.sender
 
         if subset in self.artists:
@@ -143,7 +147,10 @@ class SpectraClient(Client):
             self.graph.remove_item(layer_data_item)
             index = self.model.indexFromItem(layer_data_item)
             parent_index = self.model.indexFromItem(layer_data_item.parent)
+            node_parent_index = self.model.indexFromItem(
+                layer_data_item.node_parent)
             self.model.remove_data_item(index, parent_index)
+            self.model.remove_data_item(index, node_parent_index)
             del self.artists[subset]
 
     def update_graph(self, layer_data_item):

@@ -19,27 +19,7 @@ class MaskExtractor(Extractor):
                 if s not in ['x', 'y'] else slice(None)
                 for s in slc]
 
-        mask = np.squeeze(subset.to_mask(view))
-        if slc.index('x') < slc.index('y'):
-            mask = mask.T
+        full_mask = subset.to_mask(view)
+        full_mask = np.tile(full_mask, (data.shape[0], 1, 1))
 
-        print(mask.shape)
-
-        w = np.where(mask)
-        view[slc.index('x')] = w[1]
-        view[slc.index('y')] = w[0]
-
-        print(view)
-        print(view[0])
-
-        # result = np.empty(x.size)
-
-        # # treat each channel separately, to reduce memory storage
-        # for i in xrange(data.shape[zaxis]):
-        #     view[zaxis] = i
-        #     val = data[attribute, view]
-        #     result[i] = np.nansum(val) / np.isfinite(val).sum()
-        #
-        # y = result
-
-        return mask
+        return full_mask
