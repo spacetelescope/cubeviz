@@ -34,25 +34,7 @@ class SpecViewTool(object):
         self.widget = None
         self.layer_data_item = None
 
-        for viewers in self.image_widget.session.application.viewers:
-            print(viewers)
-            if len(viewers) > 0:
-                for l in viewers:
-                    print(type(l))
-                    if isinstance(l, SpectraWindow):
-                        print("SpectraWindow already exists; using that.")
-                        self.widget = l
-                        break
-
-        if self.widget is None:
-            self.widget = SpectraWindow(self.image_widget.session)
-
-            self.w = self.image_widget.session.application.add_widget(self)
-            self.w.show()
-
         self.mouse_mode = self._setup_mouse_mode()
-
-        self.show()
 
     @property
     def data(self):
@@ -63,11 +45,13 @@ class SpecViewTool(object):
         """Return whether the window is visible and active"""
         return self.widget.isVisible()
 
-    # def close(self):
-    #     if hasattr(self, '_mdi_wrapper'):
-    #         self._mdi_wrapper.close()
-    #     else:
-    #         self.widget.close()
+    def close(self):
+        if hasattr(self, '_mdi_wrapper'):
+            self._mdi_wrapper.close()
+        else:
+            self.widget.close()
+
+        self.widget = None
 
     def show(self):
         if self.widget.isVisible():
@@ -88,7 +72,8 @@ class SpecViewTool(object):
     def _setup_mouse_mode(self):
         # This will be added to the ImageWidget's toolbar
         mode = SpectrumUpdateMode(self.image_widget.client.axes,
-                                  move_callback=self._move_update)
+                                  move_callback=self._move_update,
+                                  press_callback=self._press_update)
         return mode
 
     def _get_modes(self, axes):
@@ -96,6 +81,26 @@ class SpecViewTool(object):
 
     def _display_data_hook(self, data):
         pass
+
+    def _press_update(self, mode):
+        if self.widget is None:
+            for viewers in self.image_widget.session.application.viewers:
+                print(viewers)
+                if len(viewers) > 0:
+                    for l in viewers:
+                        print(type(l))
+                        if isinstance(l, SpectraWindow):
+                            print("SpectraWindow already exists; using that.")
+                            self.widget = l
+                            break
+
+        if self.widget is None:
+            self.widget = SpectraWindow(self.image_widget.session)
+
+            self.w = self.image_widget.session.application.add_widget(self)
+            self.w.show()
+
+        self.show()
 
     def _move_update(self, mode):
         if not mode.dragging:
