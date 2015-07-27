@@ -16,7 +16,6 @@ from .core.data_objects import CubeData
 
 @data_factory("STcube", has_extension("fits fit"))
 def read_cube(filename, **kwargs):
-    print('STcube.read_cube: yep, we are here.')
     hdulist = fits.open(filename)
     cube_data = CubeData.read(hdulist)
 
