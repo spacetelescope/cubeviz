@@ -10,24 +10,27 @@ Cube Tools itself is pretty straight forward: simply clone or download and run
 the `setup.py` file. Cube Tools currently requires the development version of
 SpecView, along with Glue.
 
+* [Glue](http://www.glueviz.org/en/stable/installation.html)
+* [SpecView](https://github.com/spacetelescope/specview)
+
 ### Installing SpecView
 You can get this version using the git commands:
 
 1. Clone the repository
-```
-git clone https://github.com/spacetelescope/specview.git
-```
+    ```
+    git clone https://github.com/spacetelescope/specview.git
+    ```
 
 2. Enter the cloned directory and switch to the development branch
-```
-cd specview
-git checkout dev-0.1
-```
+    ```
+    cd specview
+    git checkout dev-0.1
+    ```
 
 3. Run the installation
-```
-python setup.py install
-```
+    ```
+    python setup.py install
+    ```
 
 ### Setting up Glue
 
