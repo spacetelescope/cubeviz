@@ -13,6 +13,8 @@ from ..core.data_objects import SpectrumData, CubeData
 class SpectraClient(Client):
     def __init__(self, data=None, model=None, graph=None):
         super(SpectraClient, self).__init__(data)
+        self._time = time.time()
+        self._update_queue = []
         self._data = data
         self.graph = graph
         self.model = model
@@ -40,14 +42,29 @@ class SpectraClient(Client):
 
     def _update_subset(self, message):
         subset = message.sender
-        print(message)
-        return
-        if subset not in self._subsets or subset.data.ndim != 3:
+
+        if subset.data not in self._subsets or subset.data.ndim != 3:
             return
+
+        # TODO: Getting multiple update messages for the same data... it's
+        # causing noticible lag on generating spectra. Currently, check to
+        # make sure not too many update attempts are coming at once. Yes,
+        # I know a list is unnecessary here.
+        if time.time() - self._time < 1:
+            if subset not in self._update_queue:
+                self._update_queue.append(subset)
+            return
+
+        if self._update_queue:
+            subset = self._update_queue.pop()
+            self._update_queue = []
+
+        self._time = time.time()
 
         print("Updating subset")
         cube_data = subset.data['cube']
-        filter_mask_cube = MaskExtractor.subset_mask(subset, 'cube', (0, 'y', 'x'), 0)
+        filter_mask_cube = MaskExtractor.subset_mask(subset, 'cube',
+                                                     (0, 'y', 'x'), 0)
 
         # filter_mask_cube = subset.to_mask()
         # mask = np.invert(mask)
@@ -62,13 +79,14 @@ class SpectraClient(Client):
             self._artists[subset] = self.add_layer(
                 parent=self._data_dict[cube_data],
                 filter_mask=filter_mask_cube,
-                name="{} ({})".format(subset.label, subset.data.label))
+                name="{} ({})".format(subset.label, subset.data.label),
+                color=subset.color)
 
     def _add_subset(self, message):
         subset = message.sender
         if 'cube' in [x.label for x in subset.data.components] \
                 and subset not in self._subsets:
-            self._subsets.append(subset)
+            self._subsets.append(subset.data)
 
     def add_data(self, data, label="Cube Data"):
         # Create data and layer items
@@ -87,7 +105,7 @@ class SpectraClient(Client):
         return layer_data_item
 
     def add_layer(self, parent, filter_mask=None, collapse='mean',
-                  name='Layer', set_active=True, style='line'):
+                  name='Layer', set_active=True, style='line', color=None):
         print("Adding layer {}".format(name))
 
         layer_data_item = self.model.create_layer_item(parent,
@@ -97,7 +115,7 @@ class SpectraClient(Client):
                                                        name=name)
 
         self.graph.add_item(layer_data_item, style=style,
-                            set_active=set_active)
+                            set_active=set_active, color=color)
 
         return layer_data_item
 

@@ -136,10 +136,9 @@ class SpectraWindow(DataViewer):
 
         # Connect toggling error display in plot
         self.sub_window.plot_toolbar.atn_toggle_errs.triggered.connect(lambda:
-            self.sub_window.graph.set_visibility(
-                self.layer_dock.current_item,
-                self.sub_window.plot_toolbar.atn_toggle_errs.isChecked(),
-                errors_only=True))
+            self.sub_window.graph.set_all_errors_visibility(
+                # self.layer_dock.current_item,
+                self.sub_window.plot_toolbar.atn_toggle_errs.isChecked()))
 
         # Connect smoothing functionality
         self.smoothing_dock.btn_perform.clicked.connect(lambda:
@@ -174,10 +173,10 @@ class SpectraWindow(DataViewer):
         self.client.add_layer(new_spec_data_item,
                               name="Smoothed " + layer_data_item.text())
 
-    def display_graph(self, layer_data_item, sub_window=None, set_active=True,
+    def display_graph(self, data_item, sub_window=None, set_active=True,
                       style='line'):
-        if not isinstance(layer_data_item, LayerDataTreeItem):
-            layer_data_item = self.model.create_layer_item(layer_data_item)
+        if not isinstance(data_item, LayerDataTreeItem):
+            layer_data_item = self.model.create_layer_item(data_item)
 
         self.sub_window.graph.add_item(layer_data_item, style=style,
                                        set_active=False)

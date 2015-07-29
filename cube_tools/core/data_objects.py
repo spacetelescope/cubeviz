@@ -2,6 +2,7 @@ import numbers
 import numpy as np
 from astropy.nddata import (NDData, NDSlicingMixin, NDArithmeticMixin)
 import astropy.units as u
+from astropy.io import fits
 
 
 class BaseData(NDData, NDArithmeticMixin):
@@ -89,6 +90,17 @@ class BaseData(NDData, NDArithmeticMixin):
 
         return self.divide(other)
 
+    def export_fits(self, path='out.fits'):
+        data_hdu = fits.ImageHDU(self.data, name='data')
+        ivar_hdu = fits.ImageHDU(self.uncertainty.array, name='ivar')
+        mask_hdu = fits.ImageHDU(self.mask.astype(int), name='mask')
+
+        prihead = self.wcs.to_header()
+        prihdu = fits.PrimaryHDU(header=prihead)
+
+        thdulist = fits.HDUList([prihdu, data_hdu, ivar_hdu, mask_hdu])
+        thdulist.writeto('{}.fits'.format(path))
+
 
 class CubeData(BaseData):
     """
@@ -129,8 +141,9 @@ class CubeData(BaseData):
             new_mdata = mdata.median(axis=1).median(axis=1)
             new_udata = udata.median(axis=1).median(axis=1)
 
-        return SpectrumData(new_mdata,
-                            uncertainty=self.uncertainty.__class__(new_udata),
+        return SpectrumData(new_mdata.data,
+                            uncertainty=self.uncertainty.__class__(
+                                new_udata.data),
                             mask=udata.mask, wcs=self.wcs, meta=self.meta,
                             unit=self.unit), ~new_mdata.mask
 
