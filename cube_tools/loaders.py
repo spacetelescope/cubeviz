@@ -1,6 +1,7 @@
 import six
 
 from os.path import basename
+import warnings
 
 from astropy.table import Table
 
@@ -11,28 +12,42 @@ from glue.core.coordinates import coordinates_from_header, coordinates_from_wcs
 from glue.external.astro import fits
 
 from .core.data_objects import CubeData
+from .core.custom_registry import CubeDataIOError
 
 
 @data_factory("STcube", has_extension("fits fit"))
 def read_cube(filename, **kwargs):
+    cube_data = None
+    exclude_exts = []
+    data_collection = []
     hdulist = fits.open(filename)
-    cube_data = CubeData.read(hdulist)
-
-    data = Data()
     try:
-        data.coords = coordinates_from_wcs(cube_data.wcs)
-    except AttributeError:
-        pass
-    data.add_component(Component(cube_data), label="cube")
+        cube_data = CubeData.read(hdulist)
+    except CubeDataIOError as e:
+        warnings.warn('No CubeData found in "{}": {}'.format(
+            filename,
+            e.message
+        ))
 
-    data_collection = [data]
-    exclude_exts = cube_data.meta.get('hdu_ids')
+    if cube_data is not None:
+        data = Data()
+        try:
+            data.coords = coordinates_from_wcs(cube_data.wcs)
+        except AttributeError:
+            # There is no wcs. Not to worry now.
+            pass
+        data.add_component(Component(cube_data), label="cube")
+        data_collection.append(data)
+        exclude_exts = cube_data.meta.get('hdu_ids')
+
+    # Read in the rest of the FITS file.
     data_collection += _load_fits_generic(hdulist,
                                           exclude_exts=exclude_exts)
     return data_collection
 
 
-@data_factory('Generic FITS', has_extension('fits fit'))
+# Removed from the glue data factory. Keeing it internal only.
+#@data_factory('Generic FITS', has_extension('fits fit'))
 def _load_fits_generic(source, exclude_exts=None, **kwargs):
     """Read in all extensions from a FITS file.
 

@@ -5,6 +5,10 @@ import astropy.units as u
 from astropy.io import fits
 
 
+class CubeDataError(Exception):
+    """General error related to CubeData"""
+
+
 class BaseData(NDData, NDArithmeticMixin):
     """
     Base class for all CubeData objects and their slices.
