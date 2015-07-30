@@ -10,8 +10,12 @@ from astropy.nddata import StdDevUncertainty
 import astropy.units as u
 from warnings import warn
 
-from .data_objects import CubeData, SpectrumData
+from .data_objects import CubeData, SpectrumData, CubeDataError
 from .fits_registry import fits_registry
+
+
+class CubeDataIOError(CubeDataError):
+    """Errors trying to create CubeData using IO methods"""
 
 
 default_value = {
@@ -39,7 +43,7 @@ def fits_cube_reader(source, config=None):
             except Exception:
                 continue
     if not data:
-        raise RuntimeError('Cannot find cube in fits file.')
+        raise CubeDataIOError('Cannot find cube in fits file.')
 
     return data
 
@@ -69,7 +73,7 @@ def cube_from_config(hdulist, config):
                     pass
         except (KeyError, IndexError):
             if params.get('required'):
-                raise RuntimeError(
+                raise CubeDataIOError(
                     'Required extension "{}" not found.'.format(ext_type)
                 )
 
