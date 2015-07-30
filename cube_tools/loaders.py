@@ -1,4 +1,3 @@
-from __future__ import print_function
 import six
 
 from os.path import basename
@@ -30,7 +29,6 @@ def read_cube(filename, **kwargs):
     exclude_exts = cube_data.meta.get('hdu_ids')
     data_collection += _load_fits_generic(hdulist,
                                           exclude_exts=exclude_exts)
-    print(data_collection)
     return data_collection
 
 
