@@ -136,9 +136,9 @@ class SpectraWindow(DataViewer):
 
         # Connect toggling error display in plot
         self.sub_window.plot_toolbar.atn_toggle_errs.triggered.connect(lambda:
-            self.sub_window.graph.set_all_errors_visibility(
+            self.sub_window.graph.set_error_visibility(
                 # self.layer_dock.current_item,
-                self.sub_window.plot_toolbar.atn_toggle_errs.isChecked()))
+                show=self.sub_window.plot_toolbar.atn_toggle_errs.isChecked()))
 
         # Connect smoothing functionality
         self.smoothing_dock.btn_perform.clicked.connect(lambda:
@@ -178,8 +178,7 @@ class SpectraWindow(DataViewer):
         if not isinstance(data_item, LayerDataTreeItem):
             layer_data_item = self.model.create_layer_item(data_item)
 
-        self.sub_window.graph.add_item(layer_data_item, style=style,
-                                       set_active=False)
+        self.sub_window.graph.add_item(layer_data_item, style=style)
 
     @QtCore.Slot(QtCore.QModelIndex)
     def set_selected_item(self, index):

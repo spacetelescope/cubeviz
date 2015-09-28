@@ -114,8 +114,7 @@ class SpectraClient(Client):
                                                        collapse=collapse,
                                                        name=name)
 
-        self.graph.add_item(layer_data_item, style=style,
-                            set_active=set_active, color=color)
+        self.graph.add_item(layer_data_item, style=style, pen={'color': color})
 
         return layer_data_item
 

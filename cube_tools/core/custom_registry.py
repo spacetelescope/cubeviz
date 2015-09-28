@@ -10,7 +10,7 @@ from astropy.nddata import StdDevUncertainty
 import astropy.units as u
 from warnings import warn
 
-from .data_objects import CubeData, SpectrumData, CubeDataError
+from .data_objects import CubeData, SpectrumData, ImageData, CubeDataError
 from .fits_registry import fits_registry
 
 
@@ -96,23 +96,39 @@ def cube_from_config(hdulist, config):
     return data
 
 
-def fits_spectrum_reader(filename):
+def fits_spectrum_reader(filename, hdu=1, is_record=False):
     hdulist = fits.open(filename)
-    header = hdulist[1].header
+    header = hdulist[hdu].header
 
     try:
-        unit = u.Unit(hdulist[1].header['CUNIT'].split(' ')[-1])
+        unit = u.Unit(hdulist[hdu].header['CUNIT'].split(' ')[-1])
     except KeyError:
         warn("Could not find 'CUNIT' in WCS header; assuming 'Jy'")
         unit = u.Unit('Jy')
 
-    return SpectrumData(data=hdulist[1].data[:, 25, 25],
-                        uncertainty=StdDevUncertainty(
-                            hdulist[2].data[:, 25, 25]
-                        ),
-                        mask=hdulist[3].data[:, 25, 25].astype(int),
+    data = hdulist[hdu].data['FLUX'] if is_record else hdulist[hdu].data
+    unc = hdulist[hdu].data['IVAR'] if is_record else hdulist[hdu+1].data
+    mask = hdulist[hdu].data['MASK'] if is_record else hdulist[hdu+2].data
+
+    return SpectrumData(data=data,
+                        uncertainty=StdDevUncertainty(unc),
+                        mask=mask.astype(int),
                         wcs=WCS(header),
                         unit=unit)
+
+
+def fits_image_reader(filename, hdu=0):
+    hdulist = fits.open(filename)
+    header = hdulist[hdu].header
+    data = hdulist[hdu].data
+
+    try:
+        unit = u.Unit(hdulist[hdu].header['CUNIT'].split(' ')[-1])
+    except KeyError:
+        warn("Could not find 'CUNIT' in WCS header; assuming 'Jy'")
+        unit = u.Unit('Jy')
+
+    return ImageData(data=data, wcs=WCS(header), unit=unit)
 
 
 def fits_identify(origin, *args, **kwargs):
@@ -127,8 +143,10 @@ def fits_identify(origin, *args, **kwargs):
 try:
     registry.register_reader('fits', CubeData, fits_cube_reader)
     registry.register_reader('fits', SpectrumData, fits_spectrum_reader)
+    registry.register_reader('fits', ImageData, fits_image_reader)
     registry.register_identifier('fits', CubeData, fits_identify)
     registry.register_identifier('fits', SpectrumData, fits_identify)
+    registry.register_identifier('fits', ImageData, fits_identify)
 except Exception:
     warn('Items already exist in IO registry.')
 

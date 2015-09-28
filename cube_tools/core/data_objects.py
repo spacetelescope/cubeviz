@@ -179,12 +179,13 @@ class SpectrumData(BaseData):
     """
     def __init__(self, *args, **kwargs):
         super(SpectrumData, self).__init__(*args, **kwargs)
+        print(self.wcs.wcs.crpix)
 
-        disp_data = np.arange(self.wcs.wcs.crpix[2],
-                              self.wcs.wcs.crpix[2] + self.data.shape[0])
-        disp_unit = u.Unit(self.wcs.wcs.cunit[2])
+        disp_data = np.arange(self.wcs.wcs.crpix[-1],
+                              self.wcs.wcs.crpix[-1] + self.data.shape[0])
+        disp_unit = u.Unit(self.wcs.wcs.cunit[-1])
 
-        if self.wcs.wcs.ctype[2] == 'WAVE-LOG':
+        if self.wcs.wcs.ctype[-1] == 'WAVE-LOG':
             disp_data = self.wcs.wcs.crval[2] * \
                         np.exp(self.wcs.wcs.cd[2][2] * (disp_data -
                                                     self.wcs.wcs.crpix[2])
@@ -196,9 +197,11 @@ class SpectrumData(BaseData):
         self._error = u.Quantity(self.uncertainty.array, self.unit) if \
             self.uncertainty is not None else None
 
+    # def __getitem__(self, item):
+    #     return u.Quantity(self.data[item], self.unit, copy=False)
+
     def __getitem__(self, item):
-        print(item)
-        return u.Quantity(self.data[item], self.unit, copy=False)
+        return self.data[item]
 
     @property
     def shape(self):
@@ -243,7 +246,7 @@ class ImageData(BaseData):
         super(ImageData, self).__init__(*args, **kwargs)
 
     def __getitem__(self, item):
-        return u.Quantity(self.data[item], self.unit, copy=False)
+        return self.data[item]
 
     def ravel(self):
         return self.data.ravel()

@@ -2,6 +2,8 @@ import numpy as np
 
 from glue.plugins.tools.spectrum_tool import Extractor
 import time
+from glue.core import message as msg
+
 
 class MaskExtractor(Extractor):
     def __init__(self, *args, **kwargs):
@@ -27,3 +29,8 @@ class MaskExtractor(Extractor):
         print("Full mask time: {}".format(time.time() - t1))
 
         return full_mask
+
+
+class SubsetParsedMessage(msg.Message):
+    def __init__(self, sender, tag=None):
+        super(SubsetParsedMessage, self).__init__(sender, tag)

@@ -12,3 +12,6 @@ def setup():
 
     from .qt.table_widget import TableWindow
     qt_client.add(TableWindow)
+
+    from .qt.mos_widget import MOSWindow
+    qt_client.add(MOSWindow)
