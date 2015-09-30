@@ -7,6 +7,7 @@ from ..core.utils import SubsetParsedMessage
 
 from specview.external.qt import QtGui, QtCore
 from specview.ui.qt.subwindows import MultiMdiSubWindow
+from specview.ui.models import DataTreeModel
 
 
 class MOSWindow(DataViewer):
@@ -15,6 +16,7 @@ class MOSWindow(DataViewer):
     def __init__(self, session, parent=None):
         super(MOSWindow, self).__init__(session, parent)
         self.client = MOSClient(data=self._data)
+        self.model = DataTreeModel()
 
         self.sub_window = MultiMdiSubWindow()
         self.sub_window.setWindowFlags(QtCore.Qt.FramelessWindowHint)
@@ -68,9 +70,13 @@ class MOSWindow(DataViewer):
 
         # Display graphs with the data
         current_data = self.client.selected_rows[self._current_index]
-        self.sub_window.graph1d.set_plot(current_data.spec1d)
-        self.sub_window.graph2d.set_image(current_data.spec2d)
-        self.sub_window.graph_postage.set_image(current_data.image.data)
+        spec_data_item = self.model.create_spec_data_item(current_data.spec1d)
+        layer_data_item = self.model.create_layer_item(spec_data_item)
+
+        self.sub_window.set_graph1d_data(layer_data_item)
+        self.sub_window.graph2d.set_data(
+            np.swapaxes(current_data.spec2d.data, 0, 1))
+        self.sub_window.graph_postage.set_data(current_data.image.data)
         self.sub_window.set_label(current_data.table)
 
         # If there is more than one selection, enable forward/back buttons
@@ -88,4 +94,9 @@ class MOSWindow(DataViewer):
         self.sub_window.toolbar.wgt_stack_items.currentIndexChanged[
             int].connect(
             self._load_mos_object)
+
+        # Connect toggling error display in plot
+        self.sub_window.spec_view.plot_toolbar.atn_toggle_errs.triggered.connect(lambda:
+            self.sub_window.spec_view.graph.set_error_visibility(
+                show=self.sub_window.spec_view.plot_toolbar.atn_toggle_errs.isChecked()))
 

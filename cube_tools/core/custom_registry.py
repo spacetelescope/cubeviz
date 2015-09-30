@@ -106,9 +106,9 @@ def fits_spectrum_reader(filename, hdu=1, is_record=False):
         warn("Could not find 'CUNIT' in WCS header; assuming 'Jy'")
         unit = u.Unit('Jy')
 
-    data = hdulist[hdu].data['FLUX'] if is_record else hdulist[hdu].data
-    unc = hdulist[hdu].data['IVAR'] if is_record else hdulist[hdu+1].data
-    mask = hdulist[hdu].data['MASK'] if is_record else hdulist[hdu+2].data
+    data = hdulist[hdu].data['FLUX'][0] if is_record else hdulist[hdu].data
+    unc = hdulist[hdu].data['IVAR'][0] if is_record else hdulist[hdu+1].data
+    mask = hdulist[hdu].data['MASK'][0] if is_record else hdulist[hdu+2].data
 
     return SpectrumData(data=data,
                         uncertainty=StdDevUncertainty(unc),

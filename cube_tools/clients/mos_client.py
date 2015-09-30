@@ -97,10 +97,9 @@ class MOSClient(Client):
                 spec2d = SpectrumData.read(path2d, hdu=1, is_record=True)
             elif path2d and not path1d:
                 spec2d = SpectrumData.read(path2d, hdu=1, is_record=True)
+                spec1d = spec2d.collapse(method='sum', axis=0)
 
-            spec2d = np.swapaxes(spec2d.data, 1, 2)[0, :, :]
             image = ImageData.read(path_im)
-            spec1d = np.sum(spec2d, axis=1)
             tab = {k: row[k] for k in row.colnames}
 
             new_mos_object = self.MOSObject(id, spec1d, spec2d, image, tab)

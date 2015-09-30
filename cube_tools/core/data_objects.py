@@ -179,10 +179,12 @@ class SpectrumData(BaseData):
     """
     def __init__(self, *args, **kwargs):
         super(SpectrumData, self).__init__(*args, **kwargs)
-        print(self.wcs.wcs.crpix)
-
         disp_data = np.arange(self.wcs.wcs.crpix[-1],
                               self.wcs.wcs.crpix[-1] + self.data.shape[0])
+        print("SHAPE", self.data.shape)
+        if disp_data.size != self.data.shape[0]:
+            disp_data = np.arange(self.data.shape[0])
+
         disp_unit = u.Unit(self.wcs.wcs.cunit[-1])
 
         if self.wcs.wcs.ctype[-1] == 'WAVE-LOG':
@@ -236,6 +238,32 @@ class SpectrumData(BaseData):
             return self._dispersion
 
         return self._dispersion.to(convert_unit)
+
+    def collapse(self, method='mean', axis=1, filter_mask=None):
+        if filter_mask is not None:
+            filter_mask = np.logical_not(filter_mask)
+
+        mdata = np.ma.masked_array(self.data, mask=filter_mask)
+        udata = np.ma.masked_array(self.uncertainty.array, mask=filter_mask)
+
+        if method == 'mean':
+            new_mdata = mdata.mean(axis=axis)
+            new_udata = udata.mean(axis=axis)
+        elif method == 'median':
+            new_mdata = mdata.median(axis=axis)
+            new_udata = udata.median(axis=axis)
+        elif method == 'sum':
+            new_mdata = mdata.sum(axis=axis)
+            new_udata = udata.sum(axis=axis)
+
+        print(new_mdata.shape)
+        print(mdata.shape)
+
+        return SpectrumData(new_mdata.data,
+                            uncertainty=self.uncertainty.__class__(
+                                new_udata.data),
+                            mask=new_udata, wcs=self.wcs, meta=self.meta,
+                            unit=self.unit)
 
 
 class ImageData(BaseData):
