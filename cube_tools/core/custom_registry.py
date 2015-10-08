@@ -159,8 +159,7 @@ def fits_image_reader(filename, hdu=0, is_record=False, **kwargs):
     data = hdulist[hdu].data['FLUX'][0] if is_record else hdulist[hdu].data
     try:
         unc = StdDevUncertainty(hdulist[hdu].data['IVAR'][0] if is_record else
-                                hdulist[
-            hdu+1].data)
+                                hdulist[hdu+1].data)
     except:
         unc = None
 
