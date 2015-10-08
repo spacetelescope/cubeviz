@@ -15,3 +15,6 @@ def setup():
 
     from .qt.mos_widget import MOSWindow
     qt_client.add(MOSWindow)
+
+    # from .qt.pg_widget import PGWindow
+    # qt_client.add(PGWindow)

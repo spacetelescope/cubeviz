@@ -186,7 +186,10 @@ class SpectrumData(BaseData):
             if disp_data.size != self.data.shape[0]:
                 disp_data = np.arange(self.data.shape[0])
 
-            disp_unit = u.Unit(self.wcs.wcs.cunit[0])
+            if len(self.wcs.wcs.cunit) == 3:
+                disp_unit = u.Unit(self.wcs.wcs.cunit[-1])
+            else:
+                disp_unit = u.Unit(self.wcs.wcs.cunit[0])
 
             if self.wcs.wcs.ctype[-1] == 'WAVE-LOG':
                 disp_data = self.wcs.wcs.crval[2] * \
