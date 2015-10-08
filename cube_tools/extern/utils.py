@@ -385,9 +385,18 @@ class Cutout2D(object):
             units of pixels.  ``size`` can also be a
             `~astropy.units.Quantity` object or contain
             `~astropy.units.Quantity` objects.  Such
-            `~astropy.units.Quantity` objects must be in pixel or angular
-            units.  See the ``mode`` keyword for additional details on
+            `~astropy.units.Quantity` objects must be in pixel or
+            angular units.  For all cases, ``size`` will be converted to
+            an integer number of pixels, rounding the the nearest
+            integer.  See the ``mode`` keyword for additional details on
             the final cutout size.
+
+            .. note::
+                If ``size`` is in angular units, the cutout size is
+                converted to pixels using the pixel scales along each
+                axis of the image at the ``CRPIX`` location.  Projection
+                and other non-linear distortions are not taken into
+                account.
 
         wcs : `~astropy.wcs.WCS`, optional
             A WCS object associated with the input ``data`` array.  If
@@ -493,10 +502,10 @@ class Cutout2D(object):
         # so evaluate each axis separately
         for axis, side in enumerate(size):
             if not isinstance(side, u.Quantity):
-                shape[axis] = size[axis]     # pixels
+                shape[axis] = np.int(np.round(size[axis]))     # pixels
             else:
-                if side.unit is u.pixel:
-                    shape[axis] = side.value
+                if side.unit == u.pixel:
+                    shape[axis] = np.int(np.round(side.value))
                 elif side.unit.physical_type == 'angle':
                     if wcs is None:
                         raise ValueError('wcs must be input if any element '
