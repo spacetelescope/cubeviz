@@ -2,8 +2,10 @@ import numpy as np
 
 from glue.qt.widgets.data_viewer import DataViewer
 from glue.core import message as msg
+from glue.core import Data, Component
 from ..clients.mos_client import MOSClient
 from ..core.utils import SubsetParsedMessage
+from ..qt.spectra_widget import SpectraWindow
 
 from specview.external.qt import QtGui, QtCore
 from specview.ui.qt.subwindows import MultiMdiSubWindow
@@ -25,6 +27,13 @@ class MOSWindow(DataViewer):
         self._current_index = 0
 
         self._connect()
+        # self._open_specview()
+
+        # import pyqtgraph as pg
+        # self.test_plot = pg.PlotWidget()
+        # plot = self.test_plot.plot(np.random.sample(10000) * 1e10)
+        # # self.setCentralWidget(test_plot)
+        # self.test_plot.show()
 
     def register_to_hub(self, hub):
         super(MOSWindow, self).register_to_hub(hub)
@@ -40,10 +49,6 @@ class MOSWindow(DataViewer):
 
     def add_data(self, data):
         print("[MOSWidget] Added data to widget.")
-
-        print(data)
-        # self.client.update_display(data.data[0][:, 0])
-
         return True
 
     def _parsed_subset(self, message):
@@ -70,13 +75,10 @@ class MOSWindow(DataViewer):
 
         # Display graphs with the data
         current_data = self.client.selected_rows[self._current_index]
-        spec_data_item = self.model.create_spec_data_item(current_data.spec1d)
-        layer_data_item = self.model.create_layer_item(spec_data_item)
+        # spec_data_item = self.model.create_spec_data_item(current_data.spec1d)
+        # layer_data_item = self.model.create_layer_item(spec_data_item)
 
-        self.sub_window.set_graph1d_data(layer_data_item)
-        self.sub_window.graph2d.set_data(
-            np.swapaxes(current_data.spec2d.data, 0, 1))
-        self.sub_window.graph_postage.set_data(current_data.image.data)
+        self.sub_window.set_data(current_data)
         self.sub_window.set_label(current_data.table)
 
         # If there is more than one selection, enable forward/back buttons
@@ -95,8 +97,37 @@ class MOSWindow(DataViewer):
             int].connect(
             self._load_mos_object)
 
-        # Connect toggling error display in plot
-        self.sub_window.spec_view.plot_toolbar.atn_toggle_errs.triggered.connect(lambda:
-            self.sub_window.spec_view.graph.set_error_visibility(
-                show=self.sub_window.spec_view.plot_toolbar.atn_toggle_errs.isChecked()))
+        # Connect toggling x axes
+        self.sub_window.toolbar.atn_toggle_lock_x.triggered.connect(
+            lambda: self.sub_window.toggle_lock_x(
+                self.sub_window.toolbar.atn_toggle_lock_x.isChecked()))
 
+        # Connect toggling y axes
+        self.sub_window.toolbar.atn_toggle_lock_y.triggered.connect(
+            lambda: self.sub_window.toggle_lock_y(
+                self.sub_window.toolbar.atn_toggle_lock_y.isChecked()))
+
+        # Connect toggling error display in plot
+        self.sub_window.toolbar.atn_toggle_errs.triggered.connect(lambda:
+            self.sub_window.graph1d.set_error_visibility(
+                show=self.sub_window.toolbar.atn_toggle_errs.isChecked()))
+
+        # Connect toggling mask display in plot
+        self.sub_window.toolbar.atn_toggle_mask.triggered.connect(lambda:
+            self.sub_window.graph1d.set_mask_visibility(
+                show=self.sub_window.toolbar.atn_toggle_mask.isChecked()))
+
+        # Connect toggling of color maps
+        self.sub_window.toolbar.atn_toggle_color_map.triggered.connect(
+            lambda: self.sub_window.toggle_color_maps(
+                self.sub_window.toolbar.atn_toggle_color_map.isChecked()))
+
+        # Connect toggling of color maps
+        self.sub_window.toolbar.atn_open_sv.triggered.connect(self._open_specview)
+
+    def _open_specview(self):
+        current_data = self.client.selected_rows[self._current_index]
+        new_data = Data()
+        new_data.add_component(Component(current_data.spec1d), label="spec1d")
+        self.session.application.new_data_viewer(SpectraWindow,
+                                                 data=new_data)

@@ -93,6 +93,7 @@ class SpectraClient(Client):
         if len(data.shape) == 3:
             data_item = self.model.create_cube_data_item(data)
         else:
+            print("Created spec data item")
             data_item = self.model.create_spec_data_item(data)
 
         self._data_dict[data] = data_item

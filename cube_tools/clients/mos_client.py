@@ -10,36 +10,18 @@ from ..core.utils import SubsetParsedMessage
 
 class MOSClient(Client):
     MOSObject = namedtuple('MOSObject', ['id', 'spec1d', 'spec2d', 'image',
-                                         'table'])
+                                         'table', 'slit_shape', 'pix_scale'])
 
     def __init__(self, data=None):
         super(MOSClient, self).__init__(data)
         self._loaded_data = {}
         self.selected_rows = []
         self.hub = None
+        self._current_selected = None
 
     def register_to_hub(self, hub):
         super(MOSClient, self).register_to_hub(hub)
         self.hub = hub
-
-        # hub.subscribe(self,
-        #               msg.SubsetCreateMessage,
-        #               handler=self._add_subset)
-        # hub.subscribe(self,
-        #               msg.SubsetUpdateMessage,
-        #               handler=self._update_subset)
-        # hub.subscribe(self,
-        #               msg.SubsetDeleteMessage,
-        #               handler=self._remove_subset)
-        # hub.subscribe(self,
-        #               msg.DataUpdateMessage,
-        #               handler=self._update_data)
-        # hub.subscribe(self,
-        #               msg.DataCollectionDeleteMessage,
-        #               handler=self._remove_data)
-        # hub.subscribe(self,
-        #               msg.NumericalDataChangedMessage,
-        #               handler=self._numerical_data_changed)
 
     def unregister(self, hub):
         hub.unsubscribe_all(self)
@@ -60,49 +42,55 @@ class MOSClient(Client):
         print("[MOSClient] Updating subset.")
         subset = message.sender
         mask = subset.to_mask()
+        path = ""
 
-        col_names = subset.data.components[3:]
+        col_names = subset.data.components#[3:]
         table = Table()
 
         for id in col_names:
+            comp = subset.data.get_component(id)
+            print(id)
+            if hasattr(comp, 'meta'):
+                path = comp.meta['path']
             try:
-                val = subset.data.get_component(id).labels
+                val = comp.labels
             except AttributeError:
-                val = subset.data.get_component(id).data
+                val = comp.data
 
             table[id.label] = val[mask]
 
-        self.update_display(table)
+        self.update_display(table, path=path)
 
-    def update_display(self, table):
+    def update_display(self, table, path=""):
         self.selected_rows = []
 
         for row in table:
-            id = row['Object_ID']
+            id = row['id']
 
             if id in self._loaded_data:
                 self.selected_rows.append(self._loaded_data[id])
                 continue
 
-            path2d = "/Users/nearl/Desktop/mos_spec/z1Galaxies_Kassin" \
-                     "/Spectra/{}".format(row['Spectrum2D_B'])
+            path2d = "/{}/{}".format(path, row['spectrum2d'])
+            path_cutout = "/{}/{}".format(path, row['cutout'])
+            path1d = "/{}/{}".format(path, row['spectrum1d'])
 
-            path_im = "/Users/nearl/Desktop/mos_spec/z1Galaxies_Kassin/" \
-                      "Pstg/Pstg/{}.acs.i_6ac_.fits".format(id)
+            print('-' * 20)
+            print(path2d)
+            print(path_cutout)
+            print(path1d)
+            print('-' * 20)
 
-            path1d = None
+            spec1d = SpectrumData.read(path1d, hdu=1, normalize=True)
+            spec2d = SpectrumData.read(path2d, hdu=1)
+            image = ImageData.read(path_cutout)
+            slit_shape = (float(row['slit_width']), float(row['slit_length']))
+            pix_scale = float(row['pix_scale'])
 
-            if path1d and path2d:
-                spec1d = SpectrumData.read(path1d)
-                spec2d = SpectrumData.read(path2d, hdu=1, is_record=True)
-            elif path2d and not path1d:
-                spec2d = SpectrumData.read(path2d, hdu=1, is_record=True)
-                spec1d = spec2d.collapse(method='sum', axis=0)
-
-            image = ImageData.read(path_im)
             tab = {k: row[k] for k in row.colnames}
 
-            new_mos_object = self.MOSObject(id, spec1d, spec2d, image, tab)
+            new_mos_object = self.MOSObject(id, spec1d, spec2d, image, tab,
+                                            slit_shape, pix_scale)
             self._loaded_data[id] = new_mos_object
             self.selected_rows.append(new_mos_object)
 

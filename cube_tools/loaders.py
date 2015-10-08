@@ -3,15 +3,19 @@ import six
 from os.path import basename
 import warnings
 
-from astropy.table import Table
+import numpy as np
 
 from glue.core import Data, Component
+from glue.core.data import CategoricalComponent
 from glue.config import data_factory
 from glue.core.data_factories.helpers import has_extension
 from glue.core.coordinates import coordinates_from_header, coordinates_from_wcs
 from glue.external.astro import fits
+from glue.core.data_factories.tables import astropy_tabular_data, \
+    _ascii_identifier_v02, _ascii_identifier_v03
+from glue.utils import coerce_numeric
 
-from .core.data_objects import CubeData
+from .core.data_objects import CubeData, SpectrumData, ImageData
 from .core.custom_registry import CubeDataIOError
 
 
@@ -126,3 +130,106 @@ def is_image_hdu(hdu):
 def is_table_hdu(hdu):
     from astropy.io.fits.hdu import TableHDU, BinTableHDU
     return isinstance(hdu, (TableHDU, BinTableHDU))
+
+
+class MOSCategoricalComponent(CategoricalComponent):
+    def __init__(self, data, meta=None, quantity=None, **kwargs):
+        super(MOSCategoricalComponent, self).__init__(data, **kwargs)
+        self._meta = meta
+        self._quantity = quantity
+
+    @property
+    def meta(self):
+        return self._meta
+
+    @property
+    def quantity(self):
+        return self._quantity
+
+    def jitter(self, method=None):
+        super(MOSCategoricalComponent, self).jitter(method)
+
+
+class MOSComponent(Component):
+    def __init__(self, data, meta=None, quantity=None, **kwargs):
+        super(MOSComponent, self).__init__(data, **kwargs)
+        self._meta = meta or {}
+        self._quantity = quantity
+
+    @property
+    def meta(self):
+        return self._meta
+
+    @property
+    def quantity(self):
+        return self._quantity
+
+    def jitter(self, method=None):
+        super(MOSComponent, self).jitter(method)
+
+    @classmethod
+    def autotyped(cls, data, units=None, meta=None, quantity=None):
+        """
+        Automatically choose between Component and CategoricalComponent,
+        based on the input data type.
+
+        :param data: The data to pack into a Component (array-like)
+        :param units: Optional units
+        :type units: str
+
+        :returns: A Component (or subclass)
+        """
+        data = np.asarray(data)
+
+        if np.issubdtype(data.dtype, np.object_):
+            return CategoricalComponent(data, units=units)
+
+        n = coerce_numeric(data)
+        thresh = 0.5
+        try:
+            use_categorical = np.issubdtype(data.dtype, np.character) and \
+                np.isfinite(n).mean() <= thresh
+        except TypeError:  # isfinite not supported. non-numeric dtype
+            use_categorical = True
+
+        if use_categorical:
+            return MOSCategoricalComponent(data, units=units,
+                                           meta=meta, quantity=quantity)
+        else:
+            return MOSComponent(n, units=units, meta=meta,
+                                quantity=quantity)
+
+
+@data_factory(label="MOS Catalog",
+              identifier=has_extension('xml vot csv txt tsv tbl dat fits '
+                                       'xml.gz vot.gz csv.gz txt.gz tbl.bz '
+                                       'dat.gz fits.gz'))
+def load_mos_data(*args, **kwargs):
+    path = "/".join(args[0].strip().split('/')[:-1])
+    result = Data()
+
+    # Read the table
+    from astropy.table import Table
+
+    table = Table.read(*args, format='ascii', **kwargs)
+
+    # Loop through columns and make component list
+    for column_name in table.columns:
+        print(column_name)
+        c = table[column_name]
+        d = None
+        u = c.unit if hasattr(c, 'unit') else c.units
+        m = dict()
+
+        m['cell'] = c
+        m['path'] = path
+
+        # if d is not None:
+        #     print("Attempting to autotype")
+        #     nc = MOSComponent(np.array([np.array(dt))
+        #     result.add_component(nc, column_name)
+        # else:
+        nc = MOSComponent.autotyped(c, units=u, meta=m)
+        result.add_component(nc, column_name)
+
+    return result

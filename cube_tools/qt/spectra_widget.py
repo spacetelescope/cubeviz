@@ -80,6 +80,13 @@ class SpectraWindow(DataViewer):
             self.current_layer_item = layer_data_item
             self.model_editor_dock.wgt_model_tree.set_root_item(layer_data_item)
             return True
+        else:
+            layer_data_item = self.client.add_data(data.data['spec1d'],
+                                                   "Spectrum 1D")
+
+            self.current_layer_item = layer_data_item
+            self.model_editor_dock.wgt_model_tree.set_root_item(layer_data_item)
+            return True
 
         return False
 

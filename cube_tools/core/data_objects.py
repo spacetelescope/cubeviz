@@ -179,19 +179,30 @@ class SpectrumData(BaseData):
     """
     def __init__(self, *args, **kwargs):
         super(SpectrumData, self).__init__(*args, **kwargs)
-        disp_data = np.arange(self.wcs.wcs.crpix[-1],
-                              self.wcs.wcs.crpix[-1] + self.data.shape[0])
-        print("SHAPE", self.data.shape)
-        if disp_data.size != self.data.shape[0]:
-            disp_data = np.arange(self.data.shape[0])
+        if self.wcs is not None:
+            disp_data = np.arange(self.wcs.wcs.crpix[-1],
+                                  self.wcs.wcs.crpix[-1] + self.data.shape[0])
 
-        disp_unit = u.Unit(self.wcs.wcs.cunit[-1])
+            if disp_data.size != self.data.shape[0]:
+                disp_data = np.arange(self.data.shape[0])
 
-        if self.wcs.wcs.ctype[-1] == 'WAVE-LOG':
-            disp_data = self.wcs.wcs.crval[2] * \
-                        np.exp(self.wcs.wcs.cd[2][2] * (disp_data -
-                                                    self.wcs.wcs.crpix[2])
-                               / self.wcs.wcs.crval[2])
+            disp_unit = u.Unit(self.wcs.wcs.cunit[0])
+
+            if self.wcs.wcs.ctype[-1] == 'WAVE-LOG':
+                disp_data = self.wcs.wcs.crval[2] * \
+                            np.exp(self.wcs.wcs.cd[2][2] * (disp_data -
+                                                        self.wcs.wcs.crpix[2])
+                                   / self.wcs.wcs.crval[2])
+
+            self._cross_dispersion = None
+
+            if self.data.ndim > 1:
+                c_start = self.wcs.wcs.crval[1]
+                c_step = self.wcs.wcs.cdelt[1]
+                c_stop = c_start + c_step * self.data.shape[1]
+                self._cross_dispersion = u.Quantity(np.arange(c_start, c_stop,
+                                                          c_step),
+                                                u.Unit(self.wcs.wcs.cunit[1]))
 
         # disp_data = np.linspace(disp_data[0], disp_data[-1], self.data.size)
         self._dispersion = u.Quantity(disp_data, disp_unit, copy=False)
@@ -217,9 +228,17 @@ class SpectrumData(BaseData):
     def dispersion(self):
         return self._dispersion
 
+    @dispersion.setter
+    def dispersion(self, value):
+        self._dispersion = value
+
     @property
     def error(self):
         return self._error
+
+    @property
+    def quantity(self):
+        return u.Quantity(self.data, self.unit)
 
     def get_flux(self, convert_unit=None):
         if convert_unit is None:
@@ -239,6 +258,12 @@ class SpectrumData(BaseData):
 
         return self._dispersion.to(convert_unit)
 
+    def get_cross_dispersion(self, convert_unit=None):
+        if convert_unit is None:
+            return self._cross_dispersion
+
+        return self._cross_dispersion.to(convert_unit)
+
     def collapse(self, method='mean', axis=1, filter_mask=None):
         if filter_mask is not None:
             filter_mask = np.logical_not(filter_mask)
@@ -256,14 +281,19 @@ class SpectrumData(BaseData):
             new_mdata = mdata.sum(axis=axis)
             new_udata = udata.sum(axis=axis)
 
-        print(new_mdata.shape)
-        print(mdata.shape)
-
         return SpectrumData(new_mdata.data,
                             uncertainty=self.uncertainty.__class__(
                                 new_udata.data),
                             mask=new_udata, wcs=self.wcs, meta=self.meta,
                             unit=self.unit)
+
+    def flip(self, axis1, axis2):
+        return SpectrumData(data=np.swapaxes(self.data, axis1, axis2),
+                         uncertainty=self.uncertainty,
+                         mask=self.mask,
+                         wcs=self.wcs,
+                         meta=self._meta,
+                         unit=self.unit)
 
 
 class ImageData(BaseData):
@@ -272,9 +302,38 @@ class ImageData(BaseData):
     """
     def __init__(self, *args, **kwargs):
         super(ImageData, self).__init__(*args, **kwargs)
+        if self.wcs is not None:
+            d_start = self.wcs.wcs.crval[0]
+            d_step = self.wcs.wcs.cdelt[0]
+            d_stop = d_start + d_step * self.data.shape[0]
+            self._dispersion = u.Quantity(np.arange(d_start, d_stop, d_step),
+                                          u.Unit(self.wcs.wcs.cunit[0]))
+
+            c_start = self.wcs.wcs.crval[1]
+            c_step = self.wcs.wcs.cdelt[1]
+            c_stop = c_start + c_step * self.data.shape[1]
+            self._cross_dispersion = u.Quantity(np.arange(c_start, c_stop,
+                                                          c_step),
+                                                u.Unit(self.wcs.wcs.cunit[1]))
 
     def __getitem__(self, item):
         return self.data[item]
 
+    @property
+    def quantity(self):
+        return u.Quantity(self.data, self.unit)
+
     def ravel(self):
         return self.data.ravel()
+
+    def get_dispersion(self, convert_unit=None):
+        if convert_unit is None:
+            return self._dispersion
+
+        return self._dispersion.to(convert_unit)
+
+    def get_cross_dispersion(self, convert_unit=None):
+        if convert_unit is None:
+            return self._cross_dispersion
+
+        return self._cross_dispersion.to(convert_unit)
