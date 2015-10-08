@@ -4,6 +4,7 @@ from os.path import basename
 import warnings
 
 import numpy as np
+from astropy.table import Table
 
 from glue.core import Data, Component
 from glue.core.data import CategoricalComponent
