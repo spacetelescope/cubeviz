@@ -12,8 +12,6 @@ from glue.config import data_factory
 from glue.core.data_factories.helpers import has_extension
 from glue.core.coordinates import coordinates_from_header, coordinates_from_wcs
 from glue.external.astro import fits
-from glue.core.data_factories.tables import astropy_tabular_data, \
-    _ascii_identifier_v02, _ascii_identifier_v03
 from glue.utils import coerce_numeric
 
 from .core.data_objects import CubeData, SpectrumData, ImageData
