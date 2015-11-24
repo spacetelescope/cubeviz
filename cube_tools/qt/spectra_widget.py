@@ -78,14 +78,14 @@ class SpectraWindow(DataViewer):
                                                    data.label)
 
             self.current_layer_item = layer_data_item
-            self.model_editor_dock.wgt_model_tree.set_root_item(layer_data_item)
+            # self.model_editor_dock.wgt_model_tree.set_root_item(layer_data_item)
             return True
         else:
             layer_data_item = self.client.add_data(data.data['spec1d'],
                                                    "Spectrum 1D")
 
             self.current_layer_item = layer_data_item
-            self.model_editor_dock.wgt_model_tree.set_root_item(layer_data_item)
+            # self.model_editor_dock.wgt_model_tree.set_root_item(layer_data_item)
             return True
 
         return False
@@ -125,6 +125,11 @@ class SpectraWindow(DataViewer):
         model_selector = self.model_editor_dock.wgt_model_selector
 
         # Connect the combobox signal to a lambda slot for generating fit
+
+        #TODO maybe here we update the model expression?
+        # must be done by slot create_fit_model. Pass text field to it.
+        #TODO still need to find where components get removed from model tree
+
         model_selector.activated.connect(lambda:
             self.model.create_fit_model(
                 self.current_layer_item,
