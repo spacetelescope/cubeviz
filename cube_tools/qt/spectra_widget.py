@@ -195,3 +195,15 @@ class SpectraWindow(DataViewer):
 
         self.model_editor_dock.wgt_model_tree.set_root_item(layer_data_item)
         self.current_layer_item = layer_data_item
+
+        if type(layer_data_item.model) == type([]):
+            compound_model = self.model.buildSummedCompoundModel(layer_data_item.model)
+        else:
+            compound_model = layer_data_item.model
+
+        if self.model_editor_dock:
+            if hasattr(compound_model, '_format_expression'):
+                self.model_editor_dock.expression_field.setText(compound_model._format_expression())
+            else:
+                self.model_editor_dock.expression_field.setText('')
+
