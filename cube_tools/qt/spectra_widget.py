@@ -125,14 +125,10 @@ class SpectraWindow(DataViewer):
         model_selector = self.model_editor_dock.wgt_model_selector
 
         # Connect the combobox signal to a lambda slot for generating fit
-
-        #TODO maybe here we update the model expression?
-        # must be done by slot create_fit_model. Pass text field to it.
-        #TODO still need to find where components get removed from model tree
-
         model_selector.activated.connect(lambda:
             self.model.create_fit_model(
                 self.current_layer_item,
+                self.model_editor_dock,
                 str(model_selector.currentText())))
 
         # Connect perform fit button
