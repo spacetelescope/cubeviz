@@ -137,6 +137,7 @@ class SpectraWindow(DataViewer):
 
         # Connect removing layers
         self.model.sig_removed_item.connect(self.sub_window.graph.remove_item)
+        self.model.sig_removed_item.connect(self._reconfigureSpectralModel)
 
         # Connect toggling layer visibility on graphs
         self.model.sig_set_visibility.connect(
@@ -151,6 +152,13 @@ class SpectraWindow(DataViewer):
         # Connect smoothing functionality
         self.smoothing_dock.btn_perform.clicked.connect(lambda:
             self._perform_smoothing(self.layer_dock.current_item))
+
+    # It's not enough that we remove an item. The internal structure
+    # of the spectral model may require further processing. For now,
+    # it just needs to report a new model expression in the GUI, but
+    # future enhancements may need more work in here.
+    def _reconfigureSpectralModel(self):
+        self.model.updateModelExpression(self.model_editor_dock, self.layer_dock.current_item)
 
     def _perform_fit(self, layer_data_item):
         mask = self.sub_window.graph.get_roi_mask(layer_data_item)
