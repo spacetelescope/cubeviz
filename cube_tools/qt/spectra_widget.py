@@ -1,20 +1,24 @@
 from __future__ import print_function
 
-import numpy as np
+import os
+
 from glue.qt.widgets.data_viewer import DataViewer
 
 from specview.external.qt import QtGui, QtCore
 from specview.ui.qt.subwindows import SpectraMdiSubWindow
 from specview.ui.models import DataTreeModel
 from specview.ui.qt.docks import ModelDockWidget, EquivalentWidthDockWidget,\
-    MeasurementDockWidget, SmoothingDockWidget
+     MeasurementDockWidget, SmoothingDockWidget
 from specview.ui.qt.views import LayerDataTree
 from specview.ui.items import LayerDataTreeItem
 from specview.analysis import model_fitting
 from specview.analysis.smoothing import spectral_smoothing
+from specview.tools import model_io
 
 from ..clients.spectra_client import SpectraClient
-from ..core.data_objects import SpectrumData, BaseData
+
+# To memorize last visited directory.
+_model_directory = os.environ["HOME"]
 
 
 class SpectraWindow(DataViewer):
@@ -135,6 +139,12 @@ class SpectraWindow(DataViewer):
         self.model_editor_dock.btn_perform_fit.clicked.connect(lambda:
             self._perform_fit(self.layer_dock.current_item))
 
+        # Connect Read and Save model buttons
+        self.model_editor_dock.btn_read.clicked.connect(lambda:
+            self._read_model(self.layer_dock.current_item))
+        self.model_editor_dock.btn_save.clicked.connect(lambda:
+            self._save_model(self.layer_dock.current_item))
+
         # Connect removing layers
         self.model.sig_removed_item.connect(self.sub_window.graph.remove_item)
         self.model.sig_removed_item.connect(self._reconfigureSpectralModel)
@@ -159,6 +169,14 @@ class SpectraWindow(DataViewer):
     # future enhancements may need more work in here.
     def _reconfigureSpectralModel(self):
         self.model.updateModelExpression(self.model_editor_dock, self.layer_dock.current_item)
+
+    def _read_model(self, layer):
+        print("@@@@@@  file spectra_widget.py; line 170 - ")
+
+    def _save_model(self, layer):
+        print("@@@@@@  file spectra_widget.py; line 173 - ")
+        global _model_directory # retains memory of last visited directory
+        model_io.saveModelToFile(self, layer.model, _model_directory)
 
     def _perform_fit(self, layer_data_item):
         mask = self.sub_window.graph.get_roi_mask(layer_data_item)
