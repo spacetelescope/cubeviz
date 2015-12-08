@@ -171,7 +171,23 @@ class SpectraWindow(DataViewer):
         self.model.updateModelExpression(self.model_editor_dock, self.layer_dock.current_item)
 
     def _read_model(self, layer):
-        print("@@@@@@  file spectra_widget.py; line 170 - ")
+        global _model_directory # retains memory of last visited directory
+        fname = QtGui.QFileDialog.getOpenFileName(self, 'Open file', _model_directory)
+        compound_model, _model_directory = model_io.buildModelFromFile(fname[0])
+
+        if compound_model:
+            for i, model in enumerate(compound_model._submodels):
+                # self.model.addOneElement(model)
+
+                #TODO how to replace the compound model into the selected layer?
+
+                pass
+
+
+
+
+
+
 
     def _save_model(self, layer):
         print("@@@@@@  file spectra_widget.py; line 173 - ")
