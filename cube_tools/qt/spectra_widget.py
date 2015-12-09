@@ -181,7 +181,10 @@ class SpectraWindow(DataViewer):
         #TODO how to replace the compound model into the selected layer?
         #TODO Or, should we build a new layer?
 
-        pass
+        #TODO this doesn't work. The model inside the layer must conform
+        #TODO exactly with whatever is in the file. We probably have to build
+        #TODO an entire new layer to replace the existing one.
+        # model_fitting.updateLayerItem(compound_model, layer)
 
 
 
