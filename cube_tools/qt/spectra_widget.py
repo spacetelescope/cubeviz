@@ -173,24 +173,20 @@ class SpectraWindow(DataViewer):
     def _read_model(self, layer):
         global _model_directory # retains memory of last visited directory
         fname = QtGui.QFileDialog.getOpenFileName(self, 'Open file', _model_directory)
+        # note that under glue, QFileDialog.getOpenFileName returns a tuple.
+        # Under plain PyQt it returns a simple QString. It is like it's
+        # overriding getOpenFileNameAndFilter, but why??
         compound_model, _model_directory = model_io.buildModelFromFile(fname[0])
 
-        if compound_model:
-            for i, model in enumerate(compound_model._submodels):
-                # self.model.addOneElement(model)
+        #TODO how to replace the compound model into the selected layer?
+        #TODO Or, should we build a new layer?
 
-                #TODO how to replace the compound model into the selected layer?
-
-                pass
-
-
-
+        pass
 
 
 
 
     def _save_model(self, layer):
-        print("@@@@@@  file spectra_widget.py; line 173 - ")
         global _model_directory # retains memory of last visited directory
         model_io.saveModelToFile(self, layer.model, _model_directory)
 
