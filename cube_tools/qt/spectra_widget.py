@@ -10,10 +10,10 @@ from specview.ui.models import DataTreeModel
 from specview.ui.qt.docks import ModelDockWidget, EquivalentWidthDockWidget,\
      MeasurementDockWidget, SmoothingDockWidget
 from specview.ui.qt.views import LayerDataTree
-from specview.ui.items import LayerDataTreeItem
+from specview.ui.items import LayerDataTreeItem, ModelDataTreeItem
 from specview.analysis import model_fitting
 from specview.analysis.smoothing import spectral_smoothing
-from specview.tools import model_io
+from specview.tools import model_io, model_registry
 
 from ..clients.spectra_client import SpectraClient
 
@@ -181,10 +181,22 @@ class SpectraWindow(DataViewer):
         #TODO how to replace the compound model into the selected layer?
         #TODO Or, should we build a new layer?
 
-        #TODO this doesn't work. The model inside the layer must conform
-        #TODO exactly with whatever is in the file. We probably have to build
-        #TODO an entire new layer to replace the existing one.
-        # model_fitting.updateLayerItem(compound_model, layer)
+        self._model_items = model_registry.getComponents(compound_model)
+
+        for model in self._model_items:
+            model_name = model_registry.get_component_name(model)
+            model_data_item = ModelDataTreeItem(layer, model, model_name)
+
+            layer.add_model_item(model_data_item)
+            # model_data_item.setIcon(QtGui.QIcon(path.join(PATH, 'model.png')))
+
+            layer.appendRow(model_data_item)
+
+        # self.sig_added_item.emit(model_data_item.index())
+        # self.sig_added_fit_model.emit(model_data_item)
+        #
+        # self.updateModelExpression(self.model_editor_dock, layer)
+
 
 
 
