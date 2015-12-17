@@ -171,35 +171,80 @@ class SpectraWindow(DataViewer):
         self.model.updateModelExpression(self.model_editor_dock, self.layer_dock.current_item)
 
     def _read_model(self, layer):
+        # any pre-existing compound model must be deleted before adding
+        # new spectral components. Although it would be nice to be able
+        # to add new components defined in a file to the existing compound
+        # model, that operation cannot be done if the existing compound
+        # model resulted from a previous fitting operation. The following
+        # example can be used to verify this at the command-line level:
+        #
+        # % python
+        # Python 2.7.10 |Continuum Analytics, Inc.| (default, May 28 2015, 17:04:42)
+        # [GCC 4.2.1 (Apple Inc. build 5577)] on darwin
+        # Type "help", "copyright", "credits" or "license" for more information.
+        # Anaconda is brought to you by Continuum Analytics.
+        # Please check out: http://continuum.io/thanks and https://binstar.org
+        # >>> from astropy.modeling import models, fitting
+        # >>> import numpy as np
+        # >>> fitter = fitting.LevMarLSQFitter()
+        # >>> g1 = models.Gaussian1D(1.,1.,1.)
+        # >>> g2 = models.Gaussian1D(2.,2.,2.)
+        # >>> initial_model = g1 + g2
+        # >>> initial_model
+        # <CompoundModel0(amplitude_0=1.0, mean_0=1.0, stddev_0=1.0, amplitude_1=2.0, mean_1=2.0, stddev_1=2.0)>
+        # >>> x = np.array([1.,2.,3.,4.,5.,6.,7.])
+        # >>> y = np.array([0.1,0.2,0.35,0.43,0.56,0.61,0.69])
+        # >>> fit_result = fitter(initial_model, x, y)
+        # >>> fit_result
+        # <CompoundModel0(amplitude_0=-0.738532388970048, mean_0=-1.7107256329301135, stddev_0=4.13731791035706, amplitude_1=0.8553623423732329, mean_1=23.06935094019223, stddev_1=33.944748624197345)>
+        # >>> g3 = models.Gaussian1D(3.,3.,3.)
+        # >>> modified_result = fit_result + g3
+        # >>> modified_result
+        # <CompoundModel2(amplitude_0=1.0, mean_0=1.0, stddev_0=1.0, amplitude_1=2.0, mean_1=2.0, stddev_1=2.0, amplitude_2=3.0, mean_2=3.0, stddev_2=3.0)>
+        # >>>
+        #
+        # Note the problem here: adding a new component to the compound model created
+        # by the fitter erases the fitted values and returns them to whatever values
+        # they have in the initial model.
+
+        length = len(layer._model_items)
+        for model_item in layer._model_items:
+            layer.remove_model(model_item)
+
+        # for an unknown reason, the loop above won't exhaust the layer._model_items list.
+        # One element is left behind in the list and has to be forcibly removed. Why????
+        if len(layer._model_items) > 0:
+            model_item = layer._model_items[0]
+            layer.remove_model(model_item)
+
+        layer.removeRows(0, length)
+
+        # Now we can read from file.
+
         global _model_directory # retains memory of last visited directory
         fname = QtGui.QFileDialog.getOpenFileName(self, 'Open file', _model_directory)
         # note that under glue, QFileDialog.getOpenFileName returns a tuple.
         # Under plain PyQt it returns a simple QString. It is like it's
-        # overriding getOpenFileNameAndFilter, but why??
+        # overriding getOpenFileNameAndFilter, but why?? So, under glue we
+        # need to get the first element in the tuple.
         compound_model, _model_directory = model_io.buildModelFromFile(fname[0])
-
-        #TODO how to replace the compound model into the selected layer?
-        #TODO Or, should we build a new layer?
 
         self._model_items = model_registry.getComponents(compound_model)
 
-        for model in self._model_items:
-            model_name = model_registry.get_component_name(model)
-            model_data_item = ModelDataTreeItem(layer, model, model_name)
+        for model_item in self._model_items:
+            model_name = model_registry.get_component_name(model_item)
+            model_data_item = ModelDataTreeItem(layer, model_item, model_name)
 
             layer.add_model_item(model_data_item)
-            # model_data_item.setIcon(QtGui.QIcon(path.join(PATH, 'model.png')))
+            # model_data_item.setIcon(QtGui.QIcon(path.join(PATH, 'model_item.png')))
 
             layer.appendRow(model_data_item)
 
+        # It's not clear that signals must be emitted at this point.
         # self.sig_added_item.emit(model_data_item.index())
         # self.sig_added_fit_model.emit(model_data_item)
-        #
-        # self.updateModelExpression(self.model_editor_dock, layer)
 
-
-
-
+        self.model.updateModelExpression(self.model_editor_dock, layer)
 
     def _save_model(self, layer):
         global _model_directory # retains memory of last visited directory
