@@ -244,6 +244,8 @@ class SpectraWindow(DataViewer):
         # self.sig_added_item.emit(model_data_item.index())
         # self.sig_added_fit_model.emit(model_data_item)
 
+        layer.setCompoundModel(compound_model)
+
         self.model.updateModelExpression(self.model_editor_dock, layer)
 
     def _save_model(self, layer):
