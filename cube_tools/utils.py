@@ -9,8 +9,8 @@ import astropy.units as u
 from astropy.io import fits
 from astropy.wcs import WCS
 from astropy.coordinates import SkyCoord
+from astropy.nddata.utils import Cutout2D
 from photutils import SkyRectangularAperture
-from .extern.utils import Cutout2D
 
 
 def make_cutouts(table, data, wcs, image_label, clobber=False):
