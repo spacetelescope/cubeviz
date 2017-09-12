@@ -7,6 +7,3 @@ from glue.app.qt.application import GlueApplication
 def main():
     app = GlueApplication()
     sys.exit(app.start())
-
-if __name__ == '__main__':
-    main()
