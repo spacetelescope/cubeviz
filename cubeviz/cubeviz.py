@@ -4,6 +4,9 @@ import sys
 from glue.app.qt.application import GlueApplication
 
 
+def setup():
+    pass
+
 def main():
     app = GlueApplication()
     sys.exit(app.start())
