@@ -98,7 +98,7 @@ package_info['package_data'].setdefault(PACKAGENAME, [])
 package_info['package_data'][PACKAGENAME].append('data/*')
 
 # Define entry points for command-line scripts
-entry_points = {'console_scripts': ['cubeviz=cubeviz.cubeviz:main']}
+entry_points = {'gui_scripts': ['cubeviz=cubeviz.cubeviz:main']}
 
 if conf.has_section('entry_points'):
     entry_point_list = conf.items('entry_points')
