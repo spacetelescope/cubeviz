@@ -5,7 +5,7 @@ from glue.app.qt.application import GlueApplication
 
 
 def setup():
-    pass
+    from cubeviz.utils.loader import read_jwst_data_cube
 
 def main():
     app = GlueApplication()
