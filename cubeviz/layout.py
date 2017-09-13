@@ -53,23 +53,30 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.image1 = WidgetWrapper(ImageViewer(self.session), tab_widget=self)
         self.image2 = WidgetWrapper(ImageViewer(self.session), tab_widget=self)
         self.image3 = WidgetWrapper(ImageViewer(self.session), tab_widget=self)
+        self.image4 = WidgetWrapper(ImageViewer(self.session), tab_widget=self)
         self.specviz = WidgetWrapper(SpecVizViewer(self.session), tab_widget=self)
 
         self.image1._widget.register_to_hub(self.session.hub)
         self.image2._widget.register_to_hub(self.session.hub)
         self.image3._widget.register_to_hub(self.session.hub)
+        self.image4._widget.register_to_hub(self.session.hub)
         self.specviz._widget.register_to_hub(self.session.hub)
 
-        self.ui.top_row_layout.addWidget(self.image1)
-        self.ui.top_row_layout.addWidget(self.image2)
-        self.ui.top_row_layout.addWidget(self.image3)
+        self.ui.single_image_layout.addWidget(self.image1)
 
-        self.ui.bottom_row_layout.addWidget(self.specviz)
+        self.ui.image_row_layout.addWidget(self.image2)
+        self.ui.image_row_layout.addWidget(self.image3)
+        self.ui.image_row_layout.addWidget(self.image4)
+
+        self.ui.specviz_layout.addWidget(self.specviz)
 
         self.subWindowActivated.connect(self._update_active_widget)
 
         self.ui.bool_sync.clicked.connect(self._on_sync_change)
         self.ui.button_toggle_sidebar.clicked.connect(self._toggle_sidebar)
+        self.ui.button_single_image.clicked.connect(self._single_image_mode)
+        self.ui.button_split_image.clicked.connect(self._split_image_mode)
+
         self.sync = {}
 
     def _toggle_sidebar(self, event=None):
@@ -83,6 +90,26 @@ class CubeVizLayout(QtWidgets.QWidget):
             sizes[0] = 0
         splitter.setSizes(sizes)
 
+    def _single_image_mode(self, event=None):
+        vsplitter = self.ui.vertical_splitter
+        hsplitter = self.ui.horizontal_splitter
+        vsizes = list(vsplitter.sizes())
+        hsizes = list(hsplitter.sizes())
+        vsizes = 0, max(10, vsizes[0] + vsizes[1])
+        hsizes = max(10, sum(hsizes) * 0.4), max(10, sum(hsizes) * 0.6)
+        vsplitter.setSizes(vsizes)
+        hsplitter.setSizes(hsizes)
+
+    def _split_image_mode(self, event=None):
+        vsplitter = self.ui.vertical_splitter
+        hsplitter = self.ui.horizontal_splitter
+        vsizes = list(vsplitter.sizes())
+        hsizes = list(hsplitter.sizes())
+        vsizes = max(10, sum(vsizes) / 2), max(10, sum(vsizes) / 2)
+        hsizes = 0, max(10, vsizes[0] + vsizes[1])
+        vsplitter.setSizes(vsizes)
+        hsplitter.setSizes(hsizes)
+
     def _update_active_widget(self, widget):
         self._active_widget = widget
 
@@ -90,14 +117,14 @@ class CubeVizLayout(QtWidgets.QWidget):
         return self._active_widget
 
     def subWindowList(self):
-        return [self.image1, self.image2, self.image3, self.specviz]
+        return [self.image1, self.image2, self.image3, self.image4, self.specviz]
 
     def setup_syncing(self):
         for attribute in ['slices', 'x_min', 'x_max', 'y_min', 'y_max']:
-            sync1 = keep_in_sync(self.image1._widget.state, attribute,
-                                 self.image2._widget.state, attribute)
-            sync2 = keep_in_sync(self.image2._widget.state, attribute,
+            sync1 = keep_in_sync(self.image2._widget.state, attribute,
                                  self.image3._widget.state, attribute)
+            sync2 = keep_in_sync(self.image3._widget.state, attribute,
+                                 self.image4._widget.state, attribute)
             self.sync[attribute] = sync1, sync2
         self._on_sync_change()
 
@@ -132,13 +159,35 @@ def cubeviz_setup(session, data_collection):
 
     # Automatically add data to viewers and set attribute for split viewers
 
-    image_viewers = cubeviz.image1._widget, cubeviz.image2._widget, cubeviz.image3._widget
+    image_viewers = [cubeviz.image1._widget, cubeviz.image2._widget,
+                     cubeviz.image3._widget, cubeviz.image4._widget]
+
+    color = {}
+    color['DATA'] = '#888888'
+    color['VAR'] = '#ffaa66'
+    color['QUALITY'] = '#66aaff'
 
     for i, attribute in enumerate(['DATA', 'VAR', 'QUALITY']):
-        image_viewers[i].add_data(data)
-        state = image_viewers[i].state
-        state.aspect = 'auto'
-        state.layers[0].attribute = data.id[attribute]
+
+        image_viewers[0].add_data(data)
+        image_viewers[0].state.aspect = 'auto'
+        image_viewers[0].state.color_mode = 'One color per layer'
+        image_viewers[0].state.layers[i].attribute = data.id[attribute]
+
+        image_viewers[1 + i].add_data(data)
+        image_viewers[i].state.aspect = 'auto'
+        image_viewers[i].state.layers[0].attribute = data.id[attribute]
+
+    cubeviz.ui.toggle_flux.setStyleSheet('background-color: {0};'.format(color['DATA']))
+    cubeviz.ui.toggle_error.setStyleSheet('background-color: {0};'.format(color['VAR']))
+    cubeviz.ui.toggle_quality.setStyleSheet('background-color: {0};'.format(color['QUALITY']))
+
+    image_viewers[0].state.layers[0].color = color['DATA']
+    image_viewers[0].state.layers[1].color = color['VAR']
+    image_viewers[0].state.layers[2].color = color['QUALITY']
+
+    app.show()
+    cubeviz._split_image_mode()
 
     # Set up linking of data slices and views
     cubeviz.setup_syncing()
