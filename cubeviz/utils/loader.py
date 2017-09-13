@@ -13,16 +13,14 @@ def _is_jwst_asdf_cube(asdffile):
     if meta is None:
         return False
 
-    instrument = meta.get('instrument')
-    if instrument is None:
+    if meta.get('telescope') != 'JWST':
         return False
 
-    name = instrument.get('name')
-    detector = instrument.get('detector')
-    if name is None or detector is None:
+    if meta.get('model_type') != 'IFUCubeModel':
         return False
-    if name != 'NIRSPEC' or not detector.startswith('NRS'):
-        return False
+
+    # Other possible checks to use:
+    #   meta['exposure']['type'] == 'NRS_IFU' # (for NIRSpec)
 
     for array_name in ['data', 'dq', 'err']:
         if array_name not in asdffile.tree:
