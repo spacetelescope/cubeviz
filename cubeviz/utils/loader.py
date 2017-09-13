@@ -29,7 +29,26 @@ def _is_jwst_asdf_cube(asdffile):
     return True
 
 def _is_jwst_fits_cube(hdulist):
-    pass
+    if 'PRIMARY' not in hdulist:
+        return False
+
+    primary = hdulist['PRIMARY'].header
+
+    if 'TELESCOP' not in primary:
+        return False
+    if not primary['TELESCOP'].startswith('JWST'):
+        return False
+
+    if 'DATAMODL' not in primary:
+        return False
+    if not primary['DATAMODL'] == 'IFUCubeModel':
+        return False
+
+    for extname in ['SCI', 'ERR', 'DQ']:
+        if extname not in hdulist:
+            return False
+
+    return True
 
 def is_jwst_data_cube(filename, **kwargs):
     if filename.endswith('.asdf'):
