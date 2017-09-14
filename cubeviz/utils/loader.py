@@ -1,6 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 
-from glue.config import data_factory
+from glue.config import data_factory, set_startup_action
 from glue.core import Data
 from astropy.io import fits
 
@@ -87,6 +87,9 @@ def _load_jwst_asdf(fileobj):
 
 @data_factory('JWST data cube loader', is_jwst_data_cube, priority=1200)
 def read_jwst_data_cube(filename):
+    # This loads the cubeviz-specific layout
+    set_startup_action('cubeviz')
+
     # Process ASDF files
     if filename.endswith('asdf'):
         return _load_jwst_asdf(filename)
