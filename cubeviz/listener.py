@@ -12,6 +12,11 @@ class CubevizManager(HubListener):
         self._hub = session.hub
         self._app = session.application
 
+        self._empty_layout = \
+            self._app.add_fixed_layout_tab(CubeVizLayout)
+        self._app.close_tab(0, warn=False)
+        self.hide_sidebar()
+
         self._hub.subscribe(
             self, DataCollectionAddMessage, handler=self.receive_message)
 
@@ -19,8 +24,16 @@ class CubevizManager(HubListener):
         data = message.data
         if data.meta.get('JWST_CUBE', False):
             # Assume for now the data is not yet in any tab
-            cubeviz_layout = self._app.add_fixed_layout_tab(CubeVizLayout)
-            self.setup_data(cubeviz_layout, data)
+
+            if self._empty_layout is not None:
+                cubeviz_layout = self._empty_layout
+            else:
+                cubeviz_layout = self._app.add_fixed_layout_tab(CubeVizLayout)
+
+            try:
+                self.setup_data(cubeviz_layout, data)
+            finally:
+                self._empty_layout = None
 
     def hide_sidebar(self):
         self._app._ui.main_splitter.setSizes([0, 300])
