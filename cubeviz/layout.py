@@ -8,6 +8,7 @@ from glue.viewers.image.qt import ImageViewer
 from specviz.external.glue.data_viewer import SpecVizViewer
 from glue.utils.qt import load_ui
 from glue.external.echo import keep_in_sync
+from glue.utils.qt import get_qapp
 
 
 class WidgetWrapper(QtWidgets.QWidget):
@@ -20,14 +21,6 @@ class WidgetWrapper(QtWidgets.QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.addWidget(widget)
         self.setLayout(self.layout)
-        for child in self.children():
-            if child.isWidgetType():
-                child.installEventFilter(self)
-
-    def eventFilter(self, obj, event):
-        if event.type() == QtCore.QEvent.MouseButtonPress:
-            self.tab_widget.subWindowActivated.emit(self)
-        return super(WidgetWrapper, self).eventFilter(obj, event)
 
     def widget(self):
         return self._widget
@@ -78,6 +71,37 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui.button_split_image.clicked.connect(self._split_image_mode)
 
         self.sync = {}
+
+        app = get_qapp()
+        app.installEventFilter(self)
+        self._last_click = None
+        self._active_widget = None
+
+    def eventFilter(self, obj, event):
+
+        if not self.isVisible():
+            pass
+
+        if event.type() == QtCore.QEvent.MouseButtonPress:
+
+            # Find global click position
+            click_pos = event.globalPos()
+
+            # If the click position is the same as the last one, we shouldn't
+            # do anything.
+            if click_pos != self._last_click:
+
+                # Determine if the event falls inside any of the viewers
+                for viewer in self.subWindowList():
+                    relative_click_pos = viewer.mapFromGlobal(click_pos)
+                    if viewer.rect().contains(relative_click_pos):
+                        if viewer is not self.activeSubWindow():
+                            self.subWindowActivated.emit(viewer)
+                        break
+
+                self._last_click = click_pos
+
+        return super(CubeVizLayout, self).eventFilter(obj, event)
 
     def _toggle_sidebar(self, event=None):
         splitter = self.session.application._ui.main_splitter
@@ -140,6 +164,10 @@ class CubeVizLayout(QtWidgets.QWidget):
                 sync1.disable_syncing()
                 sync2.disable_syncing()
 
+    def showEvent(self, event):
+        super(CubeVizLayout, self).showEvent(event)
+        self._split_image_mode()
+
 
 @startup_action('cubeviz')
 def cubeviz_setup(session, data_collection):
@@ -185,9 +213,6 @@ def cubeviz_setup(session, data_collection):
     image_viewers[0].state.layers[0].color = color['DATA']
     image_viewers[0].state.layers[1].color = color['VAR']
     image_viewers[0].state.layers[2].color = color['QUALITY']
-
-    app.show()
-    cubeviz._split_image_mode()
 
     # Set up linking of data slices and views
     cubeviz.setup_syncing()
