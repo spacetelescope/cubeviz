@@ -5,10 +5,15 @@ import os
 from glue.config import qt_fixed_layout_tab, startup_action
 from qtpy import QtWidgets, QtCore
 from glue.viewers.image.qt import ImageViewer
-from specviz.external.glue.data_viewer import SpecVizViewer
+from specviz.third_party.glue.data_viewer import SpecVizViewer
 from glue.utils.qt import load_ui
 from glue.external.echo import keep_in_sync
 from glue.utils.qt import get_qapp
+
+color = {}
+color['DATA'] = '#888888'
+color['VAR'] = '#ffaa66'
+color['QUALITY'] = '#66aaff'
 
 
 class WidgetWrapper(QtWidgets.QWidget):
@@ -70,6 +75,18 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui.button_single_image.clicked.connect(self._single_image_mode)
         self.ui.button_split_image.clicked.connect(self._split_image_mode)
 
+        self.ui.toggle_flux.setStyleSheet('background-color: {0};'.format(color['DATA']))
+        self.ui.toggle_error.setStyleSheet('background-color: {0};'.format(color['VAR']))
+        self.ui.toggle_quality.setStyleSheet('background-color: {0};'.format(color['QUALITY']))
+
+        self.ui.toggle_flux.setChecked(True)
+        self.ui.toggle_error.setChecked(False)
+        self.ui.toggle_quality.setChecked(False)
+
+        self.ui.toggle_flux.toggled.connect(self._toggle_flux)
+        self.ui.toggle_error.toggled.connect(self._toggle_error)
+        self.ui.toggle_quality.toggled.connect(self._toggle_quality)
+
         self.sync = {}
 
         app = get_qapp()
@@ -77,12 +94,21 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._last_click = None
         self._active_widget = None
 
+    def _toggle_flux(self, event=None):
+        self.image1._widget.state.layers[0].visible = self.ui.toggle_flux.isChecked()
+
+    def _toggle_error(self, event=None):
+        self.image1._widget.state.layers[1].visible = self.ui.toggle_error.isChecked()
+
+    def _toggle_quality(self, event=None):
+        self.image1._widget.state.layers[2].visible = self.ui.toggle_quality.isChecked()
+
     def eventFilter(self, obj, event):
 
-        if not self.isVisible():
-            pass
-
         if event.type() == QtCore.QEvent.MouseButtonPress:
+
+            if not self.isVisible():
+                return super(CubeVizLayout, self).eventFilter(obj, event)
 
             # Find global click position
             click_pos = event.globalPos()
@@ -95,8 +121,7 @@ class CubeVizLayout(QtWidgets.QWidget):
                 for viewer in self.subWindowList():
                     relative_click_pos = viewer.mapFromGlobal(click_pos)
                     if viewer.rect().contains(relative_click_pos):
-                        if viewer is not self.activeSubWindow():
-                            self.subWindowActivated.emit(viewer)
+                        self.subWindowActivated.emit(viewer)
                         break
 
                 self._last_click = click_pos
@@ -166,7 +191,8 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     def showEvent(self, event):
         super(CubeVizLayout, self).showEvent(event)
-        self._split_image_mode()
+        self._single_image_mode()
+        self._update_active_widget(self.image1)
 
 
 @startup_action('cubeviz')
@@ -190,11 +216,6 @@ def cubeviz_setup(session, data_collection):
     image_viewers = [cubeviz.image1._widget, cubeviz.image2._widget,
                      cubeviz.image3._widget, cubeviz.image4._widget]
 
-    color = {}
-    color['DATA'] = '#888888'
-    color['VAR'] = '#ffaa66'
-    color['QUALITY'] = '#66aaff'
-
     for i, attribute in enumerate(['DATA', 'VAR', 'QUALITY']):
 
         image_viewers[0].add_data(data)
@@ -203,16 +224,16 @@ def cubeviz_setup(session, data_collection):
         image_viewers[0].state.layers[i].attribute = data.id[attribute]
 
         image_viewers[1 + i].add_data(data)
-        image_viewers[i].state.aspect = 'auto'
-        image_viewers[i].state.layers[0].attribute = data.id[attribute]
-
-    cubeviz.ui.toggle_flux.setStyleSheet('background-color: {0};'.format(color['DATA']))
-    cubeviz.ui.toggle_error.setStyleSheet('background-color: {0};'.format(color['VAR']))
-    cubeviz.ui.toggle_quality.setStyleSheet('background-color: {0};'.format(color['QUALITY']))
+        image_viewers[1 + i].state.aspect = 'auto'
+        image_viewers[1 + i].state.layers[0].attribute = data.id[attribute]
 
     image_viewers[0].state.layers[0].color = color['DATA']
     image_viewers[0].state.layers[1].color = color['VAR']
     image_viewers[0].state.layers[2].color = color['QUALITY']
+
+    cubeviz._toggle_flux()
+    cubeviz._toggle_error()
+    cubeviz._toggle_quality()
 
     # Set up linking of data slices and views
     cubeviz.setup_syncing()
