@@ -3,6 +3,7 @@ from os.path import splitext
 
 from glue.config import data_factory, set_startup_action
 from glue.core import Data
+from glue.core.coordinates import coordinates_from_header
 from astropy.io import fits
 
 import asdf
@@ -78,13 +79,15 @@ def is_generic_data_cube(filename, **kwargs):
     # specific to JWST?
     return False
 
-def _load_jwst_asdf(fileobj):
+def _load_jwst_asdf(fileobj, coords):
     # fileobj parameter can be either filename or HDUList with ASDF-in-FITS
     asdffile = asdf.open(fileobj)
 
     dataname = splitext(asdffile.tree['meta']['filename'])[0]
     label = "JWST data cube: {}".format(dataname)
     data = Data(label=label)
+
+    data.coords = coords
 
     data.add_component(component=asdffile.tree['data'], label='DATA')
     data.add_component(component=asdffile.tree['dq'], label='VAR')
@@ -99,12 +102,20 @@ def read_jwst_data_cube(filename):
 
     # Process ASDF files
     if filename.endswith('asdf'):
-        return _load_jwst_asdf(filename)
+        # TODO: this is temporary and is not strictly necessary for prototyping
+        # at the moment. We're going to have to implement a GWCSCoordinates
+        # class that both glue and specviz understand. For now we'll fake it
+        # by using the wcs scheme from the FITS 'DATA' HDU below
+        return _load_jwst_asdf(filename, None)
     # Process FITS files (including ASDF-in-FITS)
     else:
         with fits.open(filename) as hdulist:
+            coords = coordinates_from_header(hdulist['SCI'].header)
+
             if ASDF_EXTENSION_NAME in hdulist:
-                return _load_jwst_asdf(hdulist)
+                # See above: eventually we will get GWCS data from ASDF itself
+                # but for now we're faking it and using the WCS data from FITS
+                return _load_jwst_asdf(hdulist, coords)
 
             data = hdulist['SCI'].data
             dq = hdulist['DQ'].data
