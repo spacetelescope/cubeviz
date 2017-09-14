@@ -1,4 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+from os.path import splitext
 
 from glue.config import data_factory, set_startup_action
 from glue.core import Data
@@ -80,10 +81,16 @@ def is_generic_data_cube(filename, **kwargs):
 def _load_jwst_asdf(fileobj):
     # fileobj parameter can be either filename or HDUList with ASDF-in-FITS
     asdffile = asdf.open(fileobj)
-    return Data(
-        data=asdffile.tree['data'],
-        dq=asdffile.tree['dq'],
-        err=asdffile.tree['err'])
+
+    dataname = splitext(asdffile.tree['meta']['filename'])[0]
+    label = "JWST data cube: {}".format(dataname)
+    data = Data(label=label)
+
+    data.add_component(component=asdffile.tree['data'], label='DATA')
+    data.add_component(component=asdffile.tree['dq'], label='VAR')
+    data.add_component(component=asdffile.tree['err'], label='QUALITY')
+
+    return data
 
 @data_factory('JWST data cube loader', is_jwst_data_cube, priority=1200)
 def read_jwst_data_cube(filename):
