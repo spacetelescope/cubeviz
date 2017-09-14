@@ -2,13 +2,14 @@ from __future__ import print_function, division
 
 import os
 
-from glue.config import qt_fixed_layout_tab, startup_action
+from glue.config import qt_fixed_layout_tab
 from qtpy import QtWidgets, QtCore
 from glue.viewers.image.qt import ImageViewer
 from specviz.third_party.glue.data_viewer import SpecVizViewer
 from glue.utils.qt import load_ui
 from glue.external.echo import keep_in_sync
 from glue.utils.qt import get_qapp
+
 
 color = {}
 color['DATA'] = '#888888'
@@ -195,45 +196,3 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._update_active_widget(self.image1)
 
 
-@startup_action('cubeviz')
-def cubeviz_setup(session, data_collection):
-
-    app = session.application
-    cubeviz = app.add_fixed_layout_tab(CubeVizLayout)
-
-    app._ui.main_splitter.setSizes([0, 300])
-
-    app.close_tab(0, warn=False)
-
-    # TEMPORARY - generalize this
-    if len(data_collection) != 1:
-        raise Exception("The cubeviz loader requires exactly one dataset to be present")
-
-    data = data_collection[0]
-
-    # Automatically add data to viewers and set attribute for split viewers
-
-    image_viewers = [cubeviz.image1._widget, cubeviz.image2._widget,
-                     cubeviz.image3._widget, cubeviz.image4._widget]
-
-    for i, attribute in enumerate(['DATA', 'VAR', 'QUALITY']):
-
-        image_viewers[0].add_data(data)
-        image_viewers[0].state.aspect = 'auto'
-        image_viewers[0].state.color_mode = 'One color per layer'
-        image_viewers[0].state.layers[i].attribute = data.id[attribute]
-
-        image_viewers[1 + i].add_data(data)
-        image_viewers[1 + i].state.aspect = 'auto'
-        image_viewers[1 + i].state.layers[0].attribute = data.id[attribute]
-
-    image_viewers[0].state.layers[0].color = color['DATA']
-    image_viewers[0].state.layers[1].color = color['VAR']
-    image_viewers[0].state.layers[2].color = color['QUALITY']
-
-    cubeviz._toggle_flux()
-    cubeviz._toggle_error()
-    cubeviz._toggle_quality()
-
-    # Set up linking of data slices and views
-    cubeviz.setup_syncing()

@@ -87,6 +87,7 @@ def _load_jwst_asdf(fileobj, coords):
     label = "JWST data cube: {}".format(dataname)
     data = Data(label=label)
 
+    data.meta['JWST_CUBE'] = True
     data.coords = coords
 
     data.add_component(component=asdffile.tree['data'], label='DATA')
