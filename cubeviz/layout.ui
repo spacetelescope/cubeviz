@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1130</width>
-    <height>586</height>
+    <width>1104</width>
+    <height>578</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -34,7 +34,7 @@
      <item>
       <widget class="QToolButton" name="button_toggle_sidebar">
        <property name="text">
-        <string>Toggle sidebar</string>
+        <string>Advanced Options</string>
        </property>
       </widget>
      </item>
@@ -92,6 +92,20 @@
       </widget>
      </item>
      <item>
+      <widget class="QToolButton" name="button_toggle_image_mode">
+       <property name="text">
+        <string>Single image viewer</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSlider" name="value_slice">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -103,20 +117,6 @@
         </size>
        </property>
       </spacer>
-     </item>
-     <item>
-      <widget class="QToolButton" name="button_single_image">
-       <property name="text">
-        <string>Single image viewer</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QToolButton" name="button_split_image">
-       <property name="text">
-        <string>Split image viewer</string>
-       </property>
-      </widget>
      </item>
      <item>
       <widget class="QToolButton" name="bool_sync">

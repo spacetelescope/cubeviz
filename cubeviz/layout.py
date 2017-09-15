@@ -2,7 +2,7 @@ from __future__ import print_function, division
 
 import os
 
-from glue.config import qt_fixed_layout_tab, startup_action
+from glue.config import qt_fixed_layout_tab
 from qtpy import QtWidgets, QtCore
 from glue.viewers.image.qt import ImageViewer
 from specviz.third_party.glue.data_viewer import SpecVizViewer
@@ -10,10 +10,14 @@ from glue.utils.qt import load_ui
 from glue.external.echo import keep_in_sync
 from glue.utils.qt import get_qapp
 
-color = {}
-color['DATA'] = '#888888'
-color['VAR'] = '#ffaa66'
-color['QUALITY'] = '#66aaff'
+FLUX = 'FLUX'
+ERROR = 'ERROR'
+MASK = 'MASK'
+
+COLOR = {}
+COLOR[FLUX] = '#888888'
+COLOR[ERROR] = '#ffaa66'
+COLOR[MASK] = '#66aaff'
 
 
 class WidgetWrapper(QtWidgets.QWidget):
@@ -60,6 +64,8 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.image4._widget.register_to_hub(self.session.hub)
         self.specviz._widget.register_to_hub(self.session.hub)
 
+        self.images = [self.image1, self.image2, self.image3, self.image4]
+
         self.ui.single_image_layout.addWidget(self.image1)
 
         self.ui.image_row_layout.addWidget(self.image2)
@@ -72,12 +78,12 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         self.ui.bool_sync.clicked.connect(self._on_sync_change)
         self.ui.button_toggle_sidebar.clicked.connect(self._toggle_sidebar)
-        self.ui.button_single_image.clicked.connect(self._single_image_mode)
-        self.ui.button_split_image.clicked.connect(self._split_image_mode)
+        self.ui.button_toggle_image_mode.clicked.connect(
+            self._toggle_image_mode)
 
-        self.ui.toggle_flux.setStyleSheet('background-color: {0};'.format(color['DATA']))
-        self.ui.toggle_error.setStyleSheet('background-color: {0};'.format(color['VAR']))
-        self.ui.toggle_quality.setStyleSheet('background-color: {0};'.format(color['QUALITY']))
+        self.ui.toggle_flux.setStyleSheet('background-color: {0};'.format(COLOR[FLUX]))
+        self.ui.toggle_error.setStyleSheet('background-color: {0};'.format(COLOR[ERROR]))
+        self.ui.toggle_quality.setStyleSheet('background-color: {0};'.format(COLOR[MASK]))
 
         self.ui.toggle_flux.setChecked(True)
         self.ui.toggle_error.setChecked(False)
@@ -87,12 +93,18 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui.toggle_error.toggled.connect(self._toggle_error)
         self.ui.toggle_quality.toggled.connect(self._toggle_quality)
 
+        self.ui.value_slice.valueChanged.connect(self._on_slice_change)
+        self.ui.value_slice.setEnabled(False)
+
         self.sync = {}
 
         app = get_qapp()
         app.installEventFilter(self)
         self._last_click = None
         self._active_widget = None
+
+        self._single_image = True
+        self.ui.button_toggle_image_mode.setText('Split Image Viewer')
 
     def _toggle_flux(self, event=None):
         self.image1._widget.state.layers[0].visible = self.ui.toggle_flux.isChecked()
@@ -102,6 +114,23 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     def _toggle_quality(self, event=None):
         self.image1._widget.state.layers[2].visible = self.ui.toggle_quality.isChecked()
+
+    def _on_slice_change(self, event):
+        value = self.ui.value_slice.value()
+
+        if not self.ui.bool_sync.isChecked:
+            images = self.images
+        else:
+            images = self.images[:2]
+
+        for image in images:
+            z, y, x = image._widget.state.slices
+            image._widget.state.slices = (value, y, x)
+
+    def set_nslices(self, nslices):
+        self.ui.value_slice.setEnabled(True)
+        self.ui.value_slice.setMinimum(0)
+        self.ui.value_slice.setMaximum(nslices-1)
 
     def eventFilter(self, obj, event):
 
@@ -138,6 +167,16 @@ class CubeVizLayout(QtWidgets.QWidget):
             sizes[1] = sizes[0] + sizes[1]
             sizes[0] = 0
         splitter.setSizes(sizes)
+
+    def _toggle_image_mode(self, event=None):
+        if self._single_image:
+            self._split_image_mode(event)
+            self._single_image = False
+            self.ui.button_toggle_image_mode.setText('Single Image Viewer')
+        else:
+            self._single_image_mode(event)
+            self._single_image = True
+            self.ui.button_toggle_image_mode.setText('Split Image Viewer')
 
     def _single_image_mode(self, event=None):
         vsplitter = self.ui.vertical_splitter
@@ -193,47 +232,3 @@ class CubeVizLayout(QtWidgets.QWidget):
         super(CubeVizLayout, self).showEvent(event)
         self._single_image_mode()
         self._update_active_widget(self.image1)
-
-
-@startup_action('cubeviz')
-def cubeviz_setup(session, data_collection):
-
-    app = session.application
-    cubeviz = app.add_fixed_layout_tab(CubeVizLayout)
-
-    app._ui.main_splitter.setSizes([0, 300])
-
-    app.close_tab(0, warn=False)
-
-    # TEMPORARY - generalize this
-    if len(data_collection) != 1:
-        raise Exception("The cubeviz loader requires exactly one dataset to be present")
-
-    data = data_collection[0]
-
-    # Automatically add data to viewers and set attribute for split viewers
-
-    image_viewers = [cubeviz.image1._widget, cubeviz.image2._widget,
-                     cubeviz.image3._widget, cubeviz.image4._widget]
-
-    for i, attribute in enumerate(['DATA', 'VAR', 'QUALITY']):
-
-        image_viewers[0].add_data(data)
-        image_viewers[0].state.aspect = 'auto'
-        image_viewers[0].state.color_mode = 'One color per layer'
-        image_viewers[0].state.layers[i].attribute = data.id[attribute]
-
-        image_viewers[1 + i].add_data(data)
-        image_viewers[1 + i].state.aspect = 'auto'
-        image_viewers[1 + i].state.layers[0].attribute = data.id[attribute]
-
-    image_viewers[0].state.layers[0].color = color['DATA']
-    image_viewers[0].state.layers[1].color = color['VAR']
-    image_viewers[0].state.layers[2].color = color['QUALITY']
-
-    cubeviz._toggle_flux()
-    cubeviz._toggle_error()
-    cubeviz._toggle_quality()
-
-    # Set up linking of data slices and views
-    cubeviz.setup_syncing()
