@@ -5,6 +5,9 @@ from glue.core.message import DataCollectionAddMessage
 from .layout import CubeVizLayout, color
 
 
+CUBEVIZ_LAYOUT = 'cubeviz_layout'
+
+
 class CubevizManager(HubListener):
 
     def __init__(self, session):
@@ -22,7 +25,7 @@ class CubevizManager(HubListener):
 
     def receive_message(self, message):
         data = message.data
-        if data.meta.get('JWST_CUBE', False):
+        if data.meta.get(CUBEVIZ_LAYOUT, ''):
             # Assume for now the data is not yet in any tab
 
             if self._empty_layout is not None:
