@@ -64,6 +64,8 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.image4._widget.register_to_hub(self.session.hub)
         self.specviz._widget.register_to_hub(self.session.hub)
 
+        self.images = [self.image1, self.image2, self.image3, self.image4]
+
         self.ui.single_image_layout.addWidget(self.image1)
 
         self.ui.image_row_layout.addWidget(self.image2)
@@ -91,6 +93,8 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui.toggle_error.toggled.connect(self._toggle_error)
         self.ui.toggle_quality.toggled.connect(self._toggle_quality)
 
+        self.ui.value_slice.valueChanged.connect(self._on_slice_change)
+
         self.sync = {}
 
         app = get_qapp()
@@ -106,6 +110,18 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     def _toggle_quality(self, event=None):
         self.image1._widget.state.layers[2].visible = self.ui.toggle_quality.isChecked()
+
+    def _on_slice_change(self, event):
+        value = self.ui.value_slice.value()
+
+        if not self.ui.bool_sync.isChecked:
+            images = self.images
+        else:
+            images = self.images[:2]
+
+        for image in images:
+            z, y, x = image._widget.state.slices
+            image._widget.state.slices = (value, y, x)
 
     def eventFilter(self, obj, event):
 
