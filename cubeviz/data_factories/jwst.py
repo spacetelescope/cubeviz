@@ -39,14 +39,10 @@ def _is_jwst_fits_cube(hdulist):
 
     primary = hdulist['PRIMARY'].header
 
-    if 'TELESCOP' not in primary:
-        return False
-    if not primary['TELESCOP'].startswith('JWST'):
+    if not primary.get('TELESCOP', '').startswith('JWST'):
         return False
 
-    if 'DATAMODL' not in primary:
-        return False
-    if not primary['DATAMODL'] == 'IFUCubeModel':
+    if not primary.get('DATAMODL', '').startswith('IFUCubeModel'):
         return False
 
     for extname in ['SCI', 'ERR', 'DQ']:
