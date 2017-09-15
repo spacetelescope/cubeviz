@@ -123,6 +123,10 @@ class CubeVizLayout(QtWidgets.QWidget):
             z, y, x = image._widget.state.slices
             image._widget.state.slices = (value, y, x)
 
+    def set_nslices(self, nslices):
+        self.ui.value_slice.setMinimum(0)
+        self.ui.value_slice.setMaximum(nslices-1)
+
     def eventFilter(self, obj, event):
 
         if event.type() == QtCore.QEvent.MouseButtonPress:

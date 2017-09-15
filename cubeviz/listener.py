@@ -70,5 +70,7 @@ class CubevizManager(HubListener):
         # Set up linking of data slices and views
         cubeviz_layout.setup_syncing()
 
+        cubeviz_layout.set_nslices(data.shape[0])
+
         index = self._app.get_tab_index(cubeviz_layout)
         self._app.tab_bar.rename_tab(index, "CubeViz: {}".format(data.label))
