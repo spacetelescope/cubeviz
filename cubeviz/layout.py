@@ -78,8 +78,8 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         self.ui.bool_sync.clicked.connect(self._on_sync_change)
         self.ui.button_toggle_sidebar.clicked.connect(self._toggle_sidebar)
-        self.ui.button_single_image.clicked.connect(self._single_image_mode)
-        self.ui.button_split_image.clicked.connect(self._split_image_mode)
+        self.ui.button_toggle_image_mode.clicked.connect(
+            self._toggle_image_mode)
 
         self.ui.toggle_flux.setStyleSheet('background-color: {0};'.format(COLOR[FLUX]))
         self.ui.toggle_error.setStyleSheet('background-color: {0};'.format(COLOR[ERROR]))
@@ -101,6 +101,9 @@ class CubeVizLayout(QtWidgets.QWidget):
         app.installEventFilter(self)
         self._last_click = None
         self._active_widget = None
+
+        self._single_image = True
+        self.ui.button_toggle_image_mode.setText('Split Image Viewer')
 
     def _toggle_flux(self, event=None):
         self.image1._widget.state.layers[0].visible = self.ui.toggle_flux.isChecked()
@@ -162,6 +165,16 @@ class CubeVizLayout(QtWidgets.QWidget):
             sizes[1] = sizes[0] + sizes[1]
             sizes[0] = 0
         splitter.setSizes(sizes)
+
+    def _toggle_image_mode(self, event=None):
+        if self._single_image:
+            self._split_image_mode(event)
+            self._single_image = False
+            self.ui.button_toggle_image_mode.setText('Single Image Viewer')
+        else:
+            self._single_image_mode(event)
+            self._single_image = True
+            self.ui.button_toggle_image_mode.setText('Split Image Viewer')
 
     def _single_image_mode(self, event=None):
         vsplitter = self.ui.vertical_splitter

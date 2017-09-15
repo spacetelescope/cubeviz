@@ -92,7 +92,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QToolButton" name="button_single_image">
+      <widget class="QToolButton" name="button_toggle_image_mode">
        <property name="text">
         <string>Single image viewer</string>
        </property>
@@ -102,13 +102,6 @@
       <widget class="QSlider" name="value_slice">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QToolButton" name="button_split_image">
-       <property name="text">
-        <string>...</string>
        </property>
       </widget>
      </item>
