@@ -94,6 +94,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui.toggle_quality.toggled.connect(self._toggle_quality)
 
         self.ui.value_slice.valueChanged.connect(self._on_slice_change)
+        self.ui.value_slice.setEnabled(False)
 
         self.sync = {}
 
@@ -127,6 +128,7 @@ class CubeVizLayout(QtWidgets.QWidget):
             image._widget.state.slices = (value, y, x)
 
     def set_nslices(self, nslices):
+        self.ui.value_slice.setEnabled(True)
         self.ui.value_slice.setMinimum(0)
         self.ui.value_slice.setMaximum(nslices-1)
 
