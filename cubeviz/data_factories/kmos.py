@@ -10,6 +10,7 @@ from astropy.io import fits
 import numpy as np
 
 from ..listener import CUBEVIZ_LAYOUT
+from ..layout import FLUX, ERROR, MASK
 
 
 def is_kmos_data_cube(filename, **kwargs):
@@ -40,8 +41,8 @@ def read_kmos_data_cube(filename):
     data.coords = coordinates_from_header(sci.header)
     data.meta[CUBEVIZ_LAYOUT] = 'KMOS'
 
-    data.add_component(component=sci.data, label='DATA')
-    data.add_component(component=np.empty(sci.data.shape), label='QUALITY')
-    data.add_component(component=noise.data, label='VAR')
+    data.add_component(component=sci.data, label=FLUX)
+    data.add_component(component=noise.data, label=ERROR)
+    data.add_component(component=np.empty(sci.data.shape), label=MASK)
 
     return data

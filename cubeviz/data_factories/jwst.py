@@ -10,6 +10,7 @@ import asdf
 from asdf.fits_embed import ASDF_EXTENSION_NAME
 
 from ..listener import CUBEVIZ_LAYOUT
+from ..layout import FLUX, ERROR, MASK
 
 
 def _is_jwst_asdf_cube(asdffile):
@@ -92,18 +93,18 @@ def _load_jwst_asdf(fileobj, coords):
 
     data = _create_data_obj(asdffile.tree['meta']['filename'], coords)
 
-    data.add_component(component=asdffile.tree['data'], label='DATA')
-    data.add_component(component=asdffile.tree['dq'], label='QUALITY')
-    data.add_component(component=asdffile.tree['err'], label='VAR')
+    data.add_component(component=asdffile.tree['data'], label=FLUX)
+    data.add_component(component=asdffile.tree['dq'], label=MASK)
+    data.add_component(component=asdffile.tree['err'], label=ERROR)
 
     return data
 
 def _load_jwst_fits(hdulist, coords):
     data = _create_data_obj(hdulist['PRIMARY']['FILENAME'], coords)
 
-    data.add_component(component=hdulist['SCI'].data, label='DATA')
-    data.add_component(component=hdulist['DQ'].data, label='QUALITY')
-    data.add_component(component=hdulist['ERR'].data, label='VAR')
+    data.add_component(component=hdulist['SCI'].data, label=FLUX)
+    data.add_component(component=hdulist['DQ'].data, label=MASK)
+    data.add_component(component=hdulist['ERR'].data, label=ERROR)
 
     return data
 

@@ -2,7 +2,7 @@
 
 from glue.core import Hub, HubListener, Data, DataCollection
 from glue.core.message import DataCollectionAddMessage
-from .layout import CubeVizLayout, color
+from .layout import CubeVizLayout, COLOR, FLUX, ERROR, MASK
 
 
 CUBEVIZ_LAYOUT = 'cubeviz_layout'
@@ -48,7 +48,7 @@ class CubevizManager(HubListener):
                          cubeviz_layout.image3._widget,
                          cubeviz_layout.image4._widget]
 
-        for i, attribute in enumerate(['DATA', 'VAR', 'QUALITY']):
+        for i, attribute in enumerate([FLUX, ERROR, MASK]):
 
             image_viewers[0].add_data(data)
             image_viewers[0].state.aspect = 'auto'
@@ -59,9 +59,9 @@ class CubevizManager(HubListener):
             image_viewers[1 + i].state.aspect = 'auto'
             image_viewers[1 + i].state.layers[0].attribute = data.id[attribute]
 
-        image_viewers[0].state.layers[0].color = color['DATA']
-        image_viewers[0].state.layers[1].color = color['VAR']
-        image_viewers[0].state.layers[2].color = color['QUALITY']
+        image_viewers[0].state.layers[0].color = COLOR[FLUX]
+        image_viewers[0].state.layers[1].color = COLOR[ERROR]
+        image_viewers[0].state.layers[2].color = COLOR[MASK]
 
         cubeviz_layout._toggle_flux()
         cubeviz_layout._toggle_error()

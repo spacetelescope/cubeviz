@@ -10,11 +10,14 @@ from glue.utils.qt import load_ui
 from glue.external.echo import keep_in_sync
 from glue.utils.qt import get_qapp
 
+FLUX = 'FLUX'
+ERROR = 'ERROR'
+MASK = 'MASK'
 
-color = {}
-color['DATA'] = '#888888'
-color['VAR'] = '#ffaa66'
-color['QUALITY'] = '#66aaff'
+COLOR = {}
+COLOR[FLUX] = '#888888'
+COLOR[ERROR] = '#ffaa66'
+COLOR[MASK] = '#66aaff'
 
 
 class WidgetWrapper(QtWidgets.QWidget):
@@ -76,9 +79,9 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui.button_single_image.clicked.connect(self._single_image_mode)
         self.ui.button_split_image.clicked.connect(self._split_image_mode)
 
-        self.ui.toggle_flux.setStyleSheet('background-color: {0};'.format(color['DATA']))
-        self.ui.toggle_error.setStyleSheet('background-color: {0};'.format(color['VAR']))
-        self.ui.toggle_quality.setStyleSheet('background-color: {0};'.format(color['QUALITY']))
+        self.ui.toggle_flux.setStyleSheet('background-color: {0};'.format(COLOR[FLUX]))
+        self.ui.toggle_error.setStyleSheet('background-color: {0};'.format(COLOR[ERROR]))
+        self.ui.toggle_quality.setStyleSheet('background-color: {0};'.format(COLOR[MASK]))
 
         self.ui.toggle_flux.setChecked(True)
         self.ui.toggle_error.setChecked(False)
@@ -194,5 +197,3 @@ class CubeVizLayout(QtWidgets.QWidget):
         super(CubeVizLayout, self).showEvent(event)
         self._single_image_mode()
         self._update_active_widget(self.image1)
-
-

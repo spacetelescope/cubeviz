@@ -10,6 +10,7 @@ from astropy.io import fits
 import numpy as np
 
 from ..listener import CUBEVIZ_LAYOUT
+from ..layout import FLUX, ERROR, MASK
 
 
 def is_manga_data_cube(filename, **kwargs):
@@ -39,8 +40,8 @@ def read_manga_data_cube(filename):
     data.coords = coordinates_from_header(flux.header)
     data.meta[CUBEVIZ_LAYOUT] = 'MANGA'
 
-    data.add_component(component=flux.data, label='DATA')
-    data.add_component(component=mask.data, label='QUALITY')
-    data.add_component(component=var.data, label='VAR')
+    data.add_component(component=flux.data, label=FLUX)
+    data.add_component(component=var.data, label=ERROR)
+    data.add_component(component=mask.data, label=MASK)
 
     return data
