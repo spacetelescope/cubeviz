@@ -73,12 +73,6 @@ def is_jwst_data_cube(filename, **kwargs):
 
     return False
 
-def is_generic_data_cube(filename, **kwargs):
-    # It's not clear whether there's a way to detect this automatically
-    # Maybe it's sufficient to test 'DATAMODL' == 'IFUCubeModel'? Or is that
-    # specific to JWST?
-    return False
-
 def _load_jwst_asdf(fileobj, coords):
     # fileobj parameter can be either filename or HDUList with ASDF-in-FITS
     asdffile = asdf.open(fileobj)
@@ -122,7 +116,3 @@ def read_jwst_data_cube(filename):
             dq = hdulist['DQ'].data
             err = hdulist['ERR'].data
             return Data(data=data, dq=dq, err=err)
-
-@data_factory('Generic data cube loader')
-def read_generic_data_cube(filename):
-    pass
