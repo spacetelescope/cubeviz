@@ -1,26 +1,23 @@
 from __future__ import absolute_import, division, print_function
 
 import numpy as np 
+import sys
+import multiprocessing
 
 import astropy.units as u
 from astropy import convolution
 
 from glue.core import Data
 from glue.core.coordinates import coordinates_from_header
+from glue.config import menubar_plugin
 
 from spectral_cube import SpectralCube, masks
 import radio_beam
 
+from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (QMainWindow, QApplication, QPushButton,
 							QLabel, QWidget, QHBoxLayout, QVBoxLayout,
 							QComboBox, QMessageBox, QLineEdit)
-from qtpy.QtCore import Qt
-import sys
-from glue.config import menubar_plugin
-from time import sleep
-import threading
-import multiprocessing
-import os
 
 def mask_function(arr):
 	a = np.empty_like(arr)
