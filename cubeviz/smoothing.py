@@ -11,11 +11,16 @@ from glue.core.coordinates import coordinates_from_header
 from spectral_cube import SpectralCube, masks
 import radio_beam
 
-from qtpy.QtWidgets import *
+from qtpy.QtWidgets import (QMainWindow, QApplication, QPushButton,
+							QLabel, QWidget, QHBoxLayout, QVBoxLayout,
+							QComboBox, QMessageBox, QLineEdit)
 from qtpy.QtCore import Qt
 import sys
 from glue.config import menubar_plugin
 from time import sleep
+import threading
+import multiprocessing
+import os
 
 def mask_function(arr):
 	a = np.empty_like(arr)
@@ -63,23 +68,67 @@ def gaussian_kernel_spectral(data, k_size):
 
 def median_kernel_spatial(data, k_size):
 	cube = data_to_cube(data)
-	new_cube = spatial_smooth_median(k_size)
+	new_cube = cube.spatial_smooth_median(k_size)
 	return cube_to_data(new_cube)
 
 def median_kernel_spectral(data, k_size):
 	cube = data_to_cube(data)
-	new_cube = spectral_smooth_median(k_size)
+	new_cube = cube.spectral_smooth_median(k_size)
 	return cube_to_data(new_cube)
+
+
+def fail_test(data, k_size):
+	cube = data_to_cube(data)
+	new_cube = cube.dummy(k_size)
+	return cube_to_data(new_cube)
+
+def smoothing_process(data, k_size, method, queue, finished):
+	"""
+	Function to be used by multiprocessing.process. It 
+	will call one of the smoothing functions and send back
+	a glue Data object containing the result.
+
+	Parameters
+	----------
+	data : glue.Data
+		Glue data object containing cube and wcs information.
+	k_size : int
+		Kernel size.
+	method : function
+		Smoothing function.
+	queue : multiprocessing.Queue
+		Queue used for interprocess data communication.
+	finished : multiprocessing.Event
+		Event used to signal that this process 
+		has completed its task. 
+	"""
+	try:
+		new_data = method(data, k_size)
+		queue.put(new_data)
+		finished.set()
+	except Exception as e:
+		queue.put(str(e))
+		finished.set()
+
 
 class SelectSmoothing(QMainWindow):
 	def __init__(self, data, data_collection, parent=None):
-		super(SelectSmoothing,self).__init__(parent)
+		super(SelectSmoothing,self).__init__(parent)#,Qt.WindowStaysOnTopHint)
 		self.title = "Smoothing Selection"
 		self.data = data
 		self.data_collection = data_collection
-		self.initUI()
+		self.running = True
 
-	def initUI(self):
+		self.sp = None #Smoothing process
+		self.queue = multiprocessing.Queue()
+		self.sp_finished = multiprocessing.Event()
+
+		self.abort_window = None
+		self.parent = parent
+
+		self.init_Selection_UI()
+
+	def init_Selection_UI(self):
 
 		self.methods = [
 			boxcar_smoothing_spatial,
@@ -118,9 +167,8 @@ class SelectSmoothing(QMainWindow):
 		hbl2.addWidget(self.k_size)
 		hbl2.addWidget(self.label3)
 
-
 		self.okButton = QPushButton("OK")
-		self.okButton.clicked.connect(self.ok)
+		self.okButton.clicked.connect(self.main)
 		self.okButton.setDefault(True)
 
 		self.cancelButton = QPushButton("Cancel")
@@ -135,14 +183,38 @@ class SelectSmoothing(QMainWindow):
 		vbl.addLayout(hbl1)
 		vbl.addLayout(hbl2)
 		vbl.addLayout(hbl3)
-
+		
 		self.wid = QWidget(self)
 		self.setCentralWidget(self.wid)
 		self.wid.setLayout(vbl)
 
 		self.show()
 
+	def init_Abort_UI(self):
+		self.abort_window = QMainWindow(parent=self.parent)
+
+		self.label4 = QLabel("Executing smoothing algorithm.")
+		self.label5 = QLabel("This may take several minutes.")
+
+		self.abort = QPushButton("Abort")
+		self.abort.clicked.connect(self.clean_up)
+
+		vbl = QVBoxLayout()
+		vbl.addWidget(self.label4)
+		vbl.addWidget(self.label5)
+		vbl.addWidget(self.abort)
+
+		self.wid_abort = QWidget(self.abort_window)
+		self.abort_window.setCentralWidget(self.wid_abort)
+		self.wid_abort.setLayout(vbl)
+
+		self.abort_window.show()
+
 	def selection_changed(self, i):
+		"""
+		Update kernel type, units, etc... when
+		smoothing function selection changes.
+		"""
 		if self.methods[i] in [gaussian_kernel_spatial,gaussian_kernel_spectral]:
 			self.label2.setText("Standard Deviation of Kernel:")
 		else:
@@ -164,37 +236,91 @@ class SelectSmoothing(QMainWindow):
 
 		return True, k_size
 
-	def ok(self):
+	def main(self):
+		"""
+		This function will create a multiprocessing.Process to
+		call the smoothing function. It will validate the input 
+		and assign a process to preform smoothing. While smoothing 
+		is running, this function will update the application and
+		host a gui with an abort button. It will remain in this state
+		until smoothing is finished or the abort button is clicked. 
+		"""
 		success, k_size = self.input_validation()
 
 		if not success:
 			return
 
-		i = self.combo.currentIndex()		
-		try:
-			new_data = self.methods[i](self.data, k_size)
-		except Exception as e:
-			print(e)
+		self.hide()
+		self.cancelButton.setDisabled(True) 
+		self.okButton.setDisabled(True) 
+		
+		i = self.combo.currentIndex()
+
+		self.sp = multiprocessing.Process(target=smoothing_process,
+										  args=(self.data, 
+										  		k_size,
+										  		self.methods[i], 
+										  		self.queue, 
+										  		self.sp_finished)
+										  )
+		self.sp.start()
+
+		self.init_Abort_UI()
+
+		while not self.sp_finished.is_set() and self.running:
+			QApplication.processEvents()
+		
+		if not self.running:
+			return
+		
+		new_data = self.queue.get()
+		self.sp_finished.clear()
+		self.sp.join()
+		
+		if type(new_data) is str:
+			e = new_data
 			if "'SpectralCube' object has no attribute" in str(e):
-				info = QMessageBox.critical(self, "Error",
+				info = QMessageBox.critical(None, "Error",
 						"Please update your spectral-cube package.\n"+str(e))
 			else:
-				info = QMessageBox.critical(self, "Error", str(e))
+				info = QMessageBox.critical(None, "Error", str(e))
+			self.abort_window.close()
+			self.abort_window = None
+
+			self.cancelButton.setDisabled(False) 
+			self.okButton.setDisabled(False) 
+			self.show()
 			return
-	
+
 		self.data_collection.append(new_data)
+
+		self.clean_up()
+
+	def cancel(self, caller=0):
+		self.clean_up()
+
+	def isrunning(self):
+		return self.running
+
+	def clean_up(self):
+		if self.sp is not None:
+			if self.sp.is_alive():
+				print("SelectSmoothing to child process: terminate()")
+				self.sp.terminate()
+		
+		if self.abort_window is not None:
+			self.abort_window.close()
+
+		self.queue.close()
 		self.close()
-
-	def cancel(self):
-		self.close()
-
-
+		self.running = False
 
 @menubar_plugin("Smoothing")
 def select_smoothing(session, data_collection):
 	print(data_collection)
 	data = data_collection[0]
-	ex = SelectSmoothing(data, data_collection, parent=session.application)
+	ex = SelectSmoothing(data, data_collection,parent=session.application)
+	
 
 if __name__ == "__main__":
 	from sys import argv
