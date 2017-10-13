@@ -207,16 +207,3 @@ def smooth(data, custom_kernel=None, kernel_type="boxcar", smoothing_axis="spati
 		output = new_cube
 
 	return output
-
-
-
-
-
-
-
-
-
-
-
-
-
