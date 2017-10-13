@@ -12,7 +12,7 @@ from glue.core.coordinates import coordinates_from_header
 from spectral_cube import SpectralCube, masks
 import radio_beam
 
-__all__ = ["data_to_cube", "cube_to_glueData", "get_kernel_list", "print_kernel_types"]
+__all__ = ["smooth", "data_to_cube", "cube_to_glueData", "get_kernel_list", "print_kernel_types"]
 
 def data_to_cube(data, component_id=None, wcs=None):
 	if type(data) == Data:
