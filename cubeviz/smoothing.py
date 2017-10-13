@@ -2,336 +2,214 @@ from __future__ import absolute_import, division, print_function
 
 import numpy as np 
 import sys
-import multiprocessing
 
 import astropy.units as u
 from astropy import convolution
 
 from glue.core import Data
 from glue.core.coordinates import coordinates_from_header
-from glue.config import menubar_plugin
 
 from spectral_cube import SpectralCube, masks
 import radio_beam
 
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import (QMainWindow, QApplication, QPushButton,
-							QLabel, QWidget, QHBoxLayout, QVBoxLayout,
-							QComboBox, QMessageBox, QLineEdit)
+__all__ = ["data_to_cube", "cube_to_glueData", "get_kernel_list", "print_kernel_types"]
 
-def mask_function(arr):
-	a = np.empty_like(arr)
-	a.fill(True)
-	a = a.astype(bool)
-	return a
+def data_to_cube(data, component_id=None, wcs=None):
+	if type(data) == Data:
+		if component_id is None:
+			raise Exception("WCS information was not provided. "
+				"use data_to_cube(data, component_id=<component id>).")
+		w = data.coords.wcs
+		d = data[component_id]
+		m = masks.LazyMask(np.isfinite, data=d, wcs=w)
+		cube = SpectralCube(data=d, wcs=w, mask=m)
+	elif type(data) == np.ndarray:
+		if wcs is None:
+			raise Exception("WCS information was not provided. "
+				"use data_to_cube(data, wcs=<wcs info>).")
+		m = masks.LazyMask(np.isfinite, data=data, wcs=wcs)
+		cube = SpectralCube(data=data, wcs=wcs, mask=m)
+	elif type(data) == SpectralCube:
+		cube = data
+	else:
+		raise TypeError("Input data is not supported.")
 
-def data_to_cube(data, component_id="SCI"):
-	w = data.coords.wcs
-	d = data[component_id]
-	m = masks.LazyMask(mask_function, data=d, wcs=w)
-	cube = SpectralCube(data=d, wcs=w, mask=m)
 	return cube
 
-def cube_to_data(cube, name='SpectralCube', component_id="SCI"):
-	#TODO: Usdate output data format	
-	result = Data(label=name)
+def cube_to_glueData(cube, output_label="SmoothedCube", component_id="Cube"):
+	result = Data(label=output_label)
 	result.coords = coordinates_from_header(cube.header) 
 	result.add_component(cube._data, component_id) 
 	return result
 
-def boxcar_smoothing_spatial(data, k_size):
-	cube = data_to_cube(data)
-	kernel = convolution.Box2DKernel(k_size)
-	new_cube = cube.spatial_smooth(kernel)	
-	return cube_to_data(new_cube)
-
-def boxcar_smoothing_spectral(data, k_size):
-	cube = data_to_cube(data)
-	kernel = convolution.Box1DKernel(k_size)
-	new_cube = cube.spectral_smooth(kernel)	
-	return cube_to_data(new_cube)
-
-def gaussian_kernel_spatial(data, k_size):
-	cube = data_to_cube(data)
-	kernel = convolution.Gaussian2DKernel(k_size)
-	new_cube = cube.spatial_smooth(kernel)	
-	return cube_to_data(new_cube)
-
-def gaussian_kernel_spectral(data, k_size):
-	cube = data_to_cube(data)
-	kernel = convolution.Gaussian1DKernel(k_size)
-	new_cube = cube.spectral_smooth(kernel)	
-	return cube_to_data(new_cube)
-
-def median_kernel_spatial(data, k_size):
-	cube = data_to_cube(data)
-	new_cube = cube.spatial_smooth_median(k_size)
-	return cube_to_data(new_cube)
-
-def median_kernel_spectral(data, k_size):
-	cube = data_to_cube(data)
-	new_cube = cube.spectral_smooth_median(k_size)
-	return cube_to_data(new_cube)
-
-
-def fail_test(data, k_size):
-	cube = data_to_cube(data)
-	new_cube = cube.dummy(k_size)
-	return cube_to_data(new_cube)
-
-def smoothing_process(data, k_size, method, queue, finished):
+def get_kernel_list():
 	"""
-	Function to be used by multiprocessing.process. It 
-	will call one of the smoothing functions and send back
-	a glue Data object containing the result.
+	Registered kernels are stored here. Format is nested dict:
+	kernel_list = {
+		<kernel name> : {<"spatial"/"spectral">: <kernel obj>, <"spatial"/"spectral">: <kernel obj>},
+		.
+		.
+		.
+		<kernel name> : {<"spatial"/"spectral">: <kernel obj>}
+	}
+	If no kernels are available or needed for that smoothing option, None can be used as a place holder to 
+	signify that axis can be used without a kernel function. In such cases, smoothing.smooth function needs
+	to be modified to include the new spectral_cube.SpectralCube smoothing function.  
+
+	Returns
+	-------
+	kernel_list : dict (nested)
+		Dictionary of registered filter kernels.
+
+	"""
+	kernel_list ={
+		"boxcar" : {"spatial" : convolution.Box2DKernel, "spectral" : convolution.Box1DKernel},
+		"box" : {"spatial" : convolution.Box2DKernel, "spectral" : convolution.Box1DKernel},
+		"gaussian" : {"spatial" : convolution.Gaussian2DKernel, "spectral" : convolution.Gaussian1DKernel},
+		"mexicanhat": {"spatial" : convolution.MexicanHat2DKernel, "spectral" : convolution.MexicanHat1DKernel},
+		"trapezoid": {"spatial" : convolution.TrapezoidDisk2DKernel, "spectral" : convolution.Trapezoid1DKernel},
+		"trapezoiddisk": {"spatial" : convolution.TrapezoidDisk2DKernel},
+		"arrydisk": {"spatial" : convolution.AiryDisk2DKernel},
+		"ring" : {"spatial" : convolution.Ring2DKernel},
+		"tophat" :{"spatial" : convolution.Tophat2DKernel},
+		"median" : {"spatial" : None, "spectral" : None}
+	}
+	return kernel_list
+
+def print_kernel_types():
+	kernel_list = get_kernel_list()
+	kernel_type_list = kernel_list.keys()
+	print()
+	print("Available Kernel Types")
+	print("kernel_type: {available smoothing_axis}")
+	print("_"*30)
+	for kt in kernel_type_list:
+		ax = kernel_list[kt].keys()
+		print(str(kt)+": "+"{"+", ".join([str(a) for a in ax])+"}")
+
+def _smoothing_available(kernel_type, smoothing_axis):
+	try:
+		if kernel_type == "median":
+			if smoothing_axis == "spatial":
+				SpectralCube.spatial_smooth_median
+			else:
+				SpectralCube.spectral_smooth_median
+		else:
+			if smoothing_axis == "spatial":
+				SpectralCube.spatial_smooth
+			else:
+				SpectralCube.spectral_smooth
+	except AttributeError as e:
+		return False, e
+	return True, None
+
+def smooth(data, custom_kernel=None, kernel_type="boxcar", smoothing_axis="spatial", 
+	kernel_size=3, component_id="SCI", output_label=None, wcs=None):
+	"""
+	This is a smoothing function for astronomical 3D Cube data. This function
+	uses the smoothing functions provided by spectral_cube.SpectralCube to
+	preform smoothing operations. This function can smooth in the spectral
+	or spatial axes depending on the kernel applied. Select kernels from 
+	astropy.convolution are available. To see a list of kernels and axes,
+	please use the print_kernel_types() function. A custom kernel can also
+	be used so long as it satisfies spectral_cube.SpectralCube as described
+	by spectral_cube documentation. 
 
 	Parameters
 	----------
-	data : glue.Data
-		Glue data object containing cube and wcs information.
-	k_size : int
-		Kernel size.
-	method : function
-		Smoothing function.
-	queue : multiprocessing.Queue
-		Queue used for interprocess data communication.
-	finished : multiprocessing.Event
-		Event used to signal that this process 
-		has completed its task. 
+	data : glue.core.Data or numpy.ndarray or SpectralCube
+		3D data to smooth. Accepted formats: 
+		- Glue data object containing cube and wcs information. 
+		- numpy ndarray (Must include WCS information).
+		- SpectralCube instance with data.
+	custom_kernel : astropy.convolution.kernels.<Kernel>
+		Filter kernel from astropy. Can be subclassed.
+	kernel_type : str
+		Name of filter kernel. Use print_kernel_types() to see list.
+	smoothing_axis : str
+		'spectral' vs 'spatial' axis. Use print_kernel_types() to see 
+		kernel compatibility.
+	kernel_size : float
+		Size of filter kernel.
+	component_id : str
+		Name of glue.core.Data component containing data.
+	output_label: str
+		label of output glue.core.Data.
+	wcs : astropy.wcs.WCS
+		wcs information. Required when input data is numpy ndarray!
+
+	Returns
+	-------
+	output : glue.core.Data or numpy.ndarray or SpectralCube
+		A smoothed cube that is the same type as input.
+
+	Raises
+	------
+	Exception: If input kernel_type is not registered.
+	Exception: If input smoothing_axis is not supported by filter kernel.
+	AttributeError: 
+		If missing smoothing functions in spectral_cube.SpectralCube.
+		User is informed to update their spectral_cube.
 	"""
-	try:
-		new_data = method(data, k_size)
-		queue.put(new_data)
-		finished.set()
-	except Exception as e:
-		queue.put(str(e))
-		finished.set()
+	if custom_kernel is None:
+		kernel_list = get_kernel_list()
 
+		kernel_type_list = [i for i in kernel_list.keys()]
+		kernel_type = kernel_type.strip().lower()
+		if kernel_type not in kernel_type_list:
+			print("Error: kernel_type was not understood. List of available options:")
+			print_kernel_types()
+			raise Exception("kernel_type was not understood.")
 
-class SelectSmoothing(QMainWindow):
-	def __init__(self, data, data_collection, parent=None):
-		super(SelectSmoothing,self).__init__(parent)#,Qt.WindowStaysOnTopHint)
-		self.title = "Smoothing Selection"
-		self.data = data
-		self.data_collection = data_collection
-		self.running = True
+		smoothing_axis_list = [i for i in kernel_list[kernel_type].keys()]
+		if smoothing_axis not in smoothing_axis_list:
+			print("Error: smoothing_axis is not available. List of available axes for %s:" % kernel_type)
+			for a in smoothing_axis_list:
+				print(a)
+			print("")
+			raise Exception("smoothing_axis is not available for kernel_type %s." % kernel_type)
 
-		self.sp = None #Smoothing process
-		self.queue = multiprocessing.Queue()
-		self.sp_finished = multiprocessing.Event()
-
-		self.abort_window = None
-		self.parent = parent
-
-		self.init_Selection_UI()
-
-	def init_Selection_UI(self):
-
-		self.methods = [
-			boxcar_smoothing_spatial,
-			boxcar_smoothing_spectral,
-			gaussian_kernel_spatial,
-			gaussian_kernel_spectral,
-			median_kernel_spatial,
-			median_kernel_spectral
-			] 
-
-		self.label1 = QLabel("Smoothing Type:")
-		self.label1.setAlignment(Qt.AlignLeft)
-
-		self.combo = QComboBox()
-		self.combo.addItems([
-			"Boxcar Kernel (Spatial Axes)",
-			"Boxcar Kernel (Spectral Axis)",
-			"Gaussian Kernel (Spatial Axes)",
-			"Gaussian Kernel (Spectral Axis)",
-			"Median Kernel (Spatial Axes)",
-			"Median Kernel (Spectral Axis)"
-			])
-
-		self.combo.currentIndexChanged.connect(self.selection_changed)
-
-		hbl1 = QHBoxLayout()
-		hbl1.addWidget(self.label1)
-		hbl1.addWidget(self.combo)
-
-		self.label2 = QLabel("Width of Kernel:")
-		self.label3 = QLabel("Pixels")
-		self.k_size = QLineEdit("3")
-
-		hbl2 = QHBoxLayout()
-		hbl2.addWidget(self.label2)
-		hbl2.addWidget(self.k_size)
-		hbl2.addWidget(self.label3)
-
-		self.okButton = QPushButton("OK")
-		self.okButton.clicked.connect(self.main)
-		self.okButton.setDefault(True)
-
-		self.cancelButton = QPushButton("Cancel")
-		self.cancelButton.clicked.connect(self.cancel)
-
-		hbl3 = QHBoxLayout()
-		hbl3.addStretch(1)
-		hbl3.addWidget(self.cancelButton)
-		hbl3.addWidget(self.okButton)
-
-		vbl = QVBoxLayout()
-		vbl.addLayout(hbl1)
-		vbl.addLayout(hbl2)
-		vbl.addLayout(hbl3)
-		
-		self.wid = QWidget(self)
-		self.setCentralWidget(self.wid)
-		self.wid.setLayout(vbl)
-
-		self.show()
-
-	def init_Abort_UI(self):
-		self.abort_window = QMainWindow(parent=self.parent)
-
-		self.label4 = QLabel("Executing smoothing algorithm.")
-		self.label5 = QLabel("This may take several minutes.")
-
-		self.abort = QPushButton("Abort")
-		self.abort.clicked.connect(self.clean_up)
-
-		vbl = QVBoxLayout()
-		vbl.addWidget(self.label4)
-		vbl.addWidget(self.label5)
-		vbl.addWidget(self.abort)
-
-		self.wid_abort = QWidget(self.abort_window)
-		self.abort_window.setCentralWidget(self.wid_abort)
-		self.wid_abort.setLayout(vbl)
-
-		self.abort_window.show()
-
-	def selection_changed(self, i):
-		"""
-		Update kernel type, units, etc... when
-		smoothing function selection changes.
-		"""
-		if self.methods[i] in [gaussian_kernel_spatial,gaussian_kernel_spectral]:
-			self.label2.setText("Standard Deviation of Kernel:")
+		available, exception = _smoothing_available(kernel_type, smoothing_axis)
+		if not available:
+			raise AttributeError("Please update your spectral-cube package, "+str(exception))
+		if kernel_type == "median":
+			kernel = None
 		else:
-			self.label2.setText("Width of Kernel:")
+			kernel_function = kernel_list[kernel_type][smoothing_axis]
+			kernel = kernel_function(kernel_size)
+	else:
+		kernel = custom_kernel
+		kernel_type = "custom_kernel"
 
-	def input_validation(self):
-		if self.k_size == "":
-			self.k_size.setStyleSheet("background-color: rgba(255, 0, 0, 128);")
-			return False, None
+	cube = data_to_cube(data, component_id, wcs)
+
+	if kernel_type == "median":
+		if smoothing_axis == "spatial":
+			new_cube = cube.spatial_smooth_median()
 		else:
-			try:
-				k_size = int(self.k_size.text())
-			except ValueError:
-				self.k_size.setStyleSheet("background-color: rgba(255, 0, 0, 128);")
-				return False, None
-			if k_size <= 0:
-				return False, None
-			self.k_size.setStyleSheet("")
+			new_cube = cube.spectral_smooth_median()
+	else:
+		if smoothing_axis == "spatial":
+			new_cube = cube.spatial_smooth(kernel)
+		else:
+			new_cube = cube.spectral_smooth(kernel)
 
-		return True, k_size
+	if type(data) == Data:
+		if output_label is None:
+			output_label = data.label+"_"
+			output_label += "_".join([kernel_type, smoothing_axis])
+		if component_id is None:
+			component_id = "DataCube"
+		output = cube_to_glueData(new_cube, output_label, component_id)
+	elif type(data) == np.ndarray:
+		output = np.copy(new_cube._data)
+	else:
+		output = new_cube
 
-	def main(self):
-		"""
-		This function will create a multiprocessing.Process to
-		call the smoothing function. It will validate the input 
-		and assign a process to preform smoothing. While smoothing 
-		is running, this function will update the application and
-		host a gui with an abort button. It will remain in this state
-		until smoothing is finished or the abort button is clicked. 
-		"""
-		success, k_size = self.input_validation()
+	return output
 
-		if not success:
-			return
 
-		self.hide()
-		self.cancelButton.setDisabled(True) 
-		self.okButton.setDisabled(True) 
-		
-		i = self.combo.currentIndex()
 
-		self.sp = multiprocessing.Process(target=smoothing_process,
-										  args=(self.data, 
-										  		k_size,
-										  		self.methods[i], 
-										  		self.queue, 
-										  		self.sp_finished)
-										  )
-		self.sp.start()
-
-		self.init_Abort_UI()
-
-		while not self.sp_finished.is_set() and self.running:
-			QApplication.processEvents()
-		
-		if not self.running:
-			return
-		
-		new_data = self.queue.get()
-		self.sp_finished.clear()
-		self.sp.join()
-		
-		if type(new_data) is str:
-			e = new_data
-			if "'SpectralCube' object has no attribute" in str(e):
-				info = QMessageBox.critical(None, "Error",
-						"Please update your spectral-cube package.\n"+str(e))
-			else:
-				info = QMessageBox.critical(None, "Error", str(e))
-			self.abort_window.close()
-			self.abort_window = None
-
-			self.cancelButton.setDisabled(False) 
-			self.okButton.setDisabled(False) 
-			self.show()
-			return
-
-		self.data_collection.append(new_data)
-
-		self.clean_up()
-
-	def cancel(self, caller=0):
-		self.clean_up()
-
-	def isrunning(self):
-		return self.running
-
-	def clean_up(self):
-		if self.sp is not None:
-			if self.sp.is_alive():
-				print("SelectSmoothing to child process: terminate()")
-				self.sp.terminate()
-		
-		if self.abort_window is not None:
-			self.abort_window.close()
-
-		self.queue.close()
-		self.close()
-		self.running = False
-
-@menubar_plugin("Smoothing")
-def select_smoothing(session, data_collection):
-	print(data_collection)
-	data = data_collection[0]
-	ex = SelectSmoothing(data, data_collection,parent=session.application)
-	
-
-if __name__ == "__main__":
-	from sys import argv
-	from glue.core.data_factories import load_data
-	from glue.core import DataCollection
-
-	dc = DataCollection()
-	dc.append(load_data(argv[1]))
-
-	data = dc[0]
-
-	app = QApplication([])
-	ex = SelectSmoothing(data, dc)
-	sys.exit(app.exec_())
 
 
 
