@@ -129,7 +129,7 @@ def smooth(data, kernel=None, smoothing_axis=None, kernel_type="boxcar",
 		Custom filter kernel from astropy or np.ndarray.
 	smoothing_axis : str
 		'spectral' vs 'spatial' axis. Use print_kernel_types() to see 
-		kernel compatibility. Auto assigned if only kernel is provided.
+		kernel compatibility. Auto assigned if custom kernel is provided.
 	kernel_type : str
 		Name of filter kernel. Use print_kernel_types() to see list.
 	kernel_size : float
