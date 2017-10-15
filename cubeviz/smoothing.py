@@ -125,7 +125,7 @@ def smooth(data, kernel=None, smoothing_axis=None, kernel_type="boxcar",
 		- Glue data object containing cube and wcs information. 
 		- numpy ndarray (Must include WCS information).
 		- SpectralCube instance with data.
-	kernel : astropy.convolution.kernels.<Kernel>
+	kernel : astropy.convolution.kernels.<Kernel> or np.ndarray
 		Custom filter kernel from astropy or np.ndarray.
 	smoothing_axis : str
 		'spectral' vs 'spatial' axis. Use print_kernel_types() to see 
@@ -215,7 +215,7 @@ def smooth(data, kernel=None, smoothing_axis=None, kernel_type="boxcar",
 	available, exception = _smoothing_available(kernel_type, smoothing_axis)
 	if not available:
 		raise AttributeError("Please update your spectral-cube package, "+str(exception))
-		
+
 	print("Smoothing Parameters:")
 	print("\tKernel type: %s" %type(kernel))
 	print("\tSmoothing axis: %s" %smoothing_axis)
