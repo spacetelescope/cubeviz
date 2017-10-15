@@ -50,9 +50,10 @@ def get_kernel_registry():
 		.
 		<kernel name> : {<"spatial"/"spectral">: <kernel obj>}
 	}
-	If no kernels are available or needed for that smoothing option, None can be used as a place holder to 
-	signify that axis can be used without a kernel function. In such cases, smoothing.smooth function needs
-	to be modified to include the new spectral_cube.SpectralCube smoothing function.  
+	If no kernels are available or needed for that smoothing option, None can 
+	be used as a place holder to signify that axis can be used without a kernel 
+	function. In such cases, smoothing.smooth function needs to be modified to 
+	include the new spectral_cube.SpectralCube smoothing function.  
 
 	Returns
 	-------
@@ -193,9 +194,9 @@ def smooth(data, kernel=None, smoothing_axis=None, kernel_type="boxcar",
 			raise TypeError("Input kernel must be from astropy.convolution or numpy array."
 				" got %s instead." %(type(kernel)))
 
-		if isinstance(kernel, convolution.Box1DKernel):
+		if isinstance(kernel, convolution.Kernel1D):
 			correct_smoothing_axis="spectral"
-		elif isinstance(kernel, convolution.Box2DKernel):
+		elif isinstance(kernel, convolution.Kernel2D):
 			correct_smoothing_axis="spatial"
 		elif type(kernel) == np.ndarray:
 			if len(kernel.shape) == 1:
@@ -223,7 +224,9 @@ def smooth(data, kernel=None, smoothing_axis=None, kernel_type="boxcar",
 	print("")
 
 	cube = data_to_cube(data, wcs, component_id)
-
+	
+	#Note: If the if-statement below is edited, 
+	#	_smoothing_available must be updated.
 	if kernel_type == "median":
 		if smoothing_axis == "spatial":
 			new_cube = cube.spatial_smooth_median()
@@ -238,7 +241,7 @@ def smooth(data, kernel=None, smoothing_axis=None, kernel_type="boxcar",
 	if type(data) == Data:
 		if output_label is None:
 			output_label = data.label+"_"
-			output_label += "_".join([kernel_type, smoothing_axis])
+			output_label += "_".join([kernel_type, smoothing_axis]) 
 		if component_id is None:
 			component_id = "DataCube"
 		output = cube_to_glueData(new_cube, output_label, component_id)
