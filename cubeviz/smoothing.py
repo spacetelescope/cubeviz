@@ -6,21 +6,79 @@ import sys
 import astropy.units as u
 from astropy import convolution
 
-from glue.core import Data
-from glue.core.coordinates import coordinates_from_header
+from glue.core import Data, Subset
+from glue.core.coordinates import coordinates_from_header, WCSCoordinates
+from glue.core.exceptions import IncompatibleAttribute
 
-from spectral_cube import SpectralCube, masks
+from spectral_cube import SpectralCube, masks, BooleanArrayMask
 
 __all__ = ["smooth", "data_to_cube", "cube_to_glueData", "get_kernel_registry", 
 	"print_kernel_types", "list_kernel_types"]
 
+def _get_glue_mask(data, component_id):
+	mask = None
+	if isinstance(data, Subset):
+		try:
+			mask = data.to_mask()
+		except IncompatibleAttribute:
+			raise
+	else:
+		d = data[component_id]
+		mask = np.empty_like(d)
+		mask.fill(True)
+		mask = mask.astype(bool)
+
+	dq_mask = None
+	components = data.component_ids()
+	if "DQ" in components:
+		dq = data.id["DQ"] == 0
+		dq_mask = dq.to_mask(data)
+		mask = mask & dq_mask 
+
+	return mask
+
+def _get_glue_wcs(data):
+	coords = data.coords
+	if isinstance(coords, WCSCoordinates):
+		return coords.wcs
+	raise Exception("WCS information was not provided.")
+
+def cube_to_glueData(cube, output_label="SmoothedCube", component_id="Cube"):
+	result = Data(label=output_label)
+	result.coords = coordinates_from_header(cube.header) 
+	result.add_component(cube._data, component_id) 
+	return result
+
 def data_to_cube(data, wcs=None, component_id=None):
+	"""
+	Convert data to SpectralCube.
+
+	Parameters
+	----------
+	data : glue.core.Data or numpy.ndarray or SpectralCube
+		3D data to smooth. Accepted formats: 
+		- Glue data object containing cube and wcs information. 
+		- numpy ndarray (Must include WCS information).
+		- SpectralCube instance with data.
+	wcs : astropy.wcs.WCS
+		wcs information. Required only when input data is numpy ndarray!
+	component_id : str
+		Name of glue.core.Data component containing data.
+		Required only when input data is glue.core.Data.
+
+	Returns
+	-------
+	output : SpectralCube
+		SpectralCube instance with data.
+	"""
 	if type(data) == Data:
 		if component_id is None:
 			raise Exception("component_id was not provided.")
-		w = data.coords.wcs
+		w = _get_glue_wcs(data)
 		d = data[component_id]
-		m = masks.LazyMask(np.isfinite, data=d, wcs=w)
+		m = BooleanArrayMask(
+				mask=_get_glue_mask(data, component_id), 
+				wcs=w)
 		cube = SpectralCube(data=d, wcs=w, mask=m)
 	elif type(data) == np.ndarray:
 		if wcs is None:
@@ -31,14 +89,7 @@ def data_to_cube(data, wcs=None, component_id=None):
 		cube = data
 	else:
 		raise TypeError("Input data is not supported.")
-
 	return cube
-
-def cube_to_glueData(cube, output_label="SmoothedCube", component_id="Cube"):
-	result = Data(label=output_label)
-	result.coords = coordinates_from_header(cube.header) 
-	result.add_component(cube._data, component_id) 
-	return result
 
 def get_kernel_registry():
 	"""
@@ -92,6 +143,10 @@ def list_kernel_types():
 	return kernel_type_list
 
 def _smoothing_available(kernel_type, smoothing_axis):
+	"""
+	Check if SpectralCube exsist. 
+	(Check for outdated package)
+	"""
 	try:
 		if kernel_type == "median":
 			if smoothing_axis == "spatial":
@@ -225,7 +280,7 @@ def smooth(data, kernel=None, smoothing_axis=None, kernel_type="boxcar",
 
 	cube = data_to_cube(data, wcs, component_id)
 	
-	#Note: If the if-statement below is edited, 
+	#Note: If the if-else-statement below is edited, 
 	#	_smoothing_available must be updated.
 	if kernel_type == "median":
 		if smoothing_axis == "spatial":
