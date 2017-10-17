@@ -70,6 +70,12 @@ def data_to_cube(data, wcs=None, component_id=None):
 	-------
 	output : SpectralCube
 		SpectralCube instance with data.
+
+	Raises
+	------
+	Exception : component_id was not provided.
+	Exception : WCS information was not provided.
+	TypeError: Input data type is not supported.
 	"""
 	if type(data) == Data:
 		if component_id is None:
@@ -144,8 +150,8 @@ def list_kernel_types():
 
 def _smoothing_available(kernel_type, smoothing_axis):
 	"""
-	Check if SpectralCube exsist. 
-	(Check for outdated package)
+	Check if SpectralCube smoothing functions exsist. 
+	(A check for outdated package)
 	"""
 	try:
 		if kernel_type == "median":
