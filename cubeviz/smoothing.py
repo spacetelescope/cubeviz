@@ -7,33 +7,29 @@ import astropy.units as u
 from astropy import convolution
 
 from glue.core import Data, Subset
+from glue.core.component import Component
+from glue.core import message as msg
 from glue.core.coordinates import coordinates_from_header, WCSCoordinates
 from glue.core.exceptions import IncompatibleAttribute
 
 from spectral_cube import SpectralCube, masks, BooleanArrayMask
 
-__all__ = ["smooth", "data_to_cube", "cube_to_glueData", "get_kernel_registry", 
-	"print_kernel_types", "list_kernel_types"]
+__all__ = ["smooth", "data_to_cube", "cube_to_glueData", 
+	"get_kernel_registry", "print_kernel_types", "list_kernel_types"]
 
 def _get_glue_mask(data, component_id):
 	mask = None
 	if isinstance(data, Subset):
 		try:
 			mask = data.to_mask()
+			return mask
 		except IncompatibleAttribute:
-			raise
-	else:
-		d = data[component_id]
-		mask = np.empty_like(d)
-		mask.fill(True)
-		mask = mask.astype(bool)
-
-	dq_mask = None
-	components = data.component_ids()
-	if "DQ" in components:
-		dq = data.id["DQ"] == 0
-		dq_mask = dq.to_mask(data)
-		mask = mask & dq_mask 
+			pass
+	
+	d = data[component_id]
+	mask = np.empty_like(d)
+	mask.fill(True)
+	mask = mask.astype(bool)
 
 	return mask
 
@@ -43,10 +39,22 @@ def _get_glue_wcs(data):
 		return coords.wcs
 	raise Exception("WCS information was not provided.")
 
-def cube_to_glueData(cube, output_label="SmoothedCube", component_id="Cube"):
-	result = Data(label=output_label)
-	result.coords = coordinates_from_header(cube.header) 
-	result.add_component(cube._data, component_id) 
+def cube_to_glueData(cube, output_label="SmoothedCube", 
+	output_component_id="Cube", output_as_component=False, 
+	original_data=None):
+	if output_as_component:
+		original_data.add_component(cube._data, output_component_id)
+		original_data.broadcast(
+			msg.DataAddComponentMessage(
+				original_data, 
+				output_component_id
+			)
+		) 
+		new_component = Component(cube._data)
+		return original_data.get_component(output_component_id)
+	new_data = Data(label=output_label)
+	new_data.coords = coordinates_from_header(cube.header) 
+	new_data.add_component(cube._data, output_component_id) 
 	return result
 
 def data_to_cube(data, wcs=None, component_id=None):
@@ -107,7 +115,7 @@ def get_kernel_registry():
 		.
 		<kernel name> : {<"spatial"/"spectral">: <kernel obj>}
 	}
-	If no kernels are available or needed for that smoothing option, None can 
+	If no kernels are needed for that smoothing option, None can 
 	be used as a place holder to signify that axis can be used without a kernel 
 	function. In such cases, smoothing.smooth function needs to be modified to 
 	include the new spectral_cube.SpectralCube smoothing function.  
@@ -119,16 +127,14 @@ def get_kernel_registry():
 
 	"""
 	kernel_registry ={
-		"boxcar" : {"spatial" : convolution.Box2DKernel, "spectral" : convolution.Box1DKernel},
-		"box" : {"spatial" : convolution.Box2DKernel, "spectral" : convolution.Box1DKernel},
-		"gaussian" : {"spatial" : convolution.Gaussian2DKernel, "spectral" : convolution.Gaussian1DKernel},
-		"mexicanhat": {"spatial" : convolution.MexicanHat2DKernel, "spectral" : convolution.MexicanHat1DKernel},
-		"trapezoid": {"spatial" : convolution.TrapezoidDisk2DKernel, "spectral" : convolution.Trapezoid1DKernel},
-		"trapezoiddisk": {"spatial" : convolution.TrapezoidDisk2DKernel},
-		"arrydisk": {"spatial" : convolution.AiryDisk2DKernel},
-		"ring" : {"spatial" : convolution.Ring2DKernel},
-		"tophat" :{"spatial" : convolution.Tophat2DKernel},
-		"median" : {"spatial" : None, "spectral" : None}
+		"Box" : {"spatial" : convolution.Box2DKernel, "spectral" : convolution.Box1DKernel},
+		"Gaussian" : {"spatial" : convolution.Gaussian2DKernel, "spectral" : convolution.Gaussian1DKernel},
+		"MexicanHat": {"spatial" : convolution.MexicanHat2DKernel, "spectral" : convolution.MexicanHat1DKernel},
+		"Trapezoid": {"spectral" : convolution.Trapezoid1DKernel},
+		"TrapezoidDisk": {"spatial" : convolution.TrapezoidDisk2DKernel},
+		"AiryDisk": {"spatial" : convolution.AiryDisk2DKernel},
+		"TopHat" :{"spatial" : convolution.Tophat2DKernel},
+		"Median" : {"spatial" : None, "spectral" : None}
 	}
 	return kernel_registry
 
@@ -154,7 +160,7 @@ def _smoothing_available(kernel_type, smoothing_axis):
 	(A check for outdated package)
 	"""
 	try:
-		if kernel_type == "median":
+		if kernel_type == "Median":
 			if smoothing_axis == "spatial":
 				SpectralCube.spatial_smooth_median
 			else:
@@ -168,8 +174,9 @@ def _smoothing_available(kernel_type, smoothing_axis):
 		return False, e
 	return True, None
 
-def smooth(data, kernel=None, smoothing_axis=None, kernel_type="boxcar",  
-	kernel_size=3, component_id="SCI", output_label=None, wcs=None):
+def smooth(data, kernel=None, smoothing_axis=None, kernel_type="Box",  
+	kernel_size=3, component_id="SCI", output_label=None, 
+	output_as_component=False, wcs=None):
 	"""
 	This is a smoothing function for astronomical 3D Cube data. This function
 	uses the smoothing functions provided by spectral_cube.SpectralCube to
@@ -200,6 +207,9 @@ def smooth(data, kernel=None, smoothing_axis=None, kernel_type="boxcar",
 		Name of glue.core.Data component containing data.
 	output_label: str
 		label of output glue.core.Data.
+	output_as_component: bool
+		True if adding output as component of input glue.core.Data.
+		If True, overrides output_label (No new Data object).
 	wcs : astropy.wcs.WCS
 		wcs information. Required when input data is numpy ndarray!
 
@@ -222,16 +232,17 @@ def smooth(data, kernel=None, smoothing_axis=None, kernel_type="boxcar",
 		If input numpy.ndarray kernel's numpy.ndarray.size 
 		is not supported.
 	"""
+	print("In")
 	if kernel is None:
 		if smoothing_axis is None:
 			smoothing_axis = "spatial"
 		else:
-			smoothing_axis = smoothing_axis.strip().lower()
+			smoothing_axis = smoothing_axis
 
 		kernel_registry = get_kernel_registry()
 
 		kernel_type_list = [i for i in kernel_registry.keys()]
-		kernel_type = kernel_type.strip().lower()
+		kernel_type = kernel_type
 		if kernel_type not in kernel_type_list:
 			print("Error: kernel_type was not understood. List of available options:")
 			print_kernel_types()
@@ -245,7 +256,7 @@ def smooth(data, kernel=None, smoothing_axis=None, kernel_type="boxcar",
 			print("")
 			raise Exception("smoothing_axis is not available for kernel_type %s." % kernel_type)
 
-		if kernel_type == "median":
+		if kernel_type == "Median":
 			kernel = None
 		else:
 			kernel_function = kernel_registry[kernel_type][smoothing_axis]
@@ -279,20 +290,20 @@ def smooth(data, kernel=None, smoothing_axis=None, kernel_type="boxcar",
 		raise AttributeError("Please update your spectral-cube package, "+str(exception))
 
 	print("Smoothing Parameters:")
-	print("\tKernel type: %s" %type(kernel))
-	print("\tSmoothing axis: %s" %smoothing_axis)
-	print("\tOutput type: %s" %type(data))
+	print("Kernel type = %s" %type(kernel))
+	print("Smoothing axis = %s" %smoothing_axis)
+	print("Output type = %s" %type(data))
 	print("")
 
 	cube = data_to_cube(data, wcs, component_id)
 	
 	#Note: If the if-else-statement below is edited, 
 	#	_smoothing_available must be updated.
-	if kernel_type == "median":
+	if kernel_type == "Median":
 		if smoothing_axis == "spatial":
-			new_cube = cube.spatial_smooth_median()
+			new_cube = cube.spatial_smooth_median(kernel_size)
 		else:
-			new_cube = cube.spectral_smooth_median()
+			new_cube = cube.spectral_smooth_median(kernel_size)
 	else:
 		if smoothing_axis == "spatial":
 			new_cube = cube.spatial_smooth(kernel)
@@ -300,15 +311,24 @@ def smooth(data, kernel=None, smoothing_axis=None, kernel_type="boxcar",
 			new_cube = cube.spectral_smooth(kernel)
 
 	if type(data) == Data:
+		name_tail = "_"+"_".join(["smoothed", kernel_type, 
+			smoothing_axis,"%spixels"%kernel_size]) 
+		
 		if output_label is None:
-			output_label = data.label+"_"
-			output_label += "_".join([kernel_type, smoothing_axis]) 
+			output_label = data.label + name_tail
+
 		if component_id is None:
 			component_id = "DataCube"
-		output = cube_to_glueData(new_cube, output_label, component_id)
+		if output_as_component:
+			output_component_id = component_id + name_tail
+		else:
+			output_component_id = component_id
+
+		output = cube_to_glueData(new_cube, output_label, 
+			output_component_id, output_as_component, data)
 	elif type(data) == np.ndarray:
 		output = np.copy(new_cube._data)
 	else:
 		output = new_cube
-
+	print("Smoothing Done")
 	return output
