@@ -67,6 +67,8 @@ class CubevizManager(HubListener):
         cubeviz_layout._toggle_error()
         cubeviz_layout._toggle_quality()
 
+        cubeviz_layout.specviz._widget.add_data(data)
+
         # Set up linking of data slices and views
         cubeviz_layout.setup_syncing()
 
