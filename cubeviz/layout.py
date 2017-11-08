@@ -181,8 +181,10 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._wavelengths = self.image1._widget._data[0].get_component('Wave')[:,0,0]
         self.ui.value_slice.setMaximum(len(self._wavelengths) - 1)
 
-        self.ui.text_slice.setText('0')
-        self.ui.text_wavelength.setText(str(self._wavelengths[0]))
+        # Set the default display to the middle of the cube
+        middle_index = len(self._wavelengths) // 2
+        self._update_slice(middle_index)
+        self.ui.value_slice.setValue(middle_index)
 
     def eventFilter(self, obj, event):
 
