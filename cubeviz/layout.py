@@ -55,6 +55,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         super(CubeVizLayout, self).__init__(parent=parent)
 
         self.session = session
+        self._wavelengths = None
 
         self.ui = load_ui('layout.ui', self,
                           directory=os.path.dirname(__file__))
@@ -134,10 +135,18 @@ class CubeVizLayout(QtWidgets.QWidget):
             z, y, x = image._widget.state.slices
             image._widget.state.slices = (value, y, x)
 
-    def set_nslices(self, nslices):
+        self.ui.text_slice.setText(str(value))
+        self.ui.text_wavelength.setText(str(self._wavelengths[value]))
+
+    def initialize_slider(self):
         self.ui.value_slice.setEnabled(True)
         self.ui.value_slice.setMinimum(0)
-        self.ui.value_slice.setMaximum(nslices-1)
+
+        self._wavelengths = self.image1._widget._data[0].get_component('Wave')[:,0,0]
+        self.ui.value_slice.setMaximum(len(self._wavelengths) - 1)
+
+        self.ui.text_slice.setText('0')
+        self.ui.text_wavelength.setText(str(self._wavelengths[0]))
 
     def eventFilter(self, obj, event):
 

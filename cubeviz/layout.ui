@@ -55,13 +55,6 @@
       </spacer>
      </item>
      <item>
-      <widget class="QLabel" name="label">
-       <property name="text">
-        <string>Show/hide specfic components in all viewers:</string>
-       </property>
-      </widget>
-     </item>
-     <item>
       <widget class="QToolButton" name="toggle_flux">
        <property name="text">
         <string>Flux</string>
@@ -104,6 +97,12 @@
         <enum>Qt::Horizontal</enum>
        </property>
       </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="text_slice"/>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="text_wavelength"/>
      </item>
      <item>
       <spacer name="horizontalSpacer">
