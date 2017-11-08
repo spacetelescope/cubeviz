@@ -110,8 +110,8 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._last_click = None
         self._active_widget = None
 
-        self._single_image = True
-        self.ui.button_toggle_image_mode.setText('Split Image Viewer')
+        self._single_image = False
+        self.ui.button_toggle_image_mode.setText('Single Image Viewer')
 
     def _toggle_flux(self, event=None):
         self.image1._widget.state.layers[0].visible = self.ui.toggle_flux.isChecked()
@@ -237,5 +237,6 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     def showEvent(self, event):
         super(CubeVizLayout, self).showEvent(event)
-        self._single_image_mode()
-        self._update_active_widget(self.image1)
+        # Make split image mode the default layout
+        self._split_image_mode()
+        self._update_active_widget(self.image2)
