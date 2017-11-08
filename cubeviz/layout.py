@@ -20,6 +20,13 @@ COLOR[ERROR] = '#ffaa66'
 COLOR[MASK] = '#66aaff'
 
 
+class CubevizImageViewer(ImageViewer):
+
+    tools = ['select:rectangle', 'select:xrange',
+             'select:yrange', 'select:circle',
+             'select:polygon', 'image:contrast_bias']
+
+
 class WidgetWrapper(QtWidgets.QWidget):
 
     def __init__(self, widget=None, tab_widget=None, parent=None):
@@ -52,10 +59,10 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui = load_ui('layout.ui', self,
                           directory=os.path.dirname(__file__))
 
-        self.image1 = WidgetWrapper(ImageViewer(self.session), tab_widget=self)
-        self.image2 = WidgetWrapper(ImageViewer(self.session), tab_widget=self)
-        self.image3 = WidgetWrapper(ImageViewer(self.session), tab_widget=self)
-        self.image4 = WidgetWrapper(ImageViewer(self.session), tab_widget=self)
+        self.image1 = WidgetWrapper(CubevizImageViewer(self.session), tab_widget=self)
+        self.image2 = WidgetWrapper(CubevizImageViewer(self.session), tab_widget=self)
+        self.image3 = WidgetWrapper(CubevizImageViewer(self.session), tab_widget=self)
+        self.image4 = WidgetWrapper(CubevizImageViewer(self.session), tab_widget=self)
         self.specviz = WidgetWrapper(SpecVizViewer(self.session), tab_widget=self)
 
         self.image1._widget.register_to_hub(self.session.hub)
