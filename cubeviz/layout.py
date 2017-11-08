@@ -2,6 +2,8 @@ from __future__ import print_function, division
 
 import os
 
+import numpy as np
+
 from glue.config import qt_fixed_layout_tab
 from qtpy import QtWidgets, QtCore
 from glue.viewers.image.qt import ImageViewer
@@ -101,8 +103,12 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui.toggle_error.toggled.connect(self._toggle_error)
         self.ui.toggle_quality.toggled.connect(self._toggle_quality)
 
-        self.ui.value_slice.valueChanged.connect(self._on_slice_change)
+        self.ui.value_slice.valueChanged.connect(self._on_slider_change)
         self.ui.value_slice.setEnabled(False)
+
+        # Register callbacks for slider and wavelength text boxes
+        self.ui.text_slice.returnPressed.connect(self._on_slice_change)
+        self.ui.text_wavelength.returnPressed.connect(self._on_wavelength_change)
 
         self.sync = {}
 
@@ -123,9 +129,38 @@ class CubeVizLayout(QtWidgets.QWidget):
     def _toggle_quality(self, event=None):
         self.image1._widget.state.layers[2].visible = self.ui.toggle_quality.isChecked()
 
-    def _on_slice_change(self, event):
-        value = self.ui.value_slice.value()
+    def _on_slice_change(self, event=None):
+        try:
+            index = int(self.ui.text_slice.text())
+        except ValueError:
+            # If invalid value is given, revert to current value
+            index = self.image1._widget.state.slices[0]
 
+        if index < 0:
+            index = 0
+        if index > len(self._wavelengths) - 1:
+            index = len(self._wavelengths) - 1
+
+        self._update_slice(index)
+        self.ui.value_slice.setValue(index)
+
+    def _on_wavelength_change(self, event=None):
+        try:
+            # Do an approximate reverse lookup of the wavelength to find the slice
+            wavelength = float(self.ui.text_wavelength.text())
+            index = np.argsort(abs(self._wavelengths - wavelength))[0]
+        except ValueError:
+            # If invalid value is given, revert to current value
+            index = self.image1._widget.state.slices[0]
+
+        self._update_slice(index)
+        self.ui.value_slice.setValue(index)
+
+    def _on_slider_change(self, event):
+        index = self.ui.value_slice.value()
+        self._update_slice(index)
+
+    def _update_slice(self, index):
         if not self.ui.bool_sync.isChecked:
             images = self.images
         else:
@@ -133,15 +168,16 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         for image in images:
             z, y, x = image._widget.state.slices
-            image._widget.state.slices = (value, y, x)
+            image._widget.state.slices = (index, y, x)
 
-        self.ui.text_slice.setText(str(value))
-        self.ui.text_wavelength.setText(str(self._wavelengths[value]))
+        self.ui.text_slice.setText(str(index))
+        self.ui.text_wavelength.setText(str(self._wavelengths[index]))
 
     def initialize_slider(self):
         self.ui.value_slice.setEnabled(True)
         self.ui.value_slice.setMinimum(0)
 
+        # Grab the wavelengths so they can be displayed in the text box
         self._wavelengths = self.image1._widget._data[0].get_component('Wave')[:,0,0]
         self.ui.value_slice.setMaximum(len(self._wavelengths) - 1)
 
