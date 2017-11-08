@@ -99,10 +99,30 @@
       </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="text_slice"/>
+      <widget class="QLineEdit" name="text_slice">
+       <property name="maximumSize">
+        <size>
+         <width>50</width>
+         <height>22</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>slice #</string>
+       </property>
+      </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="text_wavelength"/>
+      <widget class="QLineEdit" name="text_wavelength">
+       <property name="maximumSize">
+        <size>
+         <width>200</width>
+         <height>22</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>wavelength</string>
+       </property>
+      </widget>
      </item>
      <item>
       <spacer name="horizontalSpacer">
