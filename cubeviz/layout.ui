@@ -55,13 +55,6 @@
       </spacer>
      </item>
      <item>
-      <widget class="QLabel" name="label">
-       <property name="text">
-        <string>Show/hide specfic components in all viewers:</string>
-       </property>
-      </widget>
-     </item>
-     <item>
       <widget class="QToolButton" name="toggle_flux">
        <property name="text">
         <string>Flux</string>
@@ -102,6 +95,32 @@
       <widget class="QSlider" name="value_slice">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="text_slice">
+       <property name="maximumSize">
+        <size>
+         <width>50</width>
+         <height>22</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>slice #</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="text_wavelength">
+       <property name="maximumSize">
+        <size>
+         <width>200</width>
+         <height>22</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>wavelength</string>
        </property>
       </widget>
      </item>

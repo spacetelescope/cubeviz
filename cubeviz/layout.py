@@ -2,6 +2,8 @@ from __future__ import print_function, division
 
 import os
 
+import numpy as np
+
 from glue.config import qt_fixed_layout_tab
 from qtpy import QtWidgets, QtCore
 from glue.viewers.image.qt import ImageViewer
@@ -55,6 +57,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         super(CubeVizLayout, self).__init__(parent=parent)
 
         self.session = session
+        self._wavelengths = None
 
         self.ui = load_ui('layout.ui', self,
                           directory=os.path.dirname(__file__))
@@ -100,8 +103,12 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui.toggle_error.toggled.connect(self._toggle_error)
         self.ui.toggle_quality.toggled.connect(self._toggle_quality)
 
-        self.ui.value_slice.valueChanged.connect(self._on_slice_change)
+        self.ui.value_slice.valueChanged.connect(self._on_slider_change)
         self.ui.value_slice.setEnabled(False)
+
+        # Register callbacks for slider and wavelength text boxes
+        self.ui.text_slice.returnPressed.connect(self._on_slice_change)
+        self.ui.text_wavelength.returnPressed.connect(self._on_wavelength_change)
 
         self.sync = {}
 
@@ -110,8 +117,8 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._last_click = None
         self._active_widget = None
 
-        self._single_image = True
-        self.ui.button_toggle_image_mode.setText('Split Image Viewer')
+        self._single_image = False
+        self.ui.button_toggle_image_mode.setText('Single Image Viewer')
 
     def _toggle_flux(self, event=None):
         self.image1._widget.state.layers[0].visible = self.ui.toggle_flux.isChecked()
@@ -122,9 +129,38 @@ class CubeVizLayout(QtWidgets.QWidget):
     def _toggle_quality(self, event=None):
         self.image1._widget.state.layers[2].visible = self.ui.toggle_quality.isChecked()
 
-    def _on_slice_change(self, event):
-        value = self.ui.value_slice.value()
+    def _on_slice_change(self, event=None):
+        try:
+            index = int(self.ui.text_slice.text())
+        except ValueError:
+            # If invalid value is given, revert to current value
+            index = self.image1._widget.state.slices[0]
 
+        if index < 0:
+            index = 0
+        if index > len(self._wavelengths) - 1:
+            index = len(self._wavelengths) - 1
+
+        self._update_slice(index)
+        self.ui.value_slice.setValue(index)
+
+    def _on_wavelength_change(self, event=None):
+        try:
+            # Do an approximate reverse lookup of the wavelength to find the slice
+            wavelength = float(self.ui.text_wavelength.text())
+            index = np.argsort(abs(self._wavelengths - wavelength))[0]
+        except ValueError:
+            # If invalid value is given, revert to current value
+            index = self.image1._widget.state.slices[0]
+
+        self._update_slice(index)
+        self.ui.value_slice.setValue(index)
+
+    def _on_slider_change(self, event):
+        index = self.ui.value_slice.value()
+        self._update_slice(index)
+
+    def _update_slice(self, index):
         if not self.ui.bool_sync.isChecked:
             images = self.images
         else:
@@ -132,12 +168,23 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         for image in images:
             z, y, x = image._widget.state.slices
-            image._widget.state.slices = (value, y, x)
+            image._widget.state.slices = (index, y, x)
 
-    def set_nslices(self, nslices):
+        self.ui.text_slice.setText(str(index))
+        self.ui.text_wavelength.setText(str(self._wavelengths[index]))
+
+    def initialize_slider(self):
         self.ui.value_slice.setEnabled(True)
         self.ui.value_slice.setMinimum(0)
-        self.ui.value_slice.setMaximum(nslices-1)
+
+        # Grab the wavelengths so they can be displayed in the text box
+        self._wavelengths = self.image1._widget._data[0].get_component('Wave')[:,0,0]
+        self.ui.value_slice.setMaximum(len(self._wavelengths) - 1)
+
+        # Set the default display to the middle of the cube
+        middle_index = len(self._wavelengths) // 2
+        self._update_slice(middle_index)
+        self.ui.value_slice.setValue(middle_index)
 
     def eventFilter(self, obj, event):
 
@@ -237,5 +284,6 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     def showEvent(self, event):
         super(CubeVizLayout, self).showEvent(event)
-        self._single_image_mode()
-        self._update_active_widget(self.image1)
+        # Make split image mode the default layout
+        self._split_image_mode()
+        self._update_active_widget(self.image2)
