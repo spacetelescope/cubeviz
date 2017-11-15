@@ -1,11 +1,13 @@
 from __future__ import print_function, division
 
 import os
+from collections import OrderedDict
 
 import numpy as np
 
 from glue.config import qt_fixed_layout_tab
 from qtpy import QtWidgets, QtCore
+from qtpy.QtWidgets import QMenu, QAction
 from glue.viewers.image.qt import ImageViewer
 from specviz.third_party.glue.data_viewer import SpecVizViewer
 from glue.utils.qt import load_ui
@@ -110,6 +112,8 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui.text_slice.returnPressed.connect(self._on_slice_change)
         self.ui.text_wavelength.returnPressed.connect(self._on_wavelength_change)
 
+        self._init_option_buttons()
+
         self.sync = {}
 
         app = get_qapp()
@@ -119,6 +123,41 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         self._single_image = False
         self.ui.button_toggle_image_mode.setText('Single Image Viewer')
+
+    def _init_option_buttons(self):
+        view_menu = self._dict_to_menu(OrderedDict([
+            ('Something', lambda: None),
+            ('Anything', lambda: None),
+            ('Testing', lambda: None)
+        ]))
+        self.ui.view_option_button.setMenu(view_menu)
+
+        cube_menu = self._dict_to_menu(OrderedDict([
+            ('Something', lambda: None),
+            ('Anything', lambda: None),
+            ('Testing', lambda: None)
+        ]))
+        self.ui.cube_option_button.setMenu(cube_menu)
+
+    def _dict_to_menu(self, menu_dict):
+        '''Stolen shamelessly from specviz. Thanks!'''
+        menu_widget = QMenu()
+        for k, v in menu_dict.items():
+            if isinstance(v, dict):
+                new_menu = menu_widget.addMenu(k)
+                self._dict_to_menu(v, menu_widget=new_menu)
+            else:
+                act = QAction(k, menu_widget)
+
+                if isinstance(v, list):
+                    if v[0] == 'checkable':
+                        v = v[1]
+                        act.setCheckable(True)
+                        act.setChecked(True)
+
+                act.triggered.connect(v)
+                menu_widget.addAction(act)
+        return menu_widget
 
     def _toggle_flux(self, event=None):
         self.image1._widget.state.layers[0].visible = self.ui.toggle_flux.isChecked()
