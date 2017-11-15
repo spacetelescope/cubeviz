@@ -130,8 +130,11 @@
      </item>
      <item row="1" column="0">
       <widget class="QToolButton" name="button_toggle_sidebar">
+       <property name="toolTip">
+        <string>Toggle advanced option panel for Glue data viewers</string>
+       </property>
        <property name="text">
-        <string>Advanced Options</string>
+        <string>Glue Viewer Options</string>
        </property>
       </widget>
      </item>
