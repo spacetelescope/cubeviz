@@ -63,16 +63,7 @@ class CubevizManager(HubListener):
         image_viewers[0].state.layers[1].color = COLOR[ERROR]
         image_viewers[0].state.layers[2].color = COLOR[MASK]
 
-        cubeviz_layout._toggle_flux()
-        cubeviz_layout._toggle_error()
-        cubeviz_layout._toggle_quality()
-
-        cubeviz_layout.specviz._widget.add_data(data)
-
-        # Set up linking of data slices and views
-        cubeviz_layout.setup_syncing()
-
-        cubeviz_layout.initialize_slider()
+        cubeviz_layout.add_data(data)
 
         index = self._app.get_tab_index(cubeviz_layout)
         self._app.tab_bar.rename_tab(index, "CubeViz: {}".format(data.label))

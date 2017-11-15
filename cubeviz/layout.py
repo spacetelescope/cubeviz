@@ -60,6 +60,7 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         self.session = session
         self._wavelengths = None
+        self._option_buttons = []
 
         self.ui = load_ui('layout.ui', self,
                           directory=os.path.dirname(__file__))
@@ -125,6 +126,11 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui.button_toggle_image_mode.setText('Single Image Viewer')
 
     def _init_option_buttons(self):
+        self._option_buttons = [
+            self.ui.view_option_button,
+            self.ui.cube_option_button
+        ]
+
         view_menu = self._dict_to_menu(OrderedDict([
             ('Something', lambda: None),
             ('Anything', lambda: None),
@@ -158,6 +164,10 @@ class CubeVizLayout(QtWidgets.QWidget):
                 act.triggered.connect(v)
                 menu_widget.addAction(act)
         return menu_widget
+
+    def _enable_option_buttons(self):
+        for button in self._option_buttons:
+            button.setEnabled(True)
 
     def _toggle_flux(self, event=None):
         self.image1._widget.state.layers[0].visible = self.ui.toggle_flux.isChecked()
@@ -212,7 +222,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui.text_slice.setText(str(index))
         self.ui.text_wavelength.setText(str(self._wavelengths[index]))
 
-    def initialize_slider(self):
+    def _enable_slider(self):
         self.ui.value_slice.setEnabled(True)
         self.ui.value_slice.setMinimum(0)
 
@@ -224,6 +234,17 @@ class CubeVizLayout(QtWidgets.QWidget):
         middle_index = len(self._wavelengths) // 2
         self._update_slice(middle_index)
         self.ui.value_slice.setValue(middle_index)
+
+    def add_data(self, data):
+        self.specviz._widget.add_data(data)
+
+        self._setup_syncing()
+        self._enable_slider()
+        self._enable_option_buttons()
+
+        self._toggle_flux()
+        self._toggle_error()
+        self._toggle_quality()
 
     def eventFilter(self, obj, event):
 
@@ -300,7 +321,7 @@ class CubeVizLayout(QtWidgets.QWidget):
     def subWindowList(self):
         return [self.image1, self.image2, self.image3, self.image4, self.specviz]
 
-    def setup_syncing(self):
+    def _setup_syncing(self):
         for attribute in ['slices', 'x_min', 'x_max', 'y_min', 'y_max']:
             sync1 = keep_in_sync(self.image2._widget.state, attribute,
                                  self.image3._widget.state, attribute)
