@@ -10,7 +10,7 @@ from qtpy import QtWidgets, QtCore
 from qtpy.QtWidgets import QMenu, QAction
 from glue.viewers.image.qt import ImageViewer
 from specviz.third_party.glue.data_viewer import SpecVizViewer
-from glue.utils.qt import load_ui
+from glue.utils.qt import load_ui, get_text
 from glue.external.echo import keep_in_sync
 from glue.utils.qt import get_qapp
 
@@ -139,10 +139,10 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui.view_option_button.setMenu(view_menu)
 
         cube_menu = self._dict_to_menu(OrderedDict([
-            ('Filter', lambda: None),
-            ('Moment Maps', lambda: None),
-            ('Spatial Smoothing', lambda: None),
-            ('Arithmetic Operations', lambda: None)
+            ('Filter', lambda: self._open_dialog('Filter', None)),
+            ('Moment Maps', lambda: self._open_dialog('Moment Maps', None)),
+            ('Spatial Smoothing', lambda: self._open_dialog('Spatial Smoothing', None)),
+            ('Arithmetic Operations', lambda: self._open_dialog('Arithmetic Operations', None))
         ]))
         self.ui.cube_option_button.setMenu(cube_menu)
 
@@ -165,6 +165,9 @@ class CubeVizLayout(QtWidgets.QWidget):
                 act.triggered.connect(v)
                 menu_widget.addAction(act)
         return menu_widget
+
+    def _open_dialog(self, name, widget):
+        get_text(name, "What's your name?")
 
     def _enable_option_buttons(self):
         for button in self._option_buttons:
