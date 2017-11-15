@@ -139,9 +139,10 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui.view_option_button.setMenu(view_menu)
 
         cube_menu = self._dict_to_menu(OrderedDict([
-            ('Something', lambda: None),
-            ('Anything', lambda: None),
-            ('Testing', lambda: None)
+            ('Filter', lambda: None),
+            ('Moment Maps', lambda: None),
+            ('Spatial Smoothing', lambda: None),
+            ('Arithmetic Operations', lambda: None)
         ]))
         self.ui.cube_option_button.setMenu(cube_menu)
 
