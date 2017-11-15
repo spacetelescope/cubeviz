@@ -33,6 +33,9 @@
      </property>
      <item row="1" column="6">
       <widget class="QSlider" name="value_slice">
+       <property name="toolTip">
+        <string>Drag the slider to navigate through the slices of the cube</string>
+       </property>
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
@@ -48,6 +51,9 @@
          <width>0</width>
          <height>0</height>
         </size>
+       </property>
+       <property name="toolTip">
+        <string/>
        </property>
        <property name="text">
         <string>View</string>
@@ -90,6 +96,9 @@
          <width>50</width>
          <height>22</height>
         </size>
+       </property>
+       <property name="toolTip">
+        <string>Enter a slice index to go directly to that slice</string>
        </property>
        <property name="text">
         <string>slice #</string>
@@ -181,6 +190,9 @@
          <width>200</width>
          <height>22</height>
         </size>
+       </property>
+       <property name="toolTip">
+        <string>Enter a wavelength value to navigate to the slice corresponding to the nearest wavelength</string>
        </property>
        <property name="text">
         <string>wavelength</string>
