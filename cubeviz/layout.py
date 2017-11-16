@@ -94,17 +94,18 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui.button_toggle_image_mode.clicked.connect(
             self._toggle_image_mode)
 
-        self.ui.toggle_flux.setStyleSheet('background-color: {0};'.format(COLOR[FLUX]))
-        self.ui.toggle_error.setStyleSheet('background-color: {0};'.format(COLOR[ERROR]))
-        self.ui.toggle_quality.setStyleSheet('background-color: {0};'.format(COLOR[MASK]))
+        # Leave these to reenable for the single image viewer if desired
+        #self.ui.toggle_flux.setStyleSheet('background-color: {0};'.format(COLOR[FLUX]))
+        #self.ui.toggle_error.setStyleSheet('background-color: {0};'.format(COLOR[ERROR]))
+        #self.ui.toggle_quality.setStyleSheet('background-color: {0};'.format(COLOR[MASK]))
 
-        self.ui.toggle_flux.setChecked(True)
-        self.ui.toggle_error.setChecked(False)
-        self.ui.toggle_quality.setChecked(False)
+        #self.ui.toggle_flux.setChecked(True)
+        #self.ui.toggle_error.setChecked(False)
+        #self.ui.toggle_quality.setChecked(False)
 
-        self.ui.toggle_flux.toggled.connect(self._toggle_flux)
-        self.ui.toggle_error.toggled.connect(self._toggle_error)
-        self.ui.toggle_quality.toggled.connect(self._toggle_quality)
+        #self.ui.toggle_flux.toggled.connect(self._toggle_flux)
+        #self.ui.toggle_error.toggled.connect(self._toggle_error)
+        #self.ui.toggle_quality.toggled.connect(self._toggle_quality)
 
         self.ui.value_slice.valueChanged.connect(self._on_slider_change)
         self.ui.value_slice.setEnabled(False)
@@ -239,6 +240,19 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._update_slice(middle_index)
         self.ui.value_slice.setValue(middle_index)
 
+    def _enable_viewer_combos(self):
+        self._viewer_combos = [
+            self.ui.viewer1_combo,
+            self.ui.viewer2_combo,
+            self.ui.viewer3_combo
+        ]
+
+        for i, combo in enumerate(self._viewer_combos):
+            for item in ['Flux', 'Error', 'DQ']:
+                combo.addItem(item)
+            combo.setEnabled(True)
+            combo.setCurrentIndex(i)
+
     def add_data(self, data):
         self.specviz._widget.add_data(data)
 
@@ -246,9 +260,11 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._enable_slider()
         self._enable_option_buttons()
 
-        self._toggle_flux()
-        self._toggle_error()
-        self._toggle_quality()
+        self._enable_viewer_combos()
+
+        #self._toggle_flux()
+        #self._toggle_error()
+        #self._toggle_quality()
 
     def eventFilter(self, obj, event):
 
