@@ -1,14 +1,16 @@
 from __future__ import print_function, division
 
 import os
+from collections import OrderedDict
 
 import numpy as np
 
 from glue.config import qt_fixed_layout_tab
 from qtpy import QtWidgets, QtCore
+from qtpy.QtWidgets import QMenu, QAction
 from glue.viewers.image.qt import ImageViewer
 from specviz.third_party.glue.data_viewer import SpecVizViewer
-from glue.utils.qt import load_ui
+from glue.utils.qt import load_ui, get_text
 from glue.external.echo import keep_in_sync
 from glue.utils.qt import get_qapp
 
@@ -58,6 +60,7 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         self.session = session
         self._wavelengths = None
+        self._option_buttons = []
 
         self.ui = load_ui('layout.ui', self,
                           directory=os.path.dirname(__file__))
@@ -91,17 +94,18 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui.button_toggle_image_mode.clicked.connect(
             self._toggle_image_mode)
 
-        self.ui.toggle_flux.setStyleSheet('background-color: {0};'.format(COLOR[FLUX]))
-        self.ui.toggle_error.setStyleSheet('background-color: {0};'.format(COLOR[ERROR]))
-        self.ui.toggle_quality.setStyleSheet('background-color: {0};'.format(COLOR[MASK]))
+        # Leave these to reenable for the single image viewer if desired
+        #self.ui.toggle_flux.setStyleSheet('background-color: {0};'.format(COLOR[FLUX]))
+        #self.ui.toggle_error.setStyleSheet('background-color: {0};'.format(COLOR[ERROR]))
+        #self.ui.toggle_quality.setStyleSheet('background-color: {0};'.format(COLOR[MASK]))
 
-        self.ui.toggle_flux.setChecked(True)
-        self.ui.toggle_error.setChecked(False)
-        self.ui.toggle_quality.setChecked(False)
+        #self.ui.toggle_flux.setChecked(True)
+        #self.ui.toggle_error.setChecked(False)
+        #self.ui.toggle_quality.setChecked(False)
 
-        self.ui.toggle_flux.toggled.connect(self._toggle_flux)
-        self.ui.toggle_error.toggled.connect(self._toggle_error)
-        self.ui.toggle_quality.toggled.connect(self._toggle_quality)
+        #self.ui.toggle_flux.toggled.connect(self._toggle_flux)
+        #self.ui.toggle_error.toggled.connect(self._toggle_error)
+        #self.ui.toggle_quality.toggled.connect(self._toggle_quality)
 
         self.ui.value_slice.valueChanged.connect(self._on_slider_change)
         self.ui.value_slice.setEnabled(False)
@@ -109,6 +113,8 @@ class CubeVizLayout(QtWidgets.QWidget):
         # Register callbacks for slider and wavelength text boxes
         self.ui.text_slice.returnPressed.connect(self._on_slice_change)
         self.ui.text_wavelength.returnPressed.connect(self._on_wavelength_change)
+
+        self._init_option_buttons()
 
         self.sync = {}
 
@@ -119,6 +125,54 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         self._single_image = False
         self.ui.button_toggle_image_mode.setText('Single Image Viewer')
+
+    def _init_option_buttons(self):
+        self._option_buttons = [
+            self.ui.view_option_button,
+            self.ui.cube_option_button
+        ]
+
+        view_menu = self._dict_to_menu(OrderedDict([
+            ('Something', lambda: None),
+            ('Anything', lambda: None),
+            ('Testing', lambda: None)
+        ]))
+        self.ui.view_option_button.setMenu(view_menu)
+
+        cube_menu = self._dict_to_menu(OrderedDict([
+            ('Filter', lambda: self._open_dialog('Filter', None)),
+            ('Moment Maps', lambda: self._open_dialog('Moment Maps', None)),
+            ('Spatial Smoothing', lambda: self._open_dialog('Spatial Smoothing', None)),
+            ('Arithmetic Operations', lambda: self._open_dialog('Arithmetic Operations', None))
+        ]))
+        self.ui.cube_option_button.setMenu(cube_menu)
+
+    def _dict_to_menu(self, menu_dict):
+        '''Stolen shamelessly from specviz. Thanks!'''
+        menu_widget = QMenu()
+        for k, v in menu_dict.items():
+            if isinstance(v, dict):
+                new_menu = menu_widget.addMenu(k)
+                self._dict_to_menu(v, menu_widget=new_menu)
+            else:
+                act = QAction(k, menu_widget)
+
+                if isinstance(v, list):
+                    if v[0] == 'checkable':
+                        v = v[1]
+                        act.setCheckable(True)
+                        act.setChecked(True)
+
+                act.triggered.connect(v)
+                menu_widget.addAction(act)
+        return menu_widget
+
+    def _open_dialog(self, name, widget):
+        get_text(name, "What's your name?")
+
+    def _enable_option_buttons(self):
+        for button in self._option_buttons:
+            button.setEnabled(True)
 
     def _toggle_flux(self, event=None):
         self.image1._widget.state.layers[0].visible = self.ui.toggle_flux.isChecked()
@@ -173,7 +227,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui.text_slice.setText(str(index))
         self.ui.text_wavelength.setText(str(self._wavelengths[index]))
 
-    def initialize_slider(self):
+    def _enable_slider(self):
         self.ui.value_slice.setEnabled(True)
         self.ui.value_slice.setMinimum(0)
 
@@ -185,6 +239,32 @@ class CubeVizLayout(QtWidgets.QWidget):
         middle_index = len(self._wavelengths) // 2
         self._update_slice(middle_index)
         self.ui.value_slice.setValue(middle_index)
+
+    def _enable_viewer_combos(self):
+        self._viewer_combos = [
+            self.ui.viewer1_combo,
+            self.ui.viewer2_combo,
+            self.ui.viewer3_combo
+        ]
+
+        for i, combo in enumerate(self._viewer_combos):
+            for item in ['Flux', 'Error', 'DQ']:
+                combo.addItem(item)
+            combo.setEnabled(True)
+            combo.setCurrentIndex(i)
+
+    def add_data(self, data):
+        self.specviz._widget.add_data(data)
+
+        self._setup_syncing()
+        self._enable_slider()
+        self._enable_option_buttons()
+
+        self._enable_viewer_combos()
+
+        #self._toggle_flux()
+        #self._toggle_error()
+        #self._toggle_quality()
 
     def eventFilter(self, obj, event):
 
@@ -261,7 +341,7 @@ class CubeVizLayout(QtWidgets.QWidget):
     def subWindowList(self):
         return [self.image1, self.image2, self.image3, self.image4, self.specviz]
 
-    def setup_syncing(self):
+    def _setup_syncing(self):
         for attribute in ['slices', 'x_min', 'x_max', 'y_min', 'y_max']:
             sync1 = keep_in_sync(self.image2._widget.state, attribute,
                                  self.image3._widget.state, attribute)
