@@ -60,6 +60,8 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         self.session = session
         self._wavelengths = None
+        self._wavelength_units = None
+        self._wavelength_format = '{}'
         self._option_buttons = []
 
         self.ui = load_ui('layout.ui', self,
@@ -133,9 +135,9 @@ class CubeVizLayout(QtWidgets.QWidget):
         ]
 
         view_menu = self._dict_to_menu(OrderedDict([
-            ('Something', lambda: None),
-            ('Anything', lambda: None),
-            ('Testing', lambda: None)
+            ('RA-DEC', lambda: None),
+            ('RA-Spectral', lambda: None),
+            ('DEC-Spectral', lambda: None),
         ]))
         self.ui.view_option_button.setMenu(view_menu)
 
@@ -225,11 +227,18 @@ class CubeVizLayout(QtWidgets.QWidget):
             image._widget.state.slices = (index, y, x)
 
         self.ui.text_slice.setText(str(index))
-        self.ui.text_wavelength.setText(str(self._wavelengths[index]))
+
+        # Get the wavelength units in order to set the wavelength value's number format
+        self.ui.text_wavelength.setText(self._wavelength_format.format(self._wavelengths[index]))
 
     def _enable_slider(self):
         self.ui.value_slice.setEnabled(True)
         self.ui.value_slice.setMinimum(0)
+
+        # Store the wavelength units and format
+        self._wavelength_units = str(self.session.data_collection.data[0].coords.wcs.wcs.cunit[2])
+        self._wavelength_format = '{:.3}'
+        self.ui.wavelength_slider_text.setText('Wavelength ({})'.format(self._wavelength_units))
 
         # Grab the wavelengths so they can be displayed in the text box
         self._wavelengths = self.image1._widget._data[0].get_component('Wave')[:,0,0]
@@ -239,6 +248,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         middle_index = len(self._wavelengths) // 2
         self._update_slice(middle_index)
         self.ui.value_slice.setValue(middle_index)
+        self.ui.text_wavelength.setText(self._wavelength_format.format(self._wavelengths[middle_index]))
 
     def _enable_viewer_combos(self):
         self._viewer_combos = [
@@ -261,6 +271,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._enable_option_buttons()
 
         self._enable_viewer_combos()
+
 
         #self._toggle_flux()
         #self._toggle_error()
