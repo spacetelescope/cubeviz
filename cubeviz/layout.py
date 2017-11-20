@@ -14,6 +14,7 @@ from glue.core.message import SettingsChangeMessage
 
 from specviz.third_party.glue.data_viewer import SpecVizViewer
 
+from .toolbar import CubevizToolbar
 from .image_viewer import CubevizImageViewer
 
 from .controls.slice import SliceController
@@ -58,6 +59,11 @@ class CubeVizLayout(QtWidgets.QWidget):
     def __init__(self, session=None, parent=None):
         super(CubeVizLayout, self).__init__(parent=parent)
 
+        if not hasattr(session.application, '_has_cubeviz_toolbar'):
+            cubeviz_toolbar = CubevizToolbar(application=session.application)
+            session.application.insertToolBar(session.application._data_toolbar,
+                                              cubeviz_toolbar)
+
         self.session = session
         self._has_data = False
         self._wavelengths = None
@@ -95,7 +101,6 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.subWindowActivated.connect(self._update_active_view)
 
         self.ui.sync_button.clicked.connect(self._on_sync_click)
-        self.ui.button_toggle_sidebar.clicked.connect(self._toggle_sidebar)
         self.ui.button_toggle_image_mode.clicked.connect(
             self._toggle_image_mode)
 
@@ -318,17 +323,6 @@ class CubeVizLayout(QtWidgets.QWidget):
                 self._last_click = click_pos
 
         return super(CubeVizLayout, self).eventFilter(obj, event)
-
-    def _toggle_sidebar(self, event=None):
-        splitter = self.session.application._ui.main_splitter
-        sizes = list(splitter.sizes())
-        if sizes[0] == 0:
-            sizes[0] += 10
-            sizes[1] -= 10
-        else:
-            sizes[1] = sizes[0] + sizes[1]
-            sizes[0] = 0
-        splitter.setSizes(sizes)
 
     def _toggle_image_mode(self, event=None):
         if self._single_image:
