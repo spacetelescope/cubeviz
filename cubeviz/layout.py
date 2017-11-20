@@ -236,16 +236,8 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui.value_slice.setMinimum(0)
 
         # Store the wavelength units and format
-        if self._wavelength_units == None:
-            self._wavelength_units = str(self.session.data_collection.data[0].coords.wcs.wcs.cunit[2])
-
-        if self._wavelength_units == 'm':
-            self._wavelength_format = '{:.3}'
-        elif self._wavelength_units == 'um':
-            self._wavelength_format = '{:.0}'
-        else:
-            self._wavelength_format = '{}'
-
+        self._wavelength_units = str(self.session.data_collection.data[0].coords.wcs.wcs.cunit[2])
+        self._wavelength_format = '{:.3}'
         self.ui.wavelength_slider_text.setText('Wavelength ({})'.format(self._wavelength_units))
 
         # Grab the wavelengths so they can be displayed in the text box
