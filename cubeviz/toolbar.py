@@ -9,8 +9,8 @@ class CubevizToolbar(QtWidgets.QToolBar):
 
         self.application = application
 
-        self._button_viewer_options = QtWidgets.QToolButton()
-        self._button_viewer_options.setText("Viewer options")
+        self._button_viewer_options = QtWidgets.QPushButton()
+        self._button_viewer_options.setText("Show viewer options")
         self._button_viewer_options.clicked.connect(self._toggle_sidebar)
 
         self.addWidget(self._button_viewer_options)
@@ -21,7 +21,9 @@ class CubevizToolbar(QtWidgets.QToolBar):
         if sizes[0] == 0:
             sizes[0] += 10
             sizes[1] -= 10
+            self._button_viewer_options.setText("Hide viewer options")
         else:
             sizes[1] = sizes[0] + sizes[1]
             sizes[0] = 0
+            self._button_viewer_options.setText("Show viewer options")
         splitter.setSizes(sizes)
