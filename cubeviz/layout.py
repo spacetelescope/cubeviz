@@ -57,7 +57,26 @@ class CubevizImageViewer(ImageViewer):
 
     def __init__(self, *args, **kwargs):
         super(CubevizImageViewer, self).__init__(*args, **kwargs)
-        self._sync_button = SyncButtonBox(self)
+        self._sync_button = None
+        self._slice_index = None
+
+    def enable_toolbar(self):
+        self._sync_button = self.toolbar.tools[SyncButtonBox.tool_id]
+        button = self.toolbar.actions[SyncButtonBox.tool_id]
+        button.setChecked(True)
+
+    def update_slice_index(self, index):
+        self._slice_index = index
+        z, y, x = self.state.slices
+        self.state.slices = (self._slice_index, y, x)
+
+    @property
+    def synced(self):
+        return self._sync_button._synced
+
+    @property
+    def slice_index(self):
+        return self._slice_index
 
 
 class WidgetWrapper(QtWidgets.QWidget):
@@ -88,6 +107,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         super(CubeVizLayout, self).__init__(parent=parent)
 
         self.session = session
+        self._has_data = False
         self._wavelengths = None
         self._wavelength_units = None
         self._wavelength_format = '{}'
@@ -243,18 +263,16 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     def _on_slider_change(self, event):
         index = self.ui.value_slice.value()
+        self._active_widget._widget.update_slice_index(index)
+
+        if self._active_widget._widget.synced:
+            for image in self.images:
+                if image != self._active_widget and image._widget.synced:
+                    image._widget.update_slice_index(index)
+
         self._update_slice(index)
 
     def _update_slice(self, index):
-        if not self.ui.bool_sync.isChecked:
-            images = self.images
-        else:
-            images = self.images[:2]
-
-        for image in images:
-            z, y, x = image._widget.state.slices
-            image._widget.state.slices = (index, y, x)
-
         self.ui.text_slice.setText(str(index))
 
         # Get the wavelength units in order to set the wavelength value's number format
@@ -295,12 +313,17 @@ class CubeVizLayout(QtWidgets.QWidget):
     def add_data(self, data):
         self.specviz._widget.add_data(data)
 
+        for image in self.images:
+            image._widget.enable_toolbar()
+
+        self._has_data = True
+        self._active_widget = self.image2
+
         self._setup_syncing()
         self._enable_slider()
         self._enable_option_buttons()
 
         self._enable_viewer_combos()
-
 
         #self._toggle_flux()
         #self._toggle_error()
@@ -373,7 +396,11 @@ class CubeVizLayout(QtWidgets.QWidget):
         hsplitter.setSizes(hsizes)
 
     def _update_active_widget(self, widget):
-        self._active_widget = widget
+        if self._has_data:
+            self._active_widget = widget
+            index = self._active_widget._widget.slice_index
+            self.ui.value_slice.setValue(index)
+            self._update_slice(index)
 
     def activeSubWindow(self):
         return self._active_widget
