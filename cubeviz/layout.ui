@@ -270,12 +270,15 @@
       </spacer>
      </item>
      <item row="1" column="12">
-      <widget class="QToolButton" name="bool_sync">
+      <widget class="QToolButton" name="sync_button">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="text">
         <string>Sync Viewers</string>
        </property>
        <property name="checkable">
-        <bool>true</bool>
+        <bool>false</bool>
        </property>
        <property name="checked">
         <bool>false</bool>

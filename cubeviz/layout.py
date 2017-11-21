@@ -62,6 +62,9 @@ class CubevizImageViewer(ImageViewer):
 
     def enable_toolbar(self):
         self._sync_button = self.toolbar.tools[SyncButtonBox.tool_id]
+        self.enable_button()
+
+    def enable_button(self):
         button = self.toolbar.actions[SyncButtonBox.tool_id]
         button.setChecked(True)
 
@@ -140,7 +143,7 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         self.subWindowActivated.connect(self._update_active_widget)
 
-        self.ui.bool_sync.clicked.connect(self._on_sync_change)
+        self.ui.sync_button.clicked.connect(self._on_sync_click)
         self.ui.button_toggle_sidebar.clicked.connect(self._toggle_sidebar)
         self.ui.button_toggle_image_mode.clicked.connect(
             self._toggle_image_mode)
@@ -224,6 +227,7 @@ class CubeVizLayout(QtWidgets.QWidget):
     def _enable_option_buttons(self):
         for button in self._option_buttons:
             button.setEnabled(True)
+        self.ui.sync_button.setEnabled(True)
 
     def _toggle_flux(self, event=None):
         self.image1._widget.state.layers[0].visible = self.ui.toggle_flux.isChecked()
@@ -319,9 +323,9 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._has_data = True
         self._active_widget = self.image2
 
-        self._setup_syncing()
         self._enable_slider()
         self._enable_option_buttons()
+        self._setup_syncing()
 
         self._enable_viewer_combos()
 
@@ -409,25 +413,20 @@ class CubeVizLayout(QtWidgets.QWidget):
         return [self.image1, self.image2, self.image3, self.image4, self.specviz]
 
     def _setup_syncing(self):
-        for attribute in ['slices', 'x_min', 'x_max', 'y_min', 'y_max']:
+        for attribute in ['x_min', 'x_max', 'y_min', 'y_max']:
             sync1 = keep_in_sync(self.image2._widget.state, attribute,
                                  self.image3._widget.state, attribute)
             sync2 = keep_in_sync(self.image3._widget.state, attribute,
                                  self.image4._widget.state, attribute)
             self.sync[attribute] = sync1, sync2
-        self._on_sync_change()
+        self._on_sync_click()
 
-    def _on_sync_change(self, event=None):
-        if self.ui.bool_sync.isChecked():
-            for attribute in self.sync:
-                sync1, sync2 = self.sync[attribute]
-                sync1.enable_syncing()
-                sync2.enable_syncing()
-        else:
-            for attribute in self.sync:
-                sync1, sync2 = self.sync[attribute]
-                sync1.disable_syncing()
-                sync2.disable_syncing()
+    def _on_sync_click(self, event=None):
+        for image in self.images:
+            index = self._active_widget._widget.slice_index
+            image._widget.enable_button()
+            if image != self._active_widget:
+                image._widget.update_slice_index(index)
 
     def showEvent(self, event):
         super(CubeVizLayout, self).showEvent(event)
