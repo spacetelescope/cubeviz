@@ -5,7 +5,8 @@ from collections import OrderedDict
 
 import numpy as np
 
-from glue.config import qt_fixed_layout_tab
+from glue.config import qt_fixed_layout_tab, viewer_tool
+from glue.viewers.common.qt.tool import CheckableTool
 from qtpy import QtWidgets, QtCore
 from qtpy.QtWidgets import QMenu, QAction
 from glue.viewers.image.qt import ImageViewer
@@ -24,11 +25,39 @@ COLOR[ERROR] = '#ffaa66'
 COLOR[MASK] = '#66aaff'
 
 
+@viewer_tool
+class SyncButtonBox(CheckableTool):
+
+    icon = 'glue_link'
+    tool_id = 'sync_checkbox'
+    action_text = 'Sync this viewer with other viewers'
+    tool_tip = 'Sync this viewer with other viewers'
+    status_tip = 'This viewer is synced'
+    shortcut = 'D'
+
+    def __init__(self, viewer):
+        super(SyncButtonBox, self).__init__(viewer)
+        self._synced = True
+
+    def activate(self):
+        self._synced = True
+
+    def deactivate(self):
+        self._synced = False
+
+    def close(self):
+        pass
+
+
 class CubevizImageViewer(ImageViewer):
 
-    tools = ['select:rectangle', 'select:xrange',
+    tools = ['sync_checkbox', 'select:rectangle', 'select:xrange',
              'select:yrange', 'select:circle',
              'select:polygon', 'image:contrast_bias']
+
+    def __init__(self, *args, **kwargs):
+        super(CubevizImageViewer, self).__init__(*args, **kwargs)
+        self._sync_button = SyncButtonBox(self)
 
 
 class WidgetWrapper(QtWidgets.QWidget):
