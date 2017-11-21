@@ -272,7 +272,7 @@
      <item row="1" column="12">
       <widget class="QToolButton" name="bool_sync">
        <property name="text">
-        <string>Sync viewer slices/zoom</string>
+        <string>Sync Viewers</string>
        </property>
        <property name="checkable">
         <bool>true</bool>
