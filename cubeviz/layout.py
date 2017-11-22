@@ -150,7 +150,7 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         self.ui.specviz_layout.addWidget(self.specviz)
 
-        self.subWindowActivated.connect(self._updat._active_view)
+        self.subWindowActivated.connect(self._update_active_view)
 
         self.ui.sync_button.clicked.connect(self._on_sync_click)
         self.ui.button_toggle_sidebar.clicked.connect(self._toggle_sidebar)
@@ -522,4 +522,4 @@ class CubeVizLayout(QtWidgets.QWidget):
         super(CubeVizLayout, self).showEvent(event)
         # Make split image mode the default layout
         self._split_image_mode()
-        self._updat._active_view(self.left_view)
+        self._update_active_view(self.left_view)
