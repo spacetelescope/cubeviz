@@ -5,7 +5,8 @@ from collections import OrderedDict
 
 import numpy as np
 
-from glue.config import qt_fixed_layout_tab
+from glue.config import qt_fixed_layout_tab, viewer_tool
+from glue.viewers.common.qt.tool import CheckableTool
 from qtpy import QtWidgets, QtCore
 from qtpy.QtWidgets import QMenu, QAction
 from glue.viewers.image.qt import ImageViewer
@@ -24,11 +25,61 @@ COLOR[ERROR] = '#ffaa66'
 COLOR[MASK] = '#66aaff'
 
 
+@viewer_tool
+class SyncButtonBox(CheckableTool):
+
+    icon = 'glue_link'
+    tool_id = 'sync_checkbox'
+    action_text = 'Sync this viewer with other viewers'
+    tool_tip = 'Sync this viewer with other viewers'
+    status_tip = 'This viewer is synced'
+    shortcut = 'D'
+
+    def __init__(self, viewer):
+        super(SyncButtonBox, self).__init__(viewer)
+        self._synced = True
+
+    def activate(self):
+        self._synced = True
+
+    def deactivate(self):
+        self._synced = False
+
+    def close(self):
+        pass
+
+
 class CubevizImageViewer(ImageViewer):
 
-    tools = ['select:rectangle', 'select:xrange',
+    tools = ['sync_checkbox', 'select:rectangle', 'select:xrange',
              'select:yrange', 'select:circle',
              'select:polygon', 'image:contrast_bias']
+
+    def __init__(self, *args, **kwargs):
+        super(CubevizImageViewer, self).__init__(*args, **kwargs)
+        self._sync_button = None
+        self._slice_index = None
+
+    def enable_toolbar(self):
+        self._sync_button = self.toolbar.tools[SyncButtonBox.tool_id]
+        self.enable_button()
+
+    def enable_button(self):
+        button = self.toolbar.actions[SyncButtonBox.tool_id]
+        button.setChecked(True)
+
+    def update_slice_index(self, index):
+        self._slice_index = index
+        z, y, x = self.state.slices
+        self.state.slices = (self._slice_index, y, x)
+
+    @property
+    def synced(self):
+        return self._sync_button._synced
+
+    @property
+    def slice_index(self):
+        return self._slice_index
 
 
 class WidgetWrapper(QtWidgets.QWidget):
@@ -59,6 +110,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         super(CubeVizLayout, self).__init__(parent=parent)
 
         self.session = session
+        self._has_data = False
         self._wavelengths = None
         self._wavelength_units = None
         self._wavelength_format = '{}'
@@ -91,7 +143,7 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         self.subWindowActivated.connect(self._update_active_widget)
 
-        self.ui.bool_sync.clicked.connect(self._on_sync_change)
+        self.ui.sync_button.clicked.connect(self._on_sync_click)
         self.ui.button_toggle_sidebar.clicked.connect(self._toggle_sidebar)
         self.ui.button_toggle_image_mode.clicked.connect(
             self._toggle_image_mode)
@@ -175,6 +227,7 @@ class CubeVizLayout(QtWidgets.QWidget):
     def _enable_option_buttons(self):
         for button in self._option_buttons:
             button.setEnabled(True)
+        self.ui.sync_button.setEnabled(True)
 
     def _toggle_flux(self, event=None):
         self.image1._widget.state.layers[0].visible = self.ui.toggle_flux.isChecked()
@@ -214,18 +267,16 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     def _on_slider_change(self, event):
         index = self.ui.value_slice.value()
+        self._active_widget._widget.update_slice_index(index)
+
+        if self._active_widget._widget.synced:
+            for image in self.images:
+                if image != self._active_widget and image._widget.synced:
+                    image._widget.update_slice_index(index)
+
         self._update_slice(index)
 
     def _update_slice(self, index):
-        if not self.ui.bool_sync.isChecked:
-            images = self.images
-        else:
-            images = self.images[:2]
-
-        for image in images:
-            z, y, x = image._widget.state.slices
-            image._widget.state.slices = (index, y, x)
-
         self.ui.text_slice.setText(str(index))
 
         # Get the wavelength units in order to set the wavelength value's number format
@@ -266,12 +317,17 @@ class CubeVizLayout(QtWidgets.QWidget):
     def add_data(self, data):
         self.specviz._widget.add_data(data)
 
-        self._setup_syncing()
+        for image in self.images:
+            image._widget.enable_toolbar()
+
+        self._has_data = True
+        self._active_widget = self.image2
+
         self._enable_slider()
         self._enable_option_buttons()
+        self._setup_syncing()
 
         self._enable_viewer_combos()
-
 
         #self._toggle_flux()
         #self._toggle_error()
@@ -344,7 +400,11 @@ class CubeVizLayout(QtWidgets.QWidget):
         hsplitter.setSizes(hsizes)
 
     def _update_active_widget(self, widget):
-        self._active_widget = widget
+        if self._has_data:
+            self._active_widget = widget
+            index = self._active_widget._widget.slice_index
+            self.ui.value_slice.setValue(index)
+            self._update_slice(index)
 
     def activeSubWindow(self):
         return self._active_widget
@@ -353,25 +413,20 @@ class CubeVizLayout(QtWidgets.QWidget):
         return [self.image1, self.image2, self.image3, self.image4, self.specviz]
 
     def _setup_syncing(self):
-        for attribute in ['slices', 'x_min', 'x_max', 'y_min', 'y_max']:
+        for attribute in ['x_min', 'x_max', 'y_min', 'y_max']:
             sync1 = keep_in_sync(self.image2._widget.state, attribute,
                                  self.image3._widget.state, attribute)
             sync2 = keep_in_sync(self.image3._widget.state, attribute,
                                  self.image4._widget.state, attribute)
             self.sync[attribute] = sync1, sync2
-        self._on_sync_change()
+        self._on_sync_click()
 
-    def _on_sync_change(self, event=None):
-        if self.ui.bool_sync.isChecked():
-            for attribute in self.sync:
-                sync1, sync2 = self.sync[attribute]
-                sync1.enable_syncing()
-                sync2.enable_syncing()
-        else:
-            for attribute in self.sync:
-                sync1, sync2 = self.sync[attribute]
-                sync1.disable_syncing()
-                sync2.disable_syncing()
+    def _on_sync_click(self, event=None):
+        for image in self.images:
+            index = self._active_widget._widget.slice_index
+            image._widget.enable_button()
+            if image != self._active_widget:
+                image._widget.update_slice_index(index)
 
     def showEvent(self, event):
         super(CubeVizLayout, self).showEvent(event)
