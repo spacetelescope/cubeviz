@@ -427,6 +427,8 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         self._enable_viewer_combos()
 
+        self.subWindowActivated.emit(self._active_view)
+
         #self._toggle_flux()
         #self._toggle_error()
         #self._toggle_quality()
