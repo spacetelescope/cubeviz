@@ -27,6 +27,12 @@ COLOR[MASK] = '#66aaff'
 
 @viewer_tool
 class SyncButtonBox(CheckableTool):
+    """
+    SyncButtonBox derived from the Glue CheckableTool that will be placed on the Matplotlib toolbar
+    in order to allow syncing between the different views in cubeviz.
+
+    We need to store the "synced" state of this button so that we can check it in other parts of the code.
+    """
 
     icon = 'glue_link'
     tool_id = 'sync_checkbox'
@@ -51,6 +57,8 @@ class SyncButtonBox(CheckableTool):
 
 class CubevizImageViewer(ImageViewer):
 
+    # Add the sync button to the front of the list so it is more prominent
+    # on smaller screens.
     tools = ['sync_checkbox', 'select:rectangle', 'select:xrange',
              'select:yrange', 'select:circle',
              'select:polygon', 'image:contrast_bias']
@@ -119,29 +127,30 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui = load_ui('layout.ui', self,
                           directory=os.path.dirname(__file__))
 
-        self.image1 = WidgetWrapper(CubevizImageViewer(self.session), tab_widget=self)
-        self.image2 = WidgetWrapper(CubevizImageViewer(self.session), tab_widget=self)
-        self.image3 = WidgetWrapper(CubevizImageViewer(self.session), tab_widget=self)
-        self.image4 = WidgetWrapper(CubevizImageViewer(self.session), tab_widget=self)
+        # Create the views and register to the hub.
+        self.single_view = WidgetWrapper(CubevizImageViewer(self.session), tab_widget=self)
+        self.left_view = WidgetWrapper(CubevizImageViewer(self.session), tab_widget=self)
+        self.middle_view = WidgetWrapper(CubevizImageViewer(self.session), tab_widget=self)
+        self.right_view = WidgetWrapper(CubevizImageViewer(self.session), tab_widget=self)
         self.specviz = WidgetWrapper(SpecVizViewer(self.session), tab_widget=self)
 
-        self.image1._widget.register_to_hub(self.session.hub)
-        self.image2._widget.register_to_hub(self.session.hub)
-        self.image3._widget.register_to_hub(self.session.hub)
-        self.image4._widget.register_to_hub(self.session.hub)
+        self.single_view._widget.register_to_hub(self.session.hub)
+        self.left_view._widget.register_to_hub(self.session.hub)
+        self.middle_view._widget.register_to_hub(self.session.hub)
+        self.right_view._widget.register_to_hub(self.session.hub)
         self.specviz._widget.register_to_hub(self.session.hub)
 
-        self.images = [self.image1, self.image2, self.image3, self.image4]
+        self.views = [self.single_view, self.left_view, self.middle_view, self.right_view]
 
-        self.ui.single_image_layout.addWidget(self.image1)
-
-        self.ui.image_row_layout.addWidget(self.image2)
-        self.ui.image_row_layout.addWidget(self.image3)
-        self.ui.image_row_layout.addWidget(self.image4)
+        # Add the views to the layouts.
+        self.ui.single_image_layout.addWidget(self.single_view)
+        self.ui.image_row_layout.addWidget(self.left_view)
+        self.ui.image_row_layout.addWidget(self.middle_view)
+        self.ui.image_row_layout.addWidget(self.right_view)
 
         self.ui.specviz_layout.addWidget(self.specviz)
 
-        self.subWindowActivated.connect(self._update_active_widget)
+        self.subWindowActivated.connect(self._update_active_view)
 
         self.ui.sync_button.clicked.connect(self._on_sync_click)
         self.ui.button_toggle_sidebar.clicked.connect(self._toggle_sidebar)
@@ -168,24 +177,33 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui.text_slice.returnPressed.connect(self._on_slice_change)
         self.ui.text_wavelength.returnPressed.connect(self._on_wavelength_change)
 
-        self._init_option_buttons()
+        # Add menu buttons to the cubeviz toolbar.
+        self._init_menu_buttons()
 
         self.sync = {}
 
         app = get_qapp()
         app.installEventFilter(self)
         self._last_click = None
-        self._active_widget = None
+        self._active_view = None
 
         self._single_image = False
         self.ui.button_toggle_image_mode.setText('Single Image Viewer')
 
-    def _init_option_buttons(self):
+    def _init_menu_buttons(self):
+        """
+        Add the two menu buttons to the tool bar. Currently two are defined:
+            View - for changing the view of the active window
+            Data Processing - for applying a data processing step to the data.
+
+        :return:
+        """
         self._option_buttons = [
             self.ui.view_option_button,
             self.ui.cube_option_button
         ]
 
+        # Create the View Menu
         view_menu = self._dict_to_menu(OrderedDict([
             ('RA-DEC', lambda: None),
             ('RA-Spectral', lambda: None),
@@ -193,6 +211,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         ]))
         self.ui.view_option_button.setMenu(view_menu)
 
+        # Create the Data Processing Menu
         cube_menu = self._dict_to_menu(OrderedDict([
             ('Filter', lambda: self._open_dialog('Filter', None)),
             ('Moment Maps', lambda: self._open_dialog('Moment Maps', None)),
@@ -230,59 +249,109 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui.sync_button.setEnabled(True)
 
     def _toggle_flux(self, event=None):
-        self.image1._widget.state.layers[0].visible = self.ui.toggle_flux.isChecked()
+        self.single_view._widget.state.layers[0].visible = self.ui.toggle_flux.isChecked()
 
     def _toggle_error(self, event=None):
-        self.image1._widget.state.layers[1].visible = self.ui.toggle_error.isChecked()
+        self.single_view._widget.state.layers[1].visible = self.ui.toggle_error.isChecked()
 
     def _toggle_quality(self, event=None):
-        self.image1._widget.state.layers[2].visible = self.ui.toggle_quality.isChecked()
+        self.single_view._widget.state.layers[2].visible = self.ui.toggle_quality.isChecked()
 
     def _on_slice_change(self, event=None):
+        """
+        Callback for a change in the slice index text box.  We will need to
+        update the slider and the wavelength value when this changes.
+
+        :param event:
+        :return:
+        """
+
+        # Get the value they typed in, but if not a number, then let's just use
+        # the first slice.
         try:
             index = int(self.ui.text_slice.text())
         except ValueError:
             # If invalid value is given, revert to current value
-            index = self.image1._widget.state.slices[0]
+            index = self.single_view._widget.state.slices[0]
 
+        # If a number and out of range then set to the first or last slice
+        # depending if they set the number too low or too high.
         if index < 0:
             index = 0
         if index > len(self._wavelengths) - 1:
             index = len(self._wavelengths) - 1
 
-        self._update_slice(index)
+        # Now update the slice and wavelength text boxes
+        self._update_slice_textboxes(index)
+
+        # Update the slider.
         self.ui.value_slice.setValue(index)
 
     def _on_wavelength_change(self, event=None):
+        """
+        Callback for a change in wavelength inptu box. We want to find the
+        closest wavelength and use the index of it.  We will need to update the slice index box and slider as
+        well as the image.
+
+        :param event:
+        :return:
+        """
         try:
-            # Do an approximate reverse lookup of the wavelength to find the slice
+            # Find the closest real wavelength and use the index of it
             wavelength = float(self.ui.text_wavelength.text())
             index = np.argsort(abs(self._wavelengths - wavelength))[0]
         except ValueError:
             # If invalid value is given, revert to current value
-            index = self.image1._widget.state.slices[0]
+            index = self.single_view._widget.state.slices[0]
 
-        self._update_slice(index)
+        # Now update the slice and wavelength text boxes
+        self._update_slice_textboxes(index)
+
+        # Update the slider.
         self.ui.value_slice.setValue(index)
 
     def _on_slider_change(self, event):
+        """
+        Callback for change in slider value.
+
+        :param event:
+        :return:
+        """
         index = self.ui.value_slice.value()
-        self._active_widget._widget.update_slice_index(index)
 
-        if self._active_widget._widget.synced:
-            for image in self.images:
-                if image != self._active_widget and image._widget.synced:
-                    image._widget.update_slice_index(index)
+        # Update the image displayed in the slice in the active view
+        self._active_view._widget.update_slice_index(index)
 
-        self._update_slice(index)
+        # If the active widget is synced then we need to update the image
+        # in all the other synced views.
+        if self._active_view._widget.synced:
+            for view in self.views:
+                if view != self._active_view and view._widget.synced:
+                    view._widget.update_slice_index(index)
 
-    def _update_slice(self, index):
+        # Now update the slice and wavelength text boxes
+        self._update_slice_textboxes(index)
+
+    def _update_slice_textboxes(self, index):
+        """
+        Update the slice index number text box and the wavelength value displayed in the wavelengths text box.
+
+        :param index: Slice index number displayed.
+        :return:
+        """
+
+        # Update the input text box for slice number
         self.ui.text_slice.setText(str(index))
 
-        # Get the wavelength units in order to set the wavelength value's number format
+        # Update the wavelength for the corresponding slice number.
         self.ui.text_wavelength.setText(self._wavelength_format.format(self._wavelengths[index]))
 
     def _enable_slider(self):
+        """
+        Setup the slice slider (min/max, units on description and initial position). 
+
+        :return:
+        """
         self.ui.value_slice.setEnabled(True)
         self.ui.value_slice.setMinimum(0)
 
@@ -292,36 +361,54 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui.wavelength_slider_text.setText('Wavelength ({})'.format(self._wavelength_units))
 
         # Grab the wavelengths so they can be displayed in the text box
-        self._wavelengths = self.image1._widget._data[0].get_component('Wave')[:,0,0]
+        self._wavelengths = self.single_view._widget._data[0].get_component('Wave')[:,0,0]
         self.ui.value_slice.setMaximum(len(self._wavelengths) - 1)
 
         # Set the default display to the middle of the cube
         middle_index = len(self._wavelengths) // 2
-        self._update_slice(middle_index)
+        self._update_slice_textboxes(middle_index)
         self.ui.value_slice.setValue(middle_index)
         self.ui.text_wavelength.setText(self._wavelength_format.format(self._wavelengths[middle_index]))
 
     def _enable_viewer_combos(self):
+        """
+        Setup the dropdown boxes that correspond to each of the left, middle, and right views.  The combo boxes
+        initially are set to have FLUX, Error, DQ but will be dynamic depending on the type of data available either
+        from being loaded in or by being processed.
+
+        :return:
+        """
+
         self._viewer_combos = [
             self.ui.viewer1_combo,
             self.ui.viewer2_combo,
             self.ui.viewer3_combo
         ]
 
+        # Add the options to each of the dropdowns.
+        # TODO: Maybe should make this a function of the loaded data.
         for i, combo in enumerate(self._viewer_combos):
             for item in ['Flux', 'Error', 'DQ']:
                 combo.addItem(item)
             combo.setEnabled(True)
+
+            # First view will be flux, second error and third DQ.
             combo.setCurrentIndex(i)
 
     def add_data(self, data):
+        """
+        Called by a function outside the class in order to add data to cubeviz.
+
+        :param data:
+        :return:
+        """
         self.specviz._widget.add_data(data)
 
-        for image in self.images:
-            image._widget.enable_toolbar()
+        for view in self.views:
+            view._widget.enable_toolbar()
 
         self._has_data = True
-        self._active_widget = self.image2
+        self._active_view = self.left_view
 
         self._enable_slider()
         self._enable_option_buttons()
@@ -395,41 +482,44 @@ class CubeVizLayout(QtWidgets.QWidget):
         vsizes = list(vsplitter.sizes())
         hsizes = list(hsplitter.sizes())
         vsizes = max(10, sum(vsizes) / 2), max(10, sum(vsizes) / 2)
+
+        # TODO:  Might be a bug here, should the hsizes be based on vsizes? If so, not sure we need to calculate
+        # TODO:  the hsizes above.
         hsizes = 0, max(10, vsizes[0] + vsizes[1])
         vsplitter.setSizes(vsizes)
         hsplitter.setSizes(hsizes)
 
-    def _update_active_widget(self, widget):
+    def _update_active_view(self, view):
         if self._has_data:
-            self._active_widget = widget
-            index = self._active_widget._widget.slice_index
+            self._active_view = view
+            index = self._active_view._widget.slice_index
             self.ui.value_slice.setValue(index)
-            self._update_slice(index)
+            self._update_slice_textboxes(index)
 
     def activeSubWindow(self):
-        return self._active_widget
+        return self._active_view
 
     def subWindowList(self):
-        return [self.image1, self.image2, self.image3, self.image4, self.specviz]
+        return [self.single_view, self.left_view, self.middle_view, self.right_view, self.specviz]
 
     def _setup_syncing(self):
         for attribute in ['x_min', 'x_max', 'y_min', 'y_max']:
-            sync1 = keep_in_sync(self.image2._widget.state, attribute,
-                                 self.image3._widget.state, attribute)
-            sync2 = keep_in_sync(self.image3._widget.state, attribute,
-                                 self.image4._widget.state, attribute)
+            sync1 = keep_in_sync(self.left_view._widget.state, attribute,
+                                 self.middle_view._widget.state, attribute)
+            sync2 = keep_in_sync(self.middle_view._widget.state, attribute,
+                                 self.right_view._widget.state, attribute)
             self.sync[attribute] = sync1, sync2
         self._on_sync_click()
 
     def _on_sync_click(self, event=None):
-        for image in self.images:
-            index = self._active_widget._widget.slice_index
-            image._widget.enable_button()
-            if image != self._active_widget:
-                image._widget.update_slice_index(index)
+        for view in self.views:
+            index = self._active_view._widget.slice_index
+            view._widget.enable_button()
+            if view != self._active_view:
+                view._widget.update_slice_index(index)
 
     def showEvent(self, event):
         super(CubeVizLayout, self).showEvent(event)
         # Make split image mode the default layout
         self._split_image_mode()
-        self._update_active_widget(self.image2)
+        self._update_active_view(self.left_view)
