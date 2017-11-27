@@ -18,6 +18,7 @@ from glue.utils.qt import get_qapp
 FLUX = 'FLUX'
 ERROR = 'ERROR'
 MASK = 'MASK'
+DATA_LABELS = [FLUX, ERROR, MASK]
 
 COLOR = {}
 COLOR[FLUX] = '#888888'
@@ -370,6 +371,14 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui.value_slice.setValue(middle_index)
         self.ui.text_wavelength.setText(self._wavelength_format.format(self._wavelengths[middle_index]))
 
+    def _get_change_viewer_func(self, view_index):
+        def change_viewer(dropdown_index):
+            # index+1 accounts for the fact that we skip the single viewer
+            view = self.views[view_index+1]
+            label = DATA_LABELS[dropdown_index]
+            view._widget.state.layers[0].attribute = self._data.id[label]
+        return change_viewer
+
     def _enable_viewer_combos(self):
         """
         Setup the dropdown boxes that correspond to each of the left, middle, and right views.  The combo boxes
@@ -391,6 +400,7 @@ class CubeVizLayout(QtWidgets.QWidget):
             for item in ['Flux', 'Error', 'DQ']:
                 combo.addItem(item)
             combo.setEnabled(True)
+            combo.currentIndexChanged.connect(self._get_change_viewer_func(i))
 
             # First view will be flux, second error and third DQ.
             combo.setCurrentIndex(i)
@@ -402,6 +412,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         :param data:
         :return:
         """
+        self._data = data
         self.specviz._widget.add_data(data)
 
         for view in self.views:
@@ -415,6 +426,8 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._setup_syncing()
 
         self._enable_viewer_combos()
+
+        self.subWindowActivated.emit(self._active_view)
 
         #self._toggle_flux()
         #self._toggle_error()
