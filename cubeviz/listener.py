@@ -1,7 +1,7 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 
 from glue.core import Hub, HubListener, Data, DataCollection
-from glue.core.message import DataCollectionAddMessage
+from glue.core.message import DataCollectionAddMessage, DataAddComponentMessage
 from .layout import CubeVizLayout, COLOR, FLUX, ERROR, MASK
 
 
@@ -14,16 +14,18 @@ class CubevizManager(HubListener):
         self._session = session
         self._hub = session.hub
         self._app = session.application
+        self._layout = None
 
-        self._empty_layout = \
-            self._app.add_fixed_layout_tab(CubeVizLayout)
+        self._empty_layout = self._app.add_fixed_layout_tab(CubeVizLayout)
         self._app.close_tab(0, warn=False)
         self.hide_sidebar()
 
         self._hub.subscribe(
-            self, DataCollectionAddMessage, handler=self.receive_message)
+            self, DataCollectionAddMessage, handler=self.handle_new_dataset)
+        self._hub.subscribe(
+            self, DataAddComponentMessage, handler=self.handle_new_component)
 
-    def receive_message(self, message):
+    def handle_new_dataset(self, message):
         data = message.data
         if data.meta.get(CUBEVIZ_LAYOUT, ''):
             # Assume for now the data is not yet in any tab
@@ -37,6 +39,9 @@ class CubevizManager(HubListener):
                 self.setup_data(cubeviz_layout, data)
             finally:
                 self._empty_layout = None
+
+    def handle_new_component(self, message):
+        self._layout.add_smoothed_cube_name(str(message.component_id))
 
     def hide_sidebar(self):
         self._app._ui.main_splitter.setSizes([0, 300])
@@ -67,3 +72,5 @@ class CubevizManager(HubListener):
 
         index = self._app.get_tab_index(cubeviz_layout)
         self._app.tab_bar.rename_tab(index, "CubeViz: {}".format(data.label))
+
+        self._layout = cubeviz_layout
