@@ -1,6 +1,7 @@
 from __future__ import print_function, division
 
 import os
+import copy
 from collections import OrderedDict
 
 import numpy as np
@@ -24,7 +25,7 @@ except Exception as e:
 FLUX = 'FLUX'
 ERROR = 'ERROR'
 MASK = 'MASK'
-DATA_LABELS = [FLUX, ERROR, MASK]
+DEFAULT_DATA_LABELS = [FLUX, ERROR, MASK]
 
 COLOR = {}
 COLOR[FLUX] = '#888888'
@@ -187,6 +188,8 @@ class CubeVizLayout(QtWidgets.QWidget):
         # Add menu buttons to the cubeviz toolbar.
         self._init_menu_buttons()
 
+        self._component_labels = copy.copy(DEFAULT_DATA_LABELS)
+
         self.sync = {}
 
         app = get_qapp()
@@ -258,7 +261,7 @@ class CubeVizLayout(QtWidgets.QWidget):
     def add_smoothed_cube_name(self, name):
         for i, combo in enumerate(self._viewer_combos):
             combo.addItem(name)
-            DATA_LABELS.append(name)
+        self._component_labels.append(name)
 
     def _enable_option_buttons(self):
         for button in self._option_buttons:
@@ -391,7 +394,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         def change_viewer(dropdown_index):
             # index+1 accounts for the fact that we skip the single viewer
             view = self.views[view_index+1]
-            label = DATA_LABELS[dropdown_index]
+            label = self._component_labels[dropdown_index]
             view._widget.state.layers[0].attribute = self._data.id[label]
         return change_viewer
 
