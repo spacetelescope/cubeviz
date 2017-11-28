@@ -16,7 +16,7 @@ from glue.utils.qt import load_ui, get_text
 from glue.external.echo import keep_in_sync
 from glue.utils.qt import get_qapp
 
-from . import smoothing_gui
+from .tools import smoothing_gui
 
 
 FLUX = 'FLUX'
