@@ -94,6 +94,8 @@ class SelectSmoothing(QMainWindow):
             component_ids
             )
         self.component_combo.setMaximumWidth(150)
+        if 'FLUX' in component_ids:
+            self.component_combo.setCurrentIndex(component_ids.index('FLUX'))
 
         hbl4 = QHBoxLayout()
         hbl4.addWidget(self.label5)
