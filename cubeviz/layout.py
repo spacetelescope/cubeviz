@@ -15,12 +15,6 @@ from glue.utils.qt import load_ui, get_text
 from glue.external.echo import keep_in_sync
 from glue.utils.qt import get_qapp
 
-try:
-    from . import smoothing_gui 
-except Exception as e:
-    print("\n\n\nFail:\n")
-    print(e)
-    exit()
 FLUX = 'FLUX'
 ERROR = 'ERROR'
 MASK = 'MASK'
@@ -248,17 +242,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         return menu_widget
 
     def _open_dialog(self, name, widget):
-        #get_text(name, "What's your name?")
-        if name == "Filter":
-            ex = smoothing_gui.SelectSmoothing(
-                self._data, 
-                self.session.data_collection,
-                parent=self#self.session.application
-                ) 
-    def add_smoothed_cube_name(self, name):
-        for i, combo in enumerate(self._viewer_combos):
-            combo.addItem(name)
-            DATA_LABELS.append(name)
+        get_text(name, "What's your name?")
 
     def _enable_option_buttons(self):
         for button in self._option_buttons:
