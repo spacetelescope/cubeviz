@@ -1,0 +1,28 @@
+# This file describes a conda environment that can be used by alpha testers
+#
+# Run the following command to set up this environment:
+# $ conda env create -f environment.yml
+#
+# The environment name can be overridden with the following command:
+# $ conda env create -n <custom name> -f environment.yml
+#
+# Run the following command to activate the environment:
+# $ source activate cubeviz-testing
+#
+# To deactivate the environment run the following command:
+# $ source deactivate
+#
+# To remove the environment entirely, run the following command:
+# $ conda env remove -n cubeviz-testing
+
+name: cubeviz-testing
+dependencies:
+  - python=3.6
+  - pyqt
+  - numpy
+  - scipy
+  - astropy
+  - pip:
+    - git+https://github.com/glue-viz/glue#egg=glue
+    - git+https://github.com/spacetelescope/specviz#egg=specviz
+    - git+https://github.com/spacetelescope/cubeviz#egg=cubeviz
