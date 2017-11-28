@@ -149,6 +149,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.specviz._widget.register_to_hub(self.session.hub)
 
         self.views = [self.single_view, self.left_view, self.middle_view, self.right_view]
+        self.cubes = self.views[1:]
 
         # Add the views to the layouts.
         self.ui.single_image_layout.addWidget(self.single_view)
@@ -196,6 +197,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         app.installEventFilter(self)
         self._last_click = None
         self._active_view = None
+        self._active_cube = None
 
         self._single_image = False
         self.ui.button_toggle_image_mode.setText('Single Image Viewer')
@@ -340,13 +342,13 @@ class CubeVizLayout(QtWidgets.QWidget):
         index = self.ui.value_slice.value()
 
         # Update the image displayed in the slice in the active view
-        self._active_view._widget.update_slice_index(index)
+        self._active_cube._widget.update_slice_index(index)
 
         # If the active widget is synced then we need to update the image
         # in all the other synced views.
-        if self._active_view._widget.synced:
-            for view in self.views:
-                if view != self._active_view and view._widget.synced:
+        if self._active_cube._widget.synced:
+            for view in self.cubes:
+                if view != self._active_cube and view._widget.synced:
                     view._widget.update_slice_index(index)
 
         # Now update the slice and wavelength text boxes
@@ -392,8 +394,7 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     def _get_change_viewer_func(self, view_index):
         def change_viewer(dropdown_index):
-            # index+1 accounts for the fact that we skip the single viewer
-            view = self.views[view_index+1]
+            view = self.cubes[view_index]
             label = self._component_labels[dropdown_index]
             view._widget.state.layers[0].attribute = self._data.id[label]
         return change_viewer
@@ -439,6 +440,7 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         self._has_data = True
         self._active_view = self.left_view
+        self._active_cube = self.left_view
 
         self._enable_slider()
         self._enable_option_buttons()
@@ -524,9 +526,11 @@ class CubeVizLayout(QtWidgets.QWidget):
     def _update_active_view(self, view):
         if self._has_data:
             self._active_view = view
-            index = self._active_view._widget.slice_index
-            self.ui.value_slice.setValue(index)
-            self._update_slice_textboxes(index)
+            if isinstance(view._widget, CubevizImageViewer):
+                self._active_cube = view
+                index = self._active_cube._widget.slice_index
+                self.ui.value_slice.setValue(index)
+                self._update_slice_textboxes(index)
 
     def activeSubWindow(self):
         return self._active_view
@@ -544,10 +548,10 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._on_sync_click()
 
     def _on_sync_click(self, event=None):
-        for view in self.views:
-            index = self._active_view._widget.slice_index
+        for view in self.cubes:
+            index = self._active_cube._widget.slice_index
             view._widget.enable_button()
-            if view != self._active_view:
+            if view != self._active_cube:
                 view._widget.update_slice_index(index)
 
     def showEvent(self, event):
