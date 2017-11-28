@@ -269,11 +269,6 @@ class SelectSmoothing(QMainWindow):
 			component_id=component, 
 			output_as_component=True)
 
-		if self.parent is not None:
-			self.parent.add_smoothed_cube_name(
-					str(self.data.components[-1])
-				)
-		
 		info = QMessageBox.information(self, "Success", 
 			"Result added as a new component of the input Data")
 		
