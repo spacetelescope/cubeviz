@@ -280,23 +280,3 @@ class SelectSmoothing(QMainWindow):
 		self.close()
 		if self.abort_window is not None:
 			self.abort_window.close()
-	
-
-if __name__ == "__main__":
-	from sys import argv
-	from glue.core.data_factories import load_data
-	from glue.core import DataCollection
-	from time import time
-	
-	print("load_data...")
-	dc = DataCollection()
-	t1 = time()
-	dc.append(load_data(argv[1]))
-	t2 = time()
-	print("done")
-	print("load data time:", t2-t1)	
-	data = dc[0]
-
-	app = QApplication([])
-	ex = SelectSmoothing(data, dc)
-	sys.exit(app.exec_())

@@ -16,12 +16,9 @@ from glue.utils.qt import load_ui, get_text
 from glue.external.echo import keep_in_sync
 from glue.utils.qt import get_qapp
 
-try:
-    from . import smoothing_gui 
-except Exception as e:
-    print("\n\n\nFail:\n")
-    print(e)
-    exit()
+from . import smoothing_gui
+
+
 FLUX = 'FLUX'
 ERROR = 'ERROR'
 MASK = 'MASK'
