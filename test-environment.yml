@@ -21,6 +21,7 @@ channels:
 dependencies:
   - python=3.6
   - pyqt
+  - numpy>=1.13
   - scipy
   # This is necessary in some OSX environments to ensure that Python is
   # installed as a framework
