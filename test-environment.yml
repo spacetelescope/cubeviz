@@ -22,6 +22,9 @@ dependencies:
   - numpy
   - scipy
   - astropy
+  # This is necessary in some OSX environments to ensure that Python is
+  # installed as a framework
+  - matplotlib
   - pip:
     - git+https://github.com/glue-viz/glue#egg=glue
     - git+https://github.com/spacetelescope/specviz#egg=specviz
