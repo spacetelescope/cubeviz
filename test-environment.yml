@@ -1,10 +1,10 @@
 # This file describes a conda environment that can be used by alpha testers
 #
 # Run the following command to set up this environment:
-# $ conda env create -f environment.yml
+# $ conda env create -f test-environment.yml
 #
 # The environment name can be overridden with the following command:
-# $ conda env create -n <custom name> -f environment.yml
+# $ conda env create -n <custom name> -f test-environment.yml
 #
 # Run the following command to activate the environment:
 # $ source activate cubeviz-testing
