@@ -16,16 +16,16 @@
 # $ conda env remove -n cubeviz-testing
 
 name: cubeviz-testing
+channels:
+  - glueviz/label/dev
 dependencies:
   - python=3.6
   - pyqt
-  - numpy
   - scipy
-  - astropy
   # This is necessary in some OSX environments to ensure that Python is
   # installed as a framework
   - matplotlib
+  - glueviz
   - pip:
-    - git+https://github.com/glue-viz/glue#egg=glue
     - git+https://github.com/spacetelescope/specviz#egg=specviz
     - git+https://github.com/spacetelescope/cubeviz#egg=cubeviz
