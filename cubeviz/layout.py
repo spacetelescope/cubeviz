@@ -250,7 +250,6 @@ class CubeVizLayout(QtWidgets.QWidget):
         return menu_widget
 
     def _open_dialog(self, name, widget):
-        #get_text(name, "What's your name?")
         if name == "Filter":
             ex = smoothing_gui.SelectSmoothing(
                 self._data, 
