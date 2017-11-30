@@ -250,16 +250,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         return menu_widget
 
     def _open_dialog(self, name, widget):
-        if name == "Filter":
-            ex = smoothing_gui.SelectSmoothing(
-                self._data, 
-                self.session.data_collection,
-                parent=self
-                ) 
-    def add_smoothed_cube_name(self, name):
-        for i, combo in enumerate(self._viewer_combos):
-            combo.addItem(name)
-        self._component_labels.append(name)
+        pass 
 
     def _enable_option_buttons(self):
         for button in self._option_buttons:
