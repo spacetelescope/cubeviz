@@ -254,7 +254,7 @@ class CubeVizLayout(QtWidgets.QWidget):
             ex = smoothing_gui.SelectSmoothing(
                 self._data, 
                 self.session.data_collection,
-                parent=self#self.session.application
+                parent=self
                 ) 
     def add_smoothed_cube_name(self, name):
         for i, combo in enumerate(self._viewer_combos):
