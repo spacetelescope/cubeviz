@@ -1,7 +1,6 @@
 from __future__ import print_function, division
 
 import os
-import copy
 from collections import OrderedDict
 
 import numpy as np
@@ -186,7 +185,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         # Add menu buttons to the cubeviz toolbar.
         self._init_menu_buttons()
 
-        self._component_labels = copy.copy(DEFAULT_DATA_LABELS)
+        self._component_labels = DEFAULT_DATA_LABELS.copy()
 
         self.sync = {}
 
@@ -250,7 +249,12 @@ class CubeVizLayout(QtWidgets.QWidget):
         return menu_widget
 
     def _open_dialog(self, name, widget):
-        pass 
+        pass
+        
+    def add_smoothed_cube_name(self, name):
+        for i, combo in enumerate(self._viewer_combos):
+            combo.addItem(name)
+        self._component_labels.append(name)
 
     def _enable_option_buttons(self):
         for button in self._option_buttons:
