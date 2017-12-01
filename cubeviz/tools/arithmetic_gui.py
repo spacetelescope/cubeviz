@@ -7,21 +7,20 @@ from qtpy.QtWidgets import (
     QLabel, QWidget, QHBoxLayout, QVBoxLayout, QLineEdit
 )
 
+# TODO: In the future, it might be nice to be able to work across data_collection elements
+
 class SelectArithmetic(QMainWindow):
     def __init__(self, data, data_collection, parent=None):
         super(SelectArithmetic,self).__init__(parent)
 
         # Get the data_components (e.g., FLUX, DQ, ERROR etc)
         # Using list comprehension to keep the order of the component_ids
-        # TODO: Need to fix so it is not using just the first data_collection
-        tt = data_collection[0]
-        self.data_components = [str(x).strip() for x in tt.component_ids() if not x in tt.coordinate_components]
+        self.data_components = [str(x).strip() for x in data.component_ids() if not x in data.coordinate_components]
 
         self.setWindowFlags(self.windowFlags() | Qt.Tool)
         self.title = "Arithmetic Calculation"
         self.data = data
         self.data_collection = data_collection
-        self.component_id = self.data_components[0]
         self.parent = parent
 
         self.currentAxes = None
