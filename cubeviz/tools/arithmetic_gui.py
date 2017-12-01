@@ -138,15 +138,15 @@ class SelectArithmetic(QMainWindow):
         from asteval import Interpreter
         aeval = Interpreter()
 
+        # Grab the calculation from the text box which the user wants to do
+        calculation = str(self.calculation_text.text())
+
+        lhs = calculation.split('=')[0].strip()
+
+        # Use the package asteval to do the calculation, we are going to
+        # assume here that the lhs of the equals sign is going to be the output named variable
+
         try:
-            # Grab the calculation from the text box which the user wants to do
-            calculation = str(self.calculation_text.text())
-
-            lhs = calculation.split('=')[0].strip()
-
-            # Use the package asteval to do the calculation, we are going to
-            # assume here that the lhs of the equals sign is going to be the output named variable
-
             # Pull in the required data and run the calculation
             for dc in self.data_components:
                 if dc in calculation:
@@ -162,14 +162,12 @@ class SelectArithmetic(QMainWindow):
 
             self.close()
 
-        except TypeError as e:
+        except KeyError as e:
             self.calculation_text.setStyleSheet("background-color: rgba(255, 0, 0, 128);")
-            print('Error is: {}'.format(aeval.error_msg))
 
+            # Display the error in the Qt popup
             self.error_label_text.setText('{}'.format(aeval.error_msg))
             self.error_label_text.setStyleSheet("color: rgba(255, 0, 0, 128)")
-
-            #TODO:  Would be nice to have a label area where a summary of the exception could be placed to give the user more info
 
     def cancel_callback(self, caller=0):
         """
