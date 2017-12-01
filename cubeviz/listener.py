@@ -25,20 +25,27 @@ class CubevizManager(HubListener):
         self._hub.subscribe(
             self, DataAddComponentMessage, handler=self.handle_new_component)
 
+        # Look for any cube data files that were loaded from the command line
+        for data in session.data_collection:
+            if data.meta.get(CUBEVIZ_LAYOUT, ''):
+                self.configure_layout(data)
+
     def handle_new_dataset(self, message):
         data = message.data
         if data.meta.get(CUBEVIZ_LAYOUT, ''):
-            # Assume for now the data is not yet in any tab
+            self.configure_layout(data)
 
-            if self._empty_layout is not None:
-                cubeviz_layout = self._empty_layout
-            else:
-                cubeviz_layout = self._app.add_fixed_layout_tab(CubeVizLayout)
+    def configure_layout(self, data):
+        # Assume for now the data is not yet in any tab
+        if self._empty_layout is not None:
+            cubeviz_layout = self._empty_layout
+        else:
+            cubeviz_layout = self._app.add_fixed_layout_tab(CubeVizLayout)
 
-            try:
-                self.setup_data(cubeviz_layout, data)
-            finally:
-                self._empty_layout = None
+        try:
+            self.setup_data(cubeviz_layout, data)
+        finally:
+            self._empty_layout = None
 
     def handle_new_component(self, message):
         self._layout.add_smoothed_cube_name(str(message.component_id))
