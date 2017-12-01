@@ -124,7 +124,7 @@ class SelectArithmetic(QMainWindow):
         self.wid = QWidget(self)
         self.setCentralWidget(self.wid)
         self.wid.setLayout(vbl)
-        self.setMaximumWidth(600)
+        self.setMaximumWidth(700)
         self.show()
 
     def calculate_callback(self):
