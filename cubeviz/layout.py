@@ -15,10 +15,13 @@ from glue.utils.qt import load_ui, get_text
 from glue.external.echo import keep_in_sync
 from glue.utils.qt import get_qapp
 
+from .tools import smoothing_gui
+
+
 FLUX = 'FLUX'
 ERROR = 'ERROR'
 MASK = 'MASK'
-DATA_LABELS = [FLUX, ERROR, MASK]
+DEFAULT_DATA_LABELS = [FLUX, ERROR, MASK]
 
 COLOR = {}
 COLOR[FLUX] = '#888888'
@@ -182,6 +185,8 @@ class CubeVizLayout(QtWidgets.QWidget):
         # Add menu buttons to the cubeviz toolbar.
         self._init_menu_buttons()
 
+        self._component_labels = DEFAULT_DATA_LABELS.copy()
+
         self.sync = {}
 
         app = get_qapp()
@@ -244,7 +249,12 @@ class CubeVizLayout(QtWidgets.QWidget):
         return menu_widget
 
     def _open_dialog(self, name, widget):
-        get_text(name, "What's your name?")
+        pass
+        
+    def add_smoothed_cube_name(self, name):
+        for i, combo in enumerate(self._viewer_combos):
+            combo.addItem(name)
+        self._component_labels.append(name)
 
     def _enable_option_buttons(self):
         for button in self._option_buttons:
@@ -376,7 +386,7 @@ class CubeVizLayout(QtWidgets.QWidget):
     def _get_change_viewer_func(self, view_index):
         def change_viewer(dropdown_index):
             view = self.cubes[view_index]
-            label = DATA_LABELS[dropdown_index]
+            label = self._component_labels[dropdown_index]
             view._widget.state.layers[0].attribute = self._data.id[label]
         return change_viewer
 
