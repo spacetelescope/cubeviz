@@ -146,6 +146,9 @@ class SelectArithmetic(QMainWindow):
         # assume here that the lhs of the equals sign is going to be the output named variable
 
         try:
+            if lhs in self.data_components:
+                raise KeyError('{} is already in the data components, use a different variable on the left hand side.'.format(lhs))
+
             # Pull in the required data and run the calculation
             for dc in self.data_components:
                 if dc in calculation:
@@ -165,7 +168,11 @@ class SelectArithmetic(QMainWindow):
             self.calculation_text.setStyleSheet("background-color: rgba(255, 0, 0, 128);")
 
             # Display the error in the Qt popup
-            self.error_label_text.setText('{}'.format(aeval.error_msg))
+            if aeval.error_msg:
+                self.error_label_text.setText('{}'.format(aeval.error_msg))
+            else:
+                self.error_label_text.setText('{}'.format(e))
+
             self.error_label_text.setStyleSheet("color: rgba(255, 0, 0, 128)")
 
     def cancel_callback(self, caller=0):
