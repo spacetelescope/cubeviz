@@ -14,12 +14,12 @@ sudo: false
 #
 # https://github.com/travis-ci/apt-package-whitelist/blob/master/ubuntu-precise
 
-addons:
-    apt:
-        packages:
-            - graphviz
-            - texlive-latex-extra
-            - dvipng
+#addons:
+#    apt:
+#        packages:
+#            - graphviz
+#            - texlive-latex-extra
+#            - dvipng
 
 env:
     global:
@@ -80,8 +80,8 @@ matrix:
 
         # Check for sphinx doc build warnings - we do this first because it
         # may run for a long time
-        - os: linux
-          env: SETUP_CMD='build_docs -w'
+        #- os: linux
+        #  env: SETUP_CMD='build_docs -w'
 
         # Try building against Astropy dev
         - os: linux
