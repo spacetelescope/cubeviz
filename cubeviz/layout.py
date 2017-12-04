@@ -14,7 +14,8 @@ from specviz.third_party.glue.data_viewer import SpecVizViewer
 from glue.utils.qt import load_ui, get_text
 from glue.external.echo import keep_in_sync
 from glue.utils.qt import get_qapp
-from .tools import arithmetic_gui
+
+from .tools import arithmetic_gui, moment_maps
 
 FLUX = 'FLUX'
 ERROR = 'ERROR'
@@ -250,7 +251,10 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         if name == 'Arithmetic Operations':
             ex = arithmetic_gui.SelectArithmetic(self._data, self.session.data_collection, parent=self)
-        
+
+        if name == "Moment Maps":
+            moment_maps.MomentMapsGUI(self._data, self.session.data_collection, parent=self)
+
     def add_new_data_component(self, name):
         for i, combo in enumerate(self._viewer_combos):
             combo.addItem(str(name))
