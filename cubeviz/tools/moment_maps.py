@@ -113,7 +113,7 @@ class MomentMapsGUI(QMainWindow):
 
         #try:
         print('Going to calculate...')
-        cube_moment = cube.moment(order=order, axis=1)
+        cube_moment = cube.moment(order=order, axis=0)
 
         print('Going to add component... {}'.format(cube_moment.shape))
         self.data.add_component(cube_moment, '{}-moment-{}'.format(data_name, order))
