@@ -12,7 +12,9 @@ from qtpy.QtWidgets import QMenu, QAction
 from glue.viewers.image.qt import ImageViewer
 from specviz.third_party.glue.data_viewer import SpecVizViewer
 from glue.utils.qt import load_ui, get_text
-from glue.external.echo import keep_in_sync
+from glue.external.echo import keep_in_sync, SelectionCallbackProperty
+from glue.external.echo.qt import connect_combo_selection
+from glue.core.data_combo_helper import ComponentIDComboHelper
 from glue.utils.qt import get_qapp
 from .tools import arithmetic_gui
 
@@ -115,6 +117,10 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     LABEL = "CubeViz"
     subWindowActivated = QtCore.Signal(object)
+
+    viewer1_attribute = SelectionCallbackProperty(default_index=0)
+    viewer2_attribute = SelectionCallbackProperty(default_index=1)
+    viewer3_attribute = SelectionCallbackProperty(default_index=2)
 
     def __init__(self, session=None, parent=None):
         super(CubeVizLayout, self).__init__(parent=parent)
@@ -250,7 +256,7 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         if name == 'Arithmetic Operations':
             ex = arithmetic_gui.SelectArithmetic(self._data, self.session.data_collection, parent=self)
-        
+
     def add_new_data_component(self, name):
         for i, combo in enumerate(self._viewer_combos):
             combo.addItem(str(name))
@@ -363,7 +369,7 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     def _enable_slider(self):
         """
-        Setup the slice slider (min/max, units on description and initial position). 
+        Setup the slice slider (min/max, units on description and initial position).
 
         :return:
         """
@@ -392,7 +398,7 @@ class CubeVizLayout(QtWidgets.QWidget):
             view._widget.state.layers[0].attribute = self._data.id[label]
         return change_viewer
 
-    def _enable_viewer_combos(self):
+    def _enable_viewer_combos(self, data):
         """
         Setup the dropdown boxes that correspond to each of the left, middle, and right views.  The combo boxes
         initially are set to have FLUX, Error, DQ but will be dynamic depending on the type of data available either
@@ -400,23 +406,17 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         :return:
         """
-
-        self._viewer_combos = [
-            self.ui.viewer1_combo,
-            self.ui.viewer2_combo,
-            self.ui.viewer3_combo
-        ]
-
-        # Add the options to each of the dropdowns.
-        # TODO: Maybe should make this a function of the loaded data.
-        for i, combo in enumerate(self._viewer_combos):
-            for item in ['Flux', 'Error', 'DQ']:
-                combo.addItem(item)
+        self._viewer_combos = []
+        self._viewer_combo_helpers = []
+        for i in range(3):
+            combo = getattr(self.ui, 'viewer{0}_combo'.format(i+1))
+            connect_combo_selection(self, 'viewer{0}_attribute'.format(i+1), combo)
+            helper = ComponentIDComboHelper(self, 'viewer{0}_attribute'.format(i+1))
+            helper.set_multiple_data([data])
             combo.setEnabled(True)
             combo.currentIndexChanged.connect(self._get_change_viewer_func(i))
-
-            # First view will be flux, second error and third DQ.
-            combo.setCurrentIndex(i)
+            self._viewer_combos.append(combo)
+            self._viewer_combo_helpers.append(helper)
 
     def add_data(self, data):
         """
@@ -439,7 +439,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._enable_option_buttons()
         self._setup_syncing()
 
-        self._enable_viewer_combos()
+        self._enable_viewer_combos(data)
 
         self.subWindowActivated.emit(self._active_view)
 
