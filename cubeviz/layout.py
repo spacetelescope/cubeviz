@@ -14,7 +14,7 @@ from specviz.third_party.glue.data_viewer import SpecVizViewer
 from glue.utils.qt import load_ui, get_text
 from glue.external.echo import keep_in_sync
 from glue.utils.qt import get_qapp
-
+from .tools import arithmetic_gui
 
 FLUX = 'FLUX'
 ERROR = 'ERROR'
@@ -247,12 +247,16 @@ class CubeVizLayout(QtWidgets.QWidget):
         return menu_widget
 
     def _open_dialog(self, name, widget):
-        pass
+
+        if name == 'Arithmetic Operations':
+            ex = arithmetic_gui.SelectArithmetic(self._data, self.session.data_collection, parent=self)
         
-    def add_smoothed_cube_name(self, name):
+    def add_new_data_component(self, name):
         for i, combo in enumerate(self._viewer_combos):
-            combo.addItem(name)
-        self._component_labels.append(name)
+            combo.addItem(str(name))
+        self._component_labels.append(str(name))
+
+        # TODO: udpate the active view with the new component
 
     def _enable_option_buttons(self):
         for button in self._option_buttons:

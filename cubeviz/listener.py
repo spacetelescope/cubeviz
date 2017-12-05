@@ -48,7 +48,8 @@ class CubevizManager(HubListener):
             self._empty_layout = None
 
     def handle_new_component(self, message):
-        self._layout.add_smoothed_cube_name(str(message.component_id))
+        #self._layout.add_new_data_component(str(message.component_id))
+        self._layout.add_new_data_component(message.component_id)
 
     def hide_sidebar(self):
         self._app._ui.main_splitter.setSizes([0, 300])
