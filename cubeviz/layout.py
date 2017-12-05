@@ -9,7 +9,9 @@ from qtpy.QtWidgets import QMenu, QAction
 from glue.utils.qt import load_ui
 from glue.utils.qt import get_qapp
 from glue.config import qt_fixed_layout_tab
-from glue.external.echo import keep_in_sync
+from glue.external.echo import keep_in_sync, SelectionCallbackProperty
+from glue.external.echo.qt import connect_combo_selection
+from glue.core.data_combo_helper import ComponentIDComboHelper
 from glue.core.message import SettingsChangeMessage
 
 from specviz.third_party.glue.data_viewer import SpecVizViewer
@@ -55,6 +57,10 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     LABEL = "CubeViz"
     subWindowActivated = QtCore.Signal(object)
+
+    viewer1_attribute = SelectionCallbackProperty(default_index=0)
+    viewer2_attribute = SelectionCallbackProperty(default_index=1)
+    viewer3_attribute = SelectionCallbackProperty(default_index=2)
 
     def __init__(self, session=None, parent=None):
         super(CubeVizLayout, self).__init__(parent=parent)
@@ -237,7 +243,7 @@ class CubeVizLayout(QtWidgets.QWidget):
             view._widget.state.layers[0].attribute = self._data.id[label]
         return change_viewer
 
-    def _enable_viewer_combos(self):
+    def _enable_viewer_combos(self, data):
         """
         Setup the dropdown boxes that correspond to each of the left, middle, and right views.  The combo boxes
         initially are set to have FLUX, Error, DQ but will be dynamic depending on the type of data available either
@@ -245,23 +251,17 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         :return:
         """
-
-        self._viewer_combos = [
-            self.ui.viewer1_combo,
-            self.ui.viewer2_combo,
-            self.ui.viewer3_combo
-        ]
-
-        # Add the options to each of the dropdowns.
-        # TODO: Maybe should make this a function of the loaded data.
-        for i, combo in enumerate(self._viewer_combos):
-            for item in ['Flux', 'Error', 'DQ']:
-                combo.addItem(item)
+        self._viewer_combos = []
+        self._viewer_combo_helpers = []
+        for i in range(3):
+            combo = getattr(self.ui, 'viewer{0}_combo'.format(i+1))
+            connect_combo_selection(self, 'viewer{0}_attribute'.format(i+1), combo)
+            helper = ComponentIDComboHelper(self, 'viewer{0}_attribute'.format(i+1))
+            helper.set_multiple_data([data])
             combo.setEnabled(True)
             combo.currentIndexChanged.connect(self._get_change_viewer_func(i))
-
-            # First view will be flux, second error and third DQ.
-            combo.setCurrentIndex(i)
+            self._viewer_combos.append(combo)
+            self._viewer_combo_helpers.append(helper)
 
     def add_overlay(self, data, label):
         self._overlay_controller.add_overlay(data, label)
@@ -283,8 +283,6 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._active_view = self.left_view
         self._active_cube = self.left_view
 
-        self._enable_viewer_combos()
-
         # Store pointer to wavelength information
         self._wavelengths = self.single_view._widget._data[0].get_component('Wave')[:,0,0]
 
@@ -294,6 +292,8 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         self._enable_option_buttons()
         self._setup_syncing()
+
+        self._enable_viewer_combos(data)
 
         self.subWindowActivated.emit(self._active_view)
 
