@@ -4,7 +4,9 @@ import os
 from collections import OrderedDict
 
 import numpy as np
+from matplotlib import pyplot as plt
 
+from glue.core.data import Data
 from glue.config import qt_fixed_layout_tab, viewer_tool
 from glue.viewers.common.qt.tool import CheckableTool
 from qtpy import QtWidgets, QtCore
@@ -126,6 +128,9 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._wavelength_units = None
         self._wavelength_format = '{}'
         self._option_buttons = []
+
+        self._data = None
+        self._overlays = Data('Overlays')
 
         self.ui = load_ui('layout.ui', self,
                           directory=os.path.dirname(__file__))
