@@ -131,6 +131,7 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         self._data = None
         self._overlays = Data('Overlays')
+        self._active_overlays = []
 
         self.ui = load_ui('layout.ui', self,
                           directory=os.path.dirname(__file__))
@@ -258,7 +259,33 @@ class CubeVizLayout(QtWidgets.QWidget):
             ex = arithmetic_gui.SelectArithmetic(self._data, self.session.data_collection, parent=self)
 
         if name == "Moment Maps":
-            moment_maps.MomentMapsGUI(self._data, self.session.data_collection, parent=self)
+            moment_maps.MomentMapsGUI(
+                self._data, self.session.data_collection, parent=self)
+
+    def add_overlay(self, data, label):
+        self._overlays.add_component(data, label)
+        self.display_overlay(data)
+
+    def display_overlay(self, data):
+        extent = 0, data.shape[0], 0, data.shape[1]
+
+        self._active_overlays = []
+        for view in self.cubes:
+            axes = view._widget.axes
+            aspect = axes.get_aspect()
+
+            overlay = view._widget.axes.imshow(
+                data, origin='lower', cmap=plt.cm.hot, alpha=.25,
+                interpolation='none', aspect=aspect, extent=extent)
+            view._widget.figure.canvas.draw()
+
+            self._active_overlays.append(overlay)
+
+    def _show_overlay(data):
+        extent = 0, data.shape[0], 0, data.shape[1]
+        self.left_view.axes.imshow(
+            data, cmap=plt.cm.viridis, alpha=.9, interpolation='bilinear',
+            extent=extent)
 
     def add_new_data_component(self, name):
         for i, combo in enumerate(self._viewer_combos):

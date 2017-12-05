@@ -14,7 +14,7 @@ from qtpy.QtWidgets import (
 # TODO: In the future, it might be nice to be able to work across data_collection elements
 
 class MomentMapsGUI(QMainWindow):
-    def __init__(self, data, overlays, data_collection, parent=None):
+    def __init__(self, data, data_collection, parent=None):
         super(MomentMapsGUI, self).__init__(parent)
 
         # Get the data_components (e.g., FLUX, DQ, ERROR etc)
@@ -24,7 +24,6 @@ class MomentMapsGUI(QMainWindow):
         self.setWindowFlags(self.windowFlags() | Qt.Tool)
         self.title = "Arithmetic Calculation"
         self.data = data
-        self.overlays = overlays
         self.data_collection = data_collection
         self.parent = parent
 
@@ -95,18 +94,6 @@ class MomentMapsGUI(QMainWindow):
         self.setMaximumWidth(700)
         self.show()
 
-    def _display_overlay(self, data):
-        extent = 0, data.shape[0], 0, data.shape[1]
-
-        aspect = self.parent.left_view._widget.axes.get_aspect()
-        im2 = self.parent.left_view._widget.axes.imshow(data,
-                                                        origin='lower',
-                                                        cmap=plt.cm.hot,
-                                                        alpha=.25,
-                                                        interpolation='none',
-                                                        aspect=aspect,
-                                                        extent=extent)
-        self.parent.left_view._widget.figure.canvas.draw()
 
     def calculate_callback(self):
         """
@@ -134,8 +121,7 @@ class MomentMapsGUI(QMainWindow):
 
         print('Going to add component... {}'.format(cube_moment.shape))
         label = '{}-moment-{}'.format(data_name, order)
-        self.overlays.add_component(cube_moment.value, label)
-        self._display_overlay(cube_moment.value)
+        self.parent.add_overlay(cube_moment.value, label)
 
         #except Exception as e:
         #    print('Error {}'.format(e))
