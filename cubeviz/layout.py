@@ -9,12 +9,16 @@ from glue.config import qt_fixed_layout_tab, viewer_tool
 from glue.viewers.common.qt.tool import CheckableTool
 from qtpy import QtWidgets, QtCore
 from qtpy.QtWidgets import QMenu, QAction
+
 from glue.viewers.image.qt import ImageViewer
+from glue.viewers.image.layer_artist import ImageLayerArtist
+from glue.viewers.image.state import ImageLayerState
+from scipy.ndimage import gaussian_filter
+
 from specviz.third_party.glue.data_viewer import SpecVizViewer
 from glue.utils.qt import load_ui, get_text
 from glue.external.echo import keep_in_sync
 from glue.utils.qt import get_qapp
-
 
 FLUX = 'FLUX'
 ERROR = 'ERROR'
@@ -57,6 +61,28 @@ class SyncButtonBox(CheckableTool):
         pass
 
 
+class CubevizImageLayerState(ImageLayerState):
+    """
+    Sub-class of ImageLayerState that includes the ability to include smoothing
+    on-the-fly.
+    """
+
+    sigma = 0
+
+    def get_sliced_data(self, view=None):
+        if self.sigma == 0:
+            return super(CubevizImageLayerState, self).get_sliced_data(view=view)
+        else:
+            data = super(CubevizImageLayerState, self).get_sliced_data()
+            data = gaussian_filter(data, self.sigma)
+            return data[view]
+
+
+class CubevizImageLayerArtist(ImageLayerArtist):
+
+    _layer_state_cls = CubevizImageLayerState
+
+
 class CubevizImageViewer(ImageViewer):
 
     # Add the sync button to the front of the list so it is more prominent
@@ -69,6 +95,20 @@ class CubevizImageViewer(ImageViewer):
         super(CubevizImageViewer, self).__init__(*args, **kwargs)
         self._sync_button = None
         self._slice_index = None
+
+    def get_data_layer_artist(self, layer=None, layer_state=None):
+        if layer.ndim == 1:
+            cls = self._scatter_artist
+        else:
+            cls = CubevizImageLayerArtist
+        return self.get_layer_artist(cls, layer=layer, layer_state=layer_state)
+
+    def set_otf_sigma(self, sigma):
+        for layer in self.layers:
+            if isinstance(layer, CubevizImageLayerArtist):
+                layer.state.sigma = sigma
+        self.axes._composite_image.invalidate_cache()
+        self.axes.figure.canvas.draw()
 
     def enable_toolbar(self):
         self._sync_button = self.toolbar.tools[SyncButtonBox.tool_id]
@@ -248,7 +288,7 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     def _open_dialog(self, name, widget):
         pass
-        
+
     def add_smoothed_cube_name(self, name):
         for i, combo in enumerate(self._viewer_combos):
             combo.addItem(name)
@@ -359,7 +399,7 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     def _enable_slider(self):
         """
-        Setup the slice slider (min/max, units on description and initial position). 
+        Setup the slice slider (min/max, units on description and initial position).
 
         :return:
         """
