@@ -183,6 +183,8 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui.value_slice.valueChanged.connect(self._on_slider_change)
         self.ui.value_slice.setEnabled(False)
 
+        self.ui.alpha_slider.valueChanged.connect(self._on_alpha_change)
+
         # Register callbacks for slider and wavelength text boxes
         self.ui.text_slice.returnPressed.connect(self._on_slice_change)
         self.ui.text_wavelength.returnPressed.connect(self._on_wavelength_change)
@@ -280,6 +282,9 @@ class CubeVizLayout(QtWidgets.QWidget):
             view._widget.figure.canvas.draw()
 
             self._active_overlays.append(overlay)
+
+        self.ui.alpha_slider.setEnabled(True)
+        self.ui.alpha_slider.setValue(25)
 
     def _show_overlay(data):
         extent = 0, data.shape[0], 0, data.shape[1]
@@ -382,6 +387,17 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         # Now update the slice and wavelength text boxes
         self._update_slice_textboxes(index)
+
+    def _on_alpha_change(self, event):
+        """
+        Callback for change in alpha value.
+
+        :param event:
+        :return:
+        """
+        for overlay in self._active_overlays:
+            overlay.set_alpha(self.ui.alpha_slider.value() / 100.)
+            overlay.figure.canvas.draw()
 
     def _update_slice_textboxes(self, index):
         """

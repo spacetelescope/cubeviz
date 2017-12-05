@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1157</width>
+    <width>1116</width>
     <height>578</height>
    </rect>
   </property>
@@ -31,33 +31,35 @@
      <property name="spacing">
       <number>10</number>
      </property>
-     <item row="0" column="4">
-      <widget class="QLabel" name="label_6">
+     <item row="1" column="3">
+      <widget class="QComboBox" name="viewer2_combo">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="toolTip">
+        <string>Select data to display in middle viewer</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="8">
+      <widget class="QLabel" name="wavelength_slider_text">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
        <property name="font">
         <font>
          <pointsize>13</pointsize>
          <weight>75</weight>
          <bold>true</bold>
+         <underline>false</underline>
+         <kerning>true</kerning>
         </font>
        </property>
        <property name="text">
-        <string>Viewer 3</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="6">
-      <widget class="QSlider" name="value_slice">
-       <property name="maximumSize">
-        <size>
-         <width>300</width>
-         <height>16777215</height>
-        </size>
-       </property>
-       <property name="toolTip">
-        <string>Drag the slider to navigate through the slices of the cube</string>
-       </property>
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
+        <string>Wavelength</string>
        </property>
       </widget>
      </item>
@@ -89,35 +91,33 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="8">
-      <widget class="QLabel" name="wavelength_slider_text">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
+     <item row="1" column="6">
+      <widget class="QSlider" name="value_slice">
+       <property name="maximumSize">
+        <size>
+         <width>300</width>
+         <height>16777215</height>
+        </size>
        </property>
+       <property name="toolTip">
+        <string>Drag the slider to navigate through the slices of the cube</string>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="4">
+      <widget class="QLabel" name="label_6">
        <property name="font">
         <font>
          <pointsize>13</pointsize>
          <weight>75</weight>
          <bold>true</bold>
-         <underline>false</underline>
-         <kerning>true</kerning>
         </font>
        </property>
        <property name="text">
-        <string>Wavelength</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="3">
-      <widget class="QComboBox" name="viewer2_combo">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="toolTip">
-        <string>Select data to display in middle viewer</string>
+        <string>Viewer 3</string>
        </property>
       </widget>
      </item>
@@ -256,7 +256,7 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="11">
+     <item row="1" column="12">
       <spacer name="horizontalSpacer">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -269,7 +269,7 @@
        </property>
       </spacer>
      </item>
-     <item row="1" column="12">
+     <item row="1" column="13">
       <widget class="QToolButton" name="sync_button">
        <property name="enabled">
         <bool>false</bool>
@@ -334,6 +334,35 @@
        </property>
        <property name="toolTip">
         <string>Select data to display in right hand viewer</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="11">
+      <widget class="QSlider" name="alpha_slider">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="minimum">
+        <number>0</number>
+       </property>
+       <property name="maximum">
+        <number>100</number>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="11">
+      <widget class="QLabel" name="label">
+       <property name="font">
+        <font>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="text">
+        <string>Overlay Alpha</string>
        </property>
       </widget>
      </item>
