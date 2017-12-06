@@ -167,6 +167,8 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui.button_toggle_image_mode.clicked.connect(
             self._toggle_image_mode)
 
+        self.ui.overlay_image_combo.addItem("No Overlay")
+
         # Leave these to reenable for the single image viewer if desired
         #self.ui.toggle_flux.setStyleSheet('background-color: {0};'.format(COLOR[FLUX]))
         #self.ui.toggle_error.setStyleSheet('background-color: {0};'.format(COLOR[ERROR]))
@@ -269,6 +271,11 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     def add_overlay(self, data, label):
         self._overlays.add_component(data, label)
+        self.overlay_image_combo.addItem(label)
+        new_index = self.overlay_image_combo.count() - 1
+        self.overlay_image_combo.setCurrentIndex(new_index)
+        self.ui.overlay_image_combo.setEnabled(True)
+        self.ui.alpha_slider.setEnabled(True)
         self.display_overlay(data)
 
     def display_overlay(self, data):
@@ -286,7 +293,6 @@ class CubeVizLayout(QtWidgets.QWidget):
 
             self._active_overlays.append(overlay)
 
-        self.ui.alpha_slider.setEnabled(True)
         self.ui.alpha_slider.setValue(25)
 
     def _show_overlay(data):
