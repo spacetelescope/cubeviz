@@ -137,6 +137,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._active_overlays = []
         # Maps overlays to the data sets they represent
         self._overlay_map = {}
+        self._overlay_colorbar_axis = []
 
         self.ui = load_ui('layout.ui', self,
                           directory=os.path.dirname(__file__))
@@ -340,6 +341,16 @@ class CubeVizLayout(QtWidgets.QWidget):
             view._widget.figure.canvas.draw()
 
             self._active_overlays.append(overlay)
+
+            # Add the overlay colorbar as an axis
+            oca = view._widget.figure.add_axes([0.02, 0.02, 0.3, 0.2])
+            mindata, maxdata = np.nanmin(data), np.nanmax(data)
+            oca_image = np.zeros((1,100))
+            oca_image[0] = np.arange(mindata, maxdata, (maxdata-mindata)/100)
+            oca.imshow(oca_image)
+            plt.xticks([])
+            plt.yticks([])
+            self._overlay_colorbar_axis.append(oca)
 
         self.ui.alpha_slider.setValue(25)
 
