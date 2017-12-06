@@ -132,6 +132,9 @@ class CubeVizLayout(QtWidgets.QWidget):
         # This tracks the current positions of cube viewer axes when they are hidden
         self._viewer_axes_positions = []
 
+        # Indicates whether cube viewer toolbars are currently visible or not
+        self._toolbars_visible = True
+
         self._slice_controller = SliceController(self)
         self._overlay_controller = OverlayController(self)
 
@@ -173,10 +176,11 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         # Create the View Menu
         view_menu = self._dict_to_menu(OrderedDict([
-            ('Hide Axes', ['checkable', self._toggle_viewer_axes]),
             ('RA-DEC', lambda: None),
             ('RA-Spectral', lambda: None),
             ('DEC-Spectral', lambda: None),
+            ('Hide Axes', ['checkable', self._toggle_viewer_axes]),
+            ('Hide Toolbars', ['checkable', self._toggle_toolbars])
         ]))
         self.ui.view_option_button.setMenu(view_menu)
 
@@ -228,6 +232,15 @@ class CubeVizLayout(QtWidgets.QWidget):
             self._viewer_axes_positions = []
         # Record current positions if axes are currently hidden and hide them
         else:
+            self._hide_viewer_axes()
+
+    def _toggle_toolbars(self):
+        self._toolbars_visible = not self._toolbars_visible
+        for viewer in self.cube_views:
+            viewer._widget.toolbar.setVisible(self._toolbars_visible)
+
+        # Axes need to be re-hidden if we are making the toolbar visible again
+        if self._toolbars_visible and self._viewer_axes_positions:
             self._hide_viewer_axes()
 
     def _open_dialog(self, name, widget):
