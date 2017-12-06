@@ -7,6 +7,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from glue.core.data import Data
+from glue.config import colormaps as glue_colormaps
 from glue.config import qt_fixed_layout_tab, viewer_tool
 from glue.viewers.common.qt.tool import CheckableTool
 from qtpy import QtWidgets, QtCore
@@ -23,6 +24,7 @@ FLUX = 'FLUX'
 ERROR = 'ERROR'
 MASK = 'MASK'
 DEFAULT_DATA_LABELS = [FLUX, ERROR, MASK]
+DEFAULT_GLUE_COLORMAP_INDEX = 3
 
 COLOR = {}
 COLOR[FLUX] = '#888888'
@@ -174,6 +176,11 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui.overlay_image_combo.currentIndexChanged.connect(
             self._on_overlay_change)
 
+        self._colormap_index = DEFAULT_GLUE_COLORMAP_INDEX
+        self.ui.overlay_colormap_combo.setCurrentIndex(self._colormap_index)
+        self.ui.overlay_colormap_combo.currentIndexChanged.connect(
+            self._on_colormap_change)
+
         # TODO: udpate the active view with the new component
 
         # Leave these to reenable for the single image viewer if desired
@@ -285,6 +292,7 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         self.ui.alpha_slider.setEnabled(True)
         self.ui.overlay_image_combo.setEnabled(True)
+        self.ui.overlay_colormap_combo.setEnabled(True)
 
         # Setting the index will cause _on_overlay_change to fire
         self.overlay_image_combo.setCurrentIndex(new_index)
@@ -295,6 +303,14 @@ class CubeVizLayout(QtWidgets.QWidget):
         else:
             data = self._overlay_map[index]
         self.display_overlay(data)
+
+    def _on_colormap_change(self, index):
+        self._colormap_index = index
+        colormap = glue_colormaps.members[self._colormap_index][1]
+        for overlay in self._active_overlays:
+            overlay.set_cmap(colormap)
+        for cube in self.cubes:
+            cube._widget.figure.canvas.draw()
 
     def display_overlay(self, data):
         # Remove all existing overlays
@@ -317,8 +333,9 @@ class CubeVizLayout(QtWidgets.QWidget):
             axes = view._widget.axes
             aspect = axes.get_aspect()
 
+            colormap = glue_colormaps.members[self._colormap_index][1]
             overlay = view._widget.axes.imshow(
-                data, origin='lower', cmap=plt.cm.hot, alpha=.25,
+                data, origin='lower', cmap=colormap, alpha=.25,
                 interpolation='none', aspect=aspect, extent=extent)
             view._widget.figure.canvas.draw()
 

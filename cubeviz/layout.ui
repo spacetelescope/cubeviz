@@ -199,14 +199,27 @@
           <number>6</number>
          </property>
          <item row="1" column="2">
-          <widget class="QComboBox" name="overlay_colormap_combo">
+          <widget class="QColormapCombo" name="overlay_colormap_combo">
            <property name="enabled">
             <bool>false</bool>
            </property>
-           <property name="font">
-            <font>
-             <pointsize>13</pointsize>
-            </font>
+           <property name="minimumSize">
+            <size>
+             <width>110</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>110</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="sizeAdjustPolicy">
+            <enum>QComboBox::AdjustToMinimumContentsLength</enum>
+           </property>
+           <property name="frame">
+            <bool>false</bool>
            </property>
           </widget>
          </item>
@@ -584,6 +597,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QColormapCombo</class>
+   <extends>QComboBox</extends>
+   <header>glue.utils.qt.colors</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>
