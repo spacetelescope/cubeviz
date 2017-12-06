@@ -143,8 +143,10 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._active_view = None
         self._active_cube = None
 
+        # Set the default to parallel image viewer
         self._single_image = False
         self.ui.button_toggle_image_mode.setText('Single Image Viewer')
+        self.ui.viewer_control_frame.setCurrentIndex(0)
 
     def _init_menu_buttons(self):
         """
@@ -362,10 +364,12 @@ class CubeVizLayout(QtWidgets.QWidget):
             self._split_image_mode(event)
             self._single_image = False
             self.ui.button_toggle_image_mode.setText('Single Image Viewer')
+            self.ui.viewer_control_frame.setCurrentIndex(0)
         else:
             self._single_image_mode(event)
             self._single_image = True
             self.ui.button_toggle_image_mode.setText('Split Image Viewer')
+            self.ui.viewer_control_frame.setCurrentIndex(1)
 
     def _single_image_mode(self, event=None):
         vsplitter = self.ui.vertical_splitter
