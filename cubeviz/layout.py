@@ -315,8 +315,9 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._data = data
         self.specviz._widget.add_data(data)
 
-        for view in self.views:
-            view._widget.enable_toolbar()
+        # Syncing should only be enabled by default for cube viewers
+        for cube in self.cubes:
+            cube._widget.enable_toolbar()
 
         self._has_data = True
         self._active_view = self.left_view
