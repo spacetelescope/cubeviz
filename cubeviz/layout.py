@@ -58,6 +58,7 @@ class CubeVizLayout(QtWidgets.QWidget):
     LABEL = "CubeViz"
     subWindowActivated = QtCore.Signal(object)
 
+    single_viewer_attribute = SelectionCallbackProperty(default_index=0)
     viewer1_attribute = SelectionCallbackProperty(default_index=0)
     viewer2_attribute = SelectionCallbackProperty(default_index=1)
     viewer3_attribute = SelectionCallbackProperty(default_index=2)
@@ -237,30 +238,36 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     def _get_change_viewer_func(self, view_index):
         def change_viewer(dropdown_index):
-            view = self.cubes[view_index]
+            view = self.views[view_index]
             label = self._component_labels[dropdown_index]
             view._widget.state.layers[0].attribute = self._data.id[label]
         return change_viewer
 
-    def _enable_viewer_combos(self, data):
+    def _enable_viewer_combo(self, data, index, combo_label, selection_label):
+        combo = getattr(self.ui, combo_label)
+        connect_combo_selection(self, selection_label, combo)
+        helper = ComponentIDComboHelper(self, selection_label)
+        helper.set_multiple_data([data])
+        combo.setEnabled(True)
+        combo.currentIndexChanged.connect(self._get_change_viewer_func(index))
+
+    def _enable_all_viewer_combos(self, data):
         """
-        Setup the dropdown boxes that correspond to each of the left, middle, and right views.  The combo boxes
-        initially are set to have FLUX, Error, DQ but will be dynamic depending on the type of data available either
-        from being loaded in or by being processed.
+        Setup the dropdown boxes that correspond to each of the left, middle,
+        and right views.  The combo boxes initially are set to have FLUX,
+        Error, DQ but will be dynamic depending on the type of data available
+        either from being loaded in or by being processed.
 
         :return:
         """
-        self._viewer_combos = []
-        self._viewer_combo_helpers = []
-        for i in range(3):
-            combo = getattr(self.ui, 'viewer{0}_combo'.format(i+1))
-            connect_combo_selection(self, 'viewer{0}_attribute'.format(i+1), combo)
-            helper = ComponentIDComboHelper(self, 'viewer{0}_attribute'.format(i+1))
-            helper.set_multiple_data([data])
-            combo.setEnabled(True)
-            combo.currentIndexChanged.connect(self._get_change_viewer_func(i))
-            self._viewer_combos.append(combo)
-            self._viewer_combo_helpers.append(helper)
+        self._enable_viewer_combo(
+            data, 0, 'single_viewer_combo', 'single_viewer_attribute')
+
+        for i in range(1,4):
+            combo_label = 'viewer{0}_combo'.format(i)
+            selection_label = 'viewer{0}_attribute'.format(i)
+            self._enable_viewer_combo(data, i, combo_label, selection_label)
+
 
     def add_overlay(self, data, label):
         self._overlay_controller.add_overlay(data, label)
@@ -292,7 +299,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._enable_option_buttons()
         self._setup_syncing()
 
-        self._enable_viewer_combos(data)
+        self._enable_all_viewer_combos(data)
 
         self.subWindowActivated.emit(self._active_view)
 
