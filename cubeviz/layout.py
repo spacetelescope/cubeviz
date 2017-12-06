@@ -264,6 +264,9 @@ class CubeVizLayout(QtWidgets.QWidget):
             moment_maps.MomentMapsGUI(
                 self._data, self.session.data_collection, parent=self)
 
+        if name == 'Arithmetic Operations':
+            ex = arithmetic_gui.SelectArithmetic(self._data, self.session.data_collection, parent=self)
+
     def add_overlay(self, data, label):
         self._overlays.add_component(data, label)
         self.display_overlay(data)
