@@ -131,7 +131,10 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         self._data = None
         self._overlays = Data('Overlays')
+        # This is a list of overlay objects that are currently displayed
         self._active_overlays = []
+        # Maps overlays to the data sets they represent
+        self._overlay_map = {}
 
         self.ui = load_ui('layout.ui', self,
                           directory=os.path.dirname(__file__))
@@ -168,6 +171,10 @@ class CubeVizLayout(QtWidgets.QWidget):
             self._toggle_image_mode)
 
         self.ui.overlay_image_combo.addItem("No Overlay")
+        self.ui.overlay_image_combo.currentIndexChanged.connect(
+            self._on_overlay_change)
+
+        # TODO: udpate the active view with the new component
 
         # Leave these to reenable for the single image viewer if desired
         #self.ui.toggle_flux.setStyleSheet('background-color: {0};'.format(COLOR[FLUX]))
@@ -271,14 +278,38 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     def add_overlay(self, data, label):
         self._overlays.add_component(data, label)
+        # TODO: Is there a way to get this from the component ???
         self.overlay_image_combo.addItem(label)
         new_index = self.overlay_image_combo.count() - 1
-        self.overlay_image_combo.setCurrentIndex(new_index)
-        self.ui.overlay_image_combo.setEnabled(True)
+        self._overlay_map[new_index] = data
+
         self.ui.alpha_slider.setEnabled(True)
+        self.ui.overlay_image_combo.setEnabled(True)
+
+        # Setting the index will cause _on_overlay_change to fire
+        self.overlay_image_combo.setCurrentIndex(new_index)
+
+    def _on_overlay_change(self, index):
+        if index == 0:
+            data = None
+        else:
+            data = self._overlay_map[index]
         self.display_overlay(data)
 
     def display_overlay(self, data):
+        # Remove all existing overlays
+        if self._active_overlays:
+            for overlay, view in zip(self._active_overlays, self.cubes):
+                overlay.remove()
+                view._widget.figure.canvas.draw()
+
+            self._active_overlays = []
+
+        # Just return if no new overlay is to be drawn
+        if data is None:
+            return
+
+        # Draw new overlay otherwise
         extent = 0, data.shape[0], 0, data.shape[1]
 
         self._active_overlays = []
