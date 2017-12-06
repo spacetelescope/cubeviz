@@ -68,20 +68,16 @@ class CubevizManager(HubListener):
                          cubeviz_layout.middle_view._widget,
                          cubeviz_layout.right_view._widget]
 
+        # Single viewer should display FLUX only by default
+        image_viewers[0].add_data(data)
+        image_viewers[0].state.aspect = 'auto'
+        image_viewers[0].state.layers[0].attribute = data.id[FLUX]
+
+        # Split image viewers should each show different component by default
         for i, attribute in enumerate([FLUX, ERROR, MASK]):
-
-            image_viewers[0].add_data(data)
-            image_viewers[0].state.aspect = 'auto'
-            image_viewers[0].state.color_mode = 'One color per layer'
-            image_viewers[0].state.layers[i].attribute = data.id[attribute]
-
             image_viewers[1 + i].add_data(data)
             image_viewers[1 + i].state.aspect = 'auto'
             image_viewers[1 + i].state.layers[0].attribute = data.id[attribute]
-
-        image_viewers[0].state.layers[0].color = COLOR[FLUX]
-        image_viewers[0].state.layers[1].color = COLOR[ERROR]
-        image_viewers[0].state.layers[2].color = COLOR[MASK]
 
         cubeviz_layout.add_data(data)
 
