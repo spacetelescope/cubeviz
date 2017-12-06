@@ -100,13 +100,10 @@ class MomentMapsGUI(QMainWindow):
         Callback for when they hit calculate
         :return:
         """
-        print('In callback')
 
         # Determine the data component and order
         order = int(self.order_combobox.currentText())
         data_name = self.data_combobox.currentText()
-
-        print('order, datanme {}, {}'.format(order, data_name))
 
         # Grab spectral-cube
         import spectral_cube
@@ -115,19 +112,16 @@ class MomentMapsGUI(QMainWindow):
         # Use the package asteval to do the calculation, we are going to
         # assume here that the lhs of the equals sign is going to be the output named variable
 
-        #try:
-        print('Going to calculate...')
-        cube_moment = cube.moment(order=order, axis=0)
+        try:
+            cube_moment = cube.moment(order=order, axis=0)
 
-        print('Going to add component... {}'.format(cube_moment.shape))
-        label = '{}-moment-{}'.format(data_name, order)
-        self.parent.add_overlay(cube_moment.value, label)
+            label = '{}-moment-{}'.format(data_name, order)
+            self.parent.add_overlay(cube_moment.value, label)
 
-        #except Exception as e:
-        #    print('Error {}'.format(e))
-        #    print(e)
+        except Exception as e:
+           print('Error {}'.format(e))
+           print(e)
 
-        print('Done and closing')
         self.close()
 
     def cancel_callback(self, caller=0):
