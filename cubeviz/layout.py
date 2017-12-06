@@ -113,22 +113,8 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         # TODO: udpate the active view with the new component
 
-        # Leave these to reenable for the single image viewer if desired
-        #self.ui.toggle_flux.setStyleSheet('background-color: {0};'.format(COLOR[FLUX]))
-        #self.ui.toggle_error.setStyleSheet('background-color: {0};'.format(COLOR[ERROR]))
-        #self.ui.toggle_quality.setStyleSheet('background-color: {0};'.format(COLOR[MASK]))
-
-        #self.ui.toggle_flux.setChecked(True)
-        #self.ui.toggle_error.setChecked(False)
-        #self.ui.toggle_quality.setChecked(False)
-
-        #self.ui.toggle_flux.toggled.connect(self._toggle_flux)
-        #self.ui.toggle_error.toggled.connect(self._toggle_error)
-        #self.ui.toggle_quality.toggled.connect(self._toggle_quality)
-
         self._slice_controller = SliceController(self)
         self._overlay_controller = OverlayController(self)
-
 
         # Add menu buttons to the cubeviz toolbar.
         self._init_menu_buttons()
@@ -227,15 +213,6 @@ class CubeVizLayout(QtWidgets.QWidget):
             button.setEnabled(True)
         self.ui.sync_button.setEnabled(True)
 
-    def _toggle_flux(self, event=None):
-        self.single_view._widget.state.layers[0].visible = self.ui.toggle_flux.isChecked()
-
-    def _toggle_error(self, event=None):
-        self.single_view._widget.state.layers[1].visible = self.ui.toggle_error.isChecked()
-
-    def _toggle_quality(self, event=None):
-        self.single_view._widget.state.layers[2].visible = self.ui.toggle_quality.isChecked()
-
     def _get_change_viewer_func(self, view_index):
         def change_viewer(dropdown_index):
             view = self.views[view_index]
@@ -303,10 +280,6 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._enable_all_viewer_combos(data)
 
         self.subWindowActivated.emit(self._active_view)
-
-        #self._toggle_flux()
-        #self._toggle_error()
-        #self._toggle_quality()
 
     def eventFilter(self, obj, event):
 
