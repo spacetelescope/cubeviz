@@ -1,13 +1,10 @@
 from __future__ import absolute_import, division, print_function
 
-import numpy as np
-from matplotlib import pyplot as plt
-
 from qtpy.QtCore import Qt
 from qtpy import QtGui
 from qtpy.QtWidgets import (
     QMainWindow, QComboBox, QPushButton,
-    QLabel, QWidget, QHBoxLayout, QVBoxLayout, QLineEdit
+    QLabel, QWidget, QHBoxLayout, QVBoxLayout
 )
 
 
