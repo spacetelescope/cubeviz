@@ -129,6 +129,9 @@ class CubeVizLayout(QtWidgets.QWidget):
         # populated into the combo boxes.
         self._viewer_combo_helpers = []
 
+        # This tracks the current positions of cube viewer axes when they are hidden
+        self._viewer_axes_positions = []
+
         self._slice_controller = SliceController(self)
         self._overlay_controller = OverlayController(self)
 
@@ -170,6 +173,7 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         # Create the View Menu
         view_menu = self._dict_to_menu(OrderedDict([
+            ('Hide Axes', ['checkable', self._toggle_viewer_axes]),
             ('RA-DEC', lambda: None),
             ('RA-Spectral', lambda: None),
             ('DEC-Spectral', lambda: None),
@@ -198,7 +202,7 @@ class CubeVizLayout(QtWidgets.QWidget):
                     if v[0] == 'checkable':
                         v = v[1]
                         act.setCheckable(True)
-                        act.setChecked(True)
+                        act.setChecked(False)
 
                 act.triggered.connect(v)
                 menu_widget.addAction(act)
@@ -207,6 +211,24 @@ class CubeVizLayout(QtWidgets.QWidget):
     def _handle_settings_change(self, message):
         if isinstance(message, SettingsChangeMessage):
             self._slice_controller.update_index(self.synced_index)
+
+    def _hide_viewer_axes(self):
+        for viewer in self.cube_views:
+            axes = viewer._widget.axes
+            self._viewer_axes_positions.append(axes.get_position())
+            axes.set_position([0, 0, 1, 1])
+            viewer._widget.figure.canvas.draw()
+
+    def _toggle_viewer_axes(self):
+        # If axes are currently hidden, restore the original positions
+        if self._viewer_axes_positions:
+            for viewer, pos in zip(self.cube_views, self._viewer_axes_positions):
+                viewer._widget.axes.set_position(pos)
+                viewer._widget.figure.canvas.draw()
+            self._viewer_axes_positions = []
+        # Record current positions if axes are currently hidden and hide them
+        else:
+            self._hide_viewer_axes()
 
     def _open_dialog(self, name, widget):
 
