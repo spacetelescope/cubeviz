@@ -117,7 +117,6 @@ class MomentMapsGUI(QMainWindow):
 
         except Exception as e:
            print('Error {}'.format(e))
-           print(e)
 
         self.close()
 
