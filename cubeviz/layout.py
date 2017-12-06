@@ -132,6 +132,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         # Add menu buttons to the cubeviz toolbar.
         self._init_menu_buttons()
 
+        # This maps the combo box indicies to the glue data component labels
         self._component_labels = DEFAULT_DATA_LABELS.copy()
 
         self.sync = {}
@@ -216,8 +217,6 @@ class CubeVizLayout(QtWidgets.QWidget):
                 self._data, self.session.data_collection, parent=self)
 
     def add_new_data_component(self, name):
-        for i, combo in enumerate(self._viewer_combos):
-            combo.addItem(str(name))
         self._component_labels.append(str(name))
 
         # TODO: udpate the active view with the new component
