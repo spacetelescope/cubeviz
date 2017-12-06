@@ -5,7 +5,7 @@ from collections import OrderedDict
 
 import numpy as np
 from matplotlib import pyplot as plt
-
+import matplotlib.ticker as mtick
 from glue.core.data import Data
 from glue.config import colormaps as glue_colormaps
 from glue.config import qt_fixed_layout_tab, viewer_tool
@@ -307,14 +307,18 @@ class CubeVizLayout(QtWidgets.QWidget):
         colormap = glue_colormaps.members[self._colormap_index][1]
         for overlay in self._active_overlays:
             overlay.set_cmap(colormap)
+        for cb in self._overlay_colorbar_axis:
+            for cbim in cb.get_images():
+                cbim.set_cmap(colormap)
         for cube in self.cubes:
             cube._widget.figure.canvas.draw()
 
     def display_overlay(self, data):
         # Remove all existing overlays
         if self._active_overlays:
-            for overlay, view in zip(self._active_overlays, self.cubes):
+            for overlay, view, cb in zip(self._active_overlays, self.cubes, self._overlay_colorbar_axis):
                 overlay.remove()
+                cb.remove()
                 view._widget.figure.canvas.draw()
 
             self._active_overlays = []
@@ -335,19 +339,21 @@ class CubeVizLayout(QtWidgets.QWidget):
             overlay = view._widget.axes.imshow(
                 data, origin='lower', cmap=colormap, alpha=.25,
                 interpolation='none', aspect=aspect, extent=extent)
-            view._widget.figure.canvas.draw()
 
             self._active_overlays.append(overlay)
 
             # Add the overlay colorbar as an axis
-            oca = view._widget.figure.add_axes([0.02, 0.02, 0.3, 0.2])
+            oca = view._widget.figure.add_axes([0.02, 0.04, 0.3, 0.025], projection='rectilinear')
             mindata, maxdata = np.nanmin(data), np.nanmax(data)
             oca_image = np.zeros((1,100))
             oca_image[0] = np.arange(mindata, maxdata, (maxdata-mindata)/100)
-            oca.imshow(oca_image)
-            plt.xticks([])
-            plt.yticks([])
+            oca.imshow(oca_image, origin='lower', cmap=colormap, aspect=aspect, extent=[0,100,0,100])
+            oca.set_xticks([0, 25, 50, 75, 100])
+            oca.set_xticklabels(['%3.2e'%x for x in np.arange(mindata, maxdata, (maxdata-mindata)/5)], fontsize=6)
+            oca.set_yticks([])
             self._overlay_colorbar_axis.append(oca)
+
+            view._widget.figure.canvas.draw()
 
         self.ui.alpha_slider.setValue(25)
 
