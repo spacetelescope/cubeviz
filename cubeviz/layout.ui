@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1116</width>
-    <height>578</height>
+    <width>1274</width>
+    <height>560</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Overlays</string>
   </property>
   <layout class="QVBoxLayout" name="horizontalLayout">
    <property name="leftMargin">
@@ -31,17 +31,7 @@
      <property name="spacing">
       <number>10</number>
      </property>
-     <item row="1" column="3">
-      <widget class="QComboBox" name="viewer2_combo">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="toolTip">
-        <string>Select data to display in middle viewer</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="8">
+     <item row="0" column="9">
       <widget class="QLabel" name="wavelength_slider_text">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -63,7 +53,17 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="9">
+     <item row="1" column="3">
+      <widget class="QComboBox" name="viewer2_combo">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="toolTip">
+        <string>Select data to display in middle viewer</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="10">
       <widget class="QToolButton" name="view_option_button">
        <property name="enabled">
         <bool>false</bool>
@@ -197,7 +197,7 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="10">
+     <item row="1" column="11">
       <widget class="QToolButton" name="cube_option_button">
        <property name="enabled">
         <bool>false</bool>
@@ -256,19 +256,6 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="12">
-      <spacer name="horizontalSpacer">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
      <item row="1" column="13">
       <widget class="QToolButton" name="sync_button">
        <property name="enabled">
@@ -285,7 +272,7 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="8">
+     <item row="1" column="9">
       <widget class="QLineEdit" name="text_wavelength">
        <property name="maximumSize">
         <size>
@@ -337,33 +324,92 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="11">
-      <widget class="QSlider" name="alpha_slider">
-       <property name="enabled">
-        <bool>false</bool>
+     <item row="1" column="12">
+      <widget class="QGroupBox" name="groupBox">
+       <property name="title">
+        <string>Overlays</string>
        </property>
-       <property name="minimum">
-        <number>0</number>
-       </property>
-       <property name="maximum">
-        <number>100</number>
-       </property>
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="11">
-      <widget class="QLabel" name="label">
-       <property name="font">
-        <font>
-         <weight>75</weight>
-         <bold>true</bold>
-        </font>
-       </property>
-       <property name="text">
-        <string>Overlay Alpha</string>
-       </property>
+       <layout class="QGridLayout" name="gridLayout">
+        <item row="1" column="0">
+         <widget class="QSlider" name="alpha_slider">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="minimum">
+           <number>0</number>
+          </property>
+          <property name="maximum">
+           <number>100</number>
+          </property>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="2">
+         <widget class="QComboBox" name="overlay_colormap_combo">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="2">
+         <widget class="QLabel" name="label_7">
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::NoFrame</enum>
+          </property>
+          <property name="text">
+           <string>Color Map</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="label">
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Alpha</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLabel" name="label_8">
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Image Display</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QComboBox" name="overlay_image_combo">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+       <zorder>label</zorder>
+       <zorder>label</zorder>
+       <zorder>alpha_slider</zorder>
+       <zorder>label_7</zorder>
+       <zorder>overlay_colormap_combo</zorder>
+       <zorder>label_8</zorder>
+       <zorder>overlay_image_combo</zorder>
       </widget>
      </item>
     </layout>
