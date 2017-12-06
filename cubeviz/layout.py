@@ -107,6 +107,9 @@ class CubeVizLayout(QtWidgets.QWidget):
         # This tracks the current positions of cube viewer axes when they are hidden
         self._viewer_axes_positions = []
 
+        # Indicates whether cube viewer toolbars are currently visible or not
+        self._toolbars_visible = True
+
         # Leave these to reenable for the single image viewer if desired
         #self.ui.toggle_flux.setStyleSheet('background-color: {0};'.format(COLOR[FLUX]))
         #self.ui.toggle_error.setStyleSheet('background-color: {0};'.format(COLOR[ERROR]))
@@ -158,10 +161,11 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         # Create the View Menu
         view_menu = self._dict_to_menu(OrderedDict([
-            ('Hide Axes', ['checkable', self._toggle_viewer_axes]),
             ('RA-DEC', lambda: None),
             ('RA-Spectral', lambda: None),
             ('DEC-Spectral', lambda: None),
+            ('Hide Axes', ['checkable', self._toggle_viewer_axes]),
+            ('Hide Toolbars', ['checkable', self._toggle_toolbars])
         ]))
         self.ui.view_option_button.setMenu(view_menu)
 
@@ -197,6 +201,13 @@ class CubeVizLayout(QtWidgets.QWidget):
         if isinstance(message, SettingsChangeMessage):
             self._slice_controller.update_index(self.synced_index)
 
+    def _hide_viewer_axes(self):
+        for viewer in self.cubes:
+            axes = viewer._widget.axes
+            self._viewer_axes_positions.append(axes.get_position())
+            axes.set_position([0, 0, 1, 1])
+            viewer._widget.figure.canvas.draw()
+
     def _toggle_viewer_axes(self):
         # If axes are currently hidden, restore the original positions
         if self._viewer_axes_positions:
@@ -206,11 +217,16 @@ class CubeVizLayout(QtWidgets.QWidget):
             self._viewer_axes_positions = []
         # Record current positions if axes are currently hidden and hide them
         else:
-            for viewer in self.cubes:
-                axes = viewer._widget.axes
-                self._viewer_axes_positions.append(axes.get_position())
-                axes.set_position([0, 0, 1, 1])
-                viewer._widget.figure.canvas.draw()
+            self._hide_viewer_axes()
+
+    def _toggle_toolbars(self):
+        self._toolbars_visible = not self._toolbars_visible
+        for viewer in self.cubes:
+            viewer._widget.toolbar.setVisible(self._toolbars_visible)
+
+        # Axes need to be re-hidden if we are making the toolbar visible again
+        if self._toolbars_visible and self._viewer_axes_positions:
+            self._hide_viewer_axes()
 
     def _open_dialog(self, name, widget):
 
