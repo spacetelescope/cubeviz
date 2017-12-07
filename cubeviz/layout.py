@@ -58,7 +58,6 @@ class SyncButtonBox(CheckableTool):
 
 
 class CubevizImageViewer(ImageViewer):
-
     # Add the sync button to the front of the list so it is more prominent
     # on smaller screens.
     tools = ['sync_checkbox', 'select:rectangle', 'select:xrange',
@@ -69,6 +68,17 @@ class CubevizImageViewer(ImageViewer):
         super(CubevizImageViewer, self).__init__(*args, **kwargs)
         self._sync_button = None
         self._slice_index = None
+
+        self.is_mouse_over = False
+        self.hold_coords = False
+        self.x_mouse = None
+        self.y_mouse = None
+
+        self.coord_label = QLabel("")
+        self.statusBar().addPermanentWidget(self.coord_label)
+        self.statusBar().showMessage('Working')
+        self.figure.canvas.mpl_connect('motion_notify_event', self.mouse_move)
+        self.figure.canvas.mpl_connect('axes_leave_event', self.mouse_exited)
 
     def enable_toolbar(self):
         self._sync_button = self.toolbar.tools[SyncButtonBox.tool_id]
@@ -90,6 +100,68 @@ class CubevizImageViewer(ImageViewer):
     @property
     def slice_index(self):
         return self._slice_index
+
+    def get_coords(self):
+        if not self.is_mouse_over:
+            return None
+        return self.coord_label.text()
+
+    def toggle_hold_coords(self):
+        if self.is_mouse_over and not self.hold_coords:
+            self.hold_coords = True
+        else:
+            self.hold_coords = False
+
+    def clear_coords(self):
+        self.is_mouse_over = False
+        if self.hold_coords:
+            return
+        self.x_mouse = None
+        self.y_mouse = None
+        self.coord_label.setText('')
+
+    def mouse_move(self, event):
+        if not event.inaxes:
+            self.clear_coords()
+            return
+        self.is_mouse_over = True
+        if self.hold_coords:
+            return
+        x, y = [int(event.xdata + 0.5), int(event.ydata + 0.5)]
+        self.x_mouse, self.y_mouse = [x, y]
+
+        string = "X={:1.0f} Y={:1.0f}".format(x, y)
+        if len(self.state.layers) > 0:
+            # Get array arr that contains the image values
+            arr = self.state.layers[0].get_sliced_data()
+            if 0 <= x < arr.shape[0] and 0 <= y < arr.shape[1]:
+                # if x and y are in bounds get value and check if wcs is obtainable
+                if len(self.figure.axes) > 0:
+                    wcs = self.figure.axes[0].wcs.celestial
+                    if wcs is not None:
+                        # Check the number of axes in the WCS and add to string
+                        if wcs.naxis == 3 and self.slice_index is not None:
+                            ra, dec, wave = wcs.wcs_pix2world([[x, y, self._slice_index]], 0)[0]
+                            string += " RA={:1.4f} Dec={:1.4f}".format(ra, dec)
+                        elif wcs.naxis == 2:
+                            ra, dec = wcs.wcs_pix2world([[x, y]], 0)[0]
+                            string += " RA={:1.4f} Dec={:1.4f}".format(ra, dec)
+                v = arr[x][y]
+                string += " Val={:1.4f}".format(v)
+
+        if self._slice_index is not None:
+            string += " Slice={:1.0f}".format(self._slice_index)
+        string += " "
+        self.coord_label.setText(string)
+        return
+
+    def mouse_exited(self, event):
+        self.clear_coords()
+        return
+
+    def leaveEvent(self, event):
+        self.clear_coords()
+        return
 
 
 class WidgetWrapper(QtWidgets.QWidget):
