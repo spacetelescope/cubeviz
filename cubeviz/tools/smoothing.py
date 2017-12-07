@@ -21,7 +21,7 @@ from qtpy.QtWidgets import (
 class Smooth(object):
 
     def __init__(self, data=None, smoothing_axis=None, kernel_type=None, kernel_size=None,
-                 component_id=None, output_label=None, output_as_component=False):
+                 component_id=None, output_label=None, output_as_component=False, parent=None):
         self.data = data
         self.smoothing_axis = smoothing_axis
         self.kernel_type = kernel_type
@@ -30,6 +30,7 @@ class Smooth(object):
         self.output_label = output_label
         self.output_as_component = output_as_component
         self.kernel_registry = self.load_kernel_registry()
+        self.parent = parent
 
     @staticmethod
     def load_kernel_registry():
@@ -190,17 +191,23 @@ class Smooth(object):
                                        output_component_id=self.component_id)
         return output
 
+    def gui(self):
+        ex = SelectSmoothing(self.data, self.parent)
+
 
 class SelectSmoothing(QMainWindow):
 
-    def __init__(self, data, parent=None):
+    def __init__(self, data, parent=None, smooth=None):
         super(SelectSmoothing, self).__init__(parent)
         self.setWindowFlags(self.windowFlags() | Qt.Tool)
         self.parent = parent
         self.title = "Smoothing Selection"
 
         self.data = data
-        self.smooth = Smooth(data=self.data)
+        if smooth is None:
+            self.smooth = Smooth(data=self.data)
+        else:
+            self.smooth = smooth
 
         self.abort_window = None
 
