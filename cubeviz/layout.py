@@ -15,6 +15,7 @@ from glue.utils.qt import load_ui, get_text
 from glue.external.echo import keep_in_sync
 from glue.utils.qt import get_qapp
 from .tools import arithmetic_gui
+from .tools import smoothing
 
 FLUX = 'FLUX'
 ERROR = 'ERROR'
@@ -248,9 +249,12 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     def _open_dialog(self, name, widget):
 
+        if name == 'Filter':
+            ex = smoothing.SelectSmoothing(self._data, parent=self)
+
         if name == 'Arithmetic Operations':
             ex = arithmetic_gui.SelectArithmetic(self._data, self.session.data_collection, parent=self)
-        
+
     def add_new_data_component(self, name):
         for i, combo in enumerate(self._viewer_combos):
             combo.addItem(str(name))
