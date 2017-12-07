@@ -322,6 +322,7 @@ class CubeVizLayout(QtWidgets.QWidget):
                 view._widget.figure.canvas.draw()
 
             self._active_overlays = []
+            self._overlay_colorbar_axis = []
 
         # Just return if no new overlay is to be drawn
         if data is None:
