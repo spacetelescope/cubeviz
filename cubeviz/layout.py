@@ -58,6 +58,7 @@ class SyncButtonBox(CheckableTool):
 
 
 class CubevizImageViewer(ImageViewer):
+
     # Add the sync button to the front of the list so it is more prominent
     # on smaller screens.
     tools = ['sync_checkbox', 'select:rectangle', 'select:xrange',
@@ -76,7 +77,7 @@ class CubevizImageViewer(ImageViewer):
 
         self.coord_label = QLabel("")
         self.statusBar().addPermanentWidget(self.coord_label)
-        self.statusBar().showMessage('Working')
+
         self.figure.canvas.mpl_connect('motion_notify_event', self.mouse_move)
         self.figure.canvas.mpl_connect('axes_leave_event', self.mouse_exited)
 
