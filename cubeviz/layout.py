@@ -8,7 +8,7 @@ import numpy as np
 from glue.config import qt_fixed_layout_tab, viewer_tool
 from glue.viewers.common.qt.tool import CheckableTool
 from qtpy import QtWidgets, QtCore
-from qtpy.QtWidgets import QMenu, QAction
+from qtpy.QtWidgets import QMenu, QAction, QLabel
 from glue.viewers.image.qt import ImageViewer
 from specviz.third_party.glue.data_viewer import SpecVizViewer
 from glue.utils.qt import load_ui, get_text
