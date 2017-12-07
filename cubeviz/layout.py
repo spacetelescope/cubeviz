@@ -111,7 +111,11 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui.button_toggle_image_mode.clicked.connect(
             self._toggle_image_mode)
 
-        # TODO: udpate the active view with the new component
+        # This is a list of helpers for the viewer combo boxes. New data
+        # collections should be added to each helper in this list using the
+        # ``append_data`` method to ensure that the new data components are
+        # populated into the combo boxes.
+        self._viewer_combo_helpers = []
 
         self._slice_controller = SliceController(self)
         self._overlay_controller = OverlayController(self)
@@ -227,6 +231,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         helper.set_multiple_data([data])
         combo.setEnabled(True)
         combo.currentIndexChanged.connect(self._get_change_viewer_func(index))
+        self._viewer_combo_helpers.append(helper)
 
     def _enable_all_viewer_combos(self, data):
         """
