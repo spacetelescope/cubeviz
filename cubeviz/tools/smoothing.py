@@ -190,10 +190,6 @@ class Smooth(object):
                                        output_component_id=self.component_id)
         return output
 
-    def smooth_slice(self):
-        # On the fly smoothing.
-        return
-
 
 class SelectSmoothing(QMainWindow):
 
