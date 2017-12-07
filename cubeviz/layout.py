@@ -114,6 +114,12 @@ class CubeVizLayout(QtWidgets.QWidget):
         # This tracks the current positions of cube viewer axes when they are hidden
         self._viewer_axes_positions = []
 
+        # This is a list of helpers for the viewer combo boxes. New data
+        # collections should be added to each helper in this list using the
+        # ``append_data`` method to ensure that the new data components are
+        # populated into the combo boxes.
+        self._viewer_combo_helpers = []
+
         # Indicates whether cube viewer toolbars are currently visible or not
         self._toolbars_visible = True
 
@@ -260,6 +266,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         helper.set_multiple_data([data])
         combo.setEnabled(True)
         combo.currentIndexChanged.connect(self._get_change_viewer_func(index))
+        self._viewer_combo_helpers.append(helper)
 
     def _enable_all_viewer_combos(self, data):
         """
