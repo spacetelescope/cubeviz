@@ -156,7 +156,7 @@ class CubevizImageViewer(ImageViewer):
         :return: string
         """
         if self.coords_in_degrees:  # If print ra & dec in decimal degrees
-            coord_string = " ({:1.4f}\N{DEGREE SIGN}, {:1.4f}\N{DEGREE SIGN}".format(ra, dec)
+            coord_string = "({:1.4f}\N{DEGREE SIGN}, {:1.4f}\N{DEGREE SIGN}".format(ra, dec)
         else:  # else print ra & dec in Deg:Min:Sec
             c = SkyCoord(ra=ra * u.degree, dec=dec * u.degree)
             coord_string = "("
