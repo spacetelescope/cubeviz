@@ -358,12 +358,6 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         self.ui.alpha_slider.setValue(25)
 
-    def _show_overlay(data):
-        extent = 0, data.shape[0], 0, data.shape[1]
-        self.left_view.axes.imshow(
-            data, cmap=plt.cm.viridis, alpha=.9, interpolation='bilinear',
-            extent=extent)
-
     def add_new_data_component(self, name):
         for i, combo in enumerate(self._viewer_combos):
             combo.addItem(str(name))
