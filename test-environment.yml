@@ -29,5 +29,6 @@ dependencies:
   - glue-core>=0.12
   - glueviz
   - pip:
+    - asteval
     - git+https://github.com/spacetelescope/specviz#egg=specviz
     - git+https://github.com/spacetelescope/cubeviz#egg=cubeviz

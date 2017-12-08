@@ -7,7 +7,10 @@ import numpy as np
 
 from astropy import units as u
 from astropy.coordinates import SkyCoord
-
+from matplotlib import pyplot as plt
+import matplotlib.ticker as mtick
+from glue.core.data import Data
+from glue.config import colormaps as glue_colormaps
 from glue.config import qt_fixed_layout_tab, viewer_tool
 from glue.viewers.common.qt.tool import CheckableTool
 from qtpy import QtWidgets, QtCore
@@ -17,12 +20,14 @@ from specviz.third_party.glue.data_viewer import SpecVizViewer
 from glue.utils.qt import load_ui, get_text
 from glue.external.echo import keep_in_sync
 from glue.utils.qt import get_qapp
-from .tools import arithmetic_gui
+
+from .tools import arithmetic_gui, moment_maps
 
 FLUX = 'FLUX'
 ERROR = 'ERROR'
 MASK = 'MASK'
 DEFAULT_DATA_LABELS = [FLUX, ERROR, MASK]
+DEFAULT_GLUE_COLORMAP_INDEX = 3
 
 COLOR = {}
 COLOR[FLUX] = '#888888'
@@ -281,6 +286,14 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._wavelength_format = '{}'
         self._option_buttons = []
 
+        self._data = None
+        self._overlays = Data('Overlays')
+        # This is a list of overlay objects that are currently displayed
+        self._active_overlays = []
+        # Maps overlays to the data sets they represent
+        self._overlay_map = {}
+        self._overlay_colorbar_axis = []
+
         self.ui = load_ui('layout.ui', self,
                           directory=os.path.dirname(__file__))
 
@@ -315,6 +328,17 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui.button_toggle_image_mode.clicked.connect(
             self._toggle_image_mode)
 
+        self.ui.overlay_image_combo.addItem("No Overlay")
+        self.ui.overlay_image_combo.currentIndexChanged.connect(
+            self._on_overlay_change)
+
+        self._colormap_index = DEFAULT_GLUE_COLORMAP_INDEX
+        self.ui.overlay_colormap_combo.setCurrentIndex(self._colormap_index)
+        self.ui.overlay_colormap_combo.currentIndexChanged.connect(
+            self._on_colormap_change)
+
+        # TODO: udpate the active view with the new component
+
         # Leave these to reenable for the single image viewer if desired
         #self.ui.toggle_flux.setStyleSheet('background-color: {0};'.format(COLOR[FLUX]))
         #self.ui.toggle_error.setStyleSheet('background-color: {0};'.format(COLOR[ERROR]))
@@ -330,6 +354,8 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         self.ui.value_slice.valueChanged.connect(self._on_slider_change)
         self.ui.value_slice.setEnabled(False)
+
+        self.ui.alpha_slider.valueChanged.connect(self._on_alpha_change)
 
         # Register callbacks for slider and wavelength text boxes
         self.ui.text_slice.returnPressed.connect(self._on_slice_change)
@@ -405,7 +431,88 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         if name == 'Arithmetic Operations':
             ex = arithmetic_gui.SelectArithmetic(self._data, self.session.data_collection, parent=self)
-        
+
+        if name == "Moment Maps":
+            moment_maps.MomentMapsGUI(
+                self._data, self.session.data_collection, parent=self)
+
+    def add_overlay(self, data, label):
+        self._overlays.add_component(data, label)
+        # TODO: Is there a way to get this from the component ???
+        self.overlay_image_combo.addItem(label)
+        new_index = self.overlay_image_combo.count() - 1
+        self._overlay_map[new_index] = data
+
+        self.ui.alpha_slider.setEnabled(True)
+        self.ui.overlay_image_combo.setEnabled(True)
+        self.ui.overlay_colormap_combo.setEnabled(True)
+
+        # Setting the index will cause _on_overlay_change to fire
+        self.overlay_image_combo.setCurrentIndex(new_index)
+
+    def _on_overlay_change(self, index):
+        if index == 0:
+            data = None
+        else:
+            data = self._overlay_map[index]
+        self.display_overlay(data)
+
+    def _on_colormap_change(self, index):
+        self._colormap_index = index
+        colormap = glue_colormaps.members[self._colormap_index][1]
+        for overlay in self._active_overlays:
+            overlay.set_cmap(colormap)
+        for cb in self._overlay_colorbar_axis:
+            for cbim in cb.get_images():
+                cbim.set_cmap(colormap)
+        for cube in self.cubes:
+            cube._widget.figure.canvas.draw()
+
+    def display_overlay(self, data):
+        # Remove all existing overlays
+        if self._active_overlays:
+            for overlay, view, cb in zip(self._active_overlays, self.cubes, self._overlay_colorbar_axis):
+                overlay.remove()
+                cb.remove()
+                view._widget.figure.canvas.draw()
+
+            self._active_overlays = []
+            self._overlay_colorbar_axis = []
+
+        # Just return if no new overlay is to be drawn
+        if data is None:
+            return
+
+        # Draw new overlay otherwise
+        extent = 0, data.shape[0], 0, data.shape[1]
+
+        self._active_overlays = []
+        for view in self.cubes:
+            axes = view._widget.axes
+            aspect = axes.get_aspect()
+
+            colormap = glue_colormaps.members[self._colormap_index][1]
+            overlay = view._widget.axes.imshow(
+                data, origin='lower', cmap=colormap, alpha=.25,
+                interpolation='none', aspect=aspect, extent=extent)
+
+            self._active_overlays.append(overlay)
+
+            # Add the overlay colorbar as an axis
+            oca = view._widget.figure.add_axes([0.02, 0.04, 0.3, 0.025], projection='rectilinear')
+            mindata, maxdata = np.nanmin(data), np.nanmax(data)
+            oca_image = np.zeros((1,100))
+            oca_image[0] = np.arange(mindata, maxdata, (maxdata-mindata)/100)
+            oca.imshow(oca_image, origin='lower', cmap=colormap, aspect=aspect, extent=[0,100,0,100])
+            oca.set_xticks([0, 25, 50, 75, 100])
+            oca.set_xticklabels(['%3.2e'%x for x in np.arange(mindata, maxdata, (maxdata-mindata)/5)], fontsize=6)
+            oca.set_yticks([])
+            self._overlay_colorbar_axis.append(oca)
+
+            view._widget.figure.canvas.draw()
+
+        self.ui.alpha_slider.setValue(25)
+
     def add_new_data_component(self, name):
         for i, combo in enumerate(self._viewer_combos):
             combo.addItem(str(name))
@@ -501,6 +608,17 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         # Now update the slice and wavelength text boxes
         self._update_slice_textboxes(index)
+
+    def _on_alpha_change(self, event):
+        """
+        Callback for change in alpha value.
+
+        :param event:
+        :return:
+        """
+        for overlay in self._active_overlays:
+            overlay.set_alpha(self.ui.alpha_slider.value() / 100.)
+            overlay.figure.canvas.draw()
 
     def _update_slice_textboxes(self, index):
         """
