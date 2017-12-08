@@ -281,7 +281,7 @@ class SelectSmoothing(QMainWindow):
 
         self.spatial_radio = QRadioButton("Spatial")
         self.spatial_radio.setChecked(True)
-        self.currentAxes = "spatial"
+        self.current_axis = "spatial"
         self.spatial_radio.toggled.connect(self.spatial_radio_checked)
 
         self.spectral_radio = QRadioButton("Spectral")
@@ -386,9 +386,8 @@ class SelectSmoothing(QMainWindow):
                     self.options["spectral"].append(kernel_registry[k]["name"])
         self.options["spectral"].sort()
         self.options["spatial"].sort()
-        self.current_axis = "spectral" 
-        self.current_kernel_name = self.options[self.currentAxes][0]
-        self.current_kernel_type = self.smooth.name_to_kernel_type(self.options[self.currentAxes][0])
+        self.current_kernel_name = self.options[self.current_axis][0]
+        self.current_kernel_type = self.smooth.name_to_kernel_type(self.options[self.current_axis][0])
 
     def init_abort_ui(self):
         """
@@ -458,7 +457,8 @@ class SelectSmoothing(QMainWindow):
                     k_size = float(self.k_size.text())
             except ValueError:
                 if self.current_kernel_type == "median":
-                    self.k_size.setText("Must be int for median")
+                    info = QMessageBox.critical(self, "Error",
+                                                "Kernel size must be integer for median")
                 self.k_size.setStyleSheet("background-color: rgba(255, 0, 0, 128);")
                 return False
             if k_size <= 0:
