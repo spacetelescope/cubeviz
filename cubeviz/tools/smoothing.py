@@ -454,7 +454,6 @@ class SelectSmoothing(QMainWindow):
             try:
                 if self.current_kernel_type == "median":
                     k_size = int(self.k_size.text())
-                    self.k_size.setText("Must be int for median")
                 else:
                     k_size = float(self.k_size.text())
             except ValueError:
