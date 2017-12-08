@@ -4,6 +4,9 @@ import os
 from collections import OrderedDict
 
 import numpy as np
+
+from astropy import units as u
+from astropy.coordinates import SkyCoord
 from matplotlib import pyplot as plt
 import matplotlib.ticker as mtick
 from glue.core.data import Data
@@ -11,7 +14,7 @@ from glue.config import colormaps as glue_colormaps
 from glue.config import qt_fixed_layout_tab, viewer_tool
 from glue.viewers.common.qt.tool import CheckableTool
 from qtpy import QtWidgets, QtCore
-from qtpy.QtWidgets import QMenu, QAction
+from qtpy.QtWidgets import QMenu, QAction, QLabel
 from glue.viewers.image.qt import ImageViewer
 from specviz.third_party.glue.data_viewer import SpecVizViewer
 from glue.utils.qt import load_ui, get_text
@@ -75,6 +78,19 @@ class CubevizImageViewer(ImageViewer):
         self._sync_button = None
         self._slice_index = None
 
+        self.is_mouse_over = False  # If mouse cursor is over viewer
+        self.hold_coords = False  # Switch to hold current displayed coords
+        self.coords_in_degrees = True  # Switch display coords to True=deg or False=Deg:Min:Sec
+        self.x_mouse = None  # x position of mouse in pix
+        self.y_mouse = None  # y position of mouse in pix
+
+        self.coord_label = QLabel("")  # Coord display
+        self.statusBar().addPermanentWidget(self.coord_label)
+
+        # Connect matplotlib events to event handlers
+        self.figure.canvas.mpl_connect('motion_notify_event', self.mouse_move)
+        self.figure.canvas.mpl_connect('axes_leave_event', self.mouse_exited)
+
     def enable_toolbar(self):
         self._sync_button = self.toolbar.tools[SyncButtonBox.tool_id]
         self.enable_button()
@@ -95,6 +111,145 @@ class CubevizImageViewer(ImageViewer):
     @property
     def slice_index(self):
         return self._slice_index
+
+    def get_coords(self):
+        """
+        Returns coord display string.
+        """
+        if not self.is_mouse_over:
+            return None
+        return self.coord_label.text()
+
+    def toggle_hold_coords(self):
+        """
+        Switch hold_coords state
+        """
+        if self.hold_coords:
+            self.hold_coords = True
+            string = "Hold:" + self.get_coords()
+        else:
+            self.hold_coords = False
+
+    def toggle_coords_in_degrees(self):
+        """
+        Switch coords_in_degrees state
+        """
+        if self.coords_in_degrees:
+            self.coords_in_degrees = False
+        else:
+            self.coords_in_degrees = True
+
+    def clear_coords(self):
+        """
+        Reset coord display and mouse tracking variables.
+        If hold_coords is active (True), make changes
+        only to indicate that the mouse is no longer over viewer.
+        """
+        self.is_mouse_over = False
+        if self.hold_coords:
+            return
+        self.x_mouse = None
+        self.y_mouse = None
+        self.coord_label.setText('')
+
+    def _format_coord_string(self, ra, dec):
+        """
+        Format RA and Dec for coord display. If wavelength
+        is available, add it to this string.
+        :param ra: right ascension
+        :param dec: declination
+        :return: string
+        """
+        if self.coords_in_degrees:  # If print ra & dec in decimal degrees
+            coord_string = "({:1.4f}\N{DEGREE SIGN}, {:1.4f}\N{DEGREE SIGN}".format(ra, dec)
+        else:  # else print ra & dec in Deg:Min:Sec
+            c = SkyCoord(ra=ra * u.degree, dec=dec * u.degree)
+            coord_string = "("
+            coord_string += "{0:1.0f}\N{DEGREE SIGN}:{1:1.0f}':{2:1.2f}\"".format(*c.ra.dms)
+            coord_string += ", "
+            coord_string += "{0:1.0f}\N{DEGREE SIGN}:{1:1.0f}':{2:1.2f}\"".format(*c.dec.dms)
+
+        # Check if wavelength is available
+        if self.slice_index is not None and self.parent().tab_widget._wavelengths is not None:
+            wave = self.parent().tab_widget._wavelengths[self.slice_index]
+            coord_string += ", {:1.2e}m)".format(wave)
+        else:
+            coord_string += ")"
+
+        return coord_string
+
+    def mouse_move(self, event):
+        """
+        Event handler for matplotlib motion_notify_event.
+        Updates coord display and vars.
+        :param event: matplotlib event.
+        """
+        # Check if mouse is in widget but not on plot
+        if not event.inaxes:
+            self.clear_coords()
+            return
+        self.is_mouse_over = True
+
+        # If hold_coords is active, return
+        if self.hold_coords:
+            return
+
+        # Get x and y of the pixel under the mouse
+        x, y = [int(event.xdata + 0.5), int(event.ydata + 0.5)]
+        self.x_mouse, self.y_mouse = [x, y]
+
+        # Create coord display string
+        if self._slice_index is not None:
+            string = "({:1.0f}, {:1.0f}, {:1.0f})".format(x, y, self._slice_index)
+        else:
+            string = "({:1.0f}, {:1.0f})".format(x, y)
+
+        # If viewer has a layer.
+        if len(self.state.layers) > 0:
+            # Get array arr that contains the image values
+            # Default layer is layer at index 0.
+            arr = self.state.layers[0].get_sliced_data()
+            if 0 <= x < arr.shape[0] and 0 <= y < arr.shape[1]:
+                # if x and y are in bounds get value and check if wcs is obtainable
+                # WCS:
+                if len(self.figure.axes) > 0:
+                    wcs = self.figure.axes[0].wcs.celestial
+                    if wcs is not None:
+                        # Check the number of axes in the WCS and add to string
+                        ra = dec = None
+                        if wcs.naxis == 3 and self.slice_index is not None:
+                            ra, dec, wave = wcs.wcs_pix2world([[x, y, self._slice_index]], 0)[0]
+                        elif wcs.naxis == 2:
+                            ra, dec = wcs.wcs_pix2world([[x, y]], 0)[0]
+
+                        if ra is not None and dec is not None:
+                            string = string + " " + self._format_coord_string(ra, dec)
+                # Pixel Value:
+                v = arr[x][y]
+                string += " {:1.4f}".format(v)
+        # Add a gap to string and add to viewer.
+        string += " "
+        self.coord_label.setText(string)
+        return
+
+    def mouse_exited(self, event):
+        """
+        Event handler for matplotlib axes_leave_event.
+        Clears coord display and vars.
+        :param event: matplotlib event
+        """
+        self.clear_coords()
+        return
+
+    def leaveEvent(self, event):
+        """
+        Event handler for Qt widget leave events.
+        Clears coord display and vars.
+        Overrides default.
+        :param event: QEvent
+        """
+        self.clear_coords()
+        return
 
 
 class WidgetWrapper(QtWidgets.QWidget):
