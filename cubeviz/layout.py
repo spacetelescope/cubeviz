@@ -247,9 +247,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         # Create the Data Processing Menu
         cube_menu = self._dict_to_menu(OrderedDict([
             ('Smoothing', lambda: self._open_dialog('Smoothing', None)),
-            ('Filter', lambda: self._open_dialog('Filter', None)),
             ('Moment Maps', lambda: self._open_dialog('Moment Maps', None)),
-            ('Spatial Smoothing', lambda: self._open_dialog('Spatial Smoothing', None)),
             ('Arithmetic Operations', lambda: self._open_dialog('Arithmetic Operations', None))
         ]))
         self.ui.cube_option_button.setMenu(cube_menu)
