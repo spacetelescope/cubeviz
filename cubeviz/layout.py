@@ -21,7 +21,8 @@ from glue.utils.qt import load_ui, get_text
 from glue.external.echo import keep_in_sync
 from glue.utils.qt import get_qapp
 
-from .tools import arithmetic_gui, moment_maps
+
+from .tools import arithmetic_gui, moment_maps, smoothing
 
 FLUX = 'FLUX'
 ERROR = 'ERROR'
@@ -400,9 +401,8 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         # Create the Data Processing Menu
         cube_menu = self._dict_to_menu(OrderedDict([
-            ('Filter', lambda: self._open_dialog('Filter', None)),
+            ('Smoothing', lambda: self._open_dialog('Smoothing', None)),
             ('Moment Maps', lambda: self._open_dialog('Moment Maps', None)),
-            ('Spatial Smoothing', lambda: self._open_dialog('Spatial Smoothing', None)),
             ('Arithmetic Operations', lambda: self._open_dialog('Arithmetic Operations', None))
         ]))
         self.ui.cube_option_button.setMenu(cube_menu)
@@ -429,8 +429,12 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     def _open_dialog(self, name, widget):
 
+        if name == 'Smoothing':
+            ex = smoothing.SelectSmoothing(self._data, parent=self)
+
         if name == 'Arithmetic Operations':
             ex = arithmetic_gui.SelectArithmetic(self._data, self.session.data_collection, parent=self)
+
 
         if name == "Moment Maps":
             moment_maps.MomentMapsGUI(
