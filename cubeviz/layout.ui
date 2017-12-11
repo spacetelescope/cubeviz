@@ -273,7 +273,7 @@
            </property>
            <property name="minimumSize">
             <size>
-             <width>100</width>
+             <width>0</width>
              <height>0</height>
             </size>
            </property>
@@ -410,7 +410,7 @@
           <widget class="QSlider" name="value_slice">
            <property name="minimumSize">
             <size>
-             <width>300</width>
+             <width>0</width>
              <height>0</height>
             </size>
            </property>
