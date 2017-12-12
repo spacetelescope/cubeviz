@@ -9,14 +9,14 @@ class SliceController:
         ui = cubeviz_layout.ui
 
         # These are the contents of the text boxes
-        self._slice_textbox = ui.text_slice
-        self._wavelength_textbox = ui.text_wavelength
+        self._slice_textbox = ui.slice_textbox
+        self._wavelength_textbox = ui.wavelength_textbox
 
         # This is the slider widget itself
-        self._slice_slider = ui.value_slice
+        self._slice_slider = ui.slice_slider
 
         # This is the label for the wavelength units
-        self._wavelength_textbox_label = ui.wavelength_slider_text
+        self._wavelength_textbox_label = ui.wavelength_textbox_label
 
         self._slice_slider.valueChanged.connect(self._on_slider_change)
         self._slice_textbox.returnPressed.connect(self._on_text_slice_change)
