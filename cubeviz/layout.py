@@ -16,7 +16,7 @@ from glue.viewers.common.qt.tool import CheckableTool
 from qtpy import QtWidgets, QtCore
 from qtpy.QtWidgets import QMenu, QAction, QLabel
 from glue.viewers.image.qt import ImageViewer
-from specviz.third_party.glue.data_viewer import SpecVizViewer
+from specviz.third_party.glue.data_viewer import SpecVizViewer, dispatch
 from glue.utils.qt import load_ui, get_text
 from glue.external.echo import keep_in_sync
 from glue.utils.qt import get_qapp
@@ -378,6 +378,10 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._single_image = False
         self.ui.button_toggle_image_mode.setText('Single Image Viewer')
 
+        # Connect this class to specviz's event dispatch so methods can listen
+        # to specviz events
+        dispatch.setup(self)
+
     def _init_menu_buttons(self):
         """
         Add the two menu buttons to the tool bar. Currently two are defined:
@@ -568,18 +572,20 @@ class CubeVizLayout(QtWidgets.QWidget):
         # Update the slider.
         self.ui.value_slice.setValue(index)
 
-    def _on_wavelength_change(self, event=None):
+    @dispatch.register_listener("change_dispersion_position")
+    def _on_wavelength_change(self, event=None, pos=None):
         """
         Callback for a change in wavelength inptu box. We want to find the
-        closest wavelength and use the index of it.  We will need to update the slice index box and slider as
-        well as the image.
+        closest wavelength and use the index of it.  We will need to update
+        the slice index box and slider as well as the image.
 
-        :param event:
-        :return:
+        Listen for events from the specviz viewer for when a user has changed
+        the vertical line indicating the current wavelength position. Update
+        the image viewers in response.
         """
         try:
             # Find the closest real wavelength and use the index of it
-            wavelength = float(self.ui.text_wavelength.text())
+            wavelength = pos or float(self.ui.text_wavelength.text())
             index = np.argsort(abs(self._wavelengths - wavelength))[0]
         except ValueError:
             # If invalid value is given, revert to current value
@@ -612,6 +618,8 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         # Now update the slice and wavelength text boxes
         self._update_slice_textboxes(index)
+
+        dispatch.changed_dispersion_position.emit(pos=index)
 
     def _on_alpha_change(self, event):
         """
