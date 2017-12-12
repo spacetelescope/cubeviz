@@ -16,12 +16,13 @@ from glue.viewers.common.qt.tool import CheckableTool
 from qtpy import QtWidgets, QtCore
 from qtpy.QtWidgets import QMenu, QAction, QLabel
 from glue.viewers.image.qt import ImageViewer
-from specviz.third_party.glue.data_viewer import SpecVizViewer, dispatch
+from specviz.third_party.glue.data_viewer import SpecVizViewer
 from glue.utils.qt import load_ui, get_text
 from glue.external.echo import keep_in_sync
 from glue.utils.qt import get_qapp
 
 
+from .controls.slice import SliceController
 from .tools import arithmetic_gui, moment_maps, smoothing
 
 FLUX = 'FLUX'
@@ -299,8 +300,6 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.session = session
         self._has_data = False
         self._wavelengths = None
-        self._wavelength_units = None
-        self._wavelength_format = '{}'
         self._option_buttons = []
 
         self._data = None
@@ -369,14 +368,9 @@ class CubeVizLayout(QtWidgets.QWidget):
         #self.ui.toggle_error.toggled.connect(self._toggle_error)
         #self.ui.toggle_quality.toggled.connect(self._toggle_quality)
 
-        self.ui.value_slice.valueChanged.connect(self._on_slider_change)
-        self.ui.value_slice.setEnabled(False)
+        self._slice_controller = SliceController(self)
 
         self.ui.alpha_slider.valueChanged.connect(self._on_alpha_change)
-
-        # Register callbacks for slider and wavelength text boxes
-        self.ui.text_slice.returnPressed.connect(self._on_slice_change)
-        self.ui.text_wavelength.returnPressed.connect(self._on_wavelength_change)
 
         # Add menu buttons to the cubeviz toolbar.
         self._init_menu_buttons()
@@ -393,10 +387,6 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         self._single_image = False
         self.ui.button_toggle_image_mode.setText('Single Image Viewer')
-
-        # Connect this class to specviz's event dispatch so methods can listen
-        # to specviz events
-        dispatch.setup(self)
 
     def _init_menu_buttons(self):
         """
@@ -558,85 +548,6 @@ class CubeVizLayout(QtWidgets.QWidget):
     def _toggle_quality(self, event=None):
         self.single_view._widget.state.layers[2].visible = self.ui.toggle_quality.isChecked()
 
-    def _on_slice_change(self, event=None):
-        """
-        Callback for a change in the slice index text box.  We will need to
-        update the slider and the wavelength value when this changes.
-
-        :param event:
-        :return:
-        """
-
-        # Get the value they typed in, but if not a number, then let's just use
-        # the first slice.
-        try:
-            index = int(self.ui.text_slice.text())
-        except ValueError:
-            # If invalid value is given, revert to current value
-            index = self.single_view._widget.state.slices[0]
-
-        # If a number and out of range then set to the first or last slice
-        # depending if they set the number too low or too high.
-        if index < 0:
-            index = 0
-        if index > len(self._wavelengths) - 1:
-            index = len(self._wavelengths) - 1
-
-        # Now update the slice and wavelength text boxes
-        self._update_slice_textboxes(index)
-
-        # Update the slider.
-        self.ui.value_slice.setValue(index)
-
-    @dispatch.register_listener("change_dispersion_position")
-    def _on_wavelength_change(self, event=None, pos=None):
-        """
-        Callback for a change in wavelength inptu box. We want to find the
-        closest wavelength and use the index of it.  We will need to update
-        the slice index box and slider as well as the image.
-
-        Listen for events from the specviz viewer for when a user has changed
-        the vertical line indicating the current wavelength position. Update
-        the image viewers in response.
-        """
-        try:
-            # Find the closest real wavelength and use the index of it
-            wavelength = pos or float(self.ui.text_wavelength.text())
-            index = np.argsort(abs(self._wavelengths - wavelength))[0]
-        except ValueError:
-            # If invalid value is given, revert to current value
-            index = self.single_view._widget.state.slices[0]
-
-        # Now update the slice and wavelength text boxes
-        self._update_slice_textboxes(index)
-
-        # Update the slider.
-        self.ui.value_slice.setValue(index)
-
-    def _on_slider_change(self, event):
-        """
-        Callback for change in slider value.
-
-        :param event:
-        :return:
-        """
-        index = self.ui.value_slice.value()
-
-        # Update the image displayed in the slice in the active view
-        self._active_cube._widget.update_slice_index(index)
-
-        # If the active widget is synced then we need to update the image
-        # in all the other synced views.
-        if self._active_cube._widget.synced:
-            for view in self.cubes:
-                if view != self._active_cube and view._widget.synced:
-                    view._widget.update_slice_index(index)
-
-        # Now update the slice and wavelength text boxes
-        self._update_slice_textboxes(index)
-
-        dispatch.changed_dispersion_position.emit(pos=index)
-
     def _on_alpha_change(self, event):
         """
         Callback for change in alpha value.
@@ -647,44 +558,6 @@ class CubeVizLayout(QtWidgets.QWidget):
         for overlay in self._active_overlays:
             overlay.set_alpha(self.ui.alpha_slider.value() / 100.)
             overlay.figure.canvas.draw()
-
-    def _update_slice_textboxes(self, index):
-        """
-        Update the slice index number text box and the wavelength value displayed in the wavelengths text box.
-
-        :param index: Slice index number displayed.
-        :return:
-        """
-
-        # Update the input text box for slice number
-        self.ui.text_slice.setText(str(index))
-
-        # Update the wavelength for the corresponding slice number.
-        self.ui.text_wavelength.setText(self._wavelength_format.format(self._wavelengths[index]))
-
-    def _enable_slider(self):
-        """
-        Setup the slice slider (min/max, units on description and initial position). 
-
-        :return:
-        """
-        self.ui.value_slice.setEnabled(True)
-        self.ui.value_slice.setMinimum(0)
-
-        # Store the wavelength units and format
-        self._wavelength_units = str(self.session.data_collection.data[0].coords.wcs.wcs.cunit[2])
-        self._wavelength_format = '{:.3}'
-        self.ui.wavelength_slider_text.setText('Wavelength ({})'.format(self._wavelength_units))
-
-        # Grab the wavelengths so they can be displayed in the text box
-        self._wavelengths = self.single_view._widget._data[0].get_component('Wave')[:,0,0]
-        self.ui.value_slice.setMaximum(len(self._wavelengths) - 1)
-
-        # Set the default display to the middle of the cube
-        middle_index = len(self._wavelengths) // 2
-        self._update_slice_textboxes(middle_index)
-        self.ui.value_slice.setValue(middle_index)
-        self.ui.text_wavelength.setText(self._wavelength_format.format(self._wavelengths[middle_index]))
 
     def _get_change_viewer_func(self, view_index):
         def change_viewer(dropdown_index):
@@ -736,11 +609,17 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._active_view = self.left_view
         self._active_cube = self.left_view
 
-        self._enable_slider()
+        self._enable_viewer_combos()
+
+        # Store pointer to wavelength information
+        self._wavelengths = self.single_view._widget._data[0].get_component('Wave')[:,0,0]
+
+        # Pass WCS and wavelength information to slider controller and enable
+        wcs = self.session.data_collection.data[0].coords.wcs
+        self._slice_controller.enable(wcs, self._wavelengths)
+
         self._enable_option_buttons()
         self._setup_syncing()
-
-        self._enable_viewer_combos()
 
         self.subWindowActivated.emit(self._active_view)
 
@@ -823,8 +702,7 @@ class CubeVizLayout(QtWidgets.QWidget):
             if isinstance(view._widget, CubevizImageViewer):
                 self._active_cube = view
                 index = self._active_cube._widget.slice_index
-                self.ui.value_slice.setValue(index)
-                self._update_slice_textboxes(index)
+                self._slice_controller.update_index(index)
 
     def activeSubWindow(self):
         return self._active_view
@@ -842,8 +720,8 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._on_sync_click()
 
     def _on_sync_click(self, event=None):
+        index = self._active_cube._widget.slice_index
         for view in self.cubes:
-            index = self._active_cube._widget.slice_index
             view._widget.enable_button()
             if view != self._active_cube:
                 view._widget.update_slice_index(index)
