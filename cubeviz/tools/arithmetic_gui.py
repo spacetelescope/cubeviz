@@ -3,13 +3,13 @@ from __future__ import absolute_import, division, print_function
 from qtpy.QtCore import Qt
 from qtpy import QtGui
 from qtpy.QtWidgets import (
-    QMainWindow, QApplication, QPushButton,
+    QDialog, QApplication, QPushButton,
     QLabel, QWidget, QHBoxLayout, QVBoxLayout, QLineEdit
 )
 
 # TODO: In the future, it might be nice to be able to work across data_collection elements
 
-class SelectArithmetic(QMainWindow):
+class SelectArithmetic(QDialog):
     def __init__(self, data, data_collection, parent=None):
         super(SelectArithmetic,self).__init__(parent)
 
@@ -121,9 +121,7 @@ class SelectArithmetic(QMainWindow):
         vbl.addLayout(hbl_examples)
         vbl.addLayout(hbl5)
 
-        self.wid = QWidget(self)
-        self.setCentralWidget(self.wid)
-        self.wid.setLayout(vbl)
+        self.setLayout(vbl)
         self.setMaximumWidth(700)
         self.show()
 
