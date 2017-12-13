@@ -81,7 +81,8 @@ class CubevizImageViewer(ImageViewer):
 
         self.is_mouse_over = False  # If mouse cursor is over viewer
         self.hold_coords = False  # Switch to hold current displayed coords
-        self.coords_in_degrees = True  # Switch display coords to True=deg or False=Deg:Min:Sec
+        self._coords_in_degrees = True  # Switch display coords to True=deg or False=Deg/Hr:Min:Sec
+        self._coords_format_function = self._format_to_degree_string  # Function to format ra and dec
         self.x_mouse = None  # x position of mouse in pix
         self.y_mouse = None  # y position of mouse in pix
 
@@ -126,19 +127,21 @@ class CubevizImageViewer(ImageViewer):
         Switch hold_coords state
         """
         if self.hold_coords:
-            self.hold_coords = True
-            string = "Hold:" + self.get_coords()
-        else:
             self.hold_coords = False
+        else:
+            self.statusBar().showMessage("Frozen Coordinates")
+            self.hold_coords = True
 
     def toggle_coords_in_degrees(self):
         """
         Switch coords_in_degrees state
         """
-        if self.coords_in_degrees:
-            self.coords_in_degrees = False
+        if self._coords_in_degrees:
+            self._coords_in_degrees = False
+            self._coords_format_function = self._format_to_hex_string
         else:
-            self.coords_in_degrees = True
+            self._coords_in_degrees = True
+            self._coords_format_function = self._format_to_degree_string
 
     def clear_coords(self):
         """
@@ -153,27 +156,39 @@ class CubevizImageViewer(ImageViewer):
         self.y_mouse = None
         self.coord_label.setText('')
 
-    def _format_coord_string(self, ra, dec):
+    def _format_to_degree_string(self, ra, dec):
         """
-        Format RA and Dec for coord display. If wavelength
-        is available, add it to this string.
-        :param ra: right ascension
-        :param dec: declination
+        Format RA and Dec in degree format. If wavelength
+        is available add it to the output sting.
         :return: string
         """
-        if self.coords_in_degrees:  # If print ra & dec in decimal degrees
-            coord_string = "({:1.4f}\N{DEGREE SIGN}, {:1.4f}\N{DEGREE SIGN}".format(ra, dec)
-        else:  # else print ra & dec in Deg:Min:Sec
-            c = SkyCoord(ra=ra * u.degree, dec=dec * u.degree)
-            coord_string = "("
-            coord_string += "{0:1.0f}\N{DEGREE SIGN}:{1:1.0f}':{2:1.2f}\"".format(*c.ra.dms)
-            coord_string += ", "
-            coord_string += "{0:1.0f}\N{DEGREE SIGN}:{1:1.0f}':{2:1.2f}\"".format(*c.dec.dms)
+        coord_string = "({:0>8.4f}, {:0>8.4f}".format(ra, dec)
 
         # Check if wavelength is available
         if self.slice_index is not None and self.parent().tab_widget._wavelengths is not None:
             wave = self.parent().tab_widget._wavelengths[self.slice_index]
             coord_string += ", {:1.2e}m)".format(wave)
+        else:
+            coord_string += ")"
+
+        return coord_string
+
+    def _format_to_hex_string(self, ra, dec):
+        """
+        Format RA and Dec in D:M:S and H:M:S formats respectively. If wavelength
+        is available add it to the output sting.
+        :return: string
+        """
+        c = SkyCoord(ra=ra * u.degree, dec=dec * u.degree)
+        coord_string = "("
+        coord_string += "{0:0>2.0f}h:{1:0>2.0f}m:{2:0>2.0f}s".format(*c.ra.hms)
+        coord_string += "  "
+        coord_string += "{0:0>3.0f}d:{1:0>2.0f}m:{2:0>2.0f}s".format(*c.dec.dms)
+
+        # Check if wavelength is available
+        if self.slice_index is not None and self.parent().tab_widget._wavelengths is not None:
+            wave = self.parent().tab_widget._wavelengths[self.slice_index]
+            coord_string += "  {:1.2e}m)".format(wave)
         else:
             coord_string += ")"
 
@@ -210,8 +225,9 @@ class CubevizImageViewer(ImageViewer):
             # Get array arr that contains the image values
             # Default layer is layer at index 0.
             arr = self.state.layers[0].get_sliced_data()
-            if 0 <= x < arr.shape[0] and 0 <= y < arr.shape[1]:
-                # if x and y are in bounds get value and check if wcs is obtainable
+            if 0 <= y < arr.shape[0] and 0 <= x < arr.shape[1]:
+                # if x and y are in bounds. Note: x and y are swapped in array.
+                # get value and check if wcs is obtainable
                 # WCS:
                 if len(self.figure.axes) > 0:
                     wcs = self.figure.axes[0].wcs.celestial
@@ -224,10 +240,10 @@ class CubevizImageViewer(ImageViewer):
                             ra, dec = wcs.wcs_pix2world([[x, y]], 0)[0]
 
                         if ra is not None and dec is not None:
-                            string = string + " " + self._format_coord_string(ra, dec)
+                            string = string + " " + self._coords_format_function(ra, dec)
                 # Pixel Value:
-                v = arr[x][y]
-                string += " {:1.4f}".format(v)
+                v = arr[y][x]
+                string = "{:1.4f} ".format(v) + string
         # Add a gap to string and add to viewer.
         string += " "
         self.coord_label.setText(string)
