@@ -398,7 +398,7 @@ class SelectSmoothing(QDialog):
         vbl.addWidget(label_a_1)
         vbl.addWidget(label_a_2)
 
-        self.abort_window.setLayout(wid_abort)
+        self.abort_window.setLayout(vbl)
 
         self.abort_window.show()
 
