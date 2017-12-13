@@ -12,8 +12,8 @@ from spectral_cube import SpectralCube, BooleanArrayMask
 
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
-    QMainWindow, QApplication, QPushButton,
-    QLabel, QWidget, QHBoxLayout, QVBoxLayout,
+    QDialog, QApplication, QPushButton,
+    QLabel, QWidget, QDockWidget, QHBoxLayout, QVBoxLayout,
     QComboBox, QMessageBox, QLineEdit, QRadioButton
 )
 
@@ -239,7 +239,7 @@ class Smooth(object):
         ex = SelectSmoothing(self.data, self.parent)
 
 
-class SelectSmoothing(QMainWindow):
+class SelectSmoothing(QDialog):
     """
     SelectSmoothing launches a GUI and executes smoothing.
     Any output is added to the input data as a new component.
@@ -353,11 +353,7 @@ class SelectSmoothing(QMainWindow):
         vbl.addLayout(hbl4)
         vbl.addLayout(hbl5)
 
-        # Add Vertical Layout to Central Widget
-        self.wid = QWidget(self)
-        self.setCentralWidget(self.wid)
-        self.wid.setLayout(vbl)
-
+        self.setLayout(vbl)
         self.setMaximumWidth(330)
 
         # Connect kernel combo box to event handler
@@ -389,11 +385,8 @@ class SelectSmoothing(QMainWindow):
         Displays while smoothing freezes the application.
         Allows abort button to be added if needed.
         """
-        self.abort_window = QMainWindow(
-            parent=self.parent,
-            flags=Qt.WindowStaysOnTopHint)
-        self.abort_window.setWindowFlags(
-            self.abort_window.windowFlags() | Qt.Tool)
+        self.abort_window = QDialog(parent=self.parent)
+        self.abort_window.setModal(False)
 
         label_a_1 = QLabel("Executing smoothing algorithm.")
         label_a_2 = QLabel("This may take several minutes.")
@@ -405,9 +398,7 @@ class SelectSmoothing(QMainWindow):
         vbl.addWidget(label_a_1)
         vbl.addWidget(label_a_2)
 
-        wid_abort = QWidget(self.abort_window)
-        self.abort_window.setCentralWidget(wid_abort)
-        wid_abort.setLayout(vbl)
+        self.abort_window.setLayout(wid_abort)
 
         self.abort_window.show()
 
