@@ -1,6 +1,7 @@
 import numpy as np
 from specviz.third_party.glue.data_viewer import dispatch as specviz_dispatch
 
+RED_BACKGROUND = "background-color: rgba(255, 0, 0, 128);"
 
 class SliceController:
 
@@ -124,9 +125,10 @@ class SliceController:
         # the first slice.
         try:
             index = int(self._slice_textbox.text())
+            self._slice_textbox.setStyleSheet("")
         except ValueError:
-            # If invalid value is given, revert to current value
-            index = self._cubeviz_layout.single_view._widget.state.slices[0]
+            self._slice_textbox.setStyleSheet(RED_BACKGROUND)
+            return
 
         # If a number and out of range then set to the first or last slice
         # depending if they set the number too low or too high.
@@ -161,9 +163,10 @@ class SliceController:
             # Find the closest real wavelength and use the index of it
             wavelength = pos if pos is not None else float(self._wavelength_textbox.text())
             index = np.argsort(abs(self._wavelengths - wavelength))[0]
+            self._wavelength_textbox.setStyleSheet("")
         except ValueError:
-            # If invalid value is given, revert to current value
-            index = self._cubeviz_layout.single_view._widget.state.slices[0]
+            self._wavelength_textbox.setStyleSheet(RED_BACKGROUND)
+            return
 
         # Now update the slice and wavelength text boxes
         self._update_slice_textboxes(index)
