@@ -143,18 +143,23 @@ class SliceController:
 
 
     @specviz_dispatch.register_listener("change_dispersion_position")
-    def _on_text_wavelength_change(self, event=None):
+    def _on_text_wavelength_change(self, event=None, pos=None):
         """
-        Callback for a change in wavelength inptu box. We want to find the
-        closest wavelength and use the index of it.  We will need to update the slice index box and slider as
-        well as the image.
+        Callback for a change in wavelength input box. We want to find the
+        closest wavelength and use the index of it.  We will need to update the
+        slice index box and slider as well as the image.
 
         :param event:
+        :param pos: This is the argument used by the specviz event listener to
+                    update the CubeViz slider and associated text based on the
+                    movement of the SpecViz position bar. The name of this
+                    argument cannot change since it is the one expected by the
+                    SpecViz event system.
         :return:
         """
         try:
             # Find the closest real wavelength and use the index of it
-            wavelength = float(self._wavelength_textbox.text())
+            wavelength = pos if pos is not None else float(self._wavelength_textbox.text())
             index = np.argsort(abs(self._wavelengths - wavelength))[0]
         except ValueError:
             # If invalid value is given, revert to current value
