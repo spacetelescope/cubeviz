@@ -752,7 +752,7 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         if event.type() == QtCore.QEvent.MouseButtonPress:
 
-            if not self.isVisible():
+            if not (self.isVisible() and self.isActiveWindow()):
                 return super(CubeVizLayout, self).eventFilter(obj, event)
 
             # Find global click position

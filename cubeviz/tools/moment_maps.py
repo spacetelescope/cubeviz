@@ -3,14 +3,14 @@ from __future__ import absolute_import, division, print_function
 from qtpy.QtCore import Qt
 from qtpy import QtGui
 from qtpy.QtWidgets import (
-    QMainWindow, QComboBox, QPushButton,
+    QDialog, QComboBox, QPushButton,
     QLabel, QWidget, QHBoxLayout, QVBoxLayout
 )
 
 
 # TODO: In the future, it might be nice to be able to work across data_collection elements
 
-class MomentMapsGUI(QMainWindow):
+class MomentMapsGUI(QDialog):
     def __init__(self, data, data_collection, parent=None):
         super(MomentMapsGUI, self).__init__(parent)
 
@@ -85,9 +85,7 @@ class MomentMapsGUI(QMainWindow):
         vbl.addLayout(hbl2)
         vbl.addLayout(hbl5)
 
-        self.wid = QWidget(self)
-        self.setCentralWidget(self.wid)
-        self.wid.setLayout(vbl)
+        self.setLayout(vbl)
         self.setMaximumWidth(700)
         self.show()
 
