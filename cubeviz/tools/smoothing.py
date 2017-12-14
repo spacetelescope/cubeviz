@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
+from threading import Thread
 
 from astropy import convolution
 
@@ -9,10 +10,11 @@ from glue.core.coordinates import coordinates_from_header, WCSCoordinates
 from glue.core.exceptions import IncompatibleAttribute
 
 from spectral_cube import SpectralCube, BooleanArrayMask
+from .qt_spectral_cube import QSpectralCube
 
-from qtpy.QtCore import Qt
+from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import (
-    QDialog, QApplication, QPushButton,
+    QDialog, QApplication, QPushButton, QProgressBar,
     QLabel, QWidget, QDockWidget, QHBoxLayout, QVBoxLayout,
     QComboBox, QMessageBox, QLineEdit, QRadioButton
 )
@@ -152,6 +154,18 @@ class Smooth(object):
         mask = mask.astype(bool)
         return mask
 
+    def data_to_qcube(self):
+        """Glue Data -> QSpectralCube"""
+        if self.component_id is None:
+            raise Exception("component_id was not provided.")
+        wcs = self.get_glue_wcs()
+        data_array = self.data[self.component_id]
+        mask = BooleanArrayMask(
+            mask=self.get_glue_mask(),
+            wcs=wcs)
+        cube = QSpectralCube(data=data_array, wcs=wcs, mask=mask)
+        return cube
+
     def data_to_cube(self):
         """Glue Data -> SpectralCube"""
         if self.component_id is None:
@@ -189,7 +203,44 @@ class Smooth(object):
             new_data.add_component(cube._data.copy(), output_component_id)
             return new_data
 
-    def smooth_cube(self):
+    def unique_output_component_id(self):
+        name_tail = "_" + "_".join(["smoothed",
+                                    self.kernel_type,
+                                    self.smoothing_axis,
+                                    "%spixels" % self.kernel_size])
+        if self.output_label is None:
+            output_component_id = self.component_id + name_tail
+        else:
+            output_component_id = self.output_label
+
+        taken = [str(i) for i in self.data.component_ids()]
+        index_list = []
+        for name in taken:
+            if output_component_id in name:
+                if output_component_id == name:
+                    index_list.append(0)
+                else:
+                    try:
+                        idx = int(name.split("_")[-1])
+                        index_list.append(idx)
+                    except ValueError:
+                        pass
+        if len(index_list) > 0:
+            idx = max(index_list) + 1
+            return output_component_id + "_" + str(idx)
+        return output_component_id
+
+    def output_data_name(self):
+        name_tail = "_" + "_".join(["smoothed",
+                                    self.kernel_type,
+                                    self.smoothing_axis,
+                                    "%spixels" % self.kernel_size])
+        if self.output_label is None:
+            return self.data.label + name_tail
+        else:
+            return self.output_label
+
+    def smooth_cube(self, cube=None):
         """
         Main smoothing function that follows the following steps:
         1) Convert data to SpectralCube
@@ -199,7 +250,8 @@ class Smooth(object):
         5) Output component or Data
         :return: glue.core.Data or None
         """
-        cube = self.data_to_cube()
+        if cube is None:
+            cube = self.data_to_cube()
 
         if "median" == self.kernel_type:
             if self.smoothing_axis == "spatial":
@@ -213,30 +265,77 @@ class Smooth(object):
             else:
                 new_cube = cube.spectral_smooth(kernel)
 
-        name_tail = "_" + "_".join(["smoothed",
-                                    self.kernel_type,
-                                    self.smoothing_axis,
-                                    "%spixels" % self.kernel_size])
-
         if self.output_as_component:
-            if self.output_label is None:
-                output_component_id = self.component_id + name_tail
-            else:
-                output_component_id = self.output_label
+            output_component_id = self.unique_output_component_id()
             output = self.cube_to_data(new_cube, output_component_id=output_component_id)
         else:
-            if self.output_label is None:
-                output_label = self.data.label + name_tail
-            else:
-                output_label = self.output_label
+            output_label = self.output_data_name()
             output = self.cube_to_data(new_cube,
                                        output_label=output_label,
                                        output_component_id=self.component_id)
+
         return output
+
+    def multithreading_function(self, abort_window, signal):
+        cube = self.data_to_qcube()
+        abort_window.init_pb(0, cube.shape[0])
+        cube.update_function = abort_window.update_pb
+
+        self.smooth_cube(cube)
+
+        abort_window.close()
+        signal.emit()
+        return
 
     def gui(self):
         """Call smoothing gui and add output as component"""
         ex = SelectSmoothing(self.data, self.parent)
+
+
+class AbortWindow(QDialog):
+
+    def __init__(self, parent=None):
+        """
+        init abort or notification ui.
+        Displays while smoothing freezes the application.
+        Allows abort button to be added if needed.
+        """
+        super(AbortWindow, self).__init__(parent)
+        self.setModal(False)
+        self.setWindowFlags(self.windowFlags() | Qt.Tool | Qt.FramelessWindowHint)
+
+        self.setStyleSheet("background-color: rgb(255, 255, 255);")
+
+        self.label_a_1 = QLabel("Executing smoothing algorithm.")
+        self.label_a_2 = QLabel("This may take several minutes.")
+
+        # Add abort button here.
+        self.pb = QProgressBar(self)
+        self.pb_counter = 0
+
+        # vbl is short for Vertical Box Layout
+        vbl = QVBoxLayout()
+        vbl.addWidget(self.label_a_1)
+        vbl.addWidget(self.label_a_2)
+        vbl.addWidget(self.pb)
+
+        self.setLayout(vbl)
+
+        self.show()
+
+    def init_pb(self, start, end):
+        """
+        Init the progress bar
+        :param start: Start Value
+        :param end: End Value
+        """
+        self.pb.setRange(start, end)
+        self.pb_counter = start
+
+    def update_pb(self):
+        self.pb_counter += 1
+        self.pb.setValue(self.pb_counter)
+        QApplication.processEvents()
 
 
 class SelectSmoothing(QDialog):
@@ -244,6 +343,8 @@ class SelectSmoothing(QDialog):
     SelectSmoothing launches a GUI and executes smoothing.
     Any output is added to the input data as a new component.
     """
+
+    smoothing_finished = Signal()
 
     def __init__(self, data, parent=None, smooth=None):
         super(SelectSmoothing, self).__init__(parent)
@@ -261,13 +362,16 @@ class SelectSmoothing(QDialog):
 
         self.abort_window = None  # Small window pop up when smoothing.
 
+        self.smoothing_finished.connect(self.smoothing_done)
+
         self.component_id = None  # Glue data component to smooth over
         self.current_axis = None  # Selected smoothing_axis
         self.current_kernel_type = None  # Selected kernel type, a key in Smooth.kernel_registry
         self.current_kernel_name = None  # Name of selected kernel
 
-        self._init_selection_ui() # Format and show gui
+        self._init_selection_ui()  # Format and show gui
 
+    # noinspection PyUnresolvedReferences
     def _init_selection_ui(self):
         # LINE 1: Radio box spatial vs spectral axis
         self.axes_prompt = QLabel("Smoothing Axis:")
@@ -379,29 +483,6 @@ class SelectSmoothing(QDialog):
         self.current_kernel_name = self.options[self.current_axis][0]
         self.current_kernel_type = self.smooth.name_to_kernel_type(self.options[self.current_axis][0])
 
-    def init_abort_ui(self):
-        """
-        init abort or notification ui.
-        Displays while smoothing freezes the application.
-        Allows abort button to be added if needed.
-        """
-        self.abort_window = QDialog(parent=self.parent)
-        self.abort_window.setModal(False)
-
-        label_a_1 = QLabel("Executing smoothing algorithm.")
-        label_a_2 = QLabel("This may take several minutes.")
-
-        # Add abort button here.
-
-        # vbl is short for Vertical Box Layout
-        vbl = QVBoxLayout()
-        vbl.addWidget(label_a_1)
-        vbl.addWidget(label_a_2)
-
-        self.abort_window.setLayout(vbl)
-
-        self.abort_window.show()
-
     def selection_changed(self, i):
         """
         Update kernel type, units, etc... when
@@ -479,19 +560,27 @@ class SelectSmoothing(QDialog):
         self.smooth.output_as_component = True
 
         self.hide()
-        self.init_abort_ui()
+        self.abort_window = AbortWindow(self)
         QApplication.processEvents()
 
-        output = self.smooth.smooth_cube()
+        t = Thread(target=self.smooth.multithreading_function,
+                   args=(self.abort_window, self.smoothing_finished))
+        t.start()
 
-        info = QMessageBox.information(self, "Success",
-                                       "Result added as a new component of the input Data")
-
-        self.abort_window.close()
-        self.close()
         return
 
+    def smoothing_done(self):
+        message = "The result has been added as a" \
+                  " new component of the input Data." \
+                  " The new component can be accessed" \
+                  " in the viewer drop-downs."
+        info = QMessageBox.information(self, "Success", message)
+        self.clean_up()
+
     def cancel(self):
+        self.clean_up()
+
+    def clean_up(self):
         self.close()
         if self.abort_window is not None:
             self.abort_window.close()
