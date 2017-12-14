@@ -63,6 +63,7 @@ class SliceController:
         self._slice_slider.setValue(middle_index)
         self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[middle_index]))
 
+        self._cv_layout.synced_index = middle_index
 
     def update_index(self, index):
         self._slice_slider.setValue(index)
@@ -90,6 +91,7 @@ class SliceController:
             for cube in all_cubes:
                 if cube != active_cube and cube._widget.synced:
                     cube._widget.update_slice_index(index)
+            self._cv_layout.synced_index = index
 
         # Now update the slice and wavelength text boxes
         self._update_slice_textboxes(index)

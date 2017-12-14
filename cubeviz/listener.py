@@ -55,7 +55,8 @@ class CubevizManager(HubListener):
         self._layout.add_new_data_component(message.component_id)
 
     def handle_settings_change(self, message):
-        self._layout._handle_settings_change(message)
+        if self._layout is not None:
+            self._layout._handle_settings_change(message)
 
     def hide_sidebar(self):
         self._app._ui.main_splitter.setSizes([0, 300])

@@ -367,6 +367,9 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._component_labels = DEFAULT_DATA_LABELS.copy()
 
         self.sync = {}
+        # Track the slice index of the synced viewers. This is updated by the
+        # slice controller
+        self.synced_index = None
 
         app = get_qapp()
         app.installEventFilter(self)
@@ -427,7 +430,8 @@ class CubeVizLayout(QtWidgets.QWidget):
         return menu_widget
 
     def _handle_settings_change(self, message):
-        print(message)
+        if isinstance(message, SettingsChangeMessage):
+            self._slice_controller.update_index(self.synced_index)
 
     def _open_dialog(self, name, widget):
 
