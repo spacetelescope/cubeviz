@@ -7,6 +7,8 @@ import numpy as np
 
 from astropy import units as u
 from astropy.coordinates import SkyCoord
+from glue.core import Hub
+from glue.core.message import SettingsChangeMessage
 from glue.config import qt_fixed_layout_tab, viewer_tool
 from glue.viewers.common.qt.tool import CheckableTool
 from qtpy import QtWidgets, QtCore
@@ -51,10 +53,15 @@ class SyncButtonBox(CheckableTool):
 
     def __init__(self, viewer):
         super(SyncButtonBox, self).__init__(viewer)
+        self._viewer = viewer
         self._synced = True
+        self._hub = None
 
     def activate(self):
         self._synced = True
+        if self._hub is not None:
+            msg = SettingsChangeMessage(self, [self._viewer])
+            self._hub.broadcast(msg)
 
     def deactivate(self):
         self._synced = False
@@ -92,6 +99,7 @@ class CubevizImageViewer(ImageViewer):
 
     def enable_toolbar(self):
         self._sync_button = self.toolbar.tools[SyncButtonBox.tool_id]
+        self._sync_button._hub = self.parent().tab_widget.session.hub
         self.enable_button()
 
     def enable_button(self):
@@ -417,6 +425,9 @@ class CubeVizLayout(QtWidgets.QWidget):
                 act.triggered.connect(v)
                 menu_widget.addAction(act)
         return menu_widget
+
+    def _handle_settings_change(self, message):
+        print(message)
 
     def _open_dialog(self, name, widget):
 
