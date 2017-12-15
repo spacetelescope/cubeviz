@@ -15,7 +15,7 @@ except ImportError:
 
 
 def dummy_function():
-    """Place holder for update function"""
+    """Place holder for AbortWindow update function"""
     pass
 
 
