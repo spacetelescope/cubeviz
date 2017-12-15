@@ -18,6 +18,7 @@ from qtpy.QtWidgets import (
     QComboBox, QMessageBox, QLineEdit, QRadioButton
 )
 
+
 class WorkerThread(QThread):
     """
     Custom QThread for SmoothCube and QSpectralCube.
@@ -43,6 +44,14 @@ class WorkerThread(QThread):
 
 
 class SmoothCube(object):
+    """
+    SmoothCube is a wrapper for SpectralCube. It is designed to
+    operate in CubeViz and glue.
+    It saves a registry of available kernels and executes
+    smoothing operations. It has the ability to use QThreads
+    when working in gui mode. If multi-threading is used, a modified
+    version of SpectralCube, QSpectralCube is used for smoothing operations.
+    """
 
     def __init__(self, data=None, smoothing_axis=None, kernel_type=None, kernel_size=None,
                  component_id=None, output_label=None, output_as_component=False, parent=None):

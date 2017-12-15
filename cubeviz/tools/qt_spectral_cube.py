@@ -20,9 +20,24 @@ def dummy_function():
 
 
 class QSpectralCube(SpectralCube):
+    """
+    Overrides smoothing functions of SpectralCube to include Abort functionality
+    and replaces the astropy progress bar (which does not allow multi-threading)
+    with an update_function.
+    The update_function is a member of a gui with a QProgressBar and updates
+    the value displayed.
+    """
 
     update_function = dummy_function
     abort = False
+
+    def chunked(self, chunksize=1000):
+        """Abstract Method"""
+        pass
+
+    def world_spines(self):
+        """Abstract Method"""
+        pass
 
     def spatial_smooth_median(self, ksize, **kwargs):
         """
