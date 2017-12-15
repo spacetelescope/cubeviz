@@ -12,7 +12,7 @@ from glue.core.exceptions import IncompatibleAttribute
 from spectral_cube import SpectralCube, BooleanArrayMask
 from .qt_spectral_cube import QSpectralCube
 
-from qtpy.QtCore import Qt, Signal
+from qtpy.QtCore import Qt, Signal, QThread
 from qtpy.QtWidgets import (
     QDialog, QApplication, QPushButton, QProgressBar,
     QLabel, QWidget, QDockWidget, QHBoxLayout, QVBoxLayout,
@@ -265,6 +265,9 @@ class Smooth(object):
             else:
                 new_cube = cube.spectral_smooth(kernel)
 
+        if cube.abort:
+            return
+
         if self.output_as_component:
             output_component_id = self.unique_output_component_id()
             output = self.cube_to_data(new_cube, output_component_id=output_component_id)
@@ -277,12 +280,15 @@ class Smooth(object):
         return output
 
     def multithreading_function(self, abort_window, signal):
+        # TODO: Error handling
         cube = self.data_to_qcube()
         abort_window.init_pb(0, cube.shape[0])
         cube.update_function = abort_window.update_pb
+        abort_window.abort_function = cube.abort_function
 
         self.smooth_cube(cube)
-
+        if cube.abort:
+            return
         abort_window.close()
         signal.emit()
         return
@@ -302,22 +308,29 @@ class AbortWindow(QDialog):
         """
         super(AbortWindow, self).__init__(parent)
         self.setModal(False)
-        self.setWindowFlags(self.windowFlags() | Qt.Tool | Qt.FramelessWindowHint)
+        self.setWindowFlags(self.windowFlags() | Qt.Tool) #| Qt.FramelessWindowHint)
 
-        self.setStyleSheet("background-color: rgb(255, 255, 255);")
+        #self.setStyleSheet("background-color: rgb(255, 255, 255);")
+
+        self.thread = None
+        self.parent = parent
 
         self.label_a_1 = QLabel("Executing smoothing algorithm.")
         self.label_a_2 = QLabel("This may take several minutes.")
 
-        # Add abort button here.
+        self.abort_button = QPushButton("Abort")
+        self.abort_button.clicked.connect(self.abort)
         self.pb = QProgressBar(self)
         self.pb_counter = 0
+
+        self.abort_function = None
 
         # vbl is short for Vertical Box Layout
         vbl = QVBoxLayout()
         vbl.addWidget(self.label_a_1)
         vbl.addWidget(self.label_a_2)
         vbl.addWidget(self.pb)
+        vbl.addWidget(self.abort_button)
 
         self.setLayout(vbl)
 
@@ -336,6 +349,25 @@ class AbortWindow(QDialog):
         self.pb_counter += 1
         self.pb.setValue(self.pb_counter)
         QApplication.processEvents()
+
+    def abort(self):
+        if self.abort_function is not None:
+            self.abort_function()
+        self.parent.clean_up()
+
+
+class WorkerThread(QThread):
+
+    def __init__(self, func, abort_window,
+                 smoothing_finished, parent):
+        super(WorkerThread, self).__init__(parent)
+        self.function = func
+        self.abort_window = abort_window
+        self.smoothing_finished = smoothing_finished
+        self.parent = parent
+
+    def run(self):
+        self.function(self.abort_window, self.smoothing_finished)
 
 
 class SelectSmoothing(QDialog):
@@ -562,9 +594,18 @@ class SelectSmoothing(QDialog):
         self.hide()
         self.abort_window = AbortWindow(self)
         QApplication.processEvents()
-
+        
         t = Thread(target=self.smooth.multithreading_function,
                    args=(self.abort_window, self.smoothing_finished))
+        t.daemon = True
+        """
+        t = WorkerThread(self.smooth.multithreading_function,
+                         self.abort_window,
+                         self.smoothing_finished,
+                         self.parent)
+        t.setTerminationEnabled(True)
+        """
+        self.abort_window.thread = t
         t.start()
 
         return

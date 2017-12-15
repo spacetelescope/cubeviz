@@ -22,6 +22,7 @@ def dummy_function():
 class QSpectralCube(SpectralCube):
 
     update_function = dummy_function
+    abort = False
 
     def spatial_smooth_median(self, ksize, **kwargs):
         """
@@ -51,7 +52,10 @@ class QSpectralCube(SpectralCube):
             Helper function to smooth a spectrum
             """
             (im, includemask),kwargs = args
-            self.update_function()
+            if self.abort:
+                return
+            else:
+                self.update_function()
             if includemask.any():
                 return ndimage.filters.median_filter(im, size=ksize)
             else:
@@ -65,7 +69,8 @@ class QSpectralCube(SpectralCube):
                                                            )
                                        )
                                   ])
-
+        if self.abort:
+            return
         # TODO: do something about the mask?
         newcube = self._new_cube_with(data=smoothcube_, wcs=self.wcs,
                                       mask=self.mask, meta=self.meta,
@@ -105,7 +110,10 @@ class QSpectralCube(SpectralCube):
             Helper function to smooth an image
             """
             (im, includemask),kernel,kwargs = args
-            self.update_function()
+            if self.abort:
+                return
+            else:
+                self.update_function()
             if includemask.any():
                 return convolve(im, kernel, normalize_kernel=True, **kwargs)
             else:
@@ -120,6 +128,8 @@ class QSpectralCube(SpectralCube):
                                                            )
                                        )
                                   ])
+        if self.abort:
+            return
 
         # TODO: do something about the mask?
         newcube = self._new_cube_with(data=smoothcube_, wcs=self.wcs,
@@ -158,7 +168,10 @@ class QSpectralCube(SpectralCube):
             Helper function to smooth a spectrum
             """
             (spec, includemask),kwargs = args
-            self.update_function()
+            if self.abort:
+                return
+            else:
+                self.update_function()
             if any(includemask):
                 return ndimage.filters.median_filter(spec, size=ksize)
             else:
@@ -173,6 +186,8 @@ class QSpectralCube(SpectralCube):
                                        )
                                    ]
                                   )
+        if self.abort:
+            return
 
         # empirical: need to swapaxes to get shape right
         # cube = np.arange(6*5*4).reshape([4,5,6]).swapaxes(0,2)
@@ -220,7 +235,10 @@ class QSpectralCube(SpectralCube):
             Helper function to smooth a spectrum
             """
             (spec, includemask),kernel,kwargs = args
-            self.update_function()
+            if self.abort:
+                return
+            else:
+                self.update_function()
             if any(includemask):
                 return convolve(spec, kernel, normalize_kernel=True, **kwargs)
             else:
@@ -236,7 +254,8 @@ class QSpectralCube(SpectralCube):
                                        )
                                    ]
                                   )
-
+        if self.abort:
+            return
         # empirical: need to swapaxes to get shape right
         # cube = np.arange(6*5*4).reshape([4,5,6]).swapaxes(0,2)
         # cubelist.T.reshape(cube.shape) == cube
@@ -248,3 +267,6 @@ class QSpectralCube(SpectralCube):
                                       fill_value=self.fill_value)
 
         return newcube
+
+    def abort_function(self):
+        self.abort = True
