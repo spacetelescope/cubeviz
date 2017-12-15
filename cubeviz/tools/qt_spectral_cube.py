@@ -31,14 +31,6 @@ class QSpectralCube(SpectralCube):
     update_function = dummy_function
     abort = False
 
-    def chunked(self, chunksize=1000):
-        """Abstract Method"""
-        pass
-
-    def world_spines(self):
-        """Abstract Method"""
-        pass
-
     def spatial_smooth_median(self, ksize, **kwargs):
         """
         Smooth the image in each spatial-spatial plane of the cube using a median filter.
