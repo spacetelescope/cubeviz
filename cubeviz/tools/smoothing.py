@@ -106,8 +106,8 @@ class SmoothCube(object):
             "trapezoid": {"name": "Trapezoid",
                           "unit_label": "Pixels",
                           "size_prompt": "Width of Kernel:",
-                          "axis": ["spatial"],
-                          "spatial": convolution.Trapezoid1DKernel},
+                          "axis": ["spectral"],
+                          "spectral": convolution.Trapezoid1DKernel},
             "trapezoiddisk": {"name": "Trapezoid Disk",
                               "unit_label": "Pixels",
                               "size_prompt": "Radius of Kernel:",
@@ -372,6 +372,7 @@ class SmoothCube(object):
 
     def thread_error_handler(self, exception):
         self.abort_window.print_error(exception)
+        raise exception
 
     def gui(self):
         """Call smoothing gui and add output as component"""
@@ -679,7 +680,10 @@ class SelectSmoothing(QDialog):
             self.smooth_cube.data = self.data
         self.smooth_cube.smoothing_axis = self.current_axis
         self.smooth_cube.kernel_type = self.current_kernel_type
-        self.smooth_cube.kernel_size = int(self.k_size.text())
+        if self.current_kernel_type == "median":
+            self.smooth_cube.kernel_size = int(self.k_size.text())
+        else:
+            self.smooth_cube.kernel_size = float(self.k_size.text())
         self.smooth_cube.component_id = str(self.component_combo.currentText())
         self.smooth_cube.output_as_component = True
 
