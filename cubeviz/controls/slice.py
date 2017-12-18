@@ -87,7 +87,7 @@ class SliceController:
 
         # If the active widget is synced then we need to update the image
         # in all the other synced views.
-        if active_widget.synced:
+        if active_widget.synced and not self._cv_layout._single_viewer_mode:
             for view in cube_views:
                 if view != active_cube and view._widget.synced:
                     view._widget.update_slice_index(index)

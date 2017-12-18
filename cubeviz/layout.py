@@ -141,7 +141,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._active_split_cube = None
 
         # Set the default to parallel image viewer
-        self._single_image = False
+        self._single_viewer_mode = False
         self.ui.button_toggle_image_mode.setText('Single Image Viewer')
         self.ui.viewer_control_frame.setCurrentIndex(0)
 
@@ -317,25 +317,29 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     def _toggle_image_mode(self, event=None):
         # Currently in single image, moving to split image
-        if self._single_image:
+        if self._single_viewer_mode:
             self._active_cube = self._active_split_cube
-            self._split_image_mode(event)
-            self._single_image = False
+            self._activate_split_image_mode(event)
+            self._single_viewer_mode = False
             self.ui.button_toggle_image_mode.setText('Single Image Viewer')
             self.ui.viewer_control_frame.setCurrentIndex(0)
+            if self.single_view._widget.synced:
+                for view in self.split_views:
+                    if view._widget.synced:
+                        view._widget.update_slice_index(self.single_view._widget.slice_index)
         # Currently in split image, moving to single image
         else:
             self._active_split_cube = self._active_cube
             self._active_cube = self.single_view
-            self._single_image_mode(event)
-            self._single_image = True
+            self._activate_single_image_mode(event)
+            self._single_viewer_mode = True
             self.ui.button_toggle_image_mode.setText('Split Image Viewer')
             self.ui.viewer_control_frame.setCurrentIndex(1)
 
         # Update the slice index to reflect the state of the active cube
         self._slice_controller.update_index(self._active_cube._widget.slice_index)
 
-    def _single_image_mode(self, event=None):
+    def _activate_single_image_mode(self, event=None):
         vsplitter = self.ui.vertical_splitter
         hsplitter = self.ui.horizontal_splitter
         vsizes = list(vsplitter.sizes())
@@ -345,7 +349,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         vsplitter.setSizes(vsizes)
         hsplitter.setSizes(hsizes)
 
-    def _split_image_mode(self, event=None):
+    def _activate_split_image_mode(self, event=None):
         vsplitter = self.ui.vertical_splitter
         hsplitter = self.ui.horizontal_splitter
         vsizes = list(vsplitter.sizes())
@@ -384,12 +388,13 @@ class CubeVizLayout(QtWidgets.QWidget):
     def _on_sync_click(self, event=None):
         index = self._active_cube._widget.slice_index
         for view in self.cube_views:
-            view._widget.enable_button()
+            view._widget.set_sync_button()
             if view != self._active_cube:
                 view._widget.update_slice_index(index)
+        self._slice_controller.update_index(index)
 
     def showEvent(self, event):
         super(CubeVizLayout, self).showEvent(event)
         # Make split image mode the default layout
-        self._split_image_mode()
+        self._activate_split_image_mode()
         self._update_active_view(self.left_view)
