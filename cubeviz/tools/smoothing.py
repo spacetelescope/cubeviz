@@ -368,7 +368,7 @@ class SmoothCube(object):
         """
         output_component_id = self.unique_output_component_id()
         output = self.cube_to_data(self.thread_result, output_component_id=output_component_id)
-        self.abort_window.smoothing_done()
+        self.abort_window.smoothing_done(output_component_id)
 
     def thread_error_handler(self, exception):
         self.abort_window.print_error(exception)
@@ -440,13 +440,19 @@ class AbortWindow(QDialog):
             self.abort_function()
         self.parent.clean_up()
 
-    def smoothing_done(self):
+    def smoothing_done(self, component_id=None):
         """Notify user success"""
         self.hide()
-        message = "The result has been added as a" \
-                  " new component of the input Data." \
-                  " The new component can be accessed" \
-                  " in the viewer drop-downs."
+        if component_id is None:
+            message = "The result has been added as a" \
+                      " new component of the input Data." \
+                      " The new component can be accessed" \
+                      " in the viewer drop-downs."
+        else:
+            message = "The result has been added as" \
+                      " \"{0}\" and can be selected" \
+                      " in the viewer drop-down menu.".format(component_id)
+
         info = QMessageBox.information(self, "Success", message)
         self.clean_up()
 
