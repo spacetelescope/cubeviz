@@ -627,28 +627,32 @@ class SelectSmoothing(QDialog):
         Check if input will break Smoothing
         :return: bool: True if no errors
         """
+        red = "background-color: rgba(255, 0, 0, 128);"
+        success = True
 
         # Check 1: k_size
         if self.k_size == "":
-            self.k_size.setStyleSheet("background-color: rgba(255, 0, 0, 128);")
-            return False
+            self.k_size.setStyleSheet(red)
+            success = False
         else:
             try:
                 if self.current_kernel_type == "median":
                     k_size = int(self.k_size.text())
                 else:
                     k_size = float(self.k_size.text())
+                if k_size <= 0:
+                    self.k_size.setStyleSheet(red)
+                    success = False
+                else:
+                    self.k_size.setStyleSheet("")
             except ValueError:
                 if self.current_kernel_type == "median":
                     info = QMessageBox.critical(self, "Error",
                                                 "Kernel size must be integer for median")
-                self.k_size.setStyleSheet("background-color: rgba(255, 0, 0, 128);")
-                return False
-            if k_size <= 0:
-                return False
-            self.k_size.setStyleSheet("")
+                self.k_size.setStyleSheet(red)
+                success = False
 
-        return True
+        return success
 
     def call_main(self):
         try:
