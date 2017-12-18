@@ -78,7 +78,7 @@ class SliceController:
         :return:
         """
         index = self._slice_slider.value()
-        all_cubes = self._cv_layout.cubes
+        cube_views = self._cv_layout.cube_views
         active_cube = self._cv_layout._active_cube
         active_widget = active_cube._widget
 
@@ -88,9 +88,9 @@ class SliceController:
         # If the active widget is synced then we need to update the image
         # in all the other synced views.
         if active_widget.synced:
-            for cube in all_cubes:
-                if cube != active_cube and cube._widget.synced:
-                    cube._widget.update_slice_index(index)
+            for view in cube_views:
+                if view != active_cube and view._widget.synced:
+                    view._widget.update_slice_index(index)
             self._cv_layout.synced_index = index
 
         # Now update the slice and wavelength text boxes

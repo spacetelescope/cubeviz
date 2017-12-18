@@ -10,7 +10,7 @@ class OverlayController:
 
     def __init__(self, cubeviz_layout):
         self._cv_layout = cubeviz_layout
-        self._cubes = cubeviz_layout.cubes
+        self._cube_views = cubeviz_layout.cube_views
         ui = cubeviz_layout.ui
 
         self._overlays = Data('Overlays')
@@ -64,7 +64,7 @@ class OverlayController:
         for cb in self._overlay_colorbar_axis:
             for cbim in cb.get_images():
                 cbim.set_cmap(colormap)
-        for cube in self._cubes:
+        for cube in self._cube_views:
             cube._widget.figure.canvas.draw()
 
     def _draw_mpl_overlay(self, data, view):
@@ -97,7 +97,7 @@ class OverlayController:
         # Remove all existing overlays
         if self._active_overlays:
             for overlay, view, cb in zip(
-                    self._active_overlays, self._cubes, self._overlay_colorbar_axis):
+                    self._active_overlays, self._cube_views, self._overlay_colorbar_axis):
                 overlay.remove()
                 cb.remove()
                 view._widget.figure.canvas.draw()
@@ -110,7 +110,7 @@ class OverlayController:
             return
 
         self._active_overlays = []
-        for view in self._cubes:
+        for view in self._cube_views:
             self._draw_mpl_overlay(data, view)
 
         self._alpha_slider.setValue(25)
