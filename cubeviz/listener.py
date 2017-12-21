@@ -71,12 +71,12 @@ class CubevizManager(HubListener):
         for i, attribute in enumerate([FLUX, ERROR, MASK]):
 
             image_viewers[0].add_data(data)
-            image_viewers[0].state.aspect = 'auto'
+            image_viewers[0].state.aspect = 'equal'
             image_viewers[0].state.color_mode = 'One color per layer'
             image_viewers[0].state.layers[i].attribute = data.id[attribute]
 
             image_viewers[1 + i].add_data(data)
-            image_viewers[1 + i].state.aspect = 'auto'
+            image_viewers[1 + i].state.aspect = 'equal'
             image_viewers[1 + i].state.layers[0].attribute = data.id[attribute]
 
         image_viewers[0].state.layers[0].color = COLOR[FLUX]
@@ -89,3 +89,20 @@ class CubevizManager(HubListener):
         self._app.tab_bar.rename_tab(index, "CubeViz: {}".format(data.label))
 
         self._layout = cubeviz_layout
+
+        # We want square pixels if the dimensions shown are the spatial
+        # dimensions, and we want rectangular pixels if looking at a position-
+        # spectral slice. Note that for now we assume below that the spectral
+        # slice is axis 0 (in Numpy notation)
+
+        def _change_aspect(*args):
+            for image_viewer in image_viewers:
+                if (image_viewer.state.x_att.axis > 0 and
+                        image_viewer.state.y_att.axis > 0):
+                    image_viewer.state.aspect = 'equal'
+                else:
+                    image_viewer.state.aspect = 'auto'
+
+        for image_viewer in image_viewers:
+            image_viewer.state.add_callback('x_att', _change_aspect)
+            image_viewer.state.add_callback('y_att', _change_aspect)
