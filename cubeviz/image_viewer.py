@@ -82,9 +82,9 @@ class CubevizImageViewer(ImageViewer):
     def enable_toolbar(self):
         self._sync_button = self.toolbar.tools[SyncButtonBox.tool_id]
         self._sync_button._hub = self.parent().tab_widget.session.hub
-        self.enable_button()
+        self.set_sync_button()
 
-    def enable_button(self):
+    def set_sync_button(self):
         button = self.toolbar.actions[SyncButtonBox.tool_id]
         button.setChecked(True)
 
