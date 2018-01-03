@@ -9,7 +9,9 @@ from qtpy.QtWidgets import QMenu, QAction
 from glue.utils.qt import load_ui
 from glue.utils.qt import get_qapp
 from glue.config import qt_fixed_layout_tab
-from glue.external.echo import keep_in_sync
+from glue.external.echo import keep_in_sync, SelectionCallbackProperty
+from glue.external.echo.qt import connect_combo_selection
+from glue.core.data_combo_helper import ComponentIDComboHelper
 from glue.core.message import SettingsChangeMessage
 
 from specviz.third_party.glue.data_viewer import SpecVizViewer
@@ -56,6 +58,11 @@ class CubeVizLayout(QtWidgets.QWidget):
     LABEL = "CubeViz"
     subWindowActivated = QtCore.Signal(object)
 
+    single_viewer_attribute = SelectionCallbackProperty(default_index=0)
+    viewer1_attribute = SelectionCallbackProperty(default_index=0)
+    viewer2_attribute = SelectionCallbackProperty(default_index=1)
+    viewer3_attribute = SelectionCallbackProperty(default_index=2)
+
     def __init__(self, session=None, parent=None):
         super(CubeVizLayout, self).__init__(parent=parent)
 
@@ -87,8 +94,10 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.right_view._widget.register_to_hub(self.session.hub)
         self.specviz._widget.register_to_hub(self.session.hub)
 
-        self.views = [self.single_view, self.left_view, self.middle_view, self.right_view]
-        self.cubes = self.views[1:]
+        self.all_views = [self.single_view, self.left_view, self.middle_view, self.right_view]
+        # TODO: determine whether to rename this or get rid of it
+        self.cube_views = self.all_views
+        self.split_views = self.cube_views[1:]
 
         # Add the views to the layouts.
         self.ui.single_image_layout.addWidget(self.single_view)
@@ -104,28 +113,19 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui.button_toggle_image_mode.clicked.connect(
             self._toggle_image_mode)
 
-        # TODO: udpate the active view with the new component
-
-        # Leave these to reenable for the single image viewer if desired
-        #self.ui.toggle_flux.setStyleSheet('background-color: {0};'.format(COLOR[FLUX]))
-        #self.ui.toggle_error.setStyleSheet('background-color: {0};'.format(COLOR[ERROR]))
-        #self.ui.toggle_quality.setStyleSheet('background-color: {0};'.format(COLOR[MASK]))
-
-        #self.ui.toggle_flux.setChecked(True)
-        #self.ui.toggle_error.setChecked(False)
-        #self.ui.toggle_quality.setChecked(False)
-
-        #self.ui.toggle_flux.toggled.connect(self._toggle_flux)
-        #self.ui.toggle_error.toggled.connect(self._toggle_error)
-        #self.ui.toggle_quality.toggled.connect(self._toggle_quality)
+        # This is a list of helpers for the viewer combo boxes. New data
+        # collections should be added to each helper in this list using the
+        # ``append_data`` method to ensure that the new data components are
+        # populated into the combo boxes.
+        self._viewer_combo_helpers = []
 
         self._slice_controller = SliceController(self)
         self._overlay_controller = OverlayController(self)
 
-
         # Add menu buttons to the cubeviz toolbar.
         self._init_menu_buttons()
 
+        # This maps the combo box indicies to the glue data component labels
         self._component_labels = DEFAULT_DATA_LABELS.copy()
 
         self.sync = {}
@@ -138,9 +138,12 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._last_click = None
         self._active_view = None
         self._active_cube = None
+        self._active_split_cube = None
 
-        self._single_image = False
+        # Set the default to parallel image viewer
+        self._single_viewer_mode = False
         self.ui.button_toggle_image_mode.setText('Single Image Viewer')
+        self.ui.viewer_control_frame.setCurrentIndex(0)
 
     def _init_menu_buttons(self):
         """
@@ -208,8 +211,6 @@ class CubeVizLayout(QtWidgets.QWidget):
                 self._data, self.session.data_collection, parent=self)
 
     def add_new_data_component(self, name):
-        for i, combo in enumerate(self._viewer_combos):
-            combo.addItem(str(name))
         self._component_labels.append(str(name))
 
         # TODO: udpate the active view with the new component
@@ -219,47 +220,39 @@ class CubeVizLayout(QtWidgets.QWidget):
             button.setEnabled(True)
         self.ui.sync_button.setEnabled(True)
 
-    def _toggle_flux(self, event=None):
-        self.single_view._widget.state.layers[0].visible = self.ui.toggle_flux.isChecked()
-
-    def _toggle_error(self, event=None):
-        self.single_view._widget.state.layers[1].visible = self.ui.toggle_error.isChecked()
-
-    def _toggle_quality(self, event=None):
-        self.single_view._widget.state.layers[2].visible = self.ui.toggle_quality.isChecked()
-
     def _get_change_viewer_func(self, view_index):
         def change_viewer(dropdown_index):
-            view = self.cubes[view_index]
+            view = self.all_views[view_index]
             label = self._component_labels[dropdown_index]
             view._widget.state.layers[0].attribute = self._data.id[label]
         return change_viewer
 
-    def _enable_viewer_combos(self):
+    def _enable_viewer_combo(self, data, index, combo_label, selection_label):
+        combo = getattr(self.ui, combo_label)
+        connect_combo_selection(self, selection_label, combo)
+        helper = ComponentIDComboHelper(self, selection_label)
+        helper.set_multiple_data([data])
+        combo.setEnabled(True)
+        combo.currentIndexChanged.connect(self._get_change_viewer_func(index))
+        self._viewer_combo_helpers.append(helper)
+
+    def _enable_all_viewer_combos(self, data):
         """
-        Setup the dropdown boxes that correspond to each of the left, middle, and right views.  The combo boxes
-        initially are set to have FLUX, Error, DQ but will be dynamic depending on the type of data available either
-        from being loaded in or by being processed.
+        Setup the dropdown boxes that correspond to each of the left, middle,
+        and right views.  The combo boxes initially are set to have FLUX,
+        Error, DQ but will be dynamic depending on the type of data available
+        either from being loaded in or by being processed.
 
         :return:
         """
+        self._enable_viewer_combo(
+            data, 0, 'single_viewer_combo', 'single_viewer_attribute')
 
-        self._viewer_combos = [
-            self.ui.viewer1_combo,
-            self.ui.viewer2_combo,
-            self.ui.viewer3_combo
-        ]
+        for i in range(1,4):
+            combo_label = 'viewer{0}_combo'.format(i)
+            selection_label = 'viewer{0}_attribute'.format(i)
+            self._enable_viewer_combo(data, i, combo_label, selection_label)
 
-        # Add the options to each of the dropdowns.
-        # TODO: Maybe should make this a function of the loaded data.
-        for i, combo in enumerate(self._viewer_combos):
-            for item in ['Flux', 'Error', 'DQ']:
-                combo.addItem(item)
-            combo.setEnabled(True)
-            combo.currentIndexChanged.connect(self._get_change_viewer_func(i))
-
-            # First view will be flux, second error and third DQ.
-            combo.setCurrentIndex(i)
 
     def add_overlay(self, data, label):
         self._overlay_controller.add_overlay(data, label)
@@ -274,14 +267,14 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._data = data
         self.specviz._widget.add_data(data)
 
-        for view in self.views:
-            view._widget.enable_toolbar()
+        # Syncing should only be enabled by default for cube viewers
+        for cube in self.cube_views:
+            cube._widget.enable_toolbar()
 
         self._has_data = True
         self._active_view = self.left_view
         self._active_cube = self.left_view
-
-        self._enable_viewer_combos()
+        self._active_split_cube = self.left_view
 
         # Store pointer to wavelength information
         self._wavelengths = self.single_view._widget._data[0].get_component('Wave')[:,0,0]
@@ -293,11 +286,9 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._enable_option_buttons()
         self._setup_syncing()
 
-        self.subWindowActivated.emit(self._active_view)
+        self._enable_all_viewer_combos(data)
 
-        #self._toggle_flux()
-        #self._toggle_error()
-        #self._toggle_quality()
+        self.subWindowActivated.emit(self._active_view)
 
     def eventFilter(self, obj, event):
 
@@ -325,16 +316,30 @@ class CubeVizLayout(QtWidgets.QWidget):
         return super(CubeVizLayout, self).eventFilter(obj, event)
 
     def _toggle_image_mode(self, event=None):
-        if self._single_image:
-            self._split_image_mode(event)
-            self._single_image = False
+        # Currently in single image, moving to split image
+        if self._single_viewer_mode:
+            self._active_cube = self._active_split_cube
+            self._activate_split_image_mode(event)
+            self._single_viewer_mode = False
             self.ui.button_toggle_image_mode.setText('Single Image Viewer')
+            self.ui.viewer_control_frame.setCurrentIndex(0)
+            if self.single_view._widget.synced:
+                for view in self.split_views:
+                    if view._widget.synced:
+                        view._widget.update_slice_index(self.single_view._widget.slice_index)
+        # Currently in split image, moving to single image
         else:
-            self._single_image_mode(event)
-            self._single_image = True
+            self._active_split_cube = self._active_cube
+            self._active_cube = self.single_view
+            self._activate_single_image_mode(event)
+            self._single_viewer_mode = True
             self.ui.button_toggle_image_mode.setText('Split Image Viewer')
+            self.ui.viewer_control_frame.setCurrentIndex(1)
 
-    def _single_image_mode(self, event=None):
+        # Update the slice index to reflect the state of the active cube
+        self._slice_controller.update_index(self._active_cube._widget.slice_index)
+
+    def _activate_single_image_mode(self, event=None):
         vsplitter = self.ui.vertical_splitter
         hsplitter = self.ui.horizontal_splitter
         vsizes = list(vsplitter.sizes())
@@ -344,7 +349,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         vsplitter.setSizes(vsizes)
         hsplitter.setSizes(hsizes)
 
-    def _split_image_mode(self, event=None):
+    def _activate_split_image_mode(self, event=None):
         vsplitter = self.ui.vertical_splitter
         hsplitter = self.ui.horizontal_splitter
         vsizes = list(vsplitter.sizes())
@@ -382,13 +387,14 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     def _on_sync_click(self, event=None):
         index = self._active_cube._widget.slice_index
-        for view in self.cubes:
-            view._widget.enable_button()
+        for view in self.cube_views:
+            view._widget.set_sync_button()
             if view != self._active_cube:
                 view._widget.update_slice_index(index)
+        self._slice_controller.update_index(index)
 
     def showEvent(self, event):
         super(CubeVizLayout, self).showEvent(event)
         # Make split image mode the default layout
-        self._split_image_mode()
+        self._activate_split_image_mode()
         self._update_active_view(self.left_view)
