@@ -339,13 +339,6 @@ class CubeVizLayout(QtWidgets.QWidget):
         # Update the slice index to reflect the state of the active cube
         self._slice_controller.update_index(self._active_cube._widget.slice_index)
 
-        for viewer in self.cube_views:
-            viewer._widget.toolbar.setVisible(self._toolbars_visible)
-
-        if self._viewer_axes_positions:
-            self._hide_viewer_axes()
-
-
     def _activate_single_image_mode(self, event=None):
         vsplitter = self.ui.vertical_splitter
         hsplitter = self.ui.horizontal_splitter
