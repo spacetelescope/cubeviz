@@ -10,6 +10,13 @@ from glue.app.qt import GlueApplication
 TEST_DATA_PATH = os.path.join(os.path.dirname(__file__), 'data')
 
 
+def toggle_viewer(qtbot, cubeviz_layout):
+    qtbot.mouseClick(
+        cubeviz_layout.button_toggle_image_mode, QtCore.Qt.LeftButton)
+
+def select_viewer(qtbot, viewer):
+    qtbot.mouseClick(viewer._widget, QtCore.Qt.LeftButton)
+
 @pytest.fixture(scope='module')
 def cubeviz_layout():
     filename = os.path.join(TEST_DATA_PATH, 'data_cube.fits.gz')
@@ -18,10 +25,19 @@ def cubeviz_layout():
     app.run_startup_action('cubeviz')
     app.load_data(filename)
     app.setVisible(True)
-    #app.activateWindow()
 
     return app.tab(0)
 
+@pytest.fixture(autouse=True)
+def reset_state(qtbot, cubeviz_layout):
+    # This yields the test itself
+    yield
+
+    # Make sure to return the application to this state between tests
+    if cubeviz_layout._single_viewer_mode:
+        toggle_viewer(qtbot, cubeviz_layout)
+    if cubeviz_layout._active_view is not cubeviz_layout.left_view:
+        select_viewer(qtbot, cubeviz_layout.left_view)
 
 def test_starting_state(cubeviz_layout):
     assert cubeviz_layout.isVisible() == True
@@ -32,10 +48,6 @@ def test_starting_state(cubeviz_layout):
 
     for viewer in cubeviz_layout.all_views:
         assert viewer._widget.synced == True
-
-
-def select_viewer(qtbot, viewer):
-    qtbot.mouseClick(viewer._widget, QtCore.Qt.LeftButton)
 
 def assert_active_view_and_cube(layout, viewer):
     assert layout._active_view is viewer
@@ -56,14 +68,7 @@ def test_active_viewer(qtbot, cubeviz_layout):
     select_viewer(qtbot, cubeviz_layout.left_view)
     assert_active_view_and_cube(cubeviz_layout, cubeviz_layout.left_view)
 
-def toggle_viewer(qtbot, cubeviz_layout):
-    qtbot.mouseClick(
-        cubeviz_layout.button_toggle_image_mode, QtCore.Qt.LeftButton)
-
 def test_toggle_viewer_mode(qtbot, cubeviz_layout):
-    # Make sure we start in split image mode
-    assert cubeviz_layout._single_viewer_mode == False
-
     toggle_viewer(qtbot, cubeviz_layout)
     assert cubeviz_layout._single_viewer_mode == True
     assert_active_view_and_cube(cubeviz_layout, cubeviz_layout.single_view)
