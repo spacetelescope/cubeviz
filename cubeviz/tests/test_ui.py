@@ -21,5 +21,9 @@ def cubeviz_layout():
 
 
 def test_starting_state(cubeviz_layout):
-
+    assert cubeviz_layout._single_viewer_mode == False
     assert cubeviz_layout._active_view is cubeviz_layout.left_view
+    assert cubeviz_layout._active_cube is cubeviz_layout.left_view
+
+    for viewer in cubeviz_layout.all_views:
+        assert viewer._widget.synced == True
