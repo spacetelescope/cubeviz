@@ -78,12 +78,25 @@ def test_toggle_viewer_mode(qtbot, cubeviz_layout):
     assert_active_view_and_cube(cubeviz_layout, cubeviz_layout.left_view)
 
 def test_remember_active_viewer(qtbot, cubeviz_layout):
-    # Make sure that the active viewer in the current layout is remembered
+    """Make sure that the active viewer in the current layout is remembered"""
+
+    # Change active viewer in the split mode viewer
     select_viewer(qtbot, cubeviz_layout.right_view)
     assert_active_view_and_cube(cubeviz_layout, cubeviz_layout.right_view)
 
+    # Change to the single mode viewer
     toggle_viewer(qtbot, cubeviz_layout)
     assert_active_view_and_cube(cubeviz_layout, cubeviz_layout.single_view)
+    # Change active viewer in the single mode viewer
+    select_viewer(qtbot, cubeviz_layout.specviz)
+    assert cubeviz_layout._active_view == cubeviz_layout.specviz
+    assert cubeviz_layout._active_cube == cubeviz_layout.single_view
 
+    # Change back to the split mode viewer
     toggle_viewer(qtbot, cubeviz_layout)
     assert_active_view_and_cube(cubeviz_layout, cubeviz_layout.right_view)
+
+    # Change back to the single mode viewer
+    toggle_viewer(qtbot, cubeviz_layout)
+    assert cubeviz_layout._active_view == cubeviz_layout.specviz
+    assert cubeviz_layout._active_cube == cubeviz_layout.single_view
