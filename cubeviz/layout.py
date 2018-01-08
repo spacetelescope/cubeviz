@@ -148,6 +148,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._last_click = None
         self._active_view = None
         self._active_cube = None
+        self._last_active_view = None
         self._active_split_cube = None
 
         # Set the default to parallel image viewer
@@ -283,6 +284,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._has_data = True
         self._active_view = self.left_view
         self._active_cube = self.left_view
+        self._last_active_view = self.single_view
         self._active_split_cube = self.left_view
 
         # Store pointer to wavelength information
@@ -325,6 +327,9 @@ class CubeVizLayout(QtWidgets.QWidget):
         return super(CubeVizLayout, self).eventFilter(obj, event)
 
     def _toggle_image_mode(self, event=None):
+        new_active_view = self._last_active_view
+        self._last_active_view = self._active_view
+
         # Currently in single image, moving to split image
         if self._single_viewer_mode:
             self._active_cube = self._active_split_cube
@@ -339,11 +344,14 @@ class CubeVizLayout(QtWidgets.QWidget):
         # Currently in split image, moving to single image
         else:
             self._active_split_cube = self._active_cube
+            self._active_view = self.single_view
             self._active_cube = self.single_view
             self._activate_single_image_mode(event)
             self._single_viewer_mode = True
             self.ui.button_toggle_image_mode.setText('Split Image Viewer')
             self.ui.viewer_control_frame.setCurrentIndex(1)
+
+        self.subWindowActivated.emit(new_active_view)
 
         # Update the slice index to reflect the state of the active cube
         self._slice_controller.update_index(self._active_cube._widget.slice_index)
