@@ -51,3 +51,13 @@ def test_active_viewer(qtbot, cubeviz_layout):
     qtbot.mouseClick(cubeviz_layout.left_view._widget, QtCore.Qt.LeftButton)
     assert cubeviz_layout._active_view is cubeviz_layout.left_view
     assert cubeviz_layout._active_cube is cubeviz_layout.left_view
+
+def test_viewer_mode(qtbot, cubeviz_layout):
+    # Make sure we start in split image mode
+    assert cubeviz_layout._single_viewer_mode == False
+
+    qtbot.mouseClick(
+        cubeviz_layout.button_toggle_image_mode, QtCore.Qt.LeftButton)
+    assert cubeviz_layout._single_viewer_mode == True
+    assert cubeviz_layout._active_view is cubeviz_layout.single_view
+    assert cubeviz_layout._active_cube is cubeviz_layout.single_view
