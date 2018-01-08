@@ -34,30 +34,40 @@ def test_starting_state(cubeviz_layout):
         assert viewer._widget.synced == True
 
 
+def select_viewer(qtbot, viewer):
+    qtbot.mouseClick(viewer._widget, QtCore.Qt.LeftButton)
+
+def assert_active_view_and_cube(layout, viewer):
+    assert layout._active_view is viewer
+    assert layout._active_cube is viewer
+
 def test_active_viewer(qtbot, cubeviz_layout):
-    qtbot.mouseClick(cubeviz_layout.middle_view._widget, QtCore.Qt.LeftButton)
-    assert cubeviz_layout._active_view is cubeviz_layout.middle_view
-    assert cubeviz_layout._active_cube is cubeviz_layout.middle_view
+    select_viewer(qtbot, cubeviz_layout.middle_view)
+    assert_active_view_and_cube(cubeviz_layout, cubeviz_layout.middle_view)
 
-    qtbot.mouseClick(cubeviz_layout.right_view._widget, QtCore.Qt.LeftButton)
-    assert cubeviz_layout._active_view is cubeviz_layout.right_view
-    assert cubeviz_layout._active_cube is cubeviz_layout.right_view
+    select_viewer(qtbot, cubeviz_layout.right_view)
+    assert_active_view_and_cube(cubeviz_layout, cubeviz_layout.right_view)
 
-    qtbot.mouseClick(cubeviz_layout.specviz._widget, QtCore.Qt.LeftButton)
+    select_viewer(qtbot, cubeviz_layout.specviz)
     assert cubeviz_layout._active_view is cubeviz_layout.specviz
     # Selecting the specviz viewer should not affect the last active cube
     assert cubeviz_layout._active_cube is cubeviz_layout.right_view
 
-    qtbot.mouseClick(cubeviz_layout.left_view._widget, QtCore.Qt.LeftButton)
-    assert cubeviz_layout._active_view is cubeviz_layout.left_view
-    assert cubeviz_layout._active_cube is cubeviz_layout.left_view
+    select_viewer(qtbot, cubeviz_layout.left_view)
+    assert_active_view_and_cube(cubeviz_layout, cubeviz_layout.left_view)
 
 def test_viewer_mode(qtbot, cubeviz_layout):
+    def toggle_viewer():
+        qtbot.mouseClick(
+            cubeviz_layout.button_toggle_image_mode, QtCore.Qt.LeftButton)
+
     # Make sure we start in split image mode
     assert cubeviz_layout._single_viewer_mode == False
 
-    qtbot.mouseClick(
-        cubeviz_layout.button_toggle_image_mode, QtCore.Qt.LeftButton)
+    toggle_viewer()
     assert cubeviz_layout._single_viewer_mode == True
-    assert cubeviz_layout._active_view is cubeviz_layout.single_view
-    assert cubeviz_layout._active_cube is cubeviz_layout.single_view
+    assert_active_view_and_cube(cubeviz_layout, cubeviz_layout.single_view)
+
+    toggle_viewer()
+    assert cubeviz_layout._single_viewer_mode == False
+    assert_active_view_and_cube(cubeviz_layout, cubeviz_layout.left_view)
