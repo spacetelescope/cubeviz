@@ -99,6 +99,16 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.cube_views = self.all_views
         self.split_views = self.cube_views[1:]
 
+        self._synced_checkboxes = [
+            self.ui.singleviewer_synced_checkbox,
+            self.ui.viewer1_synced_checkbox,
+            self.ui.viewer2_synced_checkbox,
+            self.ui.viewer3_synced_checkbox
+        ]
+
+        for view, checkbox in zip(self.all_views, self._synced_checkboxes):
+            view._widget.assign_synced_checkbox(checkbox)
+
         # Add the views to the layouts.
         self.ui.single_image_layout.addWidget(self.single_view)
         self.ui.image_row_layout.addWidget(self.left_view)
@@ -267,9 +277,8 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._data = data
         self.specviz._widget.add_data(data)
 
-        # Syncing should only be enabled by default for cube viewers
-        for cube in self.cube_views:
-            cube._widget.enable_toolbar()
+        for checkbox in self._synced_checkboxes:
+            checkbox.setEnabled(True)
 
         self._has_data = True
         self._active_view = self.left_view
@@ -388,7 +397,7 @@ class CubeVizLayout(QtWidgets.QWidget):
     def _on_sync_click(self, event=None):
         index = self._active_cube._widget.slice_index
         for view in self.cube_views:
-            view._widget.set_sync_button()
+            view._widget.synced = True
             if view != self._active_cube:
                 view._widget.update_slice_index(index)
         self._slice_controller.update_index(index)
