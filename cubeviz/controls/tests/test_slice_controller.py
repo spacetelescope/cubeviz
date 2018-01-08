@@ -28,3 +28,14 @@ def test_enter_oob_slice_text(qtbot, cubeviz_layout):
     # Enter an impossibly large slice value
     enter_slice_text(qtbot, cubeviz_layout, str(2**20))
     assert_viewer_indices(cubeviz_layout, max_slice)
+
+@pytest.mark.parametrize('bad_text', ['garbage', '1e-07', '3.14', ''])
+def test_garbage_slice_text(qtbot, cubeviz_layout, bad_text):
+    # First make sure we're at known index
+    slice_index = 1024
+    enter_slice_text(qtbot, cubeviz_layout, str(slice_index))
+    assert_viewer_indices(cubeviz_layout, slice_index)
+
+    # Make sure that entering garbage text does not change the index
+    enter_slice_text(qtbot, cubeviz_layout, bad_text)
+    assert_viewer_indices(cubeviz_layout, slice_index)
