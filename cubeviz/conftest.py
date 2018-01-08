@@ -57,3 +57,21 @@ try:
     TESTED_VERSIONS[packagename] = version
 except NameError:   # Needed to support Astropy <= 1.0.0
     pass
+
+
+import pytest
+from .tests.helpers import (toggle_viewer, select_viewer, create_glue_app,
+                            reset_app_state)
+
+@pytest.fixture(scope='session')
+def cubeviz_layout():
+    app = create_glue_app()
+    return app.tab(0)
+
+@pytest.fixture(autouse=True)
+def reset_state(qtbot, cubeviz_layout):
+    # This yields the test itself
+    yield
+
+    # Make sure to return the application to this state between tests
+    reset_app_state(qtbot, cubeviz_layout)
