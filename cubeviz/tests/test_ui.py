@@ -56,18 +56,29 @@ def test_active_viewer(qtbot, cubeviz_layout):
     select_viewer(qtbot, cubeviz_layout.left_view)
     assert_active_view_and_cube(cubeviz_layout, cubeviz_layout.left_view)
 
-def test_viewer_mode(qtbot, cubeviz_layout):
-    def toggle_viewer():
-        qtbot.mouseClick(
-            cubeviz_layout.button_toggle_image_mode, QtCore.Qt.LeftButton)
+def toggle_viewer(qtbot, cubeviz_layout):
+    qtbot.mouseClick(
+        cubeviz_layout.button_toggle_image_mode, QtCore.Qt.LeftButton)
 
+def test_toggle_viewer_mode(qtbot, cubeviz_layout):
     # Make sure we start in split image mode
     assert cubeviz_layout._single_viewer_mode == False
 
-    toggle_viewer()
+    toggle_viewer(qtbot, cubeviz_layout)
     assert cubeviz_layout._single_viewer_mode == True
     assert_active_view_and_cube(cubeviz_layout, cubeviz_layout.single_view)
 
-    toggle_viewer()
+    toggle_viewer(qtbot, cubeviz_layout)
     assert cubeviz_layout._single_viewer_mode == False
     assert_active_view_and_cube(cubeviz_layout, cubeviz_layout.left_view)
+
+def test_remember_active_viewer(qtbot, cubeviz_layout):
+    # Make sure that the active viewer in the current layout is remembered
+    select_viewer(qtbot, cubeviz_layout.right_view)
+    assert_active_view_and_cube(cubeviz_layout, cubeviz_layout.right_view)
+
+    toggle_viewer(qtbot, cubeviz_layout)
+    assert_active_view_and_cube(cubeviz_layout, cubeviz_layout.single_view)
+
+    toggle_viewer(qtbot, cubeviz_layout)
+    assert_active_view_and_cube(cubeviz_layout, cubeviz_layout.right_view)
