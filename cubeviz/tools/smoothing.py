@@ -19,6 +19,9 @@ from qtpy.QtWidgets import (
 
 
 class AbortException(Exception):
+    """
+    Custom exception to indicate an abort.
+    """
     pass
 
 
