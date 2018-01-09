@@ -1,0 +1,22 @@
+name: 'jwst-asdf'
+type: 'JWST-ASDF'
+weight: 3
+match:
+    all:
+        equal:
+            header_key:
+                telescope
+            value:
+                JWST
+        startswith:
+            header_key:
+                DATAMODL
+            value:
+                IFUCubeModel
+        all:
+            extension_name:
+                data
+            extension_name:
+                dq
+            extension_name:
+                err

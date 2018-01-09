@@ -1,0 +1,15 @@
+name: 'manga'
+type: 'MANGA'
+weight: 20
+match:
+    all:
+        equal:
+            header_key:
+                TELESCOP
+            value:
+                SDSS 2.5-M
+        startswith:
+            header_key:
+                INSTRUME
+            value:
+                MaNGA

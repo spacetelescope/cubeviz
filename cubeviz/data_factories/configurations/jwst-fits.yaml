@@ -1,0 +1,22 @@
+name: 'jwst-fits-cube'
+type: 'JWST-FITS-CUBE'
+weight: 2
+match:
+    all:
+        equal:
+            header_key:
+                TELESCOP
+            value:
+                JWST
+        startswith:
+            header_key:
+                DATAMODL
+            value:
+                IFUCubeModel
+        all:
+            extension_name:
+                SCI
+            extension_name:
+                ERR
+            extension_name:
+                DQ

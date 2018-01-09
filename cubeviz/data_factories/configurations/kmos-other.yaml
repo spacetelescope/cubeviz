@@ -1,0 +1,15 @@
+name: 'kmos-other'
+type: 'KMOS'
+weight: 20
+match:
+    all:
+        equal:
+            header_key:
+                TELESCOP
+            value:
+                ESO-VLT-U1   
+        startswith:
+            header_key:
+                INSTRUME
+            value:
+                KMOS
