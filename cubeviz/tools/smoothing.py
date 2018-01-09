@@ -20,7 +20,7 @@ from qtpy.QtWidgets import (
 
 class AbortException(Exception):
     """
-    Custom exception to indicate an abort.
+    Custom exception to indicate a calculation abort.
     """
     pass
 
