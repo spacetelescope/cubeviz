@@ -9,7 +9,7 @@ import glob
 from astropy.io import fits
 import pprint
 
-class InstrumentFactoryConfiguration:
+class DataFactoryConfiguration:
 
     def __init__(self, config_files_or_directory):
         """
@@ -28,6 +28,7 @@ class InstrumentFactoryConfiguration:
             if not isinstance(self._config_files, list):
                 self._config_files = [self._config_files]
 
+        print('DataFactorConfiguraiton:__init__:  self._config_files is {}'.format(self._config_files))
 
     def process(self, filename):
         """
@@ -151,7 +152,7 @@ class InstrumentFactoryConfiguration:
         """
         return value in self._fits
 
-if __name__ == "__main__":
-    #iml = InstrumentFactoryConfiguration('configs/kmos.yaml')
-    iml = InstrumentFactoryConfiguration('configs/')
-    iml.process('/astro/3/jwst_da_sprint_testdata/IFU_datacubes/KMOS_Mason/KLASS_KMOS_COMBINE_SCI_RECONSTRUCTED_S2A_1261.fits')
+# if __name__ == "__main__":
+#     #iml = InstrumentFactoryConfiguration('configs/kmos.yaml')
+#     iml = InstrumentFactoryConfiguration('configs/')
+#     iml.process('/astro/3/jwst_da_sprint_testdata/IFU_datacubes/KMOS_Mason/KLASS_KMOS_COMBINE_SCI_RECONSTRUCTED_S2A_1261.fits')
