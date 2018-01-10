@@ -1,6 +1,6 @@
 name: 'kmos'
 type: 'KMOS'
-weight: 40
+priority: 1200s
 match:
     all:
         equal:
@@ -18,3 +18,10 @@ match:
                 HIERARCH ESO PRO TECH
             value:
                 IFU
+data:
+    FLUX:
+        1
+    ERROR:
+        2
+    DQ:
+        None

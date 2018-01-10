@@ -1,6 +1,6 @@
 name: 'kmos-other'
 type: 'KMOS'
-weight: 20
+priority: 1200
 match:
     all:
         equal:

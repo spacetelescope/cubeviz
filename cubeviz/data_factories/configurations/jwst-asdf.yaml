@@ -1,6 +1,6 @@
 name: 'jwst-asdf'
 type: 'JWST-ASDF'
-weight: 3
+priority: 1200
 match:
     all:
         equal:

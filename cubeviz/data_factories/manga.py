@@ -26,7 +26,7 @@ def is_manga_data_cube(filename, **kwargs):
 
     return True
 
-@data_factory('MaNGA data cube loader', is_manga_data_cube, priority=1200)
+#@data_factory('MaNGA data cube loader', is_manga_data_cube, priority=1200)
 def read_manga_data_cube(filename):
     hdulist = fits.open(filename)
 

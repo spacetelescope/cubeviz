@@ -104,7 +104,7 @@ def _load_jwst_fits(hdulist, coords):
 
     return data
 
-@data_factory('JWST data cube loader', is_jwst_data_cube, priority=1200)
+#data_factory('JWST data cube loader', is_jwst_data_cube, priority=1200)
 def read_jwst_data_cube(filename):
     # Process ASDF files
     if filename.endswith('asdf'):

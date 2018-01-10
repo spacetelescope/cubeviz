@@ -1,6 +1,6 @@
 name: 'jwst-fits-cube'
 type: 'JWST-FITS-CUBE'
-weight: 2
+priority: 1200s
 match:
     all:
         equal:
@@ -20,3 +20,10 @@ match:
                 ERR
             extension_name:
                 DQ
+data:
+    FLUX:
+        SCI
+    ERROR:
+        ERR
+    DQ:
+        DQ

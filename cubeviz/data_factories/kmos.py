@@ -29,7 +29,7 @@ def is_kmos_data_cube(filename, **kwargs):
 
     return True
 
-@data_factory('KMOS data cube loader', is_kmos_data_cube, priority=1200)
+#@data_factory('KMOS data cube loader', is_kmos_data_cube, priority=1200)
 def read_kmos_data_cube(filename):
     hdulist = fits.open(filename)
 

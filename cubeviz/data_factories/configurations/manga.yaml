@@ -1,6 +1,6 @@
 name: 'manga'
 type: 'MANGA'
-weight: 20
+priority: 1200
 match:
     all:
         equal:
@@ -13,3 +13,10 @@ match:
                 INSTRUME
             value:
                 MaNGA
+data:
+    FLUX:
+        FLUX
+    ERROR:
+        IVAR
+    DQ:
+        MASK
