@@ -9,12 +9,13 @@ from glue.main import restore_session, get_splash, load_data_files, load_plugins
 # read in from the argparse from the command line.
 # Yes, yes, we understand global variables aren't the best idea, but it
 # seems to make sense here.
-global_data_configuration = []
+global_data_configuration = {}
 
 def setup():
 
     from .data_factories import DataFactoryConfiguration
-    DataFactoryConfiguration(global_data_configuration)
+    DataFactoryConfiguration(global_data_configuration.get('data_configs', []),
+                             global_data_configuration.get('data_configs_show', False))
 
     from . import layout  # noqa
     from . import startup  # noqa
@@ -28,6 +29,19 @@ def main(argv=sys.argv):
     :param argv:
     :return:
     """
+
+    # # Parse the arguments, ignore any unkonwn
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--data-configs", help="Directory or file for data configuration YAML files", nargs=1, type=str, action='append')
+    parser.add_argument("--data-configs-show", help="Show the matching info", action="store_true", default=False)
+    parser.add_argument('data_files', nargs=argparse.REMAINDER)
+    args = parser.parse_known_args(argv[1:])
+
+    # Store the args for each ' --data-configs' found on the commandline
+    print('set configuration')
+    global global_data_configuration
+    global_data_configuration['data_configs'] = args[0].data_configs if args[0].data_configs else []
+    global_data_configuration['data_configs_show'] = args[0].data_configs_show
 
     import glue
     from glue.utils.qt import get_qapp
@@ -43,12 +57,6 @@ def main(argv=sys.argv):
     load_plugins(splash=splash)
 
     from glue.app.qt import GlueApplication
-
-    # Parse the arguments, ignore any unkonwn
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--data-configs", help="Directory or file for data configuration YAML files", nargs=1, type=str, action='append')
-    parser.add_argument('data_files', nargs=argparse.REMAINDER)
-    args = parser.parse_known_args(argv[1:])
 
     datafiles = args[0].data_files
 
@@ -81,18 +89,11 @@ def main(argv=sys.argv):
     session = glue.core.Session(data_collection=data_collection, hub=hub)
     ga = GlueApplication(session=session)
 
-    # Store the args for each ' --data-configs' found on the commandline
-    global global_data_configuration
-    global_data_configuration = args[0].data_configs
+    ga.run_startup_action('cubeviz')
 
     # Load the data files.
     if datafiles:
         datasets = load_data_files(datafiles)
         ga.add_datasets(data_collection, datasets, auto_merge=False)
-
-    startup_actions = ['cubeviz']
-    if startup_actions is not None:
-        for name in startup_actions:
-            ga.run_startup_action(name)
 
     return ga.start(maximized=True)

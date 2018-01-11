@@ -13,3 +13,10 @@ match:
                 INSTRUME
             value:
                 KMOS
+data:
+    FLUX:
+        1
+    ERROR:
+        2
+    DQ:
+        None

@@ -16,8 +16,9 @@ from astropy.io import fits
 import numpy as np
 from glue.config import data_factory
 
-logging.basicConfig()
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('cubeviz_data_configuration')
+logger.setLevel(logging.INFO)
 
 DEFAULT_DATA_CONFIGS = os.path.join(os.path.dirname(__file__), 'configurations')
 CUBEVIZ_DATA_CONFIGS = 'CUBEVIZ_DATA_CONFIGS'
@@ -49,6 +50,7 @@ class DataConfiguration:
             self._configuration = cfg['match']
 
             self._data = cfg.get('data', None)
+
 
     def load_data(self, data_filename):
         """
@@ -107,6 +109,7 @@ class DataConfiguration:
         matches = self._process('all', self._configuration['all'])
 
         if matches:
+            logger.debug('{} matches {}'.format(self._config_file, filename))
             return True
         else:
             return False
@@ -175,6 +178,7 @@ class DataConfiguration:
         :param value:
         :return:
         """
+        logger.debug('\tequality: {} = {} ?'.format(self._fits[0].header.get(value['header_key'], False), value['value']))
         return self._fits[0].header.get(value['header_key'], False) == value['value']
 
     def _startswith(self, value):
@@ -184,6 +188,7 @@ class DataConfiguration:
         :param value:
         :return:
         """
+        logger.debug('\tstartswith: {} starswith {} ?'.format(self._fits[0].header.get(value['header_key'], False), value['value']))
         return self._fits[0].header.get(value['header_key'], '').startswith(value['value'])
 
     def _extension_name(self, value):
@@ -193,6 +198,7 @@ class DataConfiguration:
         :param value:
         :return:
         """
+        logger.debug('\tcontains extension: {} in {} ?'.format(value['value'], [x.header['EXTNAME'] for x in self._fits]))
         return value in self._fits
 
 
@@ -232,14 +238,16 @@ class DataFactoryConfiguration:
 
         return config_files
 
-
-    def __init__(self, in_configs):
+    def __init__(self, in_configs=[], show_only=False):
         """
         The IFC takes either a directory (that contains YAML files), a list of directories (each of which contain
         YAML files) or a list of YAML files.  Each YAML file defines requirements
 
         :param in_configs: Directory, list of directories, or list of files.
         """
+
+        if show_only:
+            logger.setLevel(logging.DEBUG)
 
         self._config_files = []
 
