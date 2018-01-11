@@ -30,6 +30,9 @@ def enter_wavelength_text(qtbot, layout, text):
     widget.setText(str(text))
     qtbot.keyClick(widget, QtCore.Qt.Key_Enter)
 
+def sync_all_viewers(qtbot, layout):
+    left_click(qtbot, layout.ui.sync_button)
+
 def create_glue_app():
     filename = os.path.join(TEST_DATA_PATH, 'data_cube.fits.gz')
 
@@ -41,6 +44,7 @@ def create_glue_app():
     return app
 
 def reset_app_state(qtbot, layout):
+    sync_all_viewers(qtbot, layout)
     # Restore the text and index to a known state
     enter_slice_text(qtbot, layout, '1024')
     if layout._single_viewer_mode:
