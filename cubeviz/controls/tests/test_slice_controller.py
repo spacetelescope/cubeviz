@@ -19,19 +19,27 @@ def assert_slice_text(layout, text):
 def assert_wavelength_text(layout, text):
     assert layout._slice_controller._wavelength_textbox.text() == str(text)
 
+@pytest.fixture(scope='module')
+def cube_bounds(cubeviz_layout):
+    bounds = {
+        'max_slice': len(cubeviz_layout._data['FLUX']) - 1,
+    }
+
+    yield bounds
+
 @pytest.mark.parametrize('slice_index', [0, 100, 1000, 1024])
 def test_enter_valid_slice_text(qtbot, cubeviz_layout, slice_index):
     enter_slice_text(qtbot, cubeviz_layout, slice_index)
     assert_viewer_indices(cubeviz_layout, slice_index)
     assert_slice_text(cubeviz_layout, slice_index)
 
-def test_enter_oob_slice_text(qtbot, cubeviz_layout):
+def test_enter_oob_slice_text(qtbot, cubeviz_layout, cube_bounds):
     # Enter a negative slice value
     enter_slice_text(qtbot, cubeviz_layout, "-42")
     assert_viewer_indices(cubeviz_layout, 0)
     assert_slice_text(cubeviz_layout, 0)
 
-    max_slice = len(cubeviz_layout._data['FLUX']) - 1
+    max_slice = cube_bounds['max_slice']
 
     # Enter an impossibly large slice value
     enter_slice_text(qtbot, cubeviz_layout, str(2**20))
@@ -53,13 +61,16 @@ def test_wavelength_slider(cubeviz_layout, slice_index):
     set_slider_index(cubeviz_layout, slice_index)
     assert_viewer_indices(cubeviz_layout, slice_index)
 
-def test_enter_oob_wavelength_text(qtbot, cubeviz_layout):
+def test_slice_and_wavelength_correlation():
+    pass
+
+def test_enter_oob_wavelength_text(qtbot, cubeviz_layout, cube_bounds):
     enter_wavelength_text(qtbot, cubeviz_layout, '0')
     assert_viewer_indices(cubeviz_layout, 0)
     # We use the slice value as a proxy for the correct wavelength value
     assert_slice_text(cubeviz_layout, 0)
 
-    max_slice = len(cubeviz_layout._data['FLUX']) - 1
+    max_slice = cube_bounds['max_slice']
 
     # enter an impossibly large wavelength value
     enter_wavelength_text(qtbot, cubeviz_layout, '42')
