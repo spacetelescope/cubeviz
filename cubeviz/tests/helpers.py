@@ -11,12 +11,14 @@ __all__ = ['toggle_viewer', 'select_viewer', 'create_glue_app',
 TEST_DATA_PATH = os.path.join(os.path.dirname(__file__), 'data')
 
 
+def left_click(qtbot, widget):
+    qtbot.mouseClick(widget, QtCore.Qt.LeftButton)
+
 def toggle_viewer(qtbot, layout):
-    qtbot.mouseClick(
-        layout.button_toggle_image_mode, QtCore.Qt.LeftButton)
+    left_click(qtbot, layout.button_toggle_image_mode)
 
 def select_viewer(qtbot, viewer):
-    qtbot.mouseClick(viewer._widget, QtCore.Qt.LeftButton)
+    left_click(qtbot, viewer._widget)
 
 def enter_slice_text(qtbot, layout, text):
     widget = layout._slice_controller._slice_textbox

@@ -2,9 +2,8 @@
 import os
 
 import pytest
-from qtpy import QtCore
 
-from .helpers import toggle_viewer, select_viewer
+from .helpers import toggle_viewer, select_viewer, left_click
 
 
 def test_starting_state(cubeviz_layout):
@@ -82,8 +81,8 @@ def test_sync_checkboxes(qtbot, cubeviz_layout, viewer_index):
     checkbox = cubeviz_layout._synced_checkboxes[viewer_index]
     viewer = cubeviz_layout.all_views[viewer_index]
 
-    qtbot.mouseClick(checkbox, QtCore.Qt.LeftButton)
+    left_click(qtbot, checkbox)
     assert viewer._widget.synced == False
 
-    qtbot.mouseClick(checkbox, QtCore.Qt.LeftButton)
+    left_click(qtbot, checkbox)
     assert viewer._widget.synced == True
