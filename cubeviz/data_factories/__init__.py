@@ -11,13 +11,28 @@ from os.path import basename, splitext
 import yaml
 import os
 import glob
+import logging
 from astropy.io import fits
 import numpy as np
 from glue.config import data_factory
 
+logging.basicConfig()
+logger = logging.getLogger('cubeviz_data_configuration')
+
+DEFAULT_DATA_CONFIGS = os.path.join(os.path.dirname(__file__), 'configurations')
+CUBEVIZ_DATA_CONFIGS = 'CUBEVIZ_DATA_CONFIGS'
+
 class DataConfiguration:
+    """
+    This class is used to parse a YAML configuration file.
+
+    """
 
     def __init__(self, config_file):
+        """
+        Given the configuration file, save it and grab the name and priority
+        :param config_file:
+        """
         self._config_file = config_file
 
         with open(self._config_file, 'r') as ymlfile:
@@ -35,14 +50,14 @@ class DataConfiguration:
 
             self._data = cfg.get('data', None)
 
-    def matches(self, data_filename):
-        print('=== Checking to see if it matches {}'.format(data_filename))
-        return self.process(data_filename)
-
     def load_data(self, data_filename):
+        """
+        Load the data based on the extensions defined in the matching YAML file.  THen
+        create the datacube and return it.
 
-        print('in load_data goingt o load {}'.format(data_filename))
-
+        :param data_filename:
+        :return:
+        """
         hdulist = fits.open(data_filename)
 
         print(hdulist)
@@ -66,7 +81,7 @@ class DataConfiguration:
         else:
             mask_data = np.empty(flux_data.shape)
 
-        label = "MaNGA data cube: {}".format(splitext(basename(data_filename))[0])
+        label = "{}: {}".format(self._name, splitext(basename(data_filename))[0])
 
         data = Data(label=label)
 
@@ -79,7 +94,7 @@ class DataConfiguration:
 
         return data
 
-    def process(self, filename):
+    def matches(self, filename):
         """
         Main call to which we pass in the file to see if it matches based
         on the criteria in the config file.
@@ -94,10 +109,8 @@ class DataConfiguration:
         matches = self._process('all', self._configuration['all'])
 
         if matches:
-            print('File matches')
             return True
         else:
-            print('File does not match')
             return False
 
     def _process(self, key, conditional):
@@ -132,12 +145,9 @@ class DataConfiguration:
         :return:
         """
         for key, conditional in conditionals.items():
-            print('Checking {}'.format(key))
             ret = self._process(key, conditional)
-            print('    returned {}'.format(ret))
             if not ret:
                 return False
-        print('_all: GOOD')
         return True
 
     def _any(self, conditionals):
@@ -167,7 +177,6 @@ class DataConfiguration:
         :param value:
         :return:
         """
-        print('equal {} {} {} {}'.format(value['header_key'], self._fits[0].header.get(value['header_key'], False), value['value'], self._fits[0].header.get(value['header_key'], False) == value['value']))
         return self._fits[0].header.get(value['header_key'], False) == value['value']
 
     def _startswith(self, value):
@@ -177,7 +186,6 @@ class DataConfiguration:
         :param value:
         :return:
         """
-        print('startswith {}'.format(self._fits[0].header.get(value['header_key'], '').startswith(value['value'])))
         return self._fits[0].header.get(value['header_key'], '').startswith(value['value'])
 
     def _extension_name(self, value):
@@ -187,56 +195,86 @@ class DataConfiguration:
         :param value:
         :return:
         """
-        print('{} is an extension {}'.format(value, value in self._fits))
         return value in self._fits
 
 
 
 class DataFactoryConfiguration:
+    """
+    This class takes in lists of files or directories that are or contain data configuration YAML files. These
+    can come from:
+       1. the default location
+       2. from the command line "--data-configs <file-or-directory>"
+       3. from the environment variable CUBEVIZ_DATA_CONFIGS=<files-or-directories>
+    """
 
-    def __init__(self, config_files_or_directory):
+    def _find_yaml_files(self, files_or_directories):
+        """
+        Given the files_or_directories, create a list of all relevant YAML files.
+
+        :param files_or_directories:
+        :return:
+        """
+        config_files = []
+
+        # If the thing passed in was a string then we'll split on colon. If there is only one
+        # directory then it will create a list anyway.
+        if isinstance(files_or_directories, str):
+            files_or_directories = files_or_directories.split(':')
+
+        for x in files_or_directories:
+            if os.path.exists(x):
+                # file, just append
+                if os.path.isfile(x):
+                    config_files.append(x)
+                # directory, find all yaml under it.
+                else:
+                    files  = glob.glob(os.path.join(x, '*.yaml'))
+                    config_files.extend(files)
+
+        return config_files
+
+
+    def __init__(self, in_configs):
         """
         The IFC takes either a directory (that contains YAML files), a list of directories (each of which contain
         YAML files) or a list of YAML files.  Each YAML file defines requirements
 
-        :param config_files_or_directory: Directory, list of directories, or list of files.
+        :param in_configs: Directory, list of directories, or list of files.
         """
 
-        if os.path.isdir(config_files_or_directory):
-            # Get all the yaml files in the directory
-            self._config_files = glob.glob(os.path.join(config_files_or_directory, '*.yaml'))
-        else:
-            self._config_files = config_files_or_directory
+        self._config_files = []
 
-            if not isinstance(self._config_files, list):
-                self._config_files = [self._config_files]
+        # Get all the available YAML data configuration files based on the command line.
+        logger.debug('YAML data configuration fiels from command line: {}'.format(in_configs))
+        self._config_files.extend(self._find_yaml_files(in_configs))
 
-        print('DataFactorConfiguraiton:__init__:  self._config_files is {}'.format(self._config_files))
+        # Get all the available YAML data configuration files based on the environment variable.
+        if CUBEVIZ_DATA_CONFIGS in os.environ:
+            logger.debug('YAML data configuration fiels from environment variable: {}'.format(os.environ[CUBEVIZ_DATA_CONFIGS]))
+            self._config_files.extend(self._find_yaml_files(os.environ[CUBEVIZ_DATA_CONFIGS]))
+
+        # Get all the available YAML data configuration files based on the default directory
+        logger.debug(
+            'YAML data configuration fiels from the default directory: {}'.format(DEFAULT_DATA_CONFIGS))
+        self._config_files.extend(self._find_yaml_files(DEFAULT_DATA_CONFIGS))
+
+        logger.debug(
+            'YAML data configuration files: {}'.format('\n'.join(self._config_files)))
 
         for config_file in self._config_files:
-            print('\n-----------------------------')
 
-            print('Loading configuration file {}'.format(config_file))
+            # Load the YAML file and get the name, priority and create the data factory wrapper
             with open(config_file, 'r') as yamlfile:
                 cfg = yaml.load(yamlfile)
 
-            print('Read in {}'.format(cfg))
             name = cfg['name']
-            type = cfg['type']
 
             try:
                 priority = int(cfg.get('priority', 0))
             except:
                 priority = 0
 
-            print('Creating wrapper {}'.format(name))
-
             dc = DataConfiguration(config_file)
             wrapper = data_factory(name, dc.matches, priority=priority)
-
-            print('Calling wrapper function')
             wrapper(dc.load_data)
-
-            print('Done calling wrapper function')
-
-
