@@ -50,7 +50,6 @@ def main(argv=sys.argv):
     parser.add_argument('data_files', nargs=argparse.REMAINDER)
     args = parser.parse_known_args(argv[1:])
 
-    print('THE DATAFILES ARE {}'.format(args[0].data_files))
     datafiles = args[0].data_files
 
     hub = None

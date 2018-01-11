@@ -60,8 +60,6 @@ class DataConfiguration:
         """
         hdulist = fits.open(data_filename)
 
-        print(hdulist)
-
         try:
             flux_index = int(self._data['FLUX'])
         except:
