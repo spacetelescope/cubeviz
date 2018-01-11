@@ -4,6 +4,9 @@ import pytest
 from qtpy import QtCore
 
 
+
+def set_slider_index(layout, index):
+    layout._slice_controller._slice_slider.setSliderPosition(index)
 def enter_slice_text(qtbot, layout, text):
     widget = layout._slice_controller._slice_textbox
     widget.setText(str(text))
@@ -47,3 +50,8 @@ def test_garbage_slice_text(qtbot, cubeviz_layout, bad_text):
     enter_slice_text(qtbot, cubeviz_layout, bad_text)
     assert_viewer_indices(cubeviz_layout, slice_index)
     assert_slice_text(cubeviz_layout, bad_text)
+
+@pytest.mark.parametrize('slice_index', [0, 100, 1000, 1024, 2000])
+def test_wavelength_slider(cubeviz_layout, slice_index):
+    set_slider_index(cubeviz_layout, slice_index)
+    assert_viewer_indices(cubeviz_layout, slice_index)
