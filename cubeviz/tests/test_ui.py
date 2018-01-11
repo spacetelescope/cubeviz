@@ -1,6 +1,9 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import os
 
+import pytest
+from qtpy import QtCore
+
 from .helpers import toggle_viewer, select_viewer
 
 
@@ -65,3 +68,22 @@ def test_remember_active_viewer(qtbot, cubeviz_layout):
     toggle_viewer(qtbot, cubeviz_layout)
     assert cubeviz_layout._active_view == cubeviz_layout.specviz
     assert cubeviz_layout._active_cube == cubeviz_layout.single_view
+
+@pytest.mark.parametrize('viewer_index', [0, 1, 2, 3])
+def test_sync_checkboxes(qtbot, cubeviz_layout, viewer_index):
+    """This test simply makes sure that the checkbox changes the synced state
+    of the corresponding viewer. It does not test the effects of syncing on the
+    viewer indices.
+    """
+    # When testing the single viewer checkbox, first toggle to single viewer mode
+    if viewer_index == 0:
+        toggle_viewer(qtbot, cubeviz_layout)
+
+    checkbox = cubeviz_layout._synced_checkboxes[viewer_index]
+    viewer = cubeviz_layout.all_views[viewer_index]
+
+    qtbot.mouseClick(checkbox, QtCore.Qt.LeftButton)
+    assert viewer._widget.synced == False
+
+    qtbot.mouseClick(checkbox, QtCore.Qt.LeftButton)
+    assert viewer._widget.synced == True
