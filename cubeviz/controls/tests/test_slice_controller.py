@@ -3,14 +3,11 @@
 import pytest
 from qtpy import QtCore
 
+from ...tests.helpers import enter_slice_text
 
 
 def set_slider_index(layout, index):
     layout._slice_controller._slice_slider.setSliderPosition(index)
-def enter_slice_text(qtbot, layout, text):
-    widget = layout._slice_controller._slice_textbox
-    widget.setText(str(text))
-    qtbot.keyClick(widget, QtCore.Qt.Key_Enter)
 
 def assert_viewer_indices(layout, index):
     for viewer in layout.all_views:

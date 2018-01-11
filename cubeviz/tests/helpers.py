@@ -18,6 +18,11 @@ def toggle_viewer(qtbot, layout):
 def select_viewer(qtbot, viewer):
     qtbot.mouseClick(viewer._widget, QtCore.Qt.LeftButton)
 
+def enter_slice_text(qtbot, layout, text):
+    widget = layout._slice_controller._slice_textbox
+    widget.setText(str(text))
+    qtbot.keyClick(widget, QtCore.Qt.Key_Enter)
+
 def create_glue_app():
     filename = os.path.join(TEST_DATA_PATH, 'data_cube.fits.gz')
 
@@ -29,6 +34,8 @@ def create_glue_app():
     return app
 
 def reset_app_state(qtbot, layout):
+    # Restore the text and index to a known state
+    enter_slice_text(qtbot, layout, '1024')
     if layout._single_viewer_mode:
         toggle_viewer(qtbot, layout)
     if layout._active_view is not layout.left_view:
