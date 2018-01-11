@@ -23,6 +23,11 @@ def enter_slice_text(qtbot, layout, text):
     widget.setText(str(text))
     qtbot.keyClick(widget, QtCore.Qt.Key_Enter)
 
+def enter_wavelength_text(qtbot, layout, text):
+    widget = layout._slice_controller._wavelength_textbox
+    widget.setText(str(text))
+    qtbot.keyClick(widget, QtCore.Qt.Key_Enter)
+
 def create_glue_app():
     filename = os.path.join(TEST_DATA_PATH, 'data_cube.fits.gz')
 
