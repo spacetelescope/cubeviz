@@ -28,7 +28,8 @@ env:
         # overridden underneath. They are defined here in order to save having
         # to repeat them for all configurations.
         - PYTHON_VERSION=3.6
-        - NUMPY_VERSION=stable
+        # Use older version of numpy until glue issues are worked out
+        - NUMPY_VERSION=1.13
         - ASTROPY_VERSION=stable
         # Pull specviz from github until it is released on PyPi and/or conda
         - SPECVIZ_GIT='git+https://github.com/spacetelescope/specviz#egg=specviz'
