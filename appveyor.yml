@@ -12,7 +12,8 @@ environment:
                         # to the matrix section.
 
       SPECVIZ_GIT: "git+https://github.com/spacetelescope/specviz#egg=specviz"
-      CONDA_DEPENDENCIES: "pyqt matplotlib scipy glue-core>=0.12 glueviz"
+      CONDA_DEPENDENCIES: "pyqt matplotlib scipy glue-core>=0.12 glueviz asdf"
+      PIP_DEPENDENCIES: "pytest-qt"
 
       # Conda packages for affiliated packages are hosted in channel
       # "astropy" while builds for astropy LTS with recent numpy versions

@@ -38,18 +38,18 @@ env:
 
         # List other runtime dependencies for the package that are available as
         # conda packages here.
-        - CONDA_DEPENDENCIES='pyqt matplotlib scipy glue-core>=0.12 glueviz'
+        - CONDA_DEPENDENCIES='pyqt matplotlib scipy glue-core>=0.12 glueviz asdf'
 
         # List other runtime dependencies for the package that are available as
         # pip packages here.
-        - PIP_DEPENDENCIES="$SPECVIZ_GIT"
+        - PIP_DEPENDENCIES="pytest-qt $SPECVIZ_GIT"
 
         # Conda packages for affiliated packages are hosted in channel
         # "astropy" while builds for astropy LTS with recent numpy versions
         # are in astropy-ci-extras. If your package uses either of these,
         # add the channels to CONDA_CHANNELS along with any other channels
         # you want to use.
-        - CONDA_CHANNELS='astropy-ci-extras astropy glueviz/label/dev'
+        - CONDA_CHANNELS='astropy-ci-extras astropy'
 
         # If there are matplotlib or other GUI tests, uncomment the following
         # line to use the X virtual framebuffer.
