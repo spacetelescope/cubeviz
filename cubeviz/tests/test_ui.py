@@ -2,7 +2,9 @@
 import os
 
 import pytest
+import numpy as np
 
+from ..layout import DEFAULT_DATA_LABELS
 from .helpers import toggle_viewer, select_viewer, left_click
 
 
@@ -86,3 +88,30 @@ def test_sync_checkboxes(qtbot, cubeviz_layout, viewer_index):
 
     left_click(qtbot, checkbox)
     assert viewer._widget.synced == True
+
+@pytest.mark.parametrize('viewer_index', [0, 1, 2, 3])
+def test_viewer_dropdowns(qtbot, cubeviz_layout, viewer_index):
+    if viewer_index == 0:
+        toggle_viewer(qtbot, cubeviz_layout)
+        combo = getattr(cubeviz_layout.ui, 'single_viewer_combo')
+        current_index = 0
+    else:
+        combo = getattr(cubeviz_layout.ui, 'viewer{0}_combo'.format(viewer_index))
+        current_index = viewer_index - 1
+
+    slice_index = cubeviz_layout.synced_index
+    widget = cubeviz_layout.all_views[viewer_index]._widget
+
+    # Make sure there are only three data components currently
+    assert combo.count() == 3
+    # Make sure starting index is set appropriately
+    assert combo.currentIndex() == current_index
+
+    for i in range(3):
+        current_index = (current_index + 1) % 3
+        combo.setCurrentIndex(current_index)
+        current_label = DEFAULT_DATA_LABELS[current_index]
+        assert combo.currentText() == current_label
+        np.testing.assert_allclose(
+            widget.layers[0].state.get_sliced_data(),
+            cubeviz_layout._data[current_label][slice_index])
