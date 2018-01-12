@@ -104,6 +104,8 @@ class DataConfiguration:
         """
         self._fits = fits.open(filename)
 
+        logger.debug('Checking {} to see if matches {}'.format(filename, self._config_file))
+
 
         # Now call the internal processing.
         matches = self._process('all', self._configuration['all'])

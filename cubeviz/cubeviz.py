@@ -32,13 +32,12 @@ def main(argv=sys.argv):
 
     # # Parse the arguments, ignore any unkonwn
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data-configs", help="Directory or file for data configuration YAML files", nargs=1, type=str, action='append')
+    parser.add_argument("--data-configs", help="Directory or file for data configuration YAML files", action='append')
     parser.add_argument("--data-configs-show", help="Show the matching info", action="store_true", default=False)
     parser.add_argument('data_files', nargs=argparse.REMAINDER)
     args = parser.parse_known_args(argv[1:])
 
     # Store the args for each ' --data-configs' found on the commandline
-    print('set configuration')
     global global_data_configuration
     global_data_configuration['data_configs'] = args[0].data_configs if args[0].data_configs else []
     global_data_configuration['data_configs_show'] = args[0].data_configs_show
