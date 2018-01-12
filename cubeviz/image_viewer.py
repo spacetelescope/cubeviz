@@ -6,63 +6,21 @@ from astropy.coordinates import SkyCoord
 
 from qtpy.QtWidgets import QLabel
 
-from glue.config import viewer_tool
 from glue.core.message import SettingsChangeMessage
-from glue.viewers.common.qt.tool import CheckableTool
 from glue.viewers.image.qt import ImageViewer
 
 
 __all__ = ['CubevizImageViewer']
 
 
-@viewer_tool
-class SyncButtonBox(CheckableTool):
-    """
-    SyncButtonBox derived from the Glue CheckableTool that will be placed on the
-    Matplotlib toolbar in order to allow syncing between the different views in
-    cubeviz.
-
-    We need to store the "synced" state of this button so that we can check it
-    in other parts of the code.
-    """
-
-    icon = 'glue_link'
-    tool_id = 'sync_checkbox'
-    action_text = 'Sync this viewer with other viewers'
-    tool_tip = 'Sync this viewer with other viewers'
-    status_tip = 'This viewer is synced'
-    shortcut = 'D'
-
-    def __init__(self, viewer):
-        super(SyncButtonBox, self).__init__(viewer)
-        self._viewer = viewer
-        self._synced = True
-        self._hub = None
-
-    def activate(self):
-        self._synced = True
-        if self._hub is not None:
-            msg = SettingsChangeMessage(self, [self._viewer])
-            self._hub.broadcast(msg)
-
-    def deactivate(self):
-        self._synced = False
-
-    def close(self):
-        pass
-
-
 class CubevizImageViewer(ImageViewer):
 
-    # Add the sync button to the front of the list so it is more prominent
-    # on smaller screens.
-    tools = ['sync_checkbox', 'select:rectangle', 'select:xrange',
-             'select:yrange', 'select:circle',
-             'select:polygon', 'image:contrast_bias']
+    tools = ['select:rectangle', 'select:xrange', 'select:yrange',
+             'select:circle', 'select:polygon', 'image:contrast_bias']
 
     def __init__(self, *args, **kwargs):
         super(CubevizImageViewer, self).__init__(*args, **kwargs)
-        self._sync_button = None
+        self._synced_checkbox = None
         self._slice_index = None
 
         self.is_mouse_over = False  # If mouse cursor is over viewer
@@ -79,14 +37,15 @@ class CubevizImageViewer(ImageViewer):
         self.figure.canvas.mpl_connect('motion_notify_event', self.mouse_move)
         self.figure.canvas.mpl_connect('axes_leave_event', self.mouse_exited)
 
-    def enable_toolbar(self):
-        self._sync_button = self.toolbar.tools[SyncButtonBox.tool_id]
-        self._sync_button._hub = self.parent().tab_widget.session.hub
-        self.set_sync_button()
+    def _synced_checkbox_callback(self, event):
+        if self._synced_checkbox.isChecked():
+            msg = SettingsChangeMessage(self, [self])
+            self.parent().tab_widget.session.hub.broadcast(msg)
+            self.update_slice_index(self.parent().tab_widget.synced_index)
 
-    def set_sync_button(self):
-        button = self.toolbar.actions[SyncButtonBox.tool_id]
-        button.setChecked(True)
+    def assign_synced_checkbox(self, checkbox):
+        self._synced_checkbox = checkbox
+        self._synced_checkbox.stateChanged.connect(self._synced_checkbox_callback)
 
     def update_slice_index(self, index):
         self._slice_index = index
@@ -95,7 +54,11 @@ class CubevizImageViewer(ImageViewer):
 
     @property
     def synced(self):
-        return self._sync_button._synced
+        return self._synced_checkbox.isChecked()
+
+    @synced.setter
+    def synced(self, value):
+        self._synced_checkbox.setChecked(value)
 
     @property
     def slice_index(self):

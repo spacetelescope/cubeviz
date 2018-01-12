@@ -9,7 +9,6 @@ from glue.core.coordinates import coordinates_from_header, WCSCoordinates
 from glue.core.exceptions import IncompatibleAttribute
 
 from spectral_cube import SpectralCube, BooleanArrayMask
-from .qt_spectral_cube import QSpectralCube
 
 from qtpy.QtCore import Qt, Signal, QThread
 from qtpy.QtWidgets import (
@@ -19,9 +18,16 @@ from qtpy.QtWidgets import (
 )
 
 
+class AbortException(Exception):
+    """
+    Custom exception to indicate a calculation abort.
+    """
+    pass
+
+
 class WorkerThread(QThread):
     """
-    Custom QThread for SmoothCube and QSpectralCube.
+    Custom QThread for SmoothCube
     """
 
     success_signal = Signal()  # Smoothing is done
@@ -40,7 +46,8 @@ class WorkerThread(QThread):
             if success_flag:
                 self.success_signal.emit()
         except Exception as e:
-            self.error_signal.emit(e)
+            if not isinstance(e, AbortException):
+                self.error_signal.emit(e)
 
 
 class SmoothCube(object):
@@ -49,8 +56,7 @@ class SmoothCube(object):
     operate in CubeViz and glue.
     It saves a registry of available kernels and executes
     smoothing operations. It has the ability to use QThreads
-    when working in gui mode. If multi-threading is used, a modified
-    version of SpectralCube, QSpectralCube is used for smoothing operations.
+    when working in gui mode.
     """
 
     def __init__(self, data=None, smoothing_axis=None, kernel_type=None, kernel_size=None,
@@ -71,7 +77,7 @@ class SmoothCube(object):
         self.is_active = False  # Is thread active
         self.abort_window = None  # Abort window gui
         self.thread = None # QThread
-        self.thread_cube = None  # QSpectralCube
+        self.thread_cube = None  # Input SpectralCube
         self.thread_result = None  # Temporary storage for thread output
 
     @staticmethod
@@ -194,11 +200,8 @@ class SmoothCube(object):
         mask = mask.astype(bool)
         return mask
 
-    def data_to_cube(self, to_qcube=False):
-        """
-        smooth_cube: Glue Data -> SpectralCube
-        multi_threading_smooth: Glue Data -> QSpectralCube
-        """
+    def data_to_cube(self):
+        """Glue Data -> SpectralCube"""
         if self.component_id is None:
             raise Exception("component_id was not provided.")
         wcs = self.get_glue_wcs()
@@ -206,10 +209,8 @@ class SmoothCube(object):
         mask = BooleanArrayMask(
             mask=self.get_glue_mask(),
             wcs=wcs)
-        if to_qcube:
-            return QSpectralCube(data=data_array, wcs=wcs, mask=mask)
-        else:
-            return SpectralCube(data=data_array, wcs=wcs, mask=mask)
+
+        return SpectralCube(data=data_array, wcs=wcs, mask=mask)
 
     def cube_to_data(self, cube,
                      output_label=None,
@@ -286,13 +287,13 @@ class SmoothCube(object):
         cube = self.data_to_cube()
 
         if "median" == self.kernel_type:
-            if self.smoothing_axis == "spatial":
+            if "spatial" == self.smoothing_axis:
                 new_cube = cube.spatial_smooth_median(self.kernel_size)
             else:
                 new_cube = cube.spectral_smooth_median(self.kernel_size)
         else:
             kernel = self.get_kernel()
-            if self.smoothing_axis == "spatial":
+            if "spatial" == self.smoothing_axis:
                 new_cube = cube.spatial_smooth(kernel)
             else:
                 new_cube = cube.spectral_smooth(kernel)
@@ -312,14 +313,15 @@ class SmoothCube(object):
         """
         Prepares data and starts worker thread.
         Overall steps accomplished:
-            1) Convert data to QSpectralCube and start thread
+            1) Convert data to SpectralCube and start thread
         """
-        cube = self.data_to_cube(to_qcube=True)
+        cube = self.data_to_cube()
 
-        # Handshake b/w QSpectralCube and AbortWindow
-        self.abort_window.init_pb(0, cube.shape[0])
-        cube.update_function = self.abort_window.update_pb
-        self.abort_window.abort_function = cube.abort_function
+        # Handshake b/w SpectralCube and AbortWindow
+        if "spectral" == self.smoothing_axis:
+            self.abort_window.init_pb(0, cube.shape[1]*cube.shape[2])
+        else:
+            self.abort_window.init_pb(0, cube.shape[0])
 
         self.thread_cube = cube
         self.thread = WorkerThread(self, self.parent)
@@ -332,32 +334,29 @@ class SmoothCube(object):
             2) Obtain Kernel using saved parameters (if applicable)
             3) Smooth cube
         :return: bool: True if output is added to self.thread_result
-        :raises: Exception: if output type is not an instance of SpectralCube
+        :raises: Exception: if output is not an instance of SpectralCube
         """
         success = True
-        safe_fail = False
 
         cube = self.thread_cube
+        update_function = self.abort_window.update_pb
         if "median" == self.kernel_type:
-            if self.smoothing_axis == "spatial":
-                new_cube = cube.spatial_smooth_median(self.kernel_size)
+            if "spatial" == self.smoothing_axis:
+                new_cube = cube.spatial_smooth_median(self.kernel_size, update_function=update_function)
             else:
-                new_cube = cube.spectral_smooth_median(self.kernel_size)
+                new_cube = cube.spectral_smooth_median(self.kernel_size, update_function=update_function)
         else:
             kernel = self.get_kernel()
-            if self.smoothing_axis == "spatial":
-                new_cube = cube.spatial_smooth(kernel)
+            if "spatial" == self.smoothing_axis:
+                new_cube = cube.spatial_smooth(kernel, update_function=update_function)
             else:
-                new_cube = cube.spectral_smooth(kernel)
-
-        if cube.abort:
-            return safe_fail
+                new_cube = cube.spectral_smooth(kernel, update_function=update_function)
 
         if isinstance(new_cube, SpectralCube):
             self.thread_result = new_cube
             return success
         else:
-            raise Exception("Unexpected return type from QSpectralCube.")
+            raise Exception("Unexpected return type from SpectralCube.")
 
     def thread_callback(self):
         """
@@ -406,7 +405,7 @@ class AbortWindow(QDialog):
         self.pb = QProgressBar(self)
         self.pb_counter = 0
 
-        self.abort_function = None
+        self.abort_flag = False
 
         # vbl is short for Vertical Box Layout
         vbl = QVBoxLayout()
@@ -429,15 +428,27 @@ class AbortWindow(QDialog):
         self.pb_counter = start
 
     def update_pb(self):
-        """Update progress bar"""
+        """
+        This function is called in the worker thread to
+        update the progress bar and checks if the
+        local class variable abort_flag is active.
+
+        If the abort button is clicked, the main thread
+        will set abort_flag to True. The next time the
+        worker thread calls this function, a custom
+        exception is raised terminating the calculation.
+        The exception is handled by the WorkerThread class.
+        :raises: AbortException: terminating smoothing calculation
+        """
+        if self.abort_flag:
+            raise AbortException("Abort Calculation")
         self.pb_counter += 1
         self.pb.setValue(self.pb_counter)
         QApplication.processEvents()
 
     def abort(self):
         """Abort calculation"""
-        if self.abort_function is not None:
-            self.abort_function()
+        self.abort_flag = True
         self.parent.clean_up()
 
     def smoothing_done(self, component_id=None):
