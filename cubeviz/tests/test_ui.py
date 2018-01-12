@@ -89,8 +89,29 @@ def test_sync_checkboxes(qtbot, cubeviz_layout, viewer_index):
     left_click(qtbot, checkbox)
     assert viewer._widget.synced == True
 
+def check_data_component(layout, combo, index, widget):
+    combo.setCurrentIndex(index)
+    current_label = DEFAULT_DATA_LABELS[index]
+    assert combo.currentText() == current_label
+    np.testing.assert_allclose(
+        widget.layers[0].state.get_sliced_data(),
+        layout._data[current_label][layout.synced_index])
+
+def setup_combo_and_index(qtbot, layout, index):
+    if index == 0:
+        toggle_viewer(qtbot, layout)
+        combo = getattr(layout.ui, 'single_viewer_combo')
+        current_index = 0
+    else:
+        combo = getattr(layout.ui, 'viewer{0}_combo'.format(index))
+        current_index = index - 1
+
+    return combo, current_index
+
 @pytest.mark.parametrize('viewer_index', [0, 1, 2, 3])
 def test_viewer_dropdowns(qtbot, cubeviz_layout, viewer_index):
+    combo, current_index = setup_combo_and_index(
+                                qtbot, cubeviz_layout, viewer_index)
     if viewer_index == 0:
         toggle_viewer(qtbot, cubeviz_layout)
         combo = getattr(cubeviz_layout.ui, 'single_viewer_combo')
@@ -99,7 +120,6 @@ def test_viewer_dropdowns(qtbot, cubeviz_layout, viewer_index):
         combo = getattr(cubeviz_layout.ui, 'viewer{0}_combo'.format(viewer_index))
         current_index = viewer_index - 1
 
-    slice_index = cubeviz_layout.synced_index
     widget = cubeviz_layout.all_views[viewer_index]._widget
 
     # Make sure there are only three data components currently
@@ -109,9 +129,34 @@ def test_viewer_dropdowns(qtbot, cubeviz_layout, viewer_index):
 
     for i in range(3):
         current_index = (current_index + 1) % 3
-        combo.setCurrentIndex(current_index)
-        current_label = DEFAULT_DATA_LABELS[current_index]
-        assert combo.currentText() == current_label
+        check_data_component(cubeviz_layout, combo, current_index, widget)
+
+def test_add_data_component(qtbot, cubeviz_layout):
+    new_label = 'QuirkyLabel'
+    new_data = np.random.random(cubeviz_layout._data.shape)
+    cubeviz_layout._data.add_component(new_data, new_label)
+
+    for viewer_index in range(4):
+        combo, current_index = setup_combo_and_index(
+                                    qtbot, cubeviz_layout, viewer_index)
+        widget = cubeviz_layout.all_views[viewer_index]._widget
+
+        # Make sure the new index is there
+        assert combo.count() == 4
+        # Make sure the index hasn't changed (this might behave differently in the future)
+        assert combo.currentIndex() == current_index
+
+        # Make sure none of the original components have changed
+        for i in range(3):
+            check_data_component(cubeviz_layout, combo, i, widget)
+
+        # Make sure the new data is displayed when selected
+        combo.setCurrentIndex(3)
+        assert combo.currentText() == new_label
         np.testing.assert_allclose(
             widget.layers[0].state.get_sliced_data(),
-            cubeviz_layout._data[current_label][slice_index])
+            cubeviz_layout._data[new_label][cubeviz_layout.synced_index])
+
+        # Toggle back to split viewer mode if necessary
+        if viewer_index == 0:
+            toggle_viewer(qtbot, cubeviz_layout)
