@@ -1,6 +1,13 @@
+#
+#  This is the MANGA file base
+#
 name: 'manga'
 type: 'MANGA'
+
+# Highest priority data configuration file, that matches, is selected.
 priority: 1200
+
+# The two fields must match
 match:
     all:
         equal:
@@ -13,6 +20,8 @@ match:
                 INSTRUME
             value:
                 MaNGA
+
+# Data extension names for FLUX, ERROR and DQ
 data:
     FLUX:
         FLUX

@@ -1,6 +1,9 @@
 name: 'kmos-other'
 type: 'KMOS'
+
+# Highest priority data configuration file, that matches, is selected.
 priority: 1200
+
 match:
     all:
         equal:
@@ -13,6 +16,7 @@ match:
                 INSTRUME
             value:
                 KMOS
+# Data extensions for FLUX, ERROR and DQ. There is no DQ and will be created as empty
 data:
     FLUX:
         1

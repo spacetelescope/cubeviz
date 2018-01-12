@@ -1,6 +1,11 @@
+# JWST FITS cube
 name: 'jwst-fits-cube'
 type: 'JWST-FITS-CUBE'
-priority: 1200s
+
+# Highest priority data configuration file, that matches, is selected.
+priority: 1200
+
+# All must match and they must have SCI, ERR, DQ extensions
 match:
     all:
         equal:
@@ -20,6 +25,7 @@ match:
                 ERR
             extension_name:
                 DQ
+# Data extension names for FLUX, ERROR and DQ
 data:
     FLUX:
         SCI
