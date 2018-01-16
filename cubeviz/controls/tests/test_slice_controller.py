@@ -164,7 +164,7 @@ def update_synced_index_and_verify(qtbot, layout, sync_params, new_synced_index,
     assert_viewer_indices(other_viewers, new_synced_index)
     assert_slice_text(layout, str(new_synced_index))
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='function')
 def sync_params(cubeviz_layout, request):
     """This fixture expects indirect parametrization providing the viewer index"""
     viewer_index = request.param
