@@ -13,7 +13,7 @@ environment:
 
       NUMPY_VERSION: "1.13"
       SPECVIZ_GIT: "git+https://github.com/spacetelescope/specviz#egg=specviz"
-      CONDA_DEPENDENCIES: "pyqt matplotlib scipy glue-core>=0.12 glueviz asdf"
+      CONDA_DEPENDENCIES: "pyqt matplotlib scipy glue-core>=0.12 asdf"
       PIP_DEPENDENCIES: "pytest-qt"
 
       # Conda packages for affiliated packages are hosted in channel
