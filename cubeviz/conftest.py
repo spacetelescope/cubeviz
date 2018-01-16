@@ -35,8 +35,8 @@ try:
     PYTEST_HEADER_MODULES['Astropy'] = 'astropy'
     PYTEST_HEADER_MODULES['Glue'] = 'glue'
     PYTEST_HEADER_MODULES['Asdf'] = 'asdf'
-    #PYTEST_HEADER_MODULES['scikit-image'] = 'skimage'
-    #del PYTEST_HEADER_MODULES['h5py']
+    PYTEST_HEADER_MODULES['QtPy'] = 'qtpy'
+    PYTEST_HEADER_MODULES['SpecViz'] = 'specviz'
 except (NameError, KeyError):  # NameError is needed to support Astropy < 1.0
     pass
 
