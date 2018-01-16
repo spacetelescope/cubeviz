@@ -13,6 +13,7 @@ from glue.external.echo import keep_in_sync, SelectionCallbackProperty
 from glue.external.echo.qt import connect_combo_selection
 from glue.core.data_combo_helper import ComponentIDComboHelper
 from glue.core.message import SettingsChangeMessage
+from glue.utils.matplotlib import freeze_margins
 
 from specviz.third_party.glue.data_viewer import SpecVizViewer
 
@@ -216,18 +217,25 @@ class CubeVizLayout(QtWidgets.QWidget):
         if isinstance(message, SettingsChangeMessage):
             self._slice_controller.update_index(self.synced_index)
 
+    def _set_pos_and_margin(self, axes, pos, marg):
+        axes.set_position(pos)
+        freeze_margins(axes, marg)
+
     def _hide_viewer_axes(self):
         for viewer in self.cube_views:
             axes = viewer._widget.axes
-            self._viewer_axes_positions.append(axes.get_position())
-            axes.set_position([0, 0, 1, 1])
+            # Save current axes position and margins so they can be restored
+            pos = axes.get_position(), axes.resizer.margins
+            self._viewer_axes_positions.append(pos)
+            self._set_pos_and_margin(axes, [0, 0, 1, 1], [0, 0, 0, 0])
             viewer._widget.figure.canvas.draw()
 
     def _toggle_viewer_axes(self):
         # If axes are currently hidden, restore the original positions
         if self._viewer_axes_positions:
             for viewer, pos in zip(self.cube_views, self._viewer_axes_positions):
-                viewer._widget.axes.set_position(pos)
+                axes = viewer._widget.axes
+                self._set_pos_and_margin(axes, *pos)
                 viewer._widget.figure.canvas.draw()
             self._viewer_axes_positions = []
         # Record current positions if axes are currently hidden and hide them
@@ -238,10 +246,6 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._toolbars_visible = not self._toolbars_visible
         for viewer in self.cube_views:
             viewer._widget.toolbar.setVisible(self._toolbars_visible)
-
-        # Axes need to be re-hidden if we are making the toolbar visible again
-        if self._toolbars_visible and self._viewer_axes_positions:
-            self._hide_viewer_axes()
 
     def _open_dialog(self, name, widget):
 
