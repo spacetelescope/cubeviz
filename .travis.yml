@@ -89,6 +89,10 @@ matrix:
           env: ASTROPY_VERSION=development
                EVENT_TYPE='pull_request push cron'
 
+        # Test against latest stable version of numpy
+        - os: linux
+          env: NUMPY_VERSION=stable
+
         # Do a PEP8 test with pycodestyle
         - os: linux
           env: MAIN_CMD='pycodestyle cubeviz --count' SETUP_CMD=''
@@ -98,6 +102,9 @@ matrix:
         # (allow to fail unless your code completely compliant)
         - os: linux
           env: MAIN_CMD='pycodestyle cubeviz --count' SETUP_CMD=''
+        # For now allow failures against numpy 1.14
+        - os: linux
+          env: NUMPY_VERSION=stable
 
 install:
 
