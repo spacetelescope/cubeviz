@@ -38,7 +38,7 @@ class SliceController:
 
     def enable(self, wcs, wavelengths):
         """
-        Setup the slice slider (min/max, units on description and initial position). 
+        Setup the slice slider (min/max, units on description and initial position).
 
         :return:
         """
