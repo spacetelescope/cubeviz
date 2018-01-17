@@ -1,20 +1,18 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from .jwst import read_jwst_data_cube
-from .kmos import read_kmos_data_cube
-from .manga import read_manga_data_cube
-from glue.core import Data
-from glue.core.coordinates import coordinates_from_header
-from ..listener import CUBEVIZ_LAYOUT
-from ..layout import FLUX, ERROR, MASK
-
 from os.path import basename, splitext
 import yaml
 import os
 import glob
 import logging
+
+from glue.core import Data
+from glue.core.coordinates import coordinates_from_header
+from glue.config import data_factory
 from astropy.io import fits
 import numpy as np
-from glue.config import data_factory
+
+from ..listener import CUBEVIZ_LAYOUT
+from ..layout import FLUX, ERROR, MASK
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('cubeviz_data_configuration')
@@ -62,6 +60,8 @@ class DataConfiguration:
         """
         hdulist = fits.open(data_filename)
 
+        # Try the flux index as a number, if that fails then
+        # we will use a string index into the data file.
         try:
             flux_index = int(self._data['FLUX'])
         except:
@@ -70,6 +70,8 @@ class DataConfiguration:
         flux = hdulist[flux_index]
         flux_data = flux.data
 
+        # Try the error index as a number, if that fails then
+        # we will use a string index into the data file.
         try:
             error_index = int(self._data['ERROR'])
         except:
@@ -86,6 +88,8 @@ class DataConfiguration:
         data = Data(label=label)
 
         data.coords = coordinates_from_header(flux.header)
+
+        # this attribute is used to indicate to the cubeviz layout that this is a cubeviz-specific data component.
         data.meta[CUBEVIZ_LAYOUT] = self._name
 
         data.add_component(component=flux_data, label=FLUX)
@@ -112,9 +116,8 @@ class DataConfiguration:
 
         if matches:
             logger.debug('{} matches {}'.format(self._config_file, filename))
-            return True
-        else:
-            return False
+
+        return matches
 
     def _process(self, key, conditional):
         """
@@ -283,6 +286,10 @@ class DataFactoryConfiguration:
             except:
                 priority = 0
 
+            # The code below instantiates a data configuration object based on the config file and is
+            # therefore dependent on the type of data file.  The data configuration object defines two functions
+            # 'matches' and 'load_data' that are used.  We needed a way to call Glue's data_factory and be able
+            # to pass in functions that have state information.
             dc = DataConfiguration(config_file)
             wrapper = data_factory(name, dc.matches, priority=priority)
             wrapper(dc.load_data)

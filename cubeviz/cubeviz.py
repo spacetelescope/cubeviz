@@ -1,9 +1,10 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import sys
-import os
 import argparse
 
+from glue.app.qt import GlueApplication
 from glue.main import restore_session, get_splash, load_data_files, load_plugins
+from qtpy.QtCore import QTimer
 
 # Global variable to store the data configuration directories/files
 # read in from the argparse from the command line.
@@ -55,30 +56,16 @@ def main(argv=sys.argv):
     # plugins.
     load_plugins(splash=splash)
 
-    from glue.app.qt import GlueApplication
-
     datafiles = args[0].data_files
 
     hub = None
 
     # Show the splash screen for 1 second
-    from qtpy.QtCore import QTimer
     timer = QTimer()
     timer.setInterval(1000)
     timer.setSingleShot(True)
     timer.timeout.connect(splash.close)
     timer.start()
-
-    # Process glue file if passed in (was an argument to start_glue()
-    gluefile = None
-    if gluefile is not None:
-        app = restore_session(gluefile)
-        return app.start()
-
-    # Process config file if passed in (was an argument to start_glue()
-    config = None
-    if config is not None:
-        glue.env = glue.config.load_configuration(search_path=[config])
 
     data_collection = glue.core.DataCollection()
     hub = data_collection.hub
@@ -95,4 +82,4 @@ def main(argv=sys.argv):
         datasets = load_data_files(datafiles)
         ga.add_datasets(data_collection, datasets, auto_merge=False)
 
-    return ga.start(maximized=True)
+    sys.exit(ga.start(maximized=True))
