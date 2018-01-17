@@ -168,6 +168,9 @@ def update_synced_index_and_verify(qtbot, layout, sync_params, new_synced_index,
 def sync_params(cubeviz_layout, request):
     """This fixture expects indirect parametrization providing the viewer index"""
     viewer_index = request.param
+    # See comment in ``test_unsync_viewer`` below about this workaround
+    if viewer_index == 0:
+        return None
 
     params = dict(
         checkbox=cubeviz_layout._synced_checkboxes[viewer_index],
@@ -179,9 +182,20 @@ def sync_params(cubeviz_layout, request):
 
     return params
 
-# The single cube viewer will be tested by a separate test case
-@pytest.mark.parametrize('sync_params', [1, 2, 3], indirect=True)
+# The 0 index is used to enable a workaround for running the tests on Travis
+# CI. The single cube viewer will be tested by a separate test case.
+@pytest.mark.parametrize('sync_params', [0, 1, 2, 3], indirect=True)
 def test_unsync_viewer(qtbot, cubeviz_layout, sync_params):
+    # This is a workaround for an issue when running tests on Linux VMs in
+    # Travis CI. It does not appear to be an actual bug with CubeViz, but it
+    # might be due to a race condition between the application and the test
+    # framework. The solution is to make sure to toggle the viewer mode prior
+    # to running the rest of these tests. It will be toggled back to single
+    # mode by the reset_state fixture defined in the top-level conftest.py.
+    if sync_params is None:
+        toggle_viewer(qtbot, cubeviz_layout)
+        pytest.skip()
+
     # Get the current index of all viewers
     synced_index = cubeviz_layout.synced_index
     # Sanity check to make sure all viewers are actually synced
