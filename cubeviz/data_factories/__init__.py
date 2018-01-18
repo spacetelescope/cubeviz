@@ -110,12 +110,13 @@ class DataConfiguration:
 
         logger.debug('Checking {} to see if matches {}'.format(filename, self._config_file))
 
-
         # Now call the internal processing.
         matches = self._process('all', self._configuration['all'])
 
         if matches:
             logger.debug('{} matches {}'.format(self._config_file, filename))
+        else:
+            logger.debug('{} does not match {}'.format(self._config_file, filename))
 
         return matches
 
@@ -136,8 +137,8 @@ class DataConfiguration:
             return self._equal(conditional)
         elif 'startswith' == key:
             return self._startswith(conditional)
-        elif 'extension_name' == key:
-            return self._exists(conditional)
+        elif 'extension_names' == key:
+            return self._extension_names(conditional)
 
     #
     # Branch processing
@@ -150,6 +151,7 @@ class DataConfiguration:
         :param conditionals:
         :return:
         """
+        logger.debug('\tall: {}'.format(conditionals))
         for key, conditional in conditionals.items():
             ret = self._process(key, conditional)
             if not ret:
@@ -164,6 +166,7 @@ class DataConfiguration:
         :return:
         """
 
+        logger.debug('\tany: {}'.format(conditionals))
         for key, conditional in conditionals.items():
             # process conditional
             ret = self._process(key, conditional)
@@ -196,15 +199,20 @@ class DataConfiguration:
         logger.debug('\tstartswith: {} starswith {} ?'.format(self._fits[0].header.get(value['header_key'], False), value['value']))
         return self._fits[0].header.get(value['header_key'], '').startswith(value['value'])
 
-    def _extension_name(self, value):
+    def _extension_names(self, value):
         """
         This is to check if a header_key entry has the same value as what is passed in here.
 
         :param value:
         :return:
         """
-        logger.debug('\tcontains extension: {} in {} ?'.format(value['value'], [x.header['EXTNAME'] for x in self._fits]))
-        return value in self._fits
+        logger.debug('\tcontains extension: {} in {} ?'.format(value,
+                                                               [x.header['EXTNAME'] for x in self._fits if 'EXTNAME' in x.header]))
+
+        if isinstance(value, str):
+            return value in self._fits
+        else:
+            return all([v in self._fits for v in value])
 
 
 

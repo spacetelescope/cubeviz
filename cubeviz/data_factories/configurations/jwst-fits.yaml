@@ -19,12 +19,11 @@ match:
             value:
                 IFUCubeModel
         all:
-            extension_name:
-                SCI
-            extension_name:
-                ERR
-            extension_name:
-                DQ
+            # All the extensions must exist.
+            extension_names:
+                - SCI
+                - ERR
+                - DQ
 # Data extension names for FLUX, ERROR and DQ
 data:
     FLUX:
