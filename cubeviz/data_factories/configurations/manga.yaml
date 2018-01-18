@@ -1,0 +1,31 @@
+#
+#  This is the MANGA file base
+#
+name: 'manga'
+type: 'MANGA'
+
+# Highest priority data configuration file, that matches, is selected.
+priority: 1200
+
+# The two fields must match
+match:
+    all:
+        equal:
+            header_key:
+                TELESCOP
+            value:
+                SDSS 2.5-M
+        startswith:
+            header_key:
+                INSTRUME
+            value:
+                MaNGA
+
+# Data extension names for FLUX, ERROR and DQ
+data:
+    FLUX:
+        FLUX
+    ERROR:
+        IVAR
+    DQ:
+        MASK

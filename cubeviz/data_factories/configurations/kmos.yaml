@@ -1,0 +1,34 @@
+#
+#  KMOS IFU dataset
+#
+name: 'kmos'
+type: 'KMOS'
+
+# Highest priority data configuration file, that matches, is selected.
+priority: 1200
+
+match:
+    all:
+        equal:
+            header_key:
+                TELESCOP
+            value:
+                ESO-VLT-U1   
+        startswith:
+            header_key:
+                INSTRUME
+            value:
+                KMOS
+        startswith:
+            header_key:
+                HIERARCH ESO PRO TECH
+            value:
+                IFU
+# Data extensions for FLUX, ERROR and DQ. There is no DQ and will be created as empty
+data:
+    FLUX:
+        1
+    ERROR:
+        2
+    DQ:
+        None
