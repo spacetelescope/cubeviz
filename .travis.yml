@@ -28,7 +28,8 @@ env:
         # overridden underneath. They are defined here in order to save having
         # to repeat them for all configurations.
         - PYTHON_VERSION=3.6
-        - NUMPY_VERSION=stable
+        # Use older version of numpy until glue issues are worked out
+        - NUMPY_VERSION=1.13
         - ASTROPY_VERSION=stable
         # Pull specviz from github until it is released on PyPi and/or conda
         - SPECVIZ_GIT='git+https://github.com/spacetelescope/specviz#egg=specviz'
@@ -38,18 +39,18 @@ env:
 
         # List other runtime dependencies for the package that are available as
         # conda packages here.
-        - CONDA_DEPENDENCIES='pyqt matplotlib scipy glue-core>=0.12 glueviz'
+        - CONDA_DEPENDENCIES='pyqt matplotlib scipy glue-core>=0.12 asdf'
 
         # List other runtime dependencies for the package that are available as
         # pip packages here.
-        - PIP_DEPENDENCIES="$SPECVIZ_GIT"
+        - PIP_DEPENDENCIES="pytest-qt $SPECVIZ_GIT"
 
         # Conda packages for affiliated packages are hosted in channel
         # "astropy" while builds for astropy LTS with recent numpy versions
         # are in astropy-ci-extras. If your package uses either of these,
         # add the channels to CONDA_CHANNELS along with any other channels
         # you want to use.
-        - CONDA_CHANNELS='astropy-ci-extras astropy glueviz/label/dev'
+        - CONDA_CHANNELS='astropy-ci-extras astropy'
 
         # If there are matplotlib or other GUI tests, uncomment the following
         # line to use the X virtual framebuffer.
@@ -88,6 +89,10 @@ matrix:
           env: ASTROPY_VERSION=development
                EVENT_TYPE='pull_request push cron'
 
+        # Test against latest stable version of numpy
+        - os: linux
+          env: NUMPY_VERSION=stable
+
         # Do a PEP8 test with pycodestyle
         - os: linux
           env: MAIN_CMD='pycodestyle cubeviz --count' SETUP_CMD=''
@@ -97,6 +102,9 @@ matrix:
         # (allow to fail unless your code completely compliant)
         - os: linux
           env: MAIN_CMD='pycodestyle cubeviz --count' SETUP_CMD=''
+        # For now allow failures against numpy 1.14
+        - os: linux
+          env: NUMPY_VERSION=stable
 
 install:
 

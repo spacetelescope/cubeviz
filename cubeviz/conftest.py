@@ -1,8 +1,19 @@
-# this contains imports plugins that configure py.test for astropy tests.
-# by importing them here in conftest.py they are discoverable by py.test
-# no matter how it is invoked within the source tree.
+# This file is used to configure the behavior of pytest when using the Astropy
+# test infrastructure.
 
-from astropy.tests.pytest_plugins import *
+from astropy.version import version as astropy_version
+if astropy_version < '3.0':
+    # With older versions of Astropy, we actually need to import the pytest
+    # plugins themselves in order to make them discoverable by pytest.
+    from astropy.tests.pytest_plugins import *
+else:
+    # As of Astropy 3.0, the pytest plugins provided by Astropy are
+    # automatically made available when Astropy is installed. This means it's
+    # not necessary to import them here, but we still need to import global
+    # variables that are used for configuration.
+    from astropy.tests.plugins.display import PYTEST_HEADER_MODULES, TESTED_VERSIONS
+
+from astropy.tests.helper import enable_deprecations_as_exceptions
 
 ## Uncomment the following line to treat all DeprecationWarnings as
 ## exceptions. For Astropy v2.0 or later, there are 2 additional keywords,
@@ -20,27 +31,47 @@ from astropy.tests.pytest_plugins import *
 ## the list of packages for which version numbers are displayed when running
 ## the tests. Making it pass for KeyError is essential in some cases when
 ## the package uses other astropy affiliated packages.
-# try:
-#     PYTEST_HEADER_MODULES['Astropy'] = 'astropy'
-#     PYTEST_HEADER_MODULES['scikit-image'] = 'skimage'
-#     del PYTEST_HEADER_MODULES['h5py']
-# except (NameError, KeyError):  # NameError is needed to support Astropy < 1.0
-#     pass
+try:
+    PYTEST_HEADER_MODULES['Astropy'] = 'astropy'
+    PYTEST_HEADER_MODULES['Glue'] = 'glue'
+    PYTEST_HEADER_MODULES['Asdf'] = 'asdf'
+    PYTEST_HEADER_MODULES['QtPy'] = 'qtpy'
+    PYTEST_HEADER_MODULES['SpecViz'] = 'specviz'
+except (NameError, KeyError):  # NameError is needed to support Astropy < 1.0
+    pass
 
 ## Uncomment the following lines to display the version number of the
 ## package rather than the version number of Astropy in the top line when
 ## running the tests.
-# import os
-#
-## This is to figure out the affiliated package version, rather than
-## using Astropy's
-# try:
-#     from .version import version
-# except ImportError:
-#     version = 'dev'
-#
-# try:
-#     packagename = os.path.basename(os.path.dirname(__file__))
-#     TESTED_VERSIONS[packagename] = version
-# except NameError:   # Needed to support Astropy <= 1.0.0
-#     pass
+import os
+
+# This is to figure out the package version, rather than
+# using Astropy's
+try:
+    from .version import version
+except ImportError:
+    version = 'dev'
+
+try:
+    packagename = os.path.basename(os.path.dirname(__file__))
+    TESTED_VERSIONS[packagename] = version
+except NameError:   # Needed to support Astropy <= 1.0.0
+    pass
+
+
+import pytest
+from .tests.helpers import (toggle_viewer, select_viewer, create_glue_app,
+                            reset_app_state)
+
+@pytest.fixture(scope='session')
+def cubeviz_layout():
+    app = create_glue_app()
+    return app.tab(0)
+
+@pytest.fixture(autouse=True)
+def reset_state(qtbot, cubeviz_layout):
+    # This yields the test itself
+    yield
+
+    # Make sure to return the application to this state between tests
+    reset_app_state(qtbot, cubeviz_layout)
