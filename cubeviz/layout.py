@@ -311,7 +311,7 @@ class CubeVizLayout(QtWidgets.QWidget):
             button.setEnabled(True)
         self.ui.sync_button.setEnabled(True)
 
-    def _get_change_viewer_func(self, view_index):
+    def _get_change_viewer_func(self, combo, view_index):
         def change_viewer(dropdown_index):
             view = self.all_views[view_index].widget()
             label = self._component_labels[dropdown_index]
@@ -320,7 +320,9 @@ class CubeVizLayout(QtWidgets.QWidget):
             view.update_component_unit_label(label)
             view.update_axes_title(title=str(label))
             view.state.layers[0]._update_attribute()
-            view.state.layers[0].attribute = self._data.id[label]
+            component = combo.currentData()
+            view.state.reference_data = component.parent
+            view.state.layers[0].attribute = component
             if view.is_contour_active:
                 view.draw_contour()
 
@@ -332,7 +334,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         helper = ComponentIDComboHelper(self, selection_label)
         helper.set_multiple_data([data])
         combo.setEnabled(True)
-        combo.currentIndexChanged.connect(self._get_change_viewer_func(index))
+        combo.currentIndexChanged.connect(self._get_change_viewer_func(combo, index))
         self._viewer_combo_helpers.append(helper)
 
     def _enable_all_viewer_combos(self, data):

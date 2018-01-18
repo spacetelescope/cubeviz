@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+from glue.core import Data
 from qtpy.QtCore import Qt
 from qtpy import QtGui
 from qtpy.QtWidgets import (
@@ -23,6 +24,7 @@ class MomentMapsGUI(QDialog):
         self.data = data
         self.data_collection = data_collection
         self.parent = parent
+        self._moments_container = None
 
         self.currentAxes = None
         self.currentKernel = None
@@ -89,6 +91,17 @@ class MomentMapsGUI(QDialog):
         self.setMaximumWidth(700)
         self.show()
 
+    def add_to_moment_container(self, data, label):
+        if self._moments_container is None:
+            self._moments_container = Data(label='Moments')
+            first = True
+        self._moments_container.add_component(data, label)
+        if first:
+            self.data_collection.append(self._moments_container)
+            for helper in self.parent._viewer_combo_helpers:
+                helper.append_data(self._moments_container)
+            for viewer in self.parent.all_views:
+                viewer._widget.add_data(self._moments_container)
 
     def calculate_callback(self):
         """
@@ -111,6 +124,7 @@ class MomentMapsGUI(QDialog):
             cube_moment = cube.moment(order=order, axis=0)
 
             label = '{}-moment-{}'.format(data_name, order)
+            self.add_to_moment_container(cube_moment.value, label)
             self.parent.add_overlay(cube_moment.value, label)
 
         except Exception as e:

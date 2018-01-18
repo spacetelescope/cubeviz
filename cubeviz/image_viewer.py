@@ -681,6 +681,11 @@ class CubevizImageViewer(ImageViewer):
         if len(self.state.layers) > 0:
             # Get array arr that contains the image values
             # Default layer is layer at index 0.
+            for layer in self.state.layers:
+                if layer.layer is self.state.reference_data:
+                    arr = layer.get_sliced_data()
+            else:
+                raise Exception("Couldn't find layer corresponding to reference data")
             arr = self.state.layers[0].get_sliced_data()
             if 0 <= y < arr.shape[0] and 0 <= x < arr.shape[1]:
                 # if x and y are in bounds. Note: x and y are swapped in array.
