@@ -75,11 +75,6 @@
       </item>
       <item row="2" column="6" alignment="Qt::AlignLeft">
        <widget class="QGroupBox" name="groupBox">
-        <property name="font">
-         <font>
-          <pointsize>16</pointsize>
-         </font>
-        </property>
         <property name="title">
          <string/>
         </property>
@@ -119,7 +114,6 @@
           <widget class="QLabel" name="label_7">
            <property name="font">
             <font>
-             <pointsize>13</pointsize>
              <weight>75</weight>
              <bold>true</bold>
             </font>
@@ -136,7 +130,6 @@
           <widget class="QLabel" name="label_8">
            <property name="font">
             <font>
-             <pointsize>13</pointsize>
              <weight>75</weight>
              <bold>true</bold>
             </font>
@@ -150,11 +143,6 @@
           <widget class="QComboBox" name="overlay_image_combo">
            <property name="enabled">
             <bool>false</bool>
-           </property>
-           <property name="font">
-            <font>
-             <pointsize>13</pointsize>
-            </font>
            </property>
           </widget>
          </item>
@@ -190,7 +178,6 @@
           <widget class="QLabel" name="label">
            <property name="font">
             <font>
-             <pointsize>13</pointsize>
              <weight>75</weight>
              <bold>true</bold>
             </font>
@@ -213,7 +200,6 @@
        <widget class="QGroupBox" name="groupBox_2">
         <property name="font">
          <font>
-          <pointsize>10</pointsize>
           <weight>50</weight>
           <bold>false</bold>
          </font>
@@ -238,7 +224,6 @@
            </property>
            <property name="font">
             <font>
-             <pointsize>13</pointsize>
              <weight>75</weight>
              <bold>true</bold>
              <underline>false</underline>
@@ -262,7 +247,6 @@
            </property>
            <property name="font">
             <font>
-             <pointsize>13</pointsize>
              <weight>75</weight>
              <bold>true</bold>
              <underline>false</underline>
@@ -286,7 +270,6 @@
            </property>
            <property name="font">
             <font>
-             <pointsize>13</pointsize>
              <weight>75</weight>
              <bold>true</bold>
              <underline>false</underline>
@@ -328,11 +311,6 @@
              <height>22</height>
             </size>
            </property>
-           <property name="font">
-            <font>
-             <pointsize>13</pointsize>
-            </font>
-           </property>
            <property name="toolTip">
             <string>Enter a slice index to go directly to that slice</string>
            </property>
@@ -348,11 +326,6 @@
              <width>200</width>
              <height>22</height>
             </size>
-           </property>
-           <property name="font">
-            <font>
-             <pointsize>13</pointsize>
-            </font>
            </property>
            <property name="toolTip">
             <string>Enter a wavelength value to navigate to the slice corresponding to the nearest wavelength</string>
@@ -401,11 +374,6 @@
           <height>0</height>
          </size>
         </property>
-        <property name="font">
-         <font>
-          <pointsize>13</pointsize>
-         </font>
-        </property>
         <property name="toolTip">
          <string/>
         </property>
@@ -434,11 +402,6 @@
           <height>0</height>
          </size>
         </property>
-        <property name="font">
-         <font>
-          <pointsize>13</pointsize>
-         </font>
-        </property>
         <property name="text">
          <string>Data Processing</string>
         </property>
@@ -455,11 +418,6 @@
       </item>
       <item row="2" column="1">
        <widget class="QStackedWidget" name="viewer_control_frame">
-        <property name="font">
-         <font>
-          <pointsize>13</pointsize>
-         </font>
-        </property>
         <property name="frameShape">
          <enum>QFrame::NoFrame</enum>
         </property>
@@ -495,7 +453,6 @@
                 <widget class="QLabel" name="label_4">
                  <property name="font">
                   <font>
-                   <pointsize>13</pointsize>
                    <weight>75</weight>
                    <bold>true</bold>
                    <underline>false</underline>
@@ -529,11 +486,6 @@
                <property name="enabled">
                 <bool>false</bool>
                </property>
-               <property name="font">
-                <font>
-                 <pointsize>13</pointsize>
-                </font>
-               </property>
                <property name="toolTip">
                 <string>Select data to display in left hand viewer</string>
                </property>
@@ -544,11 +496,6 @@
                <property name="enabled">
                 <bool>false</bool>
                </property>
-               <property name="font">
-                <font>
-                 <pointsize>13</pointsize>
-                </font>
-               </property>
                <property name="toolTip">
                 <string>Select data to display in middle viewer</string>
                </property>
@@ -558,11 +505,6 @@
               <widget class="QComboBox" name="viewer3_combo">
                <property name="enabled">
                 <bool>false</bool>
-               </property>
-               <property name="font">
-                <font>
-                 <pointsize>13</pointsize>
-                </font>
                </property>
                <property name="toolTip">
                 <string>Select data to display in right hand viewer</string>
@@ -575,7 +517,6 @@
                 <widget class="QLabel" name="label_5">
                  <property name="font">
                   <font>
-                   <pointsize>13</pointsize>
                    <weight>75</weight>
                    <bold>true</bold>
                   </font>
@@ -609,7 +550,6 @@
                 <widget class="QLabel" name="label_6">
                  <property name="font">
                   <font>
-                   <pointsize>13</pointsize>
                    <weight>75</weight>
                    <bold>true</bold>
                   </font>
@@ -666,11 +606,6 @@
                  <width>150</width>
                  <height>16777215</height>
                 </size>
-               </property>
-               <property name="font">
-                <font>
-                 <pointsize>13</pointsize>
-                </font>
                </property>
               </widget>
              </item>
