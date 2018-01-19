@@ -36,6 +36,12 @@ def sync_all_viewers(qtbot, layout):
 def create_glue_app():
     filename = os.path.join(TEST_DATA_PATH, 'data_cube.fits.gz')
 
+    # We need to make sure that the data factories have been instantiated
+    # before creating the glue application below. Otherwise the test data file
+    # will not be recognized and the application will hang waiting for user input.
+    from ..data_factories import DataFactoryConfiguration
+    dfc = DataFactoryConfiguration()
+
     app = GlueApplication()
     app.run_startup_action('cubeviz')
     app.load_data(filename)
