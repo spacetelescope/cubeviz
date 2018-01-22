@@ -1,16 +1,41 @@
 # This file contains a sub-class of the glue image viewer with further
 # customizations.
 
+import numpy as np
+
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 
 from qtpy.QtWidgets import QLabel
 
 from glue.core.message import SettingsChangeMessage
+
 from glue.viewers.image.qt import ImageViewer
+from glue.viewers.image.layer_artist import ImageLayerArtist
+from glue.viewers.image.state import ImageLayerState
 
 
 __all__ = ['CubevizImageViewer']
+
+class CubevizImageLayerState(ImageLayerState):
+    """
+    Sub-class of ImageLayerState that includes the ability to include smoothing
+    on-the-fly.
+    """
+
+    preview_function = None
+
+    def get_sliced_data(self, view=None):
+        if self.preview_function is None:
+            return super(CubevizImageLayerState, self).get_sliced_data(view=view)
+        else:
+            data = super(CubevizImageLayerState, self).get_sliced_data()
+            return self.preview_function(data)
+
+
+class CubevizImageLayerArtist(ImageLayerArtist):
+
+    _layer_state_cls = CubevizImageLayerState
 
 
 class CubevizImageViewer(ImageViewer):
@@ -36,6 +61,33 @@ class CubevizImageViewer(ImageViewer):
         # Connect matplotlib events to event handlers
         self.figure.canvas.mpl_connect('motion_notify_event', self.mouse_move)
         self.figure.canvas.mpl_connect('axes_leave_event', self.mouse_exited)
+
+    def get_data_layer_artist(self, layer=None, layer_state=None):
+        if layer.ndim == 1:
+            cls = self._scatter_artist
+        else:
+            cls = CubevizImageLayerArtist
+        return self.get_layer_artist(cls, layer=layer, layer_state=layer_state)
+
+    def update_axes_title(self, title=""):
+        title = " ".join(title.split("_"))
+        self.axes.set_title(title, color="black")
+        self.axes.figure.canvas.draw()
+
+    def set_smoothing_preview(self, preview_function):
+        for layer in self.layers:
+            if isinstance(layer, CubevizImageLayerArtist):
+                layer.state.preview_function = preview_function
+        self.axes._composite_image.invalidate_cache()
+        self.axes.set_title("Smoothing Preview", color="r")
+        self.axes.figure.canvas.draw()
+
+    def end_smoothing_preview(self):
+        for layer in self.layers:
+            if isinstance(layer, CubevizImageLayerArtist):
+                layer.state.preview_function = None
+        self.axes._composite_image.invalidate_cache()
+        self.axes.figure.canvas.draw()
 
     def _synced_checkbox_callback(self, event):
         if self._synced_checkbox.isChecked():

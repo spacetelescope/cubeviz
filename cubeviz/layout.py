@@ -155,6 +155,8 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui.button_toggle_image_mode.setText('Single Image Viewer')
         self.ui.viewer_control_frame.setCurrentIndex(0)
 
+        self.is_smoothing_preview_active = False
+
     def _init_menu_buttons(self):
         """
         Add the two menu buttons to the tool bar. Currently two are defined:
@@ -211,7 +213,7 @@ class CubeVizLayout(QtWidgets.QWidget):
     def _open_dialog(self, name, widget):
 
         if name == 'Smoothing':
-            ex = smoothing.SelectSmoothing(self._data, parent=self)
+            ex = smoothing.SelectSmoothing(self._data, parent=self, allow_preview=True)
 
         if name == 'Arithmetic Operations':
             ex = arithmetic_gui.SelectArithmetic(self._data, self.session.data_collection, parent=self)
@@ -232,9 +234,10 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     def _get_change_viewer_func(self, view_index):
         def change_viewer(dropdown_index):
-            view = self.all_views[view_index]
+            view = self.all_views[view_index].widget()
             label = self._component_labels[dropdown_index]
-            view._widget.state.layers[0].attribute = self._data.id[label]
+            view.update_axes_title(title=str(label))
+            view.state.layers[0].attribute = self._data.id[label]
         return change_viewer
 
     def _enable_viewer_combo(self, data, index, combo_label, selection_label):
@@ -257,11 +260,15 @@ class CubeVizLayout(QtWidgets.QWidget):
         """
         self._enable_viewer_combo(
             data, 0, 'single_viewer_combo', 'single_viewer_attribute')
+        view = self.all_views[0].widget()
+        view.update_axes_title(str(getattr(self, 'single_viewer_attribute')))
 
         for i in range(1,4):
             combo_label = 'viewer{0}_combo'.format(i)
             selection_label = 'viewer{0}_attribute'.format(i)
             self._enable_viewer_combo(data, i, combo_label, selection_label)
+            view = self.all_views[i].widget()
+            view.update_axes_title(str(getattr(self, selection_label)))
 
 
     def add_overlay(self, data, label):
@@ -401,6 +408,33 @@ class CubeVizLayout(QtWidgets.QWidget):
             if view != self._active_cube:
                 view._widget.update_slice_index(index)
         self._slice_controller.update_index(index)
+
+    def start_smoothing_preview(self, preview_function, component_id):
+        # For single and first viewer:
+        for view_index in [0, 1]:
+            view = self.all_views[view_index].widget()
+            if view_index == 0:
+                combo_label = 'single_viewer_combo'
+            else:
+                combo_label = 'viewer{0}_combo'.format(view_index)
+            combo = getattr(self.ui, combo_label)
+            component_index = self._component_labels.index(component_id)
+            combo.setCurrentIndex(component_index)
+            view.set_smoothing_preview(preview_function)
+        self.is_smoothing_preview_active = True
+
+    def end_smoothing_preview(self):
+        for view_index in [0,1]:
+            view = self.all_views[view_index].widget()
+            view.end_smoothing_preview()
+            if view_index == 0:
+                combo_label = 'single_viewer_combo'
+            else:
+                combo_label = 'viewer{0}_combo'.format(view_index)
+            combo = getattr(self.ui, combo_label)
+            combo.setCurrentIndex(0)
+            combo.currentIndexChanged.emit(0)
+        self.is_smoothing_preview_active = False
 
     def showEvent(self, event):
         super(CubeVizLayout, self).showEvent(event)
