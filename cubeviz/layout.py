@@ -13,6 +13,7 @@ from glue.external.echo import keep_in_sync, SelectionCallbackProperty
 from glue.external.echo.qt import connect_combo_selection
 from glue.core.data_combo_helper import ComponentIDComboHelper
 from glue.core.message import SettingsChangeMessage
+from glue.utils.matplotlib import freeze_margins
 
 from specviz.third_party.glue.data_viewer import SpecVizViewer
 
@@ -129,6 +130,12 @@ class CubeVizLayout(QtWidgets.QWidget):
         # populated into the combo boxes.
         self._viewer_combo_helpers = []
 
+        # This tracks the current positions of cube viewer axes when they are hidden
+        self._viewer_axes_positions = []
+
+        # Indicates whether cube viewer toolbars are currently visible or not
+        self._toolbars_visible = True
+
         self._slice_controller = SliceController(self)
         self._overlay_controller = OverlayController(self)
 
@@ -148,6 +155,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._last_click = None
         self._active_view = None
         self._active_cube = None
+        self._last_active_view = None
         self._active_split_cube = None
 
         # Set the default to parallel image viewer
@@ -175,6 +183,8 @@ class CubeVizLayout(QtWidgets.QWidget):
             ('RA-DEC', lambda: None),
             ('RA-Spectral', lambda: None),
             ('DEC-Spectral', lambda: None),
+            ('Hide Axes', ['checkable', self._toggle_viewer_axes]),
+            ('Hide Toolbars', ['checkable', self._toggle_toolbars])
         ]))
         self.ui.view_option_button.setMenu(view_menu)
 
@@ -200,7 +210,7 @@ class CubeVizLayout(QtWidgets.QWidget):
                     if v[0] == 'checkable':
                         v = v[1]
                         act.setCheckable(True)
-                        act.setChecked(True)
+                        act.setChecked(False)
 
                 act.triggered.connect(v)
                 menu_widget.addAction(act)
@@ -209,6 +219,36 @@ class CubeVizLayout(QtWidgets.QWidget):
     def _handle_settings_change(self, message):
         if isinstance(message, SettingsChangeMessage):
             self._slice_controller.update_index(self.synced_index)
+
+    def _set_pos_and_margin(self, axes, pos, marg):
+        axes.set_position(pos)
+        freeze_margins(axes, marg)
+
+    def _hide_viewer_axes(self):
+        for viewer in self.cube_views:
+            axes = viewer._widget.axes
+            # Save current axes position and margins so they can be restored
+            pos = axes.get_position(), axes.resizer.margins
+            self._viewer_axes_positions.append(pos)
+            self._set_pos_and_margin(axes, [0, 0, 1, 1], [0, 0, 0, 0])
+            viewer._widget.figure.canvas.draw()
+
+    def _toggle_viewer_axes(self):
+        # If axes are currently hidden, restore the original positions
+        if self._viewer_axes_positions:
+            for viewer, pos in zip(self.cube_views, self._viewer_axes_positions):
+                axes = viewer._widget.axes
+                self._set_pos_and_margin(axes, *pos)
+                viewer._widget.figure.canvas.draw()
+            self._viewer_axes_positions = []
+        # Record current positions if axes are currently hidden and hide them
+        else:
+            self._hide_viewer_axes()
+
+    def _toggle_toolbars(self):
+        self._toolbars_visible = not self._toolbars_visible
+        for viewer in self.cube_views:
+            viewer._widget.toolbar.setVisible(self._toolbars_visible)
 
     def _open_dialog(self, name, widget):
 
@@ -290,6 +330,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._has_data = True
         self._active_view = self.left_view
         self._active_cube = self.left_view
+        self._last_active_view = self.single_view
         self._active_split_cube = self.left_view
 
         # Store pointer to wavelength information
@@ -332,6 +373,9 @@ class CubeVizLayout(QtWidgets.QWidget):
         return super(CubeVizLayout, self).eventFilter(obj, event)
 
     def _toggle_image_mode(self, event=None):
+        new_active_view = self._last_active_view
+        self._last_active_view = self._active_view
+
         # Currently in single image, moving to split image
         if self._single_viewer_mode:
             self._active_cube = self._active_split_cube
@@ -346,11 +390,14 @@ class CubeVizLayout(QtWidgets.QWidget):
         # Currently in split image, moving to single image
         else:
             self._active_split_cube = self._active_cube
+            self._active_view = self.single_view
             self._active_cube = self.single_view
             self._activate_single_image_mode(event)
             self._single_viewer_mode = True
             self.ui.button_toggle_image_mode.setText('Split Image Viewer')
             self.ui.viewer_control_frame.setCurrentIndex(1)
+
+        self.subWindowActivated.emit(new_active_view)
 
         # Update the slice index to reflect the state of the active cube
         self._slice_controller.update_index(self._active_cube._widget.slice_index)

@@ -1,0 +1,32 @@
+name: 'jwst-asdf'
+type: 'JWST-ASDF'
+
+# Highest priority data configuration file, that matches, is selected.
+priority: 1200
+
+match:
+    all:
+        equal:
+            header_key:
+                telescope
+            value:
+                JWST
+        startswith:
+            header_key:
+                DATAMODL
+            value:
+                IFUCubeModel
+        all:
+            # All extension must exist
+            extension_names:
+                - data
+                - dq
+                - err
+# Data extension names for FLUX, ERROR and DQ
+data:
+    FLUX:
+        data
+    ERROR:
+        err
+    DQ:
+        dq

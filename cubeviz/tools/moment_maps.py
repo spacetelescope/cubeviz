@@ -114,7 +114,7 @@ class MomentMapsGUI(QDialog):
             self.parent.add_overlay(cube_moment.value, label)
 
         except Exception as e:
-           print('Error {}'.format(e))
+            print('Error {}'.format(e))
 
         self.close()
 
