@@ -133,7 +133,7 @@ install:
 
 script:
    - $MAIN_CMD $SETUP_CMD
-   - find glue -name "*.ui" -exec grep "pointsize" {} \; >& font.log
+   - find cubeviz -name "*.ui" -exec grep "pointsize" {} \; >& font.log
    - test ! -s font.log
 
 after_success:
