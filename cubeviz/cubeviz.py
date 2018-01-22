@@ -6,6 +6,8 @@ from glue.app.qt import GlueApplication
 from glue.main import restore_session, get_splash, load_data_files, load_plugins
 from qtpy.QtCore import QTimer
 
+from .version import version as cubeviz_version
+
 # Global variable to store the data configuration directories/files
 # read in from the argparse from the command line.
 # Yes, yes, we understand global variables aren't the best idea, but it
@@ -81,5 +83,7 @@ def main(argv=sys.argv):
     if datafiles:
         datasets = load_data_files(datafiles)
         ga.add_datasets(data_collection, datasets, auto_merge=False)
+
+    ga.setWindowTitle('cubeviz ({})'.format(cubeviz_version))
 
     sys.exit(ga.start(maximized=True))
