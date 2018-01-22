@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1553</width>
+    <width>1599</width>
     <height>550</height>
    </rect>
   </property>
@@ -361,6 +361,9 @@
             <string>wavelength</string>
            </property>
           </widget>
+         </item>
+         <item row="0" column="3">
+          <widget class="QComboBox" name="unitcomboBox"/>
          </item>
         </layout>
        </widget>

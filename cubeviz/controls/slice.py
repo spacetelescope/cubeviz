@@ -13,6 +13,11 @@ class SliceController:
         self._slice_textbox = ui.slice_textbox
         self._wavelength_textbox = ui.wavelength_textbox
 
+        # This is the Wavelength conversion/combobox code
+        self._wavelength_combobox = ui.unitcomboBox
+        arr = ["hello"]
+        self._wavelength_combobox.addItems(arr)
+
         # This is the slider widget itself
         self._slice_slider = ui.slice_slider
 
@@ -68,7 +73,6 @@ class SliceController:
     def update_index(self, index):
         self._slice_slider.setValue(index)
         self._update_slice_textboxes(index)
-
 
     def _on_slider_change(self, event):
         """
