@@ -226,6 +226,7 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     def _hide_viewer_axes(self):
         for viewer in self.cube_views:
+            viewer._widget.toggle_hidden_axes(True)
             axes = viewer._widget.axes
             # Save current axes position and margins so they can be restored
             pos = axes.get_position(), axes.resizer.margins
@@ -237,6 +238,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         # If axes are currently hidden, restore the original positions
         if self._viewer_axes_positions:
             for viewer, pos in zip(self.cube_views, self._viewer_axes_positions):
+                viewer._widget.toggle_hidden_axes(False)
                 axes = viewer._widget.axes
                 self._set_pos_and_margin(axes, *pos)
                 viewer._widget.figure.canvas.draw()
@@ -276,6 +278,8 @@ class CubeVizLayout(QtWidgets.QWidget):
         def change_viewer(dropdown_index):
             view = self.all_views[view_index].widget()
             label = self._component_labels[dropdown_index]
+            if view.is_smoothing_preview_active:
+                view.end_smoothing_preview()
             view.update_axes_title(title=str(label))
             view.state.layers[0].attribute = self._data.id[label]
         return change_viewer

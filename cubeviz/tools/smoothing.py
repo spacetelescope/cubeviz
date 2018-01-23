@@ -516,7 +516,6 @@ class SelectSmoothing(QDialog):
 
         self.allow_preview = allow_preview
         self.is_preview_active = False  # Flag to show if smoothing preview is active
-        self.is_preview_message_displayed = False
 
         self.abort_window = None  # Small window pop up when smoothing.
 

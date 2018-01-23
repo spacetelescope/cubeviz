@@ -55,6 +55,11 @@ class CubevizImageViewer(ImageViewer):
         self.x_mouse = None  # x position of mouse in pix
         self.y_mouse = None  # y position of mouse in pix
 
+        self.is_smoothing_preview_active = False
+
+        self.is_axes_hidden = False
+        self.axes_title = ""
+
         self.coord_label = QLabel("")  # Coord display
         self.statusBar().addPermanentWidget(self.coord_label)
 
@@ -69,25 +74,51 @@ class CubevizImageViewer(ImageViewer):
             cls = CubevizImageLayerArtist
         return self.get_layer_artist(cls, layer=layer, layer_state=layer_state)
 
-    def update_axes_title(self, title=""):
-        title = " ".join(title.split("_"))
-        self.axes.set_title(title, color="black")
+    def update_axes_title(self, title=None):
+        if title is not None:
+            self.axes_title = " ".join(title.split("_"))
+        self.axes.set_title(self.axes_title, color="black")
+        #self.statusBar().showMessage(self.axes_title)
         self.axes.figure.canvas.draw()
 
+    def show_smoothing_title(self):
+        if self.is_axes_hidden:
+            if self.is_smoothing_preview_active:
+                st = self.figure.suptitle("Smoothing Preview", color="black")
+                st.set_bbox(dict(facecolor='red', edgecolor='red'))
+                self.axes.set_title("", color="black")
+        else:
+            if self.is_smoothing_preview_active:
+                self.axes.set_title("Smoothing Preview", color="r")
+
+    def hide_smoothing_title(self):
+        self.figure.suptitle("", color="black")
+
     def set_smoothing_preview(self, preview_function):
+        self.is_smoothing_preview_active = True
         for layer in self.layers:
             if isinstance(layer, CubevizImageLayerArtist):
                 layer.state.preview_function = preview_function
         self.axes._composite_image.invalidate_cache()
-        self.axes.set_title("Smoothing Preview", color="r")
+        self.show_smoothing_title()
         self.axes.figure.canvas.draw()
 
     def end_smoothing_preview(self):
+        self.is_smoothing_preview_active = False
+        self.hide_smoothing_title()
         for layer in self.layers:
             if isinstance(layer, CubevizImageLayerArtist):
                 layer.state.preview_function = None
         self.axes._composite_image.invalidate_cache()
         self.axes.figure.canvas.draw()
+
+    def toggle_hidden_axes(self, is_axes_hidden):
+        self.is_axes_hidden = is_axes_hidden
+        if self.is_smoothing_preview_active:
+            self.hide_smoothing_title()
+            self.show_smoothing_title()
+        else:
+            self.update_axes_title()
 
     def _synced_checkbox_callback(self, event):
         if self._synced_checkbox.isChecked():
