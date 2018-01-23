@@ -394,6 +394,13 @@ class SmoothCube(object):
             kernel = self.get_kernel()
             return convolution.convolve(data, kernel, normalize_kernel = True)
 
+    def get_preview_title(self):
+        name_tail = "(" + ", ".join([
+                            self.kernel_type_to_name(self.kernel_type),
+                            self.smoothing_axis.title(),
+                            "%spixels" % self.kernel_size]) + ")"
+        return "Smoothing Preview: " + name_tail
+
 
 class AbortWindow(QDialog):
     """
@@ -789,8 +796,9 @@ class SelectSmoothing(QDialog):
             self.smooth_cube.kernel_size = float(self.k_size.text())
 
         preview_function = self.smooth_cube.preview_smoothing
+        preview_title = self.smooth_cube.get_preview_title()
         component_id = str(self.component_combo.currentText())
-        self.parent.start_smoothing_preview(preview_function, component_id)
+        self.parent.start_smoothing_preview(preview_function, component_id, preview_title)
 
         self.is_preview_active = True
         self.preview_message.show()

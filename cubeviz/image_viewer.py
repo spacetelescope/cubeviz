@@ -55,10 +55,11 @@ class CubevizImageViewer(ImageViewer):
         self.x_mouse = None  # x position of mouse in pix
         self.y_mouse = None  # y position of mouse in pix
 
-        self.is_smoothing_preview_active = False
+        self.is_smoothing_preview_active = False  # Smoothing preview flag
+        self.smoothing_preview_title = ""
 
-        self.is_axes_hidden = False
-        self.axes_title = ""
+        self.is_axes_hidden = False  # True if axes is hidden
+        self.axes_title = ""  # Plot title
 
         self.coord_label = QLabel("")  # Coord display
         self.statusBar().addPermanentWidget(self.coord_label)
@@ -75,37 +76,65 @@ class CubevizImageViewer(ImageViewer):
         return self.get_layer_artist(cls, layer=layer, layer_state=layer_state)
 
     def update_axes_title(self, title=None):
+        """
+        Update plot title.
+        :param title: str: Plot title
+        """
         if title is not None:
             self.axes_title = " ".join(title.split("_"))
+
         self.axes.set_title(self.axes_title, color="black")
-        #self.statusBar().showMessage(self.axes_title)
         self.axes.figure.canvas.draw()
 
+        # Disabled feature:
+        #self.statusBar().showMessage(self.axes_title)
+
     def show_smoothing_title(self):
+        """
+        Override normal plot title to show smoothing preview title.
+        """
         if self.is_axes_hidden:
             if self.is_smoothing_preview_active:
-                st = self.figure.suptitle("Smoothing Preview", color="black")
+                st = self.figure.suptitle(self.smoothing_preview_title, color="black")
                 st.set_bbox(dict(facecolor='red', edgecolor='red'))
                 self.axes.set_title("", color="black")
         else:
             if self.is_smoothing_preview_active:
-                self.axes.set_title("Smoothing Preview", color="r")
+                self.axes.set_title(self.smoothing_preview_title, color="r")
 
     def hide_smoothing_title(self):
         self.figure.suptitle("", color="black")
 
-    def set_smoothing_preview(self, preview_function):
+    def set_smoothing_preview(self, preview_function, preview_title=None):
+        """
+        Sets up on the fly smoothing and displays smoothing preview title.
+        :param preview_function: function: Single-slice smoothing function
+        :param preview_title: str: Title displayed when previewing
+        """
         self.is_smoothing_preview_active = True
+
+        if preview_title is None:
+            self.smoothing_preview_title = "Smoothing Preview"
+        else:
+            self.smoothing_preview_title = preview_title
+        self.show_smoothing_title()
+
         for layer in self.layers:
             if isinstance(layer, CubevizImageLayerArtist):
                 layer.state.preview_function = preview_function
         self.axes._composite_image.invalidate_cache()
-        self.show_smoothing_title()
         self.axes.figure.canvas.draw()
 
     def end_smoothing_preview(self):
+        """
+        Ends on the fly smoothing.
+        Warning: A change of combo index should always happen
+        after calling this function!
+        """
         self.is_smoothing_preview_active = False
         self.hide_smoothing_title()
+        self.update_axes_title()
+        self.smoothing_preview_title = "Smoothing Preview"
         for layer in self.layers:
             if isinstance(layer, CubevizImageLayerArtist):
                 layer.state.preview_function = None
@@ -113,7 +142,13 @@ class CubevizImageViewer(ImageViewer):
         self.axes.figure.canvas.draw()
 
     def toggle_hidden_axes(self, is_axes_hidden):
+        """
+        Opertations to execute when axes is hidden/shown.
+        :param is_axes_hidden: bool: True if axes is now hidden
+        """
         self.is_axes_hidden = is_axes_hidden
+
+        # Plot title operations
         if self.is_smoothing_preview_active:
             self.hide_smoothing_title()
             self.show_smoothing_title()

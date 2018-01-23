@@ -163,8 +163,6 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui.button_toggle_image_mode.setText('Single Image Viewer')
         self.ui.viewer_control_frame.setCurrentIndex(0)
 
-        self.is_smoothing_preview_active = False
-
     def _init_menu_buttons(self):
         """
         Add the two menu buttons to the tool bar. Currently two are defined:
@@ -460,7 +458,16 @@ class CubeVizLayout(QtWidgets.QWidget):
                 view._widget.update_slice_index(index)
         self._slice_controller.update_index(index)
 
-    def start_smoothing_preview(self, preview_function, component_id):
+    def start_smoothing_preview(self, preview_function, component_id, preview_title=None):
+        """
+        Starts smoothing preview. This function preforms the following steps
+        1) SelectSmoothing passes parameters.
+        2) The left and single viewers' combo box is set to component_id
+        3) The set_smoothing_preview is called to setup on the fly smoothing
+        :param preview_function: function: Single-slice smoothing function
+        :param component_id: int: Which component to preview
+        :param preview_title: str: Title displayed when previewing
+        """
         # For single and first viewer:
         for view_index in [0, 1]:
             view = self.all_views[view_index].widget()
@@ -471,10 +478,12 @@ class CubeVizLayout(QtWidgets.QWidget):
             combo = getattr(self.ui, combo_label)
             component_index = self._component_labels.index(component_id)
             combo.setCurrentIndex(component_index)
-            view.set_smoothing_preview(preview_function)
-        self.is_smoothing_preview_active = True
+            view.set_smoothing_preview(preview_function, preview_title)
 
     def end_smoothing_preview(self):
+        """
+        End preview and change viewer combo index to the first component.
+        """
         for view_index in [0,1]:
             view = self.all_views[view_index].widget()
             view.end_smoothing_preview()
@@ -485,7 +494,6 @@ class CubeVizLayout(QtWidgets.QWidget):
             combo = getattr(self.ui, combo_label)
             combo.setCurrentIndex(0)
             combo.currentIndexChanged.emit(0)
-        self.is_smoothing_preview_active = False
 
     def showEvent(self, event):
         super(CubeVizLayout, self).showEvent(event)
