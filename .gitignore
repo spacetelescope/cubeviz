@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Compiled files
 *.py[cod]
 *.a
@@ -58,3 +59,44 @@ distribute-*.tar.gz
 
 # Mac OSX
 .DS_Store
+=======
+# Sphinx & coverage
+build
+doc/_build
+doc/api
+glue/tests/htmlcov
+*.coverage
+*htmlcov*
+
+# Packages/installer info
+doc/.eggs
+Glue.egg-info
+glueviz.egg-info
+dist
+
+# Compiled files
+*.pyc
+
+# Other generated files
+glue/_githash.py
+
+# Other
+.pylintrc
+*.ropeproject
+glue/qt/glue_qt_resources.py
+*.__junk*
+*.orig
+*~
+.cache
+
+# Mac OSX
+.DS_Store
+
+# PyCharm
+.idea
+
+# Eclipse editor project files
+.project
+.pydevproject
+.settings
+>>>>>>> 0c2af110d9ed7d8513be86820fe64ae19e2e54d9

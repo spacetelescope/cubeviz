@@ -1,7 +1,9 @@
 import numpy as np
+from astropy import units as u
 from specviz.third_party.glue.data_viewer import dispatch as specviz_dispatch
 
 RED_BACKGROUND = "background-color: rgba(255, 0, 0, 128);"
+
 
 class SliceController:
 
@@ -15,8 +17,9 @@ class SliceController:
 
         # This is the Wavelength conversion/combobox code
         self._wavelength_combobox = ui.unitcomboBox
-        arr = ["hello"]
-        self._wavelength_combobox.addItems(arr)
+        units = [u.meter, u.kilometer, u.cm]
+        units_titles = (u.long_names[0].title() for u in units)
+        self._wavelength_combobox.addItems(units_titles)
 
         # This is the slider widget itself
         self._slice_slider = ui.slice_slider
@@ -39,7 +42,6 @@ class SliceController:
         # Connect this class to specviz's event dispatch so methods can listen
         # to specviz events
         specviz_dispatch.setup(self)
-
 
     def enable(self, wcs, wavelengths):
         """
@@ -74,6 +76,15 @@ class SliceController:
         self._slice_slider.setValue(index)
         self._update_slice_textboxes(index)
 
+    def _on_combobox_change(self, event):
+        """
+        Callback for change in unitcombobox value
+
+        :param event:
+        :return:
+        """
+        return
+
     def _on_slider_change(self, event):
         """
         Callback for change in slider value.
@@ -102,7 +113,6 @@ class SliceController:
 
         specviz_dispatch.changed_dispersion_position.emit(pos=index)
 
-
     def _update_slice_textboxes(self, index):
         """
         Update the slice index number text box and the wavelength value displayed in the wavelengths text box.
@@ -116,7 +126,6 @@ class SliceController:
 
         # Update the wavelength for the corresponding slice number.
         self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[index]))
-
 
     def _on_text_slice_change(self, event=None):
         """
@@ -148,7 +157,6 @@ class SliceController:
 
         # Update the slider.
         self._slice_slider.setValue(index)
-
 
     @specviz_dispatch.register_listener("change_dispersion_position")
     def _on_text_wavelength_change(self, event=None, pos=None):

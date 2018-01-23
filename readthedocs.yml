@@ -1,5 +1,15 @@
 conda:
+<<<<<<< HEAD
   file: .rtd-environment.yml
 
 python:
    setup_py_install: true
+=======
+    file: .environment.yml
+    
+python:
+    setup_py_install: true
+
+formats:
+    - none
+>>>>>>> 0c2af110d9ed7d8513be86820fe64ae19e2e54d9

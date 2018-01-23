@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 include README.rst
 include CHANGES.rst
 
@@ -39,3 +40,11 @@ prune astropy_helpers/astropy_helpers/tests
 
 
 global-exclude *.pyc *.o
+=======
+recursive-include glue *.ui *.png *.glu *.hdf5 *.fits *.xlsx
+include LICENSE
+include README.md
+include glueviz.desktop
+include CHANGES.md
+recursive-include doc *
+>>>>>>> 0c2af110d9ed7d8513be86820fe64ae19e2e54d9
