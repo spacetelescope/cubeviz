@@ -507,7 +507,8 @@ class SelectSmoothing(QDialog):
     Any output is added to the input data as a new component.
     """
 
-    def __init__(self, data, parent=None, smooth_cube=None, allow_preview=False):
+    def __init__(self, data, parent=None, smooth_cube=None,
+                 allow_preview=False, allow_spectral_axes=False):
         super(SelectSmoothing, self).__init__(parent)
         self.setWindowFlags(self.windowFlags() | Qt.Tool)
         self.parent = parent
@@ -520,6 +521,8 @@ class SelectSmoothing(QDialog):
             self.smooth_cube = SmoothCube(data=self.data)
         else:
             self.smooth_cube = smooth_cube
+
+        self.allow_spectral_axes = allow_spectral_axes
 
         self.allow_preview = allow_preview
         self.is_preview_active = False  # Flag to show if smoothing preview is active
@@ -632,7 +635,8 @@ class SelectSmoothing(QDialog):
         # Add Lines to Vertical Layout
         # vbl is short for Vertical Box Layout
         vbl = QVBoxLayout()
-        #vbl.addLayout(hbl1)  # Spectral option disabled
+        if self.allow_spectral_axes:
+            vbl.addLayout(hbl1)
         vbl.addLayout(hbl2)
         vbl.addLayout(hbl3)
         vbl.addLayout(hbl4)

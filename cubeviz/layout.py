@@ -188,7 +188,7 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         # Create the Data Processing Menu
         cube_menu = self._dict_to_menu(OrderedDict([
-            ('Smoothing', lambda: self._open_dialog('Smoothing', None)),
+            ('Spatial Smoothing', lambda: self._open_dialog('Spatial Smoothing', None)),
             ('Moment Maps', lambda: self._open_dialog('Moment Maps', None)),
             ('Arithmetic Operations', lambda: self._open_dialog('Arithmetic Operations', None))
         ]))
@@ -252,7 +252,7 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     def _open_dialog(self, name, widget):
 
-        if name == 'Smoothing':
+        if name == 'Spatial Smoothing':
             ex = smoothing.SelectSmoothing(self._data, parent=self, allow_preview=True)
 
         if name == 'Arithmetic Operations':
