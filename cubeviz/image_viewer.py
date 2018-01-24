@@ -13,7 +13,7 @@ from glue.core.message import SettingsChangeMessage
 from glue.viewers.image.qt import ImageViewer
 from glue.viewers.image.layer_artist import ImageLayerArtist
 from glue.viewers.image.state import ImageLayerState
-
+from glue.viewers.image.qt.layer_style_editor import ImageLayerStyleEditor
 
 __all__ = ['CubevizImageViewer']
 
@@ -45,6 +45,7 @@ class CubevizImageViewer(ImageViewer):
 
     def __init__(self, *args, **kwargs):
         super(CubevizImageViewer, self).__init__(*args, **kwargs)
+        self. _layer_style_widget_cls[CubevizImageLayerArtist] = ImageLayerStyleEditor
         self._synced_checkbox = None
         self._slice_index = None
 
