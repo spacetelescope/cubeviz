@@ -91,6 +91,7 @@ class SmoothCube(object):
                 name: Display name
                 unit_label: Display units of kernel size
                 size_prompt: User prompt for size of kernel
+                size_dimension: Dimension of kernel (width, radius, etc..)
                 axis: Available axes. Each must have a kernel.
                 spatial: 2D astropy.convolution.kernel else None.
                 spectral: 1D astropy.convolution.kernel else None.
@@ -101,38 +102,45 @@ class SmoothCube(object):
             "box": {"name": "Box",
                     "unit_label": "Pixels",
                     "size_prompt": "Width of Kernel:",
+                    "size_dimension": "Width",
                     "axis": ["spatial", "spectral"],
                     "spatial": convolution.Box2DKernel,
                     "spectral": convolution.Box1DKernel},
             "gaussian": {"name": "Gaussian",
                          "unit_label": "Pixels",
                          "size_prompt": "Standard Deviation of Kernel:",
+                         "size_dimension": "Sigma",
                          "axis": ["spatial", "spectral"],
                          "spatial": convolution.Gaussian2DKernel,
                          "spectral": convolution.Gaussian1DKernel},
             "trapezoid": {"name": "Trapezoid",
                           "unit_label": "Pixels",
                           "size_prompt": "Width of Kernel:",
+                          "size_dimension": "Width",
                           "axis": ["spectral"],
                           "spectral": convolution.Trapezoid1DKernel},
             "trapezoiddisk": {"name": "Trapezoid Disk",
                               "unit_label": "Pixels",
                               "size_prompt": "Radius of Kernel:",
+                              "size_dimension": "Radius",
                               "axis": ["spatial"],
                               "spatial": convolution.TrapezoidDisk2DKernel},
             "airydisk": {"name": "Airy Disk",
                          "unit_label": "Pixels",
                          "size_prompt": "Radius of Kernel:",
+                         "size_dimension": "Radius",
                          "axis": ["spatial"],
                          "spatial": convolution.AiryDisk2DKernel},
             "tophat": {"name": "Top Hat",
                        "unit_label": "Pixels",
                        "size_prompt": "Radius of Kernel:",
+                       "size_dimension": "Radius",
                        "axis": ["spatial"],
                        "spatial": convolution.Tophat2DKernel},
             "median": {"name": "Median",
                        "unit_label": "Pixels",
                        "size_prompt": "Width of Kernel:",
+                       "size_dimension": "Width",
                        "axis": ["spatial", "spectral"],
                        "spatial": None,
                        "spectral": None}
@@ -168,6 +176,16 @@ class SmoothCube(object):
         if kernel_type not in self.kernel_registry:
             return None
         return self.kernel_registry[kernel_type]["unit_label"]
+
+    def get_kernel_size_dimension(self, kernel_type=None):
+        """kernel_type -> size_dimension"""
+        if kernel_type is None:
+            if self.kernel_type is None:
+                return None
+            kernel_type = self.kernel_type
+        if kernel_type not in self.kernel_registry:
+            return None
+        return self.kernel_registry[kernel_type]["size_dimension"]
 
     def name_to_kernel_type(self, name):
         """kernel name -> kernel_type"""
@@ -246,10 +264,16 @@ class SmoothCube(object):
             return new_data
 
     def unique_output_component_id(self):
+        if self.kernel_size == 1:
+            kernel_size_text = "%s_pixel" % self.kernel_size
+        else:
+            kernel_size_text = "%s_pixels" % self.kernel_size
+
         name_tail = "_Smoothed(" + ", ".join([
-                                    self.kernel_type_to_name(self.kernel_type),
-                                    self.smoothing_axis.title(),
-                                    "%spixels" % self.kernel_size]) + ")"
+                                            self.kernel_type_to_name(self.kernel_type),
+                                            self.smoothing_axis.title(),
+                                            kernel_size_text]) + ")"
+
         if self.output_label is None:
             output_component_id = self.component_id + name_tail
         else:
@@ -273,10 +297,16 @@ class SmoothCube(object):
         return output_component_id
 
     def output_data_name(self):
+        if self.kernel_size == 1:
+            kernel_size_text = "%s_pixel" % self.kernel_size
+        else:
+            kernel_size_text = "%s_pixels" % self.kernel_size
+
         name_tail = "_Smoothed(" + ", ".join([
-                                    self.kernel_type_to_name(self.kernel_type),
-                                    self.smoothing_axis.title(),
-                                    "%spixels" % self.kernel_size]) + ")"
+                                            self.kernel_type_to_name(self.kernel_type),
+                                            self.smoothing_axis.title(),
+                                            kernel_size_text]) + ")"
+
         if self.output_label is None:
             return self.data.label + name_tail
         else:
@@ -395,11 +425,14 @@ class SmoothCube(object):
             return convolution.convolve(data, kernel, normalize_kernel = True)
 
     def get_preview_title(self):
-        name_tail = "(" + ", ".join([
-                            self.kernel_type_to_name(self.kernel_type),
-                            self.smoothing_axis.title(),
-                            "%spixels" % self.kernel_size]) + ")"
-        return "Smoothing Preview: " + name_tail
+        title = "Smoothing Preview: "
+        title += self.kernel_type_to_name(self.kernel_type)
+        size_dimension = self.get_kernel_size_dimension(self.kernel_type)
+        if self.kernel_size == 1:
+            title += "({0} = {1} pixel)".format(size_dimension, self.kernel_size)
+        else:
+            title += "({0} = {1} pixels)".format(size_dimension, self.kernel_size)
+        return title
 
 
 class AbortWindow(QDialog):

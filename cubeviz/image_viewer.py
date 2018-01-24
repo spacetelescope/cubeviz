@@ -82,7 +82,7 @@ class CubevizImageViewer(ImageViewer):
         :param title: str: Plot title
         """
         if title is not None:
-            self.axes_title = " ".join(title.split("_"))
+            self.axes_title = title
 
         self.axes.set_title(self.axes_title, color="black")
         self.axes.figure.canvas.draw()
