@@ -15,6 +15,7 @@ from glue.core.data_combo_helper import ComponentIDComboHelper
 from glue.core.message import SettingsChangeMessage
 
 from specviz.third_party.glue.data_viewer import SpecVizViewer
+from specviz.core.events import dispatch
 
 from .toolbar import CubevizToolbar
 from .image_viewer import CubevizImageViewer
@@ -22,6 +23,7 @@ from .image_viewer import CubevizImageViewer
 from .controls.slice import SliceController
 from .controls.overlay import OverlayController
 from .tools import arithmetic_gui, moment_maps, smoothing
+from .tools.spectral_operations import SpectralOperationHandler
 
 FLUX = 'FLUX'
 ERROR = 'ERROR'
@@ -155,6 +157,9 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui.button_toggle_image_mode.setText('Single Image Viewer')
         self.ui.viewer_control_frame.setCurrentIndex(0)
 
+        # Add this class to the specviz dispatcher watcher
+        dispatch.setup(self)
+
     def _init_menu_buttons(self):
         """
         Add the two menu buttons to the tool bar. Currently two are defined:
@@ -219,6 +224,13 @@ class CubeVizLayout(QtWidgets.QWidget):
         if name == "Moment Maps":
             moment_maps.MomentMapsGUI(
                 self._data, self.session.data_collection, parent=self)
+
+    @dispatch.register_listener("apply_function")
+    def apply_to_cube(self, func):
+        """Apply operation from spectral analysis to the entire cube."""
+        # Retrieve the current cube data object
+        operation_handler = SpectralOperationHandler(self._data, function=func, parent=self)
+        operation_handler.exec_()
 
     def add_new_data_component(self, name):
         self._component_labels.append(str(name))
