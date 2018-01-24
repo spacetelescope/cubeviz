@@ -1,16 +1,41 @@
 # This file contains a sub-class of the glue image viewer with further
 # customizations.
 
+import numpy as np
+
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 
 from qtpy.QtWidgets import QLabel
 
 from glue.core.message import SettingsChangeMessage
-from glue.viewers.image.qt import ImageViewer
 
+from glue.viewers.image.qt import ImageViewer
+from glue.viewers.image.layer_artist import ImageLayerArtist
+from glue.viewers.image.state import ImageLayerState
+from glue.viewers.image.qt.layer_style_editor import ImageLayerStyleEditor
 
 __all__ = ['CubevizImageViewer']
+
+class CubevizImageLayerState(ImageLayerState):
+    """
+    Sub-class of ImageLayerState that includes the ability to include smoothing
+    on-the-fly.
+    """
+
+    preview_function = None
+
+    def get_sliced_data(self, view=None):
+        if self.preview_function is None:
+            return super(CubevizImageLayerState, self).get_sliced_data(view=view)
+        else:
+            data = super(CubevizImageLayerState, self).get_sliced_data()
+            return self.preview_function(data)
+
+
+class CubevizImageLayerArtist(ImageLayerArtist):
+
+    _layer_state_cls = CubevizImageLayerState
 
 
 class CubevizImageViewer(ImageViewer):
@@ -20,6 +45,7 @@ class CubevizImageViewer(ImageViewer):
 
     def __init__(self, *args, **kwargs):
         super(CubevizImageViewer, self).__init__(*args, **kwargs)
+        self. _layer_style_widget_cls[CubevizImageLayerArtist] = ImageLayerStyleEditor
         self._synced_checkbox = None
         self._slice_index = None
 
@@ -30,12 +56,105 @@ class CubevizImageViewer(ImageViewer):
         self.x_mouse = None  # x position of mouse in pix
         self.y_mouse = None  # y position of mouse in pix
 
+        self.is_smoothing_preview_active = False  # Smoothing preview flag
+        self.smoothing_preview_title = ""
+
+        self.is_axes_hidden = False  # True if axes is hidden
+        self.axes_title = ""  # Plot title
+
         self.coord_label = QLabel("")  # Coord display
         self.statusBar().addPermanentWidget(self.coord_label)
 
         # Connect matplotlib events to event handlers
         self.figure.canvas.mpl_connect('motion_notify_event', self.mouse_move)
         self.figure.canvas.mpl_connect('axes_leave_event', self.mouse_exited)
+
+    def get_data_layer_artist(self, layer=None, layer_state=None):
+        if layer.ndim == 1:
+            cls = self._scatter_artist
+        else:
+            cls = CubevizImageLayerArtist
+        return self.get_layer_artist(cls, layer=layer, layer_state=layer_state)
+
+    def update_axes_title(self, title=None):
+        """
+        Update plot title.
+        :param title: str: Plot title
+        """
+        if title is not None:
+            self.axes_title = title
+
+        self.axes.set_title(self.axes_title, color="black")
+        self.axes.figure.canvas.draw()
+
+        # Disabled feature:
+        #self.statusBar().showMessage(self.axes_title)
+
+    def show_smoothing_title(self):
+        """
+        Override normal plot title to show smoothing preview title.
+        """
+        if self.is_axes_hidden:
+            if self.is_smoothing_preview_active:
+                st = self.figure.suptitle(self.smoothing_preview_title, color="black")
+                st.set_bbox(dict(facecolor='red', edgecolor='red'))
+                self.axes.set_title("", color="black")
+        else:
+            if self.is_smoothing_preview_active:
+                self.axes.set_title(self.smoothing_preview_title, color="r")
+
+    def hide_smoothing_title(self):
+        self.figure.suptitle("", color="black")
+
+    def set_smoothing_preview(self, preview_function, preview_title=None):
+        """
+        Sets up on the fly smoothing and displays smoothing preview title.
+        :param preview_function: function: Single-slice smoothing function
+        :param preview_title: str: Title displayed when previewing
+        """
+        self.is_smoothing_preview_active = True
+
+        if preview_title is None:
+            self.smoothing_preview_title = "Smoothing Preview"
+        else:
+            self.smoothing_preview_title = preview_title
+        self.show_smoothing_title()
+
+        for layer in self.layers:
+            if isinstance(layer, CubevizImageLayerArtist):
+                layer.state.preview_function = preview_function
+        self.axes._composite_image.invalidate_cache()
+        self.axes.figure.canvas.draw()
+
+    def end_smoothing_preview(self):
+        """
+        Ends on the fly smoothing.
+        Warning: A change of combo index should always happen
+        after calling this function!
+        """
+        self.is_smoothing_preview_active = False
+        self.hide_smoothing_title()
+        self.update_axes_title()
+        self.smoothing_preview_title = "Smoothing Preview"
+        for layer in self.layers:
+            if isinstance(layer, CubevizImageLayerArtist):
+                layer.state.preview_function = None
+        self.axes._composite_image.invalidate_cache()
+        self.axes.figure.canvas.draw()
+
+    def toggle_hidden_axes(self, is_axes_hidden):
+        """
+        Opertations to execute when axes is hidden/shown.
+        :param is_axes_hidden: bool: True if axes is now hidden
+        """
+        self.is_axes_hidden = is_axes_hidden
+
+        # Plot title operations
+        if self.is_smoothing_preview_active:
+            self.hide_smoothing_title()
+            self.show_smoothing_title()
+        else:
+            self.update_axes_title()
 
     def _synced_checkbox_callback(self, event):
         if self._synced_checkbox.isChecked():
