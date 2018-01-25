@@ -13,6 +13,7 @@ from glue.external.echo import keep_in_sync, SelectionCallbackProperty
 from glue.external.echo.qt import connect_combo_selection
 from glue.core.data_combo_helper import ComponentIDComboHelper
 from glue.core.message import SettingsChangeMessage
+from glue.utils.matplotlib import freeze_margins
 
 from specviz.third_party.glue.data_viewer import SpecVizViewer
 from specviz.core.events import dispatch
@@ -131,6 +132,12 @@ class CubeVizLayout(QtWidgets.QWidget):
         # populated into the combo boxes.
         self._viewer_combo_helpers = []
 
+        # This tracks the current positions of cube viewer axes when they are hidden
+        self._viewer_axes_positions = []
+
+        # Indicates whether cube viewer toolbars are currently visible or not
+        self._toolbars_visible = True
+
         self._slice_controller = SliceController(self)
         self._overlay_controller = OverlayController(self)
 
@@ -150,6 +157,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._last_click = None
         self._active_view = None
         self._active_cube = None
+        self._last_active_view = None
         self._active_split_cube = None
 
         # Set the default to parallel image viewer
@@ -178,12 +186,14 @@ class CubeVizLayout(QtWidgets.QWidget):
             ('RA-DEC', lambda: None),
             ('RA-Spectral', lambda: None),
             ('DEC-Spectral', lambda: None),
+            ('Hide Axes', ['checkable', self._toggle_viewer_axes]),
+            ('Hide Toolbars', ['checkable', self._toggle_toolbars])
         ]))
         self.ui.view_option_button.setMenu(view_menu)
 
         # Create the Data Processing Menu
         cube_menu = self._dict_to_menu(OrderedDict([
-            ('Smoothing', lambda: self._open_dialog('Smoothing', None)),
+            ('Spatial Smoothing', lambda: self._open_dialog('Spatial Smoothing', None)),
             ('Moment Maps', lambda: self._open_dialog('Moment Maps', None)),
             ('Arithmetic Operations', lambda: self._open_dialog('Arithmetic Operations', None))
         ]))
@@ -203,7 +213,7 @@ class CubeVizLayout(QtWidgets.QWidget):
                     if v[0] == 'checkable':
                         v = v[1]
                         act.setCheckable(True)
-                        act.setChecked(True)
+                        act.setChecked(False)
 
                 act.triggered.connect(v)
                 menu_widget.addAction(act)
@@ -213,10 +223,42 @@ class CubeVizLayout(QtWidgets.QWidget):
         if isinstance(message, SettingsChangeMessage):
             self._slice_controller.update_index(self.synced_index)
 
+    def _set_pos_and_margin(self, axes, pos, marg):
+        axes.set_position(pos)
+        freeze_margins(axes, marg)
+
+    def _hide_viewer_axes(self):
+        for viewer in self.cube_views:
+            viewer._widget.toggle_hidden_axes(True)
+            axes = viewer._widget.axes
+            # Save current axes position and margins so they can be restored
+            pos = axes.get_position(), axes.resizer.margins
+            self._viewer_axes_positions.append(pos)
+            self._set_pos_and_margin(axes, [0, 0, 1, 1], [0, 0, 0, 0])
+            viewer._widget.figure.canvas.draw()
+
+    def _toggle_viewer_axes(self):
+        # If axes are currently hidden, restore the original positions
+        if self._viewer_axes_positions:
+            for viewer, pos in zip(self.cube_views, self._viewer_axes_positions):
+                viewer._widget.toggle_hidden_axes(False)
+                axes = viewer._widget.axes
+                self._set_pos_and_margin(axes, *pos)
+                viewer._widget.figure.canvas.draw()
+            self._viewer_axes_positions = []
+        # Record current positions if axes are currently hidden and hide them
+        else:
+            self._hide_viewer_axes()
+
+    def _toggle_toolbars(self):
+        self._toolbars_visible = not self._toolbars_visible
+        for viewer in self.cube_views:
+            viewer._widget.toolbar.setVisible(self._toolbars_visible)
+
     def _open_dialog(self, name, widget):
 
-        if name == 'Smoothing':
-            ex = smoothing.SelectSmoothing(self._data, parent=self)
+        if name == 'Spatial Smoothing':
+            ex = smoothing.SelectSmoothing(self._data, parent=self, allow_preview=True)
 
         if name == 'Arithmetic Operations':
             ex = arithmetic_gui.SelectArithmetic(self._data, self.session.data_collection, parent=self)
@@ -244,9 +286,12 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     def _get_change_viewer_func(self, view_index):
         def change_viewer(dropdown_index):
-            view = self.all_views[view_index]
+            view = self.all_views[view_index].widget()
             label = self._component_labels[dropdown_index]
-            view._widget.state.layers[0].attribute = self._data.id[label]
+            if view.is_smoothing_preview_active:
+                view.end_smoothing_preview()
+            view.update_axes_title(title=str(label))
+            view.state.layers[0].attribute = self._data.id[label]
         return change_viewer
 
     def _enable_viewer_combo(self, data, index, combo_label, selection_label):
@@ -269,11 +314,15 @@ class CubeVizLayout(QtWidgets.QWidget):
         """
         self._enable_viewer_combo(
             data, 0, 'single_viewer_combo', 'single_viewer_attribute')
+        view = self.all_views[0].widget()
+        view.update_axes_title(str(getattr(self, 'single_viewer_attribute')))
 
         for i in range(1,4):
             combo_label = 'viewer{0}_combo'.format(i)
             selection_label = 'viewer{0}_attribute'.format(i)
             self._enable_viewer_combo(data, i, combo_label, selection_label)
+            view = self.all_views[i].widget()
+            view.update_axes_title(str(getattr(self, selection_label)))
 
 
     def add_overlay(self, data, label):
@@ -295,6 +344,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._has_data = True
         self._active_view = self.left_view
         self._active_cube = self.left_view
+        self._last_active_view = self.single_view
         self._active_split_cube = self.left_view
 
         # Store pointer to wavelength information
@@ -337,6 +387,9 @@ class CubeVizLayout(QtWidgets.QWidget):
         return super(CubeVizLayout, self).eventFilter(obj, event)
 
     def _toggle_image_mode(self, event=None):
+        new_active_view = self._last_active_view
+        self._last_active_view = self._active_view
+
         # Currently in single image, moving to split image
         if self._single_viewer_mode:
             self._active_cube = self._active_split_cube
@@ -351,11 +404,14 @@ class CubeVizLayout(QtWidgets.QWidget):
         # Currently in split image, moving to single image
         else:
             self._active_split_cube = self._active_cube
+            self._active_view = self.single_view
             self._active_cube = self.single_view
             self._activate_single_image_mode(event)
             self._single_viewer_mode = True
             self.ui.button_toggle_image_mode.setText('Split Image Viewer')
             self.ui.viewer_control_frame.setCurrentIndex(1)
+
+        self.subWindowActivated.emit(new_active_view)
 
         # Update the slice index to reflect the state of the active cube
         self._slice_controller.update_index(self._active_cube._widget.slice_index)
@@ -413,6 +469,43 @@ class CubeVizLayout(QtWidgets.QWidget):
             if view != self._active_cube:
                 view._widget.update_slice_index(index)
         self._slice_controller.update_index(index)
+
+    def start_smoothing_preview(self, preview_function, component_id, preview_title=None):
+        """
+        Starts smoothing preview. This function preforms the following steps
+        1) SelectSmoothing passes parameters.
+        2) The left and single viewers' combo box is set to component_id
+        3) The set_smoothing_preview is called to setup on the fly smoothing
+        :param preview_function: function: Single-slice smoothing function
+        :param component_id: int: Which component to preview
+        :param preview_title: str: Title displayed when previewing
+        """
+        # For single and first viewer:
+        for view_index in [0, 1]:
+            view = self.all_views[view_index].widget()
+            if view_index == 0:
+                combo_label = 'single_viewer_combo'
+            else:
+                combo_label = 'viewer{0}_combo'.format(view_index)
+            combo = getattr(self.ui, combo_label)
+            component_index = self._component_labels.index(component_id)
+            combo.setCurrentIndex(component_index)
+            view.set_smoothing_preview(preview_function, preview_title)
+
+    def end_smoothing_preview(self):
+        """
+        End preview and change viewer combo index to the first component.
+        """
+        for view_index in [0,1]:
+            view = self.all_views[view_index].widget()
+            view.end_smoothing_preview()
+            if view_index == 0:
+                combo_label = 'single_viewer_combo'
+            else:
+                combo_label = 'viewer{0}_combo'.format(view_index)
+            combo = getattr(self.ui, combo_label)
+            combo.setCurrentIndex(0)
+            combo.currentIndexChanged.emit(0)
 
     def showEvent(self, event):
         super(CubeVizLayout, self).showEvent(event)

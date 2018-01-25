@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
+from scipy import ndimage
 
 from astropy import convolution
 
@@ -90,6 +91,7 @@ class SmoothCube(object):
                 name: Display name
                 unit_label: Display units of kernel size
                 size_prompt: User prompt for size of kernel
+                size_dimension: Dimension of kernel (width, radius, etc..)
                 axis: Available axes. Each must have a kernel.
                 spatial: 2D astropy.convolution.kernel else None.
                 spectral: 1D astropy.convolution.kernel else None.
@@ -100,38 +102,45 @@ class SmoothCube(object):
             "box": {"name": "Box",
                     "unit_label": "Pixels",
                     "size_prompt": "Width of Kernel:",
+                    "size_dimension": "Width",
                     "axis": ["spatial", "spectral"],
                     "spatial": convolution.Box2DKernel,
                     "spectral": convolution.Box1DKernel},
             "gaussian": {"name": "Gaussian",
                          "unit_label": "Pixels",
                          "size_prompt": "Standard Deviation of Kernel:",
+                         "size_dimension": "Sigma",
                          "axis": ["spatial", "spectral"],
                          "spatial": convolution.Gaussian2DKernel,
                          "spectral": convolution.Gaussian1DKernel},
             "trapezoid": {"name": "Trapezoid",
                           "unit_label": "Pixels",
                           "size_prompt": "Width of Kernel:",
+                          "size_dimension": "Width",
                           "axis": ["spectral"],
                           "spectral": convolution.Trapezoid1DKernel},
             "trapezoiddisk": {"name": "Trapezoid Disk",
                               "unit_label": "Pixels",
                               "size_prompt": "Radius of Kernel:",
+                              "size_dimension": "Radius",
                               "axis": ["spatial"],
                               "spatial": convolution.TrapezoidDisk2DKernel},
             "airydisk": {"name": "Airy Disk",
                          "unit_label": "Pixels",
                          "size_prompt": "Radius of Kernel:",
+                         "size_dimension": "Radius",
                          "axis": ["spatial"],
                          "spatial": convolution.AiryDisk2DKernel},
             "tophat": {"name": "Top Hat",
                        "unit_label": "Pixels",
                        "size_prompt": "Radius of Kernel:",
+                       "size_dimension": "Radius",
                        "axis": ["spatial"],
                        "spatial": convolution.Tophat2DKernel},
             "median": {"name": "Median",
                        "unit_label": "Pixels",
                        "size_prompt": "Width of Kernel:",
+                       "size_dimension": "Width",
                        "axis": ["spatial", "spectral"],
                        "spatial": None,
                        "spectral": None}
@@ -168,11 +177,28 @@ class SmoothCube(object):
             return None
         return self.kernel_registry[kernel_type]["unit_label"]
 
+    def get_kernel_size_dimension(self, kernel_type=None):
+        """kernel_type -> size_dimension"""
+        if kernel_type is None:
+            if self.kernel_type is None:
+                return None
+            kernel_type = self.kernel_type
+        if kernel_type not in self.kernel_registry:
+            return None
+        return self.kernel_registry[kernel_type]["size_dimension"]
+
     def name_to_kernel_type(self, name):
         """kernel name -> kernel_type"""
         for k in self.kernel_registry:
             if name == self.kernel_registry[k]["name"]:
                 return k
+        return None
+
+    def kernel_type_to_name(self, kernel_type):
+        """kernel_type -> kernel name"""
+        for k in self.kernel_registry:
+            if kernel_type == k:
+                return self.kernel_registry[k]["name"]
         return None
 
     def get_glue_wcs(self):
@@ -238,10 +264,16 @@ class SmoothCube(object):
             return new_data
 
     def unique_output_component_id(self):
-        name_tail = "_" + "_".join(["smoothed",
-                                    self.kernel_type,
-                                    self.smoothing_axis,
-                                    "%spixels" % self.kernel_size])
+        if self.kernel_size == 1:
+            kernel_size_text = "%s_pixel" % self.kernel_size
+        else:
+            kernel_size_text = "%s_pixels" % self.kernel_size
+
+        name_tail = "_Smoothed(" + ", ".join([
+                                            self.kernel_type_to_name(self.kernel_type),
+                                            self.smoothing_axis.title(),
+                                            kernel_size_text]) + ")"
+
         if self.output_label is None:
             output_component_id = self.component_id + name_tail
         else:
@@ -265,16 +297,22 @@ class SmoothCube(object):
         return output_component_id
 
     def output_data_name(self):
-        name_tail = "_" + "_".join(["smoothed",
-                                    self.kernel_type,
-                                    self.smoothing_axis,
-                                    "%spixels" % self.kernel_size])
+        if self.kernel_size == 1:
+            kernel_size_text = "%s_pixel" % self.kernel_size
+        else:
+            kernel_size_text = "%s_pixels" % self.kernel_size
+
+        name_tail = "_Smoothed(" + ", ".join([
+                                            self.kernel_type_to_name(self.kernel_type),
+                                            self.smoothing_axis.title(),
+                                            kernel_size_text]) + ")"
+
         if self.output_label is None:
             return self.data.label + name_tail
         else:
             return self.output_label
 
-    def smooth_cube(self):
+    def smooth_cube(self, preview=False):
         """
         Main (serial) smoothing function that follows the following steps:
         1) Convert data to SpectralCube
@@ -301,6 +339,8 @@ class SmoothCube(object):
         if self.output_as_component:
             output_component_id = self.unique_output_component_id()
             output = self.cube_to_data(new_cube, output_component_id=output_component_id)
+        elif preview:
+            return cube._data.copy()
         else:
             output_label = self.output_data_name()
             output = self.cube_to_data(new_cube,
@@ -376,6 +416,23 @@ class SmoothCube(object):
     def gui(self):
         """Call smoothing gui and add output as component"""
         ex = SelectSmoothing(self.data, self.parent)
+
+    def preview_smoothing(self, data):
+        if "median" == self.kernel_type:
+            return ndimage.filters.median_filter(data, self.kernel_size)
+        else:
+            kernel = self.get_kernel()
+            return convolution.convolve(data, kernel, normalize_kernel = True)
+
+    def get_preview_title(self):
+        title = "Smoothing Preview: "
+        title += self.kernel_type_to_name(self.kernel_type)
+        size_dimension = self.get_kernel_size_dimension(self.kernel_type)
+        if self.kernel_size == 1:
+            title += "({0} = {1} pixel)".format(size_dimension, self.kernel_size)
+        else:
+            title += "({0} = {1} pixels)".format(size_dimension, self.kernel_size)
+        return title
 
 
 class AbortWindow(QDialog):
@@ -483,7 +540,8 @@ class SelectSmoothing(QDialog):
     Any output is added to the input data as a new component.
     """
 
-    def __init__(self, data, parent=None, smooth_cube=None):
+    def __init__(self, data, parent=None, smooth_cube=None,
+                 allow_preview=False, allow_spectral_axes=False):
         super(SelectSmoothing, self).__init__(parent)
         self.setWindowFlags(self.windowFlags() | Qt.Tool)
         self.parent = parent
@@ -496,6 +554,11 @@ class SelectSmoothing(QDialog):
             self.smooth_cube = SmoothCube(data=self.data)
         else:
             self.smooth_cube = smooth_cube
+
+        self.allow_spectral_axes = allow_spectral_axes
+
+        self.allow_preview = allow_preview
+        self.is_preview_active = False  # Flag to show if smoothing preview is active
 
         self.abort_window = None  # Small window pop up when smoothing.
 
@@ -556,6 +619,10 @@ class SelectSmoothing(QDialog):
         self.component_prompt.setMinimumWidth(150)
         # Load component_ids and add to drop down
         component_ids = [str(i) for i in self.data.component_ids()]
+        if self.parent is not None:
+            if hasattr(self.parent, "_component_labels"):
+                component_ids = self.parent._component_labels
+
         self.component_combo = QComboBox()
         self.component_combo.addItems(
             component_ids
@@ -564,12 +631,26 @@ class SelectSmoothing(QDialog):
         self.component_combo.setMaximumWidth(150)
         if 'FLUX' in component_ids:
             self.component_combo.setCurrentIndex(component_ids.index('FLUX'))
+        if self.allow_preview:
+            self.component_combo.currentIndexChanged.connect(self.update_preview_button)
 
         hbl4 = QHBoxLayout()
         hbl4.addWidget(self.component_prompt)
         hbl4.addWidget(self.component_combo)
 
-        # LINE 5: ok cancel buttons
+        # Line 5: Preview Message
+        message = "Info: Smoothing previews are displayed on " \
+                  "CubeViz's left and single image viewers."
+        self.preview_message = QLabel(message)
+        self.preview_message.setWordWrap(True)
+        self.preview_message.hide()
+        hbl5 = QHBoxLayout()
+        hbl5.addWidget(self.preview_message)
+
+        # LINE 6: preview ok cancel buttons
+        self.previewButton = QPushButton("Preview")
+        self.previewButton.clicked.connect(self.call_preview)
+
         self.okButton = QPushButton("OK")
         self.okButton.clicked.connect(self.call_main)
         self.okButton.setDefault(True)
@@ -577,19 +658,23 @@ class SelectSmoothing(QDialog):
         self.cancelButton = QPushButton("Cancel")
         self.cancelButton.clicked.connect(self.cancel)
 
-        hbl5 = QHBoxLayout()
-        hbl5.addStretch(1)
-        hbl5.addWidget(self.cancelButton)
-        hbl5.addWidget(self.okButton)
+        hbl6 = QHBoxLayout()
+        hbl6.addStretch(1)
+        if self.allow_preview:
+            hbl6.addWidget(self.previewButton)
+        hbl6.addWidget(self.cancelButton)
+        hbl6.addWidget(self.okButton)
 
         # Add Lines to Vertical Layout
         # vbl is short for Vertical Box Layout
         vbl = QVBoxLayout()
-        vbl.addLayout(hbl1)
+        if self.allow_spectral_axes:
+            vbl.addLayout(hbl1)
         vbl.addLayout(hbl2)
         vbl.addLayout(hbl3)
         vbl.addLayout(hbl4)
         vbl.addLayout(hbl5)
+        vbl.addLayout(hbl6)
 
         self.setLayout(vbl)
         self.setMaximumWidth(330)
@@ -631,11 +716,13 @@ class SelectSmoothing(QDialog):
 
     def spatial_radio_checked(self):
         self.current_axis = "spatial"
+        self.update_preview_button()
         self.combo.clear()
         self.combo.addItems(self.options[self.current_axis])
 
     def spectral_radio_checked(self):
         self.current_axis = "spectral"
+        self.update_preview_button()
         self.combo.clear()
         self.combo.addItems(self.options[self.current_axis])
 
@@ -697,7 +784,7 @@ class SelectSmoothing(QDialog):
         self.smooth_cube.abort_window = self.abort_window
         if self.smooth_cube.parent is None and self.parent is not self.smooth_cube:
             self.smooth_cube.parent = self.parent
-        if self.smooth_cube.data is None:
+        if self.parent is not self.smooth_cube:
             self.smooth_cube.data = self.data
         self.smooth_cube.smoothing_axis = self.current_axis
         self.smooth_cube.kernel_type = self.current_kernel_type
@@ -708,8 +795,50 @@ class SelectSmoothing(QDialog):
         self.smooth_cube.component_id = str(self.component_combo.currentText())
         self.smooth_cube.output_as_component = True
 
+        if self.is_preview_active:
+            self.parent.end_smoothing_preview()
+            self.is_preview_active = False
         self.smooth_cube.multi_threading_smooth()
         return
+
+    def update_preview_button(self):
+        if self.parent is None or "spatial" != self.current_axis:
+            self.previewButton.setDisabled(True)
+            return
+        self.previewButton.setDisabled(False)
+        return
+
+    def call_preview(self):
+        try:
+            self.preview()
+        except Exception as e:
+            info = QMessageBox.critical(self, "Error", str(e))
+            self.cancel()
+            raise
+
+    def preview(self):
+        """Preview current options"""
+        success = self.input_validation()
+
+        if not success:
+            return
+
+        if self.smooth_cube.parent is None and self.parent is not self.smooth_cube:
+            self.smooth_cube.parent = self.parent
+        self.smooth_cube.smoothing_axis = self.current_axis
+        self.smooth_cube.kernel_type = self.current_kernel_type
+        if self.current_kernel_type == "median":
+            self.smooth_cube.kernel_size = int(self.k_size.text())
+        else:
+            self.smooth_cube.kernel_size = float(self.k_size.text())
+
+        preview_function = self.smooth_cube.preview_smoothing
+        preview_title = self.smooth_cube.get_preview_title()
+        component_id = str(self.component_combo.currentText())
+        self.parent.start_smoothing_preview(preview_function, component_id, preview_title)
+
+        self.is_preview_active = True
+        self.preview_message.show()
 
     def cancel(self):
         self.clean_up()
@@ -718,3 +847,11 @@ class SelectSmoothing(QDialog):
         self.close()
         if self.abort_window is not None:
             self.abort_window.close()
+        if self.is_preview_active:
+            self.parent.end_smoothing_preview()
+            self.is_preview_active = False
+
+    def closeEvent(self, event):
+        if self.is_preview_active:
+            self.parent.end_smoothing_preview()
+            self.is_preview_active = False

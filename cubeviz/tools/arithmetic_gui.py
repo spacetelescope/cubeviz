@@ -84,7 +84,7 @@ class SelectArithmetic(QDialog):
         self.example_text_label.setFont(boldFont)
 
         examples = """Assuming we have data available called FLUX and ERROR:
-        
+
         - Subtract 1000 from {0}:  {0}new = {0} - 1000
         - Double the FLUX:  {0}new = {0} * 2
         - Scale FLUX between 0 and 1:  {0}norm = ({0} - min({0})) - (max({0})-min({0}))
