@@ -263,7 +263,6 @@ class CubeVizLayout(QtWidgets.QWidget):
             selection_label = 'viewer{0}_attribute'.format(i)
             self._enable_viewer_combo(data, i, combo_label, selection_label)
 
-
     def add_overlay(self, data, label):
         self._overlay_controller.add_overlay(data, label)
 

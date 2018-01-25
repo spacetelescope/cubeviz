@@ -1,6 +1,7 @@
 import numpy as np
 from astropy import units as u
 from specviz.third_party.glue.data_viewer import dispatch as specviz_dispatch
+from ..tools import unit_conversion
 
 RED_BACKGROUND = "background-color: rgba(255, 0, 0, 128);"
 
@@ -9,6 +10,7 @@ class SliceController:
 
     def __init__(self, cubeviz_layout):
         self._cv_layout = cubeviz_layout
+        print(cubeviz_layout._wavelengths)
         ui = cubeviz_layout.ui
 
         # These are the contents of the text boxes
@@ -17,7 +19,7 @@ class SliceController:
 
         # This is the Wavelength conversion/combobox code
         self._wavelength_combobox = ui.unitcomboBox
-        units = [u.meter, u.kilometer, u.cm]
+        units = [u.m, u.cm, u.mm, u.um, u.nm, u.Angstrom]
         units_titles = (u.long_names[0].title() for u in units)
         self._wavelength_combobox.addItems(units_titles)
 
@@ -30,6 +32,7 @@ class SliceController:
         self._slice_slider.valueChanged.connect(self._on_slider_change)
         self._slice_textbox.returnPressed.connect(self._on_text_slice_change)
         self._wavelength_textbox.returnPressed.connect(self._on_text_wavelength_change)
+        self._wavelength_combobox.activated.connect(self._on_combobox_change)
 
         self._slice_slider.setEnabled(False)
         self._slice_textbox.setEnabled(False)
@@ -83,6 +86,8 @@ class SliceController:
         :param event:
         :return:
         """
+        print("testing")
+        unit_conversion.convert_wavelength()
         return
 
     def _on_slider_change(self, event):
