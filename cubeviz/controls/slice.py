@@ -42,6 +42,7 @@ class SliceController:
 
         :return:
         """
+        print("In slider", len(wavelengths), wavelengths[0])
         self._slice_slider.setEnabled(True)
         self._slice_textbox.setEnabled(True)
         self._wavelength_textbox.setEnabled(True)
@@ -64,6 +65,27 @@ class SliceController:
         self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[middle_index]))
 
         self._cv_layout.synced_index = middle_index
+        print("end of slider enable", middle_index)
+
+    def set_wavelengths(self, new_wavelengths, new_units):
+
+        print("in set_wavelengths - slice")
+        self._slice_slider.setMinimum(0)
+
+        # Store the wavelength units and format
+        self._wavelength_units = new_units
+        self._wavelength_format = '{:.3}'
+        self._wavelength_textbox_label.setText('Wavelength ({})'.format(self._wavelength_units))
+
+        # Grab the wavelengths so they can be displayed in the text box
+        self._wavelengths = new_wavelengths
+        self._slice_slider.setMaximum(len(self._wavelengths) - 1)
+
+        # Set the default display to the middle of the cube
+        middle_index = len(self._wavelengths) // 2
+        self._update_slice_textboxes(middle_index)
+        self._slice_slider.setValue(middle_index)
+        self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[middle_index]))
 
     def update_index(self, index):
         self._slice_slider.setValue(index)
@@ -81,6 +103,8 @@ class SliceController:
         cube_views = self._cv_layout.cube_views
         active_cube = self._cv_layout._active_cube
         active_widget = active_cube._widget
+
+        print("in slider", index)
 
         # Update the image displayed in the slice in the active view
         active_widget.update_slice_index(index)
