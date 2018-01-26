@@ -36,8 +36,6 @@ class UnitController:
         self._new_wavelengths = self.convert_wavelengths(self._original_wavelengths, self._original_units, self._new_units)
         if self._new_wavelengths is None:
             return
-        print(self._original_wavelengths)
-        print(self._new_wavelengths, len(self._new_wavelengths))
 
         # Set layout._wavelength as the new wavelength
         self._cv_layout.set_wavelengths(self._new_wavelengths, self._new_units)
