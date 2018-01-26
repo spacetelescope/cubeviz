@@ -22,6 +22,7 @@ from .image_viewer import CubevizImageViewer
 
 from .controls.slice import SliceController
 from .controls.overlay import OverlayController
+from .controls.units import UnitController
 from .tools import arithmetic_gui, moment_maps, smoothing
 
 FLUX = 'FLUX'
@@ -138,6 +139,7 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         self._slice_controller = SliceController(self)
         self._overlay_controller = OverlayController(self)
+        self._units_controller = UnitController(self)
 
         # Add menu buttons to the cubeviz toolbar.
         self._init_menu_buttons()
@@ -341,6 +343,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         # Pass WCS and wavelength information to slider controller and enable
         wcs = self.session.data_collection.data[0].coords.wcs
         self._slice_controller.enable(wcs, self._wavelengths)
+        self._units_controller.enable(wcs, self._wavelengths)
 
         self._enable_option_buttons()
         self._setup_syncing()
