@@ -143,7 +143,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._init_menu_buttons()
 
         # This maps the combo box indicies to the glue data component labels
-        self._component_labels = DEFAULT_DATA_LABELS.copy()
+        self._component_labels = []
 
         self.sync = {}
         # Track the slice index of the synced viewers. This is updated by the
@@ -334,6 +334,9 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._active_cube = self.left_view
         self._last_active_view = self.single_view
         self._active_split_cube = self.left_view
+
+        # Set the component labels to what was actually in the file.
+        self._component_labels = [str(x).strip() for x in data.component_ids() if not x in data.coordinate_components]
 
         # Store pointer to wavelength information
         self._wavelengths = self.single_view._widget._data[0].get_component('Wave')[:,0,0]
