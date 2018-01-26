@@ -629,8 +629,7 @@ class SelectSmoothing(QDialog):
         )
 
         self.component_combo.setMaximumWidth(150)
-        if 'FLUX' in component_ids:
-            self.component_combo.setCurrentIndex(component_ids.index('FLUX'))
+        self.component_combo.setCurrentIndex(0)
         if self.allow_preview:
             self.component_combo.currentIndexChanged.connect(self.update_preview_button)
 
