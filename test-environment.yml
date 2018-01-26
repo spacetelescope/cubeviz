@@ -35,6 +35,6 @@ dependencies:
 
   - pip:
     - asteval
-    - git+https://github.com/spacetelescope/specviz#egg=specviz
-    - git+https://github.com/spacetelescope/cubeviz#egg=cubeviz
-    - git+https://github.com/radio-astro-tools/spectral-cube#egg=spectral-cube
+    - "--editable=git+https://github.com/spacetelescope/specviz#egg=specviz"
+    - "--editable=git+https://github.com/spacetelescope/cubeviz#egg=cubeviz"
+    - "--editable=git+https://github.com/radio-astro-tools/spectral-cube#egg=spectral-cube"
