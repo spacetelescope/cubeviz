@@ -16,7 +16,6 @@ from ..listener import CUBEVIZ_LAYOUT
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('cubeviz_data_configuration')
 logger.setLevel(logging.INFO)
-logging.getLogger('glue').setLevel(logging.DEBUG)
 
 DEFAULT_DATA_CONFIGS = os.path.join(os.path.dirname(__file__), 'configurations')
 CUBEVIZ_DATA_CONFIGS = 'CUBEVIZ_DATA_CONFIGS'

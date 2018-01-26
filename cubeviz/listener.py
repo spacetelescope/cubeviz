@@ -82,6 +82,10 @@ class CubevizManager(HubListener):
             view.state.aspect = 'auto'
             view.state.layers[0].attribute = data.id[data_headers[ii%len(data_headers)]]
 
+        # Disable any viewers that are beyond the number of data acomponents
+        for ii in range(len(data_headers), 3):
+            image_viewers[1+ii].setEnabled(False)
+
         cubeviz_layout.add_data(data)
 
         index = self._app.get_tab_index(cubeviz_layout)
