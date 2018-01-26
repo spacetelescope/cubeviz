@@ -19,7 +19,6 @@ name: cubeviz-testing
 
 channels:
   - glueviz/label/dev
-  - http://ssb.stsci.edu/astroconda
 
 dependencies:
   - python=3.6
@@ -31,7 +30,6 @@ dependencies:
   - matplotlib
   - glue-core>=0.12
   - glueviz
-  - astroimtools
 
   - pip:
     - asteval
