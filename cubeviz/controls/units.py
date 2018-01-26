@@ -33,7 +33,7 @@ class UnitController:
         self._new_units = self.units[self.units_titles.index(new_unit_name)]
 
         self._new_wavelengths = ((self._original_wavelengths * self._original_units).to(self._new_units)/self._new_units)
-
+        self._wavelength_textbox_label.setText('Wavelength ({})'.format(self._new_units.short_names[0]))
         print(self._original_wavelengths)
         print(self._new_wavelengths)
 
