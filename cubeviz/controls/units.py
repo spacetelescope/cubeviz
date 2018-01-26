@@ -40,17 +40,7 @@ class UnitController:
         print(self._new_wavelengths, len(self._new_wavelengths))
 
         # Set layout._wavelength as the new wavelength
-        self._cv_layout.set_wavelengths(self._new_wavelengths, self._new_units.short_names[0])
-
-        # Code that is breaking functionality (on slice click sets slice index to 0)
-        # self._cv_layout._slice_controller.enable(self._wcs, self._new_wavelengths)
-        # self._cv_layout._slice_controller.set_wavelengths(self._new_units.short_names[0, self._new_wavelengths])
-
-        # Update slice index and set wavelength label as new unit
-        # self._cv_layout._slice_controller.update_index(self._cv_layout.synced_index)
-        # self._wavelength_textbox_label.setText('Wavelength ({})'.format(self._new_units.short_names[0]))
-
-        return
+        self._cv_layout.set_wavelengths(self._new_wavelengths, self._new_units)
 
     def convert_wavelengths(self, old_wavelengths, old_units, new_units):
         if old_wavelengths is not None:

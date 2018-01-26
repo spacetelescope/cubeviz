@@ -65,15 +65,15 @@ class SliceController:
         self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[middle_index]))
 
         self._cv_layout.synced_index = middle_index
-        print("end of slider enable", middle_index)
+        #print("end of slider enable", middle_index)
 
     def set_wavelengths(self, new_wavelengths, new_units):
 
         print("in set_wavelengths - slice")
-        self._slice_slider.setMinimum(0)
 
         # Store the wavelength units and format
-        self._wavelength_units = new_units
+        new_units_name = new_units.short_names[0]
+        self._wavelength_units = new_units_name
         self._wavelength_format = '{:.3}'
         self._wavelength_textbox_label.setText('Wavelength ({})'.format(self._wavelength_units))
 
@@ -86,6 +86,8 @@ class SliceController:
         self._update_slice_textboxes(middle_index)
         self._slice_slider.setValue(middle_index)
         self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[middle_index]))
+
+        specviz_dispatch.changed_units.emit(x=new_units)
 
     def update_index(self, index):
         self._slice_slider.setValue(index)
