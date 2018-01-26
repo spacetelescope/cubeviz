@@ -74,7 +74,9 @@ class CubevizManager(HubListener):
         image_viewers[0].state.layers[0].attribute = data.id[FLUX]
 
         # Split image viewers should each show different component by default
-        for i, attribute in enumerate([FLUX, ERROR, MASK]):
+        data_headers = [str(x).strip() for x in data.component_ids() if not x in data.coordinate_components]
+        print('data headers {}'.format(data_headers))
+        for i, attribute in enumerate(data_headers):
             image_viewers[1 + i].add_data(data)
             image_viewers[1 + i].state.aspect = 'auto'
             image_viewers[1 + i].state.layers[0].attribute = data.id[attribute]

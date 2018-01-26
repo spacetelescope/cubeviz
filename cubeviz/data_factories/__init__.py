@@ -12,11 +12,11 @@ from astropy.io import fits
 import numpy as np
 
 from ..listener import CUBEVIZ_LAYOUT
-from ..layout import FLUX, ERROR, MASK
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('cubeviz_data_configuration')
 logger.setLevel(logging.INFO)
+logging.getLogger('glue').setLevel(logging.DEBUG)
 
 DEFAULT_DATA_CONFIGS = os.path.join(os.path.dirname(__file__), 'configurations')
 CUBEVIZ_DATA_CONFIGS = 'CUBEVIZ_DATA_CONFIGS'
@@ -60,41 +60,28 @@ class DataConfiguration:
         """
         hdulist = fits.open(data_filename)
 
-        # Try the flux index as a number, if that fails then
-        # we will use a string index into the data file.
-        try:
-            flux_index = int(self._data['FLUX'])
-        except:
-            flux_index = self._data['FLUX']
-
-        flux = hdulist[flux_index]
-        flux_data = flux.data
-
-        # Try the error index as a number, if that fails then
-        # we will use a string index into the data file.
-        try:
-            error_index = int(self._data['ERROR'])
-        except:
-            error_index = self._data['ERROR']
-        var_data = hdulist[error_index].data
-
-        if not self._data['DQ'] == 'None':
-            mask_data = hdulist[self._data['DQ']].data
-        else:
-            mask_data = np.empty(flux_data.shape)
-
         label = "{}: {}".format(self._name, splitext(basename(data_filename))[0])
-
         data = Data(label=label)
-
-        data.coords = coordinates_from_header(flux.header)
 
         # this attribute is used to indicate to the cubeviz layout that this is a cubeviz-specific data component.
         data.meta[CUBEVIZ_LAYOUT] = self._name
 
-        data.add_component(component=flux_data, label=FLUX)
-        data.add_component(component=var_data, label=ERROR)
-        data.add_component(component=mask_data, label=MASK)
+        data_coords_set = False
+        for ii, hdu in enumerate(hdulist):
+            if 'NAXIS' in hdu.header and hdu.header['NAXIS'] == 3:
+
+                # Set the coords based on the first 3D HDU
+                if not data_coords_set:
+                    data.coords = coordinates_from_header(hdu.header)
+                    data_coords_set = True
+
+                component_name = str(ii)
+                if 'EXTNAME' in hdu.header:
+                    component_name = hdu.header['EXTNAME']
+
+                    print('Adding component {}'.format(component_name))
+                    data.add_component(component=hdu.data, label=component_name)
+
 
         return data
 
