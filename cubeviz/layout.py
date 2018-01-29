@@ -24,17 +24,6 @@ from .controls.slice import SliceController
 from .controls.overlay import OverlayController
 from .tools import arithmetic_gui, moment_maps, smoothing
 
-FLUX = 'FLUX'
-ERROR = 'ERROR'
-MASK = 'MASK'
-DEFAULT_DATA_LABELS = [FLUX, ERROR, MASK]
-
-COLOR = {}
-COLOR[FLUX] = '#888888'
-COLOR[ERROR] = '#ffaa66'
-COLOR[MASK] = '#66aaff'
-
-
 class WidgetWrapper(QtWidgets.QWidget):
 
     def __init__(self, widget=None, tab_widget=None, parent=None):
@@ -340,7 +329,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._component_labels = [str(x).strip() for x in data.component_ids() if not x in data.coordinate_components]
 
         # Store pointer to wavelength information
-        self._wavelengths = self.single_view._widget._data[0].get_component('Wave')[:,0,0]
+        self._wavelengths = self.single_view._widget._data[0].coords.world_axis(self.single_view._widget._data[0], axis=0)
 
         # Pass WCS and wavelength information to slider controller and enable
         wcs = self.session.data_collection.data[0].coords.wcs

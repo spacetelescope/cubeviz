@@ -49,7 +49,7 @@ class DataConfiguration:
             self._data = cfg.get('data', None)
 
 
-    def load_data(self, data_filename):
+    def load_data(self, data_filenames):
         """
         Load the data based on the extensions defined in the matching YAML file.  THen
         create the datacube and return it.
@@ -57,30 +57,35 @@ class DataConfiguration:
         :param data_filename:
         :return:
         """
-        hdulist = fits.open(data_filename)
 
-        label = "{}: {}".format(self._name, splitext(basename(data_filename))[0])
-        data = Data(label=label)
+        label = None
+        data = None
 
-        # this attribute is used to indicate to the cubeviz layout that this is a cubeviz-specific data component.
-        data.meta[CUBEVIZ_LAYOUT] = self._name
+        for data_filename in data_filenames.split(','):
+            hdulist = fits.open(data_filename)
 
-        data_coords_set = False
-        for ii, hdu in enumerate(hdulist):
-            if 'NAXIS' in hdu.header and hdu.header['NAXIS'] == 3:
+            if not label:
+                label = "{}: {}".format(self._name, splitext(basename(data_filename))[0])
+                data = Data(label=label)
 
-                # Set the coords based on the first 3D HDU
-                if not data_coords_set:
-                    data.coords = coordinates_from_header(hdu.header)
-                    data_coords_set = True
+                # this attribute is used to indicate to the cubeviz layout that this is a cubeviz-specific data component.
+                data.meta[CUBEVIZ_LAYOUT] = self._name
 
-                component_name = str(ii)
-                if 'EXTNAME' in hdu.header:
-                    component_name = hdu.header['EXTNAME']
+            data_coords_set = False
+            for ii, hdu in enumerate(hdulist):
+                if 'NAXIS' in hdu.header and hdu.header['NAXIS'] == 3:
 
-                    print('Adding component {}'.format(component_name))
-                    data.add_component(component=hdu.data, label=component_name)
+                    # Set the coords based on the first 3D HDU
+                    if not data_coords_set:
+                        data.coords = coordinates_from_header(hdu.header)
+                        data_coords_set = True
 
+                    component_name = str(ii)
+                    if 'EXTNAME' in hdu.header:
+                        component_name = hdu.header['EXTNAME']
+
+                        # The data must be floating point as spectralcube is expecting floating point data
+                        data.add_component(component=hdu.data.astype(np.float), label=component_name)
 
         return data
 
@@ -92,9 +97,10 @@ class DataConfiguration:
         :param filename:
         :return:
         """
-        self._fits = fits.open(filename)
 
-        logger.debug('Checking {} to see if matches {}'.format(filename, self._config_file))
+        # Check the "first filename in the list" which might be the "only filename" in the list. 
+        filename = filename.split(',')[0]
+        self._fits = fits.open(filename)
 
         # Now call the internal processing.
         matches = self._process('all', self._configuration['all'])
