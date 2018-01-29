@@ -16,8 +16,10 @@
 # $ conda env remove -n cubeviz-testing
 
 name: cubeviz-testing
+
 channels:
   - glueviz/label/dev
+
 dependencies:
   - python=3.6
   - pyqt
@@ -28,7 +30,9 @@ dependencies:
   - matplotlib
   - glue-core>=0.12
   - glueviz
+
   - pip:
     - asteval
-    - git+https://github.com/spacetelescope/specviz#egg=specviz
-    - git+https://github.com/spacetelescope/cubeviz#egg=cubeviz
+    - "--editable=git+https://github.com/spacetelescope/specviz#egg=specviz"
+    - "--editable=git+https://github.com/spacetelescope/cubeviz#egg=cubeviz"
+    - "--editable=git+https://github.com/radio-astro-tools/spectral-cube#egg=spectral-cube"
