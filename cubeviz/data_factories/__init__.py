@@ -138,7 +138,7 @@ class DataConfiguration:
 
     def _all(self, conditionals):
         """
-        Check all the conditionals and they must all be true for this to return true.
+        All conditions must be met
 
         :param conditionals:
         :return:
@@ -152,7 +152,7 @@ class DataConfiguration:
 
     def _any(self, conditionals):
         """
-        Check each conditional and return true for the first one that matches true. Else return False
+        Any condition can be met
 
         :param conditionals:
         :return:
@@ -173,7 +173,7 @@ class DataConfiguration:
 
     def _equal(self, value):
         """
-        This is to check if a header_key entry has the same value as what is passed in here.
+        The value at the header_key must equal the value
 
         :param value:
         :return:
@@ -183,7 +183,7 @@ class DataConfiguration:
 
     def _startswith(self, value):
         """
-        This is to check if a header_key entry starts with the value as what is passed in here.
+        The value at the header_key must start with the value
 
         :param value:
         :return:
@@ -193,7 +193,7 @@ class DataConfiguration:
 
     def _extension_names(self, value):
         """
-        This is to check if a header_key entry has the same value as what is passed in here.
+        All extensions must exist in the file
 
         :param value:
         :return:
@@ -206,7 +206,53 @@ class DataConfiguration:
         else:
             return all([v in self._fits for v in value])
 
+    def summarize(self):
+        """
+        High level summarize function for the YAML configuration file. 
+        """
 
+        print('# {}'.format(self._name))
+        print('Description: {}\n'.format(self._type))
+        print('Filename: {}\n'.format(self._config_file))
+        print('\n')
+
+        self._summarize(self._configuration)
+
+    def _summarize(self, d, level=1):
+        """
+        Summarize function that will either print the lear values or will go
+        one level deeper.
+        """
+
+        # Leaf value, so just print it out.
+        if 'header_key' in d.keys():
+            print("""{}* header['{}']   '{}'""".format('  '*level, d['header_key'], d['value']))
+            print('\n')
+
+
+        # Check each key of the dictionary and go deeper if needed.
+        else:
+            for k, v in d.items():
+
+                func = eval('self._{}'.format(k))
+                print('{}* {}:'.format('  '*level, self._get_func_docstring(func)))
+
+                if isinstance(v, dict):
+                    self._summarize(v, level+1)
+                elif v:
+                    print('{}{}'.format('  '*level, v))
+
+    def _get_func_docstring(self, func):
+        """
+        Given the string representation of one of the functions, get the 
+        docstring and return it to be used in the markup.
+        """
+        ds = func.__doc__
+        for dsl in ds.split('\n'):
+            if len(dsl) > 0:
+                return dsl.strip()
+
+        return ''
 
 class DataFactoryConfiguration:
     """
@@ -242,6 +288,15 @@ class DataFactoryConfiguration:
                     config_files.extend(files)
 
         return config_files
+
+
+    def summarize(self):
+        """
+        Function to print out a Markup representation of each configuration file.
+        """
+        for config_file in self._find_yaml_files(DEFAULT_DATA_CONFIGS):
+            dc = DataConfiguration(config_file)
+            print(dc.summarize())
 
     def __init__(self, in_configs=[], show_only=False):
         """
@@ -293,3 +348,4 @@ class DataFactoryConfiguration:
             dc = DataConfiguration(config_file)
             wrapper = data_factory(name, dc.matches, priority=priority)
             wrapper(dc.load_data)
+
