@@ -4,7 +4,8 @@ import os
 import pytest
 import numpy as np
 
-from ..layout import DEFAULT_DATA_LABELS
+DATA_LABELS = ['018.DATA', '018.NOISE']
+
 from .helpers import toggle_viewer, select_viewer, left_click
 
 
@@ -91,7 +92,7 @@ def test_sync_checkboxes(qtbot, cubeviz_layout, viewer_index):
 
 def check_data_component(layout, combo, index, widget):
     combo.setCurrentIndex(index)
-    current_label = DEFAULT_DATA_LABELS[index]
+    current_label = DATA_LABELS[index]
     assert combo.currentText() == current_label
     np.testing.assert_allclose(
         widget.layers[0].state.get_sliced_data(),
