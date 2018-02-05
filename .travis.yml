@@ -93,6 +93,11 @@ matrix:
         - os: linux
           env: NUMPY_VERSION=stable
 
+        # Test against latest development version of Glue
+        - os: linux
+          env: NUMPY_VERSION=stable
+               CONDA_CHANNELS='glueviz/label/dev glueviz'
+
         # Do a PEP8 test with pycodestyle
         - os: linux
           env: MAIN_CMD='pycodestyle cubeviz --count' SETUP_CMD=''
@@ -105,6 +110,10 @@ matrix:
         # For now allow failures against numpy 1.14
         - os: linux
           env: NUMPY_VERSION=stable
+        # Allow failures against development version of Glue
+        - os: linux
+          env: NUMPY_VERSION=stable
+               CONDA_CHANNELS='glueviz/label/dev glueviz'
 
 install:
 
