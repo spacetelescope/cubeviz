@@ -24,17 +24,6 @@ from .controls.slice import SliceController
 from .controls.overlay import OverlayController
 from .tools import arithmetic_gui, moment_maps, smoothing
 
-FLUX = 'FLUX'
-ERROR = 'ERROR'
-MASK = 'MASK'
-DEFAULT_DATA_LABELS = [FLUX, ERROR, MASK]
-
-COLOR = {}
-COLOR[FLUX] = '#888888'
-COLOR[ERROR] = '#ffaa66'
-COLOR[MASK] = '#66aaff'
-
-
 class WidgetWrapper(QtWidgets.QWidget):
 
     def __init__(self, widget=None, tab_widget=None, parent=None):
@@ -143,7 +132,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._init_menu_buttons()
 
         # This maps the combo box indicies to the glue data component labels
-        self._component_labels = DEFAULT_DATA_LABELS.copy()
+        self._component_labels = []
 
         self.sync = {}
         # Track the slice index of the synced viewers. This is updated by the
@@ -283,6 +272,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         return change_viewer
 
     def _enable_viewer_combo(self, data, index, combo_label, selection_label):
+        print('enable_viewer_combo {} {} {}'.format(index, combo_label, selection_label))
         combo = getattr(self.ui, combo_label)
         connect_combo_selection(self, selection_label, combo)
         helper = ComponentIDComboHelper(self, selection_label)
@@ -335,8 +325,11 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._last_active_view = self.single_view
         self._active_split_cube = self.left_view
 
+        # Set the component labels to what was actually in the file.
+        self._component_labels = [str(x).strip() for x in data.component_ids() if not x in data.coordinate_components]
+
         # Store pointer to wavelength information
-        self._wavelengths = self.single_view._widget._data[0].get_component('Wave')[:,0,0]
+        self._wavelengths = self.single_view._widget._data[0].coords.world_axis(self.single_view._widget._data[0], axis=0)
 
         # Pass WCS and wavelength information to slider controller and enable
         wcs = self.session.data_collection.data[0].coords.wcs

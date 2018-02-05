@@ -3,7 +3,7 @@
 from glue.core import Hub, HubListener, Data, DataCollection
 from glue.core.message import (DataCollectionAddMessage,
                                DataAddComponentMessage, SettingsChangeMessage)
-from .layout import CubeVizLayout, COLOR, FLUX, ERROR, MASK
+from .layout import CubeVizLayout
 
 
 CUBEVIZ_LAYOUT = 'cubeviz_layout'
@@ -68,16 +68,26 @@ class CubevizManager(HubListener):
                          cubeviz_layout.middle_view._widget,
                          cubeviz_layout.right_view._widget]
 
+        data_headers = [str(x).strip() for x in data.component_ids() if not x in data.coordinate_components]
+
         # Single viewer should display FLUX only by default
         image_viewers[0].add_data(data)
         image_viewers[0].state.aspect = 'auto'
-        image_viewers[0].state.layers[0].attribute = data.id[FLUX]
+        image_viewers[0].state.layers[0].attribute = data.id[data_headers[0]]
 
         # Split image viewers should each show different component by default
-        for i, attribute in enumerate([FLUX, ERROR, MASK]):
-            image_viewers[1 + i].add_data(data)
-            image_viewers[1 + i].state.aspect = 'auto'
-            image_viewers[1 + i].state.layers[0].attribute = data.id[attribute]
+        for ii, dh in enumerate(data_headers[:3]):
+            view = image_viewers[1+ii]
+            view.add_data(data) 
+            view.state.aspect = 'auto'
+            view.state.layers[0].attribute = data.id[dh]
+
+        # And then for the "other" viewers, load the data up
+        for jj in range(ii+1,3):
+            view = image_viewers[1+jj]
+            view.add_data(data) 
+            view.state.aspect = 'auto'
+            view.state.layers[0].attribute = data.id[dh]
 
         cubeviz_layout.add_data(data)
 

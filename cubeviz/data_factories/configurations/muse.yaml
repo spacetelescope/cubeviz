@@ -1,0 +1,28 @@
+# JWST FITS cube
+name: 'muse'
+type: 'MUSE'
+# Highest priority data configuration file, that matches, is selected.
+priority: 1200
+
+# All must match and they must have SCI, ERR, DQ extensions
+match:
+    all:
+        equal:
+            header_key:
+                HDUCLASS
+            value:
+                ESO
+        all:
+            # All the extensions must exist.
+            extension_names:
+                - DATA
+                - STAT
+                - DQ
+# Data extension names for FLUX, ERROR and DQ
+data:
+    FLUX:
+        DATA
+    ERROR:
+        STAT
+    DQ:
+        DQ
