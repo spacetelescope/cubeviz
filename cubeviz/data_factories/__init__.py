@@ -98,7 +98,7 @@ class DataConfiguration:
         :return:
         """
 
-        # Check the "first filename in the list" which might be the "only filename" in the list. 
+        # Check the "first filename in the list" which might be the "only filename" in the list.
         filename = filename.split(',')[0]
         self._fits = fits.open(filename)
 
@@ -208,7 +208,7 @@ class DataConfiguration:
 
     def summarize(self):
         """
-        High level summarize function for the YAML configuration file. 
+        High level summarize function for the YAML configuration file.
         """
 
         print('# {}'.format(self._name))
@@ -244,7 +244,7 @@ class DataConfiguration:
 
     def _get_func_docstring(self, func):
         """
-        Given the string representation of one of the functions, get the 
+        Given the string representation of one of the functions, get the
         docstring and return it to be used in the markup.
         """
         ds = func.__doc__
@@ -348,4 +348,3 @@ class DataFactoryConfiguration:
             dc = DataConfiguration(config_file)
             wrapper = data_factory(name, dc.matches, priority=priority)
             wrapper(dc.load_data)
-
