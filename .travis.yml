@@ -103,10 +103,6 @@ matrix:
           env: MAIN_CMD='pycodestyle cubeviz --count' SETUP_CMD=''
 
     allow_failures:
-        # Do a PEP8 test with pycodestyle
-        # (allow to fail unless your code completely compliant)
-        - os: linux
-          env: MAIN_CMD='pycodestyle cubeviz --count' SETUP_CMD=''
         # For now allow failures against numpy 1.14
         - os: linux
           env: NUMPY_VERSION=stable
