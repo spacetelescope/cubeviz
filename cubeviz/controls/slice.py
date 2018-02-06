@@ -3,6 +3,7 @@ from specviz.third_party.glue.data_viewer import dispatch as specviz_dispatch
 
 RED_BACKGROUND = "background-color: rgba(255, 0, 0, 128);"
 
+
 class SliceController:
 
     def __init__(self, cubeviz_layout):
