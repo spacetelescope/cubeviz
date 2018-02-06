@@ -272,7 +272,6 @@ class CubeVizLayout(QtWidgets.QWidget):
         return change_viewer
 
     def _enable_viewer_combo(self, data, index, combo_label, selection_label):
-        print('enable_viewer_combo {} {} {}'.format(index, combo_label, selection_label))
         combo = getattr(self.ui, combo_label)
         connect_combo_selection(self, selection_label, combo)
         helper = ComponentIDComboHelper(self, selection_label)
