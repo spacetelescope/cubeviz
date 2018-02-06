@@ -78,14 +78,14 @@ class CubevizManager(HubListener):
         # Split image viewers should each show different component by default
         for ii, dh in enumerate(data_headers[:3]):
             view = image_viewers[1+ii]
-            view.add_data(data) 
+            view.add_data(data)
             view.state.aspect = 'auto'
             view.state.layers[0].attribute = data.id[dh]
 
         # And then for the "other" viewers, load the data up
         for jj in range(ii+1,3):
             view = image_viewers[1+jj]
-            view.add_data(data) 
+            view.add_data(data)
             view.state.aspect = 'auto'
             view.state.layers[0].attribute = data.id[dh]
 
