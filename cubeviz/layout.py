@@ -251,12 +251,18 @@ class CubeVizLayout(QtWidgets.QWidget):
             moment_maps.MomentMapsGUI(
                 self._data, self.session.data_collection, parent=self)
 
+    def refresh_viewer_combo_helpers(self):
+        for helper in self._viewer_combo_helpers:
+            helper.refresh()
+
     def add_new_data_component(self, name):
         self._component_labels.append(str(name))
 
-        if self._active_view is not None:
+        if self._active_view in self.all_views:
+            view = self._active_view.widget()
             view_index = self.all_views.index(self._active_view)
             component_index = self._component_labels.index(str(name))
+            self.refresh_viewer_combo_helpers()
             self.change_viewer_component(view_index, component_index)
 
     def remove_component(self, name):
@@ -322,7 +328,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         else:
             combo_label = 'viewer{0}_combo'.format(view_index)
         combo = getattr(self.ui, combo_label)
-
+        print([combo.itemText(i) for i in range(combo.count())])
         if combo.currentIndex() == component_index:
             combo.currentIndexChanged.emit(component_index)
         else:
