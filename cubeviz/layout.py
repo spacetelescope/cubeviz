@@ -252,21 +252,14 @@ class CubeVizLayout(QtWidgets.QWidget):
                 self._data, self.session.data_collection, parent=self)
 
     def add_new_data_component(self, name):
-        print("adding:", name)
         self._component_labels.append(str(name))
 
         if self._active_view is not None:
-            print("NOW...", self._active_view, self.all_views)
-            view = self._active_view.widget()
             view_index = self.all_views.index(self._active_view)
             component_index = self._component_labels.index(str(name))
-            try:
-                self.change_viewer_component(view_index, component_index)
-            except ValueError:
-                self.change_viewer_component(view_index, component_index)
+            self.change_viewer_component(view_index, component_index)
 
     def remove_component(self, name):
-        print("Removing: ", name)
         if str(name) not in self._component_labels:
             return
         index = self._component_labels.index(str(name))
