@@ -4,4 +4,21 @@ from qtpy import QtCore, QtWidgets, QtGui, compat
 
 @keyboard_shortcut(QtCore.Qt.Key_Left, None)
 def move_slider_left(session):
-    return
+    """
+    Move slider index one to the left
+    :param session:
+    :return:
+    """
+    curr_layout = session.application.current_tab.ui
+    curr_layout.change_slice_index(-1)
+
+
+@keyboard_shortcut(QtCore.Qt.Key_Right, None)
+def move_slider_right(session):
+    """
+    Move slider index one to the right
+    :param session:
+    :return:
+    """
+    curr_layout = session.application.current_tab.ui
+    curr_layout.change_slice_index(1)

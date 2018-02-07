@@ -493,3 +493,6 @@ class CubeVizLayout(QtWidgets.QWidget):
         # Make split image mode the default layout
         self._activate_split_image_mode()
         self._update_active_view(self.left_view)
+
+    def change_slice_index(self, amount):
+        self._slice_controller.change_slider_value(amount)

@@ -69,6 +69,10 @@ class SliceController:
         self._slice_slider.setValue(index)
         self._update_slice_textboxes(index)
 
+    def change_slider_value(self, amount):
+        new_index = self._slice_slider.value() + amount
+        self._slice_slider.setValue(new_index)
+        specviz_dispatch.changed_dispersion_position.emit(pos=new_index)
 
     def _on_slider_change(self, event):
         """
