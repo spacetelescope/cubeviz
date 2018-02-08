@@ -14,8 +14,33 @@ from glue.viewers.image.qt import ImageViewer
 from glue.viewers.image.layer_artist import ImageLayerArtist
 from glue.viewers.image.state import ImageLayerState
 from glue.viewers.image.qt.layer_style_editor import ImageLayerStyleEditor
+from glue.viewers.common.qt.tool import CheckableTool
+from glue.config import viewer_tool
 
-__all__ = ['CubevizImageViewer']
+__all__ = ['CubevizImageViewer', 'ContourButton']
+
+@viewer_tool
+class ContourButton(CheckableTool):
+    icon = '/Users/rgeda/Pictures/icon.png'
+    tool_id = 'cubeviz:contour'
+    action_text = 'Toggles contour map'
+    tool_tip = 'Toggles contour map'
+    status_tip = ''
+    shortcut = None
+
+    def __init__(self, viewer):
+        super(ContourButton, self).__init__(viewer)
+        self.viewer = viewer
+
+    def activate(self):
+        self.viewer.toggle_contour()
+
+    def deactivate(self):
+        self.viewer.toggle_contour()
+    """
+    def close(self):
+        pass
+    """
 
 class CubevizImageLayerState(ImageLayerState):
     """
@@ -41,13 +66,17 @@ class CubevizImageLayerArtist(ImageLayerArtist):
 class CubevizImageViewer(ImageViewer):
 
     tools = ['select:rectangle', 'select:xrange', 'select:yrange',
-             'select:circle', 'select:polygon', 'image:contrast_bias']
+             'select:circle', 'select:polygon', 'image:contrast_bias',
+             'cubeviz:contour']
 
     def __init__(self, *args, **kwargs):
         super(CubevizImageViewer, self).__init__(*args, **kwargs)
         self. _layer_style_widget_cls[CubevizImageLayerArtist] = ImageLayerStyleEditor
         self._synced_checkbox = None
         self._slice_index = None
+
+        self.is_contour_active = False
+        self.contour = None
 
         self.is_mouse_over = False  # If mouse cursor is over viewer
         self.hold_coords = False  # Switch to hold current displayed coords
@@ -124,7 +153,10 @@ class CubevizImageViewer(ImageViewer):
             if isinstance(layer, CubevizImageLayerArtist):
                 layer.state.preview_function = preview_function
         self.axes._composite_image.invalidate_cache()
-        self.axes.figure.canvas.draw()
+        if self.is_contour_active:
+            self.draw_contour()
+        else:
+            self.axes.figure.canvas.draw()
 
     def end_smoothing_preview(self):
         """
@@ -140,7 +172,10 @@ class CubevizImageViewer(ImageViewer):
             if isinstance(layer, CubevizImageLayerArtist):
                 layer.state.preview_function = None
         self.axes._composite_image.invalidate_cache()
-        self.axes.figure.canvas.draw()
+        if self.is_contour_active:
+            self.draw_contour()
+        else:
+            self.axes.figure.canvas.draw()
 
     def toggle_hidden_axes(self, is_axes_hidden):
         """
@@ -156,6 +191,27 @@ class CubevizImageViewer(ImageViewer):
         else:
             self.update_axes_title()
 
+    def remove_contour(self):
+        if self.contour is not None:
+            for c in self.contour.collections:
+                c.remove()
+            self.contour = None
+
+    def draw_contour(self):
+        self.remove_contour()
+        arr = self.state.layers[0].get_sliced_data()
+        self.contour = self.axes.contour(arr)
+        self.axes.figure.canvas.draw()
+
+    def toggle_contour(self):
+        if self.is_contour_active:
+            self.is_contour_active = False
+            self.remove_contour()
+            self.axes.figure.canvas.draw()
+        else:
+            self.is_contour_active = True
+            self.draw_contour()
+
     def _synced_checkbox_callback(self, event):
         if self._synced_checkbox.isChecked():
             msg = SettingsChangeMessage(self, [self])
@@ -170,6 +226,8 @@ class CubevizImageViewer(ImageViewer):
         self._slice_index = index
         z, y, x = self.state.slices
         self.state.slices = (self._slice_index, y, x)
+        if self.is_contour_active:
+            self.draw_contour()
 
     @property
     def synced(self):

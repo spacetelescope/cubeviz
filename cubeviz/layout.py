@@ -269,6 +269,8 @@ class CubeVizLayout(QtWidgets.QWidget):
                 view.end_smoothing_preview()
             view.update_axes_title(title=str(label))
             view.state.layers[0].attribute = self._data.id[label]
+            if view.is_contour_active:
+                view.draw_contour()
         return change_viewer
 
     def _enable_viewer_combo(self, data, index, combo_label, selection_label):
