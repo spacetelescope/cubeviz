@@ -214,6 +214,7 @@ class OperationThread(QThread):
             self._function,
             spectral_axis=self._cube_data.spectral_axis,
             axis=0,
+            keep_shape=True,
             update_function=progress_wrapper)
 
         self.finished.emit(new_data)
