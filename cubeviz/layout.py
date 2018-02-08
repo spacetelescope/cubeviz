@@ -253,18 +253,12 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     def refresh_viewer_combo_helpers(self):
         for i, helper in enumerate(self._viewer_combo_helpers):
-            print("refresh_viewer_combo_helpers: ", i)
             helper.refresh()
-
-    def print_viewer_combo_helpers(self):
-        print("print_viewer_combo_helpers: choices...")
-        for i, helper in enumerate(self._viewer_combo_helpers):
-            print("Viewer:", i, helper.choices)
-        print(" ")
 
     def add_new_data_component(self, name):
         self._component_labels.append(str(name))
         self.refresh_viewer_combo_helpers()
+
         if self._active_view in self.all_views:
             view_index = self.all_views.index(self._active_view)
             component_index = self._component_labels.index(str(name))
@@ -288,7 +282,7 @@ class CubeVizLayout(QtWidgets.QWidget):
             if view.is_smoothing_preview_active:
                 view.end_smoothing_preview()
             view.update_axes_title(title=str(label))
-            self.print_viewer_combo_helpers()
+            view.state.layers[0]._update_attribute()
             view.state.layers[0].attribute = self._data.id[label]
         return change_viewer
 
@@ -337,9 +331,6 @@ class CubeVizLayout(QtWidgets.QWidget):
         else:
             combo_label = 'viewer{0}_combo'.format(view_index)
         combo = getattr(self.ui, combo_label)
-        print("\nchange_viewer_component: Printing viewer combo items:")
-        print([combo.itemText(i) for i in range(combo.count())])
-        print("")
         if combo.currentIndex() == component_index and force:
             combo.currentIndexChanged.emit(component_index)
         else:
