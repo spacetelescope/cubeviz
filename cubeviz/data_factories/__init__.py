@@ -12,7 +12,6 @@ from astropy.io import fits
 import numpy as np
 
 from ..listener import CUBEVIZ_LAYOUT
-from ..layout import FLUX, ERROR, MASK
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('cubeviz_data_configuration')
@@ -50,7 +49,7 @@ class DataConfiguration:
             self._data = cfg.get('data', None)
 
 
-    def load_data(self, data_filename):
+    def load_data(self, data_filenames):
         """
         Load the data based on the extensions defined in the matching YAML file.  THen
         create the datacube and return it.
@@ -58,43 +57,35 @@ class DataConfiguration:
         :param data_filename:
         :return:
         """
-        hdulist = fits.open(data_filename)
 
-        # Try the flux index as a number, if that fails then
-        # we will use a string index into the data file.
-        try:
-            flux_index = int(self._data['FLUX'])
-        except:
-            flux_index = self._data['FLUX']
+        label = None
+        data = None
 
-        flux = hdulist[flux_index]
-        flux_data = flux.data
+        for data_filename in data_filenames.split(','):
+            hdulist = fits.open(data_filename)
 
-        # Try the error index as a number, if that fails then
-        # we will use a string index into the data file.
-        try:
-            error_index = int(self._data['ERROR'])
-        except:
-            error_index = self._data['ERROR']
-        var_data = hdulist[error_index].data
+            if not label:
+                label = "{}: {}".format(self._name, splitext(basename(data_filename))[0])
+                data = Data(label=label)
 
-        if not self._data['DQ'] == 'None':
-            mask_data = hdulist[self._data['DQ']].data
-        else:
-            mask_data = np.empty(flux_data.shape)
+                # this attribute is used to indicate to the cubeviz layout that this is a cubeviz-specific data component.
+                data.meta[CUBEVIZ_LAYOUT] = self._name
 
-        label = "{}: {}".format(self._name, splitext(basename(data_filename))[0])
+            data_coords_set = False
+            for ii, hdu in enumerate(hdulist):
+                if 'NAXIS' in hdu.header and hdu.header['NAXIS'] == 3:
 
-        data = Data(label=label)
+                    # Set the coords based on the first 3D HDU
+                    if not data_coords_set:
+                        data.coords = coordinates_from_header(hdu.header)
+                        data_coords_set = True
 
-        data.coords = coordinates_from_header(flux.header)
+                    component_name = str(ii)
+                    if 'EXTNAME' in hdu.header:
+                        component_name = hdu.header['EXTNAME']
 
-        # this attribute is used to indicate to the cubeviz layout that this is a cubeviz-specific data component.
-        data.meta[CUBEVIZ_LAYOUT] = self._name
-
-        data.add_component(component=flux_data, label=FLUX)
-        data.add_component(component=var_data, label=ERROR)
-        data.add_component(component=mask_data, label=MASK)
+                        # The data must be floating point as spectralcube is expecting floating point data
+                        data.add_component(component=hdu.data.astype(np.float), label=component_name)
 
         return data
 
@@ -106,9 +97,10 @@ class DataConfiguration:
         :param filename:
         :return:
         """
-        self._fits = fits.open(filename)
 
-        logger.debug('Checking {} to see if matches {}'.format(filename, self._config_file))
+        # Check the "first filename in the list" which might be the "only filename" in the list.
+        filename = filename.split(',')[0]
+        self._fits = fits.open(filename)
 
         # Now call the internal processing.
         matches = self._process('all', self._configuration['all'])
@@ -146,7 +138,7 @@ class DataConfiguration:
 
     def _all(self, conditionals):
         """
-        Check all the conditionals and they must all be true for this to return true.
+        All conditions must be met
 
         :param conditionals:
         :return:
@@ -160,7 +152,7 @@ class DataConfiguration:
 
     def _any(self, conditionals):
         """
-        Check each conditional and return true for the first one that matches true. Else return False
+        Any condition can be met
 
         :param conditionals:
         :return:
@@ -181,7 +173,7 @@ class DataConfiguration:
 
     def _equal(self, value):
         """
-        This is to check if a header_key entry has the same value as what is passed in here.
+        The value at the header_key must equal the value
 
         :param value:
         :return:
@@ -191,7 +183,7 @@ class DataConfiguration:
 
     def _startswith(self, value):
         """
-        This is to check if a header_key entry starts with the value as what is passed in here.
+        The value at the header_key must start with the value
 
         :param value:
         :return:
@@ -201,7 +193,7 @@ class DataConfiguration:
 
     def _extension_names(self, value):
         """
-        This is to check if a header_key entry has the same value as what is passed in here.
+        All extensions must exist in the file
 
         :param value:
         :return:
@@ -214,7 +206,53 @@ class DataConfiguration:
         else:
             return all([v in self._fits for v in value])
 
+    def summarize(self):
+        """
+        High level summarize function for the YAML configuration file.
+        """
 
+        print('# {}'.format(self._name))
+        print('Description: {}\n'.format(self._type))
+        print('Filename: {}\n'.format(self._config_file))
+        print('\n')
+
+        self._summarize(self._configuration)
+
+    def _summarize(self, d, level=1):
+        """
+        Summarize function that will either print the lear values or will go
+        one level deeper.
+        """
+
+        # Leaf value, so just print it out.
+        if 'header_key' in d.keys():
+            print("""{}* header['{}']   '{}'""".format('  '*level, d['header_key'], d['value']))
+            print('\n')
+
+
+        # Check each key of the dictionary and go deeper if needed.
+        else:
+            for k, v in d.items():
+
+                func = eval('self._{}'.format(k))
+                print('{}* {}:'.format('  '*level, self._get_func_docstring(func)))
+
+                if isinstance(v, dict):
+                    self._summarize(v, level+1)
+                elif v:
+                    print('{}{}'.format('  '*level, v))
+
+    def _get_func_docstring(self, func):
+        """
+        Given the string representation of one of the functions, get the
+        docstring and return it to be used in the markup.
+        """
+        ds = func.__doc__
+        for dsl in ds.split('\n'):
+            if len(dsl) > 0:
+                return dsl.strip()
+
+        return ''
 
 class DataFactoryConfiguration:
     """
@@ -250,6 +288,15 @@ class DataFactoryConfiguration:
                     config_files.extend(files)
 
         return config_files
+
+
+    def summarize(self):
+        """
+        Function to print out a Markup representation of each configuration file.
+        """
+        for config_file in self._find_yaml_files(DEFAULT_DATA_CONFIGS):
+            dc = DataConfiguration(config_file)
+            print(dc.summarize())
 
     def __init__(self, in_configs=[], show_only=False):
         """
