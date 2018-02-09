@@ -14,13 +14,13 @@ from glue.viewers.image.qt import ImageViewer
 from glue.viewers.image.layer_artist import ImageLayerArtist
 from glue.viewers.image.state import ImageLayerState
 from glue.viewers.image.qt.layer_style_editor import ImageLayerStyleEditor
-from glue.viewers.common.qt.tool import CheckableTool
+from glue.viewers.common.qt.tool import Tool
 from glue.config import viewer_tool
 
 __all__ = ['CubevizImageViewer', 'ContourButton']
 
 @viewer_tool
-class ContourButton(CheckableTool):
+class ContourButton(Tool):
     icon = '/Users/rgeda/Pictures/icon.png'
     tool_id = 'cubeviz:contour'
     action_text = 'Toggles contour map'
@@ -30,17 +30,10 @@ class ContourButton(CheckableTool):
 
     def __init__(self, viewer):
         super(ContourButton, self).__init__(viewer)
-        self.viewer = viewer
 
     def activate(self):
         self.viewer.toggle_contour()
-
-    def deactivate(self):
-        self.viewer.toggle_contour()
-    """
-    def close(self):
-        pass
-    """
+        
 
 class CubevizImageLayerState(ImageLayerState):
     """
