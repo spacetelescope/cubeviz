@@ -306,6 +306,10 @@ class DataFactoryConfiguration:
         :param in_configs: Directory, list of directories, or list of files.
         """
 
+        # Remove all pre-defined data configuration loaders in Glue. Then, if a user tries to open an IFU FITS
+        # file that is not known to us a popup will come up saying cubeviz does not recognize the data format.
+        data_factory._members = []
+
         if show_only:
             logger.setLevel(logging.DEBUG)
 
