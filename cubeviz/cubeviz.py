@@ -12,21 +12,14 @@ except ImportError:
     from glue.utils.decorators import die_on_error
 
 from .version import version as cubeviz_version
+from .data_factories import DataFactoryConfiguration
 
-# Global variable to store the data configuration directories/files
-# read in from the argparse from the command line.
-# Yes, yes, we understand global variables aren't the best idea, but it
-# seems to make sense here.
-global_data_configuration = {}
 
 def setup():
 
-    from .data_factories import DataFactoryConfiguration
-    DataFactoryConfiguration(global_data_configuration.get('data_configs', []),
-                             global_data_configuration.get('data_configs_show', False), remove_defaults=True)
-
     from . import layout  # noqa
     from . import startup  # noqa
+
 
 @die_on_error("Error starting up Cubeviz")
 def main(argv=sys.argv):
@@ -47,9 +40,9 @@ def main(argv=sys.argv):
     args = parser.parse_known_args(argv[1:])
 
     # Store the args for each ' --data-configs' found on the commandline
-    global global_data_configuration
-    global_data_configuration['data_configs'] = args[0].data_configs if args[0].data_configs else []
-    global_data_configuration['data_configs_show'] = args[0].data_configs_show
+    data_configuration = {}
+    data_configuration['data_configs'] = args[0].data_configs if args[0].data_configs else []
+    data_configuration['data_configs_show'] = args[0].data_configs_show
 
     import glue
     from glue.utils.qt import get_qapp
@@ -64,9 +57,11 @@ def main(argv=sys.argv):
     # plugins.
     load_plugins(splash=splash)
 
-    datafiles = args[0].data_files
+    # Load the
+    DataFactoryConfiguration(data_configuration.get('data_configs', []),
+                             data_configuration.get('data_configs_show', False), remove_defaults=True)
 
-    hub = None
+    datafiles = args[0].data_files
 
     # Show the splash screen for 1 second
     timer = QTimer()
