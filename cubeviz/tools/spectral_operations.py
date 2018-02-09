@@ -18,8 +18,8 @@ UI_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__),
 class SpectralOperationHandler(QDialog):
     """
     Widget to handle user interactions with operations that are communicated
-    from the SpecViz viewer. This is built to work with 
-    :func:`~spectral_cube.SpectralCube.apply_function` method by passing in a 
+    from the SpecViz viewer. This is built to work with
+    :func:`~spectral_cube.SpectralCube.apply_function` method by passing in a
     callable :class:`specviz.analysis.operations.FunctionalOperation` object.
 
     Attributes
@@ -27,7 +27,7 @@ class SpectralOperationHandler(QDialog):
     data : :class:`~glue.core.data.Data`
         Glue data object on which the spectral operation will be performed.
     function : :class:`specviz.analysis.operations.FunctionalOperation`
-        Python class instance whose `call` function will be performed on the 
+        Python class instance whose `call` function will be performed on the
         :class:`~spectral_cube.SpectralCube` object.
     """
     def __init__(self, data, function, *args, **kwargs):
@@ -65,7 +65,7 @@ class SpectralOperationHandler(QDialog):
 
     def _compose_cube(self):
         """
-        Create a :class:`~spectral_cube.SpectralCube` from a Glue data 
+        Create a :class:`~spectral_cube.SpectralCube` from a Glue data
         component.
         """
         if issubclass(self.data.__class__, Subset):
@@ -181,7 +181,7 @@ class SimpleProgressTracker():
 
 class OperationThread(QThread):
     """
-    Thread in which an operation is performed on some 
+    Thread in which an operation is performed on some
     :class:`~spectral_cube.SpectralCube` object to ensure that the UI does not
     freeze while the operation is running.
 
