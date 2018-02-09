@@ -23,7 +23,7 @@ def setup():
 
     from .data_factories import DataFactoryConfiguration
     DataFactoryConfiguration(global_data_configuration.get('data_configs', []),
-                             global_data_configuration.get('data_configs_show', False))
+                             global_data_configuration.get('data_configs_show', False), remove_defaults=True)
 
     from . import layout  # noqa
     from . import startup  # noqa

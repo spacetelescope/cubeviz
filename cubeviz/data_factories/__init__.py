@@ -298,7 +298,7 @@ class DataFactoryConfiguration:
             dc = DataConfiguration(config_file)
             print(dc.summarize())
 
-    def __init__(self, in_configs=[], show_only=False):
+    def __init__(self, in_configs=[], show_only=False, remove_defaults=False):
         """
         The IFC takes either a directory (that contains YAML files), a list of directories (each of which contain
         YAML files) or a list of YAML files.  Each YAML file defines requirements
@@ -308,7 +308,8 @@ class DataFactoryConfiguration:
 
         # Remove all pre-defined data configuration loaders in Glue. Then, if a user tries to open an IFU FITS
         # file that is not known to us a popup will come up saying cubeviz does not recognize the data format.
-        data_factory._members = []
+        if remove_defaults:
+            data_factory._members = []
 
         if show_only:
             logger.setLevel(logging.DEBUG)
