@@ -6,6 +6,11 @@ from glue.app.qt import GlueApplication
 from glue.main import restore_session, get_splash, load_data_files, load_plugins
 from qtpy.QtCore import QTimer
 
+try:
+    from glue.utils.qt.decorators import die_on_error
+except ImportError:
+    from glue.utils.decorators import die_on_error
+
 from .version import version as cubeviz_version
 
 # Global variable to store the data configuration directories/files
@@ -23,6 +28,7 @@ def setup():
     from . import layout  # noqa
     from . import startup  # noqa
 
+@die_on_error("Error starting up Cubeviz")
 def main(argv=sys.argv):
     """
     The majority of the code in this function was taken from start_glue() in main.py after a discussion with
