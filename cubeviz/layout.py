@@ -4,7 +4,7 @@ from collections import OrderedDict
 import numpy as np
 
 from qtpy import QtWidgets, QtCore
-from qtpy.QtWidgets import QMenu, QAction
+from qtpy.QtWidgets import QMenu, QAction, QInputDialog
 
 from glue.utils.qt import load_ui
 from glue.utils.qt import get_qapp
@@ -184,7 +184,8 @@ class CubeVizLayout(QtWidgets.QWidget):
             ('RA-Spectral', lambda: None),
             ('DEC-Spectral', lambda: None),
             ('Hide Axes', ['checkable', self._toggle_viewer_axes]),
-            ('Hide Toolbars', ['checkable', self._toggle_toolbars])
+            ('Hide Toolbars', ['checkable', self._toggle_toolbars]),
+            ('Wavelength Units', lambda: self._open_dialog('Wavelength Units', None))
         ]))
         self.ui.view_option_button.setMenu(view_menu)
 
@@ -263,6 +264,12 @@ class CubeVizLayout(QtWidgets.QWidget):
         if name == "Moment Maps":
             moment_maps.MomentMapsGUI(
                 self._data, self.session.data_collection, parent=self)
+
+        if name == 'Wavelength Units':
+            current_unit = self._units_controller.units_titles.index(self._units_controller._new_units.long_names[0].title())
+            wavelength, ok_pressed = QInputDialog.getItem(self, "Pick a wavelength", "Wavelengths:", self._units_controller.units_titles, current_unit, False)
+            if ok_pressed:
+                self._units_controller.on_combobox_change(wavelength)
 
     def add_new_data_component(self, name):
         self._component_labels.append(str(name))

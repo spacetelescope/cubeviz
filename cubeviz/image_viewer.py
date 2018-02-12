@@ -236,7 +236,8 @@ class CubevizImageViewer(ImageViewer):
         # Check if wavelength is available
         if self.slice_index is not None and self.parent().tab_widget._wavelengths is not None:
             wave = self.parent().tab_widget._wavelengths[self.slice_index]
-            coord_string += ", {:1.2e}m)".format(wave)
+            wavelength_unit = self.parent().tab_widget._units_controller._new_units.short_names[0]
+            coord_string += ", {:1.2e}{})".format(wave, wavelength_unit)
         else:
             coord_string += ")"
 
@@ -257,7 +258,8 @@ class CubevizImageViewer(ImageViewer):
         # Check if wavelength is available
         if self.slice_index is not None and self.parent().tab_widget._wavelengths is not None:
             wave = self.parent().tab_widget._wavelengths[self.slice_index]
-            coord_string += "  {:1.2e}m)".format(wave)
+            wavelength_unit = self.parent().tab_widget._units_controller._new_units.short_names[0]
+            coord_string += ", {:1.2e}{})".format(wave, wavelength_unit)
         else:
             coord_string += ")"
 
