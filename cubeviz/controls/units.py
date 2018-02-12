@@ -49,3 +49,6 @@ class UnitController:
     def enable(self, wcs, wavelength):
         self._original_wavelengths = wavelength
         self._wcs = wcs
+
+    def get_new_units(self):
+        return self._new_units

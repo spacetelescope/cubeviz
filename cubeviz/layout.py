@@ -511,6 +511,12 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._activate_split_image_mode()
         self._update_active_view(self.left_view)
 
+    def get_wavelengths(self):
+        return self._wavelengths
+
+    def get_wavelengths_units(self):
+        return self._units_controller.get_new_units()
+
     def set_wavelengths(self, new_wavelengths, new_units):
         self._wavelengths = new_wavelengths
         self._slice_controller.set_wavelengths(new_wavelengths, new_units)
