@@ -40,9 +40,8 @@ def main(argv=sys.argv):
     args = parser.parse_known_args(argv[1:])
 
     # Store the args for each ' --data-configs' found on the commandline
-    data_configuration = {}
-    data_configuration['data_configs'] = args[0].data_configs if args[0].data_configs else []
-    data_configuration['data_configs_show'] = args[0].data_configs_show
+    data_configs = args[0].data_configs if args[0].data_configs else []
+    data_configs_show = args[0].data_configs_show
 
     import glue
     from glue.utils.qt import get_qapp
@@ -58,8 +57,7 @@ def main(argv=sys.argv):
     load_plugins(splash=splash)
 
     # Load the
-    DataFactoryConfiguration(data_configuration.get('data_configs', []),
-                             data_configuration.get('data_configs_show', False), remove_defaults=True)
+    DataFactoryConfiguration(data_configs, data_configs_show, remove_defaults=True)
 
     datafiles = args[0].data_files
 
