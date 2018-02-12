@@ -6,34 +6,24 @@ import numpy as np
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 
-from qtpy.QtWidgets import QLabel
+from qtpy.QtWidgets import (QLabel, QAction, QActionGroup,
+                            QDialog, QHBoxLayout, QVBoxLayout)
 
 from glue.core.message import SettingsChangeMessage
+
+from glue.utils.qt import pick_item, get_text
 
 from glue.viewers.image.qt import ImageViewer
 from glue.viewers.image.layer_artist import ImageLayerArtist
 from glue.viewers.image.state import ImageLayerState
 from glue.viewers.image.qt.layer_style_editor import ImageLayerStyleEditor
 from glue.viewers.common.qt.tool import Tool
-from glue.config import viewer_tool
 
-__all__ = ['CubevizImageViewer', 'ContourButton']
+from .utils.contour import ContourSettings
 
-@viewer_tool
-class ContourButton(Tool):
-    icon = '/Users/rgeda/Pictures/icon.png'
-    tool_id = 'cubeviz:contour'
-    action_text = 'Toggles contour map'
-    tool_tip = 'Toggles contour map'
-    status_tip = ''
-    shortcut = None
 
-    def __init__(self, viewer):
-        super(ContourButton, self).__init__(viewer)
+__all__ = ['CubevizImageViewer']
 
-    def activate(self):
-        self.viewer.toggle_contour()
-        
 
 class CubevizImageLayerState(ImageLayerState):
     """
@@ -62,14 +52,18 @@ class CubevizImageViewer(ImageViewer):
              'select:circle', 'select:polygon', 'image:contrast_bias',
              'cubeviz:contour']
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self,  *args, cubeviz_layout=None, **kwargs):
         super(CubevizImageViewer, self).__init__(*args, **kwargs)
+        self.cubeviz_layout = cubeviz_layout
         self. _layer_style_widget_cls[CubevizImageLayerArtist] = ImageLayerStyleEditor
         self._synced_checkbox = None
         self._slice_index = None
 
         self.is_contour_active = False
         self.contour = None
+        self.contour_component = None
+        self.contour_settings = ContourSettings(cubeviz_layout=self.cubeviz_layout,
+                                                draw_function=self.draw_contour)
 
         self.is_mouse_over = False  # If mouse cursor is over viewer
         self.hold_coords = False  # Switch to hold current displayed coords
@@ -184,26 +178,52 @@ class CubevizImageViewer(ImageViewer):
         else:
             self.update_axes_title()
 
-    def remove_contour(self):
+    def _delete_contour(self):
         if self.contour is not None:
             for c in self.contour.collections:
                 c.remove()
             self.contour = None
 
     def draw_contour(self):
-        self.remove_contour()
-        arr = self.state.layers[0].get_sliced_data()
-        self.contour = self.axes.contour(arr)
+        self._delete_contour()
+        if self.contour_component is None:
+            arr = self.state.layers[0].get_sliced_data()
+        else:
+            data = self.state.layers_data[0]
+            arr = data[self.contour_component][self.slice_index]
+        self.contour = self.axes.contour(arr, **self.contour_settings.options)
         self.axes.figure.canvas.draw()
 
-    def toggle_contour(self):
-        if self.is_contour_active:
-            self.is_contour_active = False
+    def default_contour(self, *args):
+        self.is_contour_active = True
+        self.contour_component = None
+        self.draw_contour()
+
+    def custom_contour(self, *args):
+        self.is_contour_active = True
+        components = self.cubeviz_layout.component_labels
+        self.contour_component = pick_item(components, components,
+                                           title='Custom Contour',
+                                           label='Pick a component')
+        if self.contour_component is None:
+            # Make toolbar menu to check the off option
+            menu = self.toolbar.actions['cubeviz:contour'].menu()
+            actions = menu.actions()
+            for action in actions:
+                if 'Off' == action.text():
+                    action.setChecked(True)
+                    break
             self.remove_contour()
-            self.axes.figure.canvas.draw()
         else:
-            self.is_contour_active = True
             self.draw_contour()
+
+    def edit_contour_settings(self, *args):
+        self.contour_settings.options_dialog()
+
+    def remove_contour(self, *args):
+        self.is_contour_active = False
+        self._delete_contour()
+        self.axes.figure.canvas.draw()
 
     def _synced_checkbox_callback(self, event):
         if self._synced_checkbox.isChecked():

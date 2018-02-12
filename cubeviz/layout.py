@@ -72,10 +72,10 @@ class CubeVizLayout(QtWidgets.QWidget):
                           directory=os.path.dirname(__file__))
 
         # Create the views and register to the hub.
-        self.single_view = WidgetWrapper(CubevizImageViewer(self.session), tab_widget=self)
-        self.left_view = WidgetWrapper(CubevizImageViewer(self.session), tab_widget=self)
-        self.middle_view = WidgetWrapper(CubevizImageViewer(self.session), tab_widget=self)
-        self.right_view = WidgetWrapper(CubevizImageViewer(self.session), tab_widget=self)
+        self.single_view = WidgetWrapper(CubevizImageViewer(self.session, cubeviz_layout=self), tab_widget=self)
+        self.left_view = WidgetWrapper(CubevizImageViewer(self.session, cubeviz_layout=self), tab_widget=self)
+        self.middle_view = WidgetWrapper(CubevizImageViewer(self.session, cubeviz_layout=self), tab_widget=self)
+        self.right_view = WidgetWrapper(CubevizImageViewer(self.session, cubeviz_layout=self), tab_widget=self)
         self.specviz = WidgetWrapper(SpecVizViewer(self.session), tab_widget=self)
 
         self.single_view._widget.register_to_hub(self.session.hub)
@@ -85,6 +85,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.specviz._widget.register_to_hub(self.session.hub)
 
         self.all_views = [self.single_view, self.left_view, self.middle_view, self.right_view]
+
         # TODO: determine whether to rename this or get rid of it
         self.cube_views = self.all_views
         self.split_views = self.cube_views[1:]
@@ -251,9 +252,12 @@ class CubeVizLayout(QtWidgets.QWidget):
             moment_maps.MomentMapsGUI(
                 self._data, self.session.data_collection, parent=self)
 
+    @property
+    def component_labels(self):
+        return self._component_labels
+
     def add_new_data_component(self, name):
         self._component_labels.append(str(name))
-
         # TODO: udpate the active view with the new component
 
     def _enable_option_buttons(self):
