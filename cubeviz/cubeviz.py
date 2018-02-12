@@ -6,23 +6,22 @@ from glue.app.qt import GlueApplication
 from glue.main import restore_session, get_splash, load_data_files, load_plugins
 from qtpy.QtCore import QTimer
 
-from .version import version as cubeviz_version
+try:
+    from glue.utils.qt.decorators import die_on_error
+except ImportError:
+    from glue.utils.decorators import die_on_error
 
-# Global variable to store the data configuration directories/files
-# read in from the argparse from the command line.
-# Yes, yes, we understand global variables aren't the best idea, but it
-# seems to make sense here.
-global_data_configuration = {}
+from .version import version as cubeviz_version
+from .data_factories import DataFactoryConfiguration
+
 
 def setup():
-
-    from .data_factories import DataFactoryConfiguration
-    DataFactoryConfiguration(global_data_configuration.get('data_configs', []),
-                             global_data_configuration.get('data_configs_show', False))
 
     from . import layout  # noqa
     from . import startup  # noqa
 
+
+@die_on_error("Error starting up Cubeviz")
 def main(argv=sys.argv):
     """
     The majority of the code in this function was taken from start_glue() in main.py after a discussion with
@@ -35,15 +34,14 @@ def main(argv=sys.argv):
 
     # # Parse the arguments, ignore any unkonwn
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data-configs", help="Directory or file for data configuration YAML files", action='append')
+    parser.add_argument("--data-configs", help="Directory or file for data configuration YAML files", action='append', default=[])
     parser.add_argument("--data-configs-show", help="Show the matching info", action="store_true", default=False)
     parser.add_argument('data_files', nargs=argparse.REMAINDER)
     args = parser.parse_known_args(argv[1:])
 
     # Store the args for each ' --data-configs' found on the commandline
-    global global_data_configuration
-    global_data_configuration['data_configs'] = args[0].data_configs if args[0].data_configs else []
-    global_data_configuration['data_configs_show'] = args[0].data_configs_show
+    data_configs = args[0].data_configs
+    data_configs_show = args[0].data_configs_show
 
     import glue
     from glue.utils.qt import get_qapp
@@ -58,9 +56,10 @@ def main(argv=sys.argv):
     # plugins.
     load_plugins(splash=splash)
 
-    datafiles = args[0].data_files
+    # Load the
+    DataFactoryConfiguration(data_configs, data_configs_show, remove_defaults=True)
 
-    hub = None
+    datafiles = args[0].data_files
 
     # Show the splash screen for 1 second
     timer = QTimer()
