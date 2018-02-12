@@ -18,6 +18,7 @@
 name: cubeviz-testing
 channels:
   - glueviz/label/dev
+  - glueviz
 dependencies:
   - python=3.6
   - pyqt
