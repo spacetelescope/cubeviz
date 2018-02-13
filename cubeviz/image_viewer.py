@@ -40,8 +40,8 @@ class CubevizImageLayerArtist(ImageLayerArtist):
 
 class CubevizImageViewer(ImageViewer):
 
-    tools = ['select:rectangle', 'select:xrange', 'select:yrange',
-             'select:circle', 'select:polygon', 'image:contrast_bias']
+    tools = ['cubeviz:rectangle', 'cubeviz:circle', 'cubeviz:polygon',
+             'image:contrast_bias']
 
     def __init__(self, *args, **kwargs):
         super(CubevizImageViewer, self).__init__(*args, **kwargs)
