@@ -59,18 +59,19 @@ class CubevizImageViewer(ImageViewer):
         self._synced_checkbox = None
         self._slice_index = None
 
-        self.is_contour_active = False
-        self.contour = None
-        self.contour_component = None
-        self.contour_settings = ContourSettings(cubeviz_layout=self.cubeviz_layout,
-                                                draw_function=self.draw_contour)
-
         self.is_mouse_over = False  # If mouse cursor is over viewer
         self.hold_coords = False  # Switch to hold current displayed coords
         self._coords_in_degrees = True  # Switch display coords to True=deg or False=Deg/Hr:Min:Sec
         self._coords_format_function = self._format_to_degree_string  # Function to format ra and dec
         self.x_mouse = None  # x position of mouse in pix
         self.y_mouse = None  # y position of mouse in pix
+
+        self.is_contour_active = False
+        self.is_contour_preview_active = False
+        self.contour = None
+        self.contour_component = None
+        self.contour_settings = ContourSettings(self)
+        self.contour_preview_settings = None
 
         self.is_smoothing_preview_active = False  # Smoothing preview flag
         self.smoothing_preview_title = ""
@@ -92,6 +93,10 @@ class CubevizImageViewer(ImageViewer):
             cls = CubevizImageLayerArtist
         return self.get_layer_artist(cls, layer=layer, layer_state=layer_state)
 
+    @property
+    def is_preview_active(self):
+        return self.is_contour_preview_active or self.is_smoothing_preview_active
+
     def update_axes_title(self, title=None):
         """
         Update plot title.
@@ -100,27 +105,42 @@ class CubevizImageViewer(ImageViewer):
         if title is not None:
             self.axes_title = title
 
+        if self.is_contour_preview_active:
+            return
+
         self.axes.set_title(self.axes_title, color="black")
         self.axes.figure.canvas.draw()
 
         # Disabled feature:
         #self.statusBar().showMessage(self.axes_title)
 
-    def show_smoothing_title(self):
+    def show_preview_title(self):
         """
         Override normal plot title to show smoothing preview title.
         """
-        if self.is_axes_hidden:
-            if self.is_smoothing_preview_active:
-                st = self.figure.suptitle(self.smoothing_preview_title, color="black")
-                st.set_bbox(dict(facecolor='red', edgecolor='red'))
-                self.axes.set_title("", color="black")
+        if self.is_smoothing_preview_active:
+            title = self.smoothing_preview_title
+        elif self.is_contour_preview_active:
+            title = "Contour Preview"
         else:
-            if self.is_smoothing_preview_active:
-                self.axes.set_title(self.smoothing_preview_title, color="r")
+            return
 
-    def hide_smoothing_title(self):
+        if self.is_axes_hidden:
+            st = self.figure.suptitle(title, color="black")
+            st.set_bbox(dict(facecolor='red', edgecolor='red'))
+            self.axes.set_title("", color="black")
+        else:
+            self.axes.set_title(title, color="r")
+
+    def hide_preview_title(self):
+        """
+        You should always call this after setting the is_preview flag
+        """
         self.figure.suptitle("", color="black")
+        if self.is_preview_active:
+            self.show_preview_title()
+        else:
+            self.update_axes_title()
 
     def set_smoothing_preview(self, preview_function, preview_title=None):
         """
@@ -134,7 +154,7 @@ class CubevizImageViewer(ImageViewer):
             self.smoothing_preview_title = "Smoothing Preview"
         else:
             self.smoothing_preview_title = preview_title
-        self.show_smoothing_title()
+        self.show_preview_title()
 
         for layer in self.layers:
             if isinstance(layer, CubevizImageLayerArtist):
@@ -152,8 +172,7 @@ class CubevizImageViewer(ImageViewer):
         after calling this function!
         """
         self.is_smoothing_preview_active = False
-        self.hide_smoothing_title()
-        self.update_axes_title()
+        self.hide_preview_title()
         self.smoothing_preview_title = "Smoothing Preview"
         for layer in self.layers:
             if isinstance(layer, CubevizImageLayerArtist):
@@ -172,9 +191,8 @@ class CubevizImageViewer(ImageViewer):
         self.is_axes_hidden = is_axes_hidden
 
         # Plot title operations
-        if self.is_smoothing_preview_active:
-            self.hide_smoothing_title()
-            self.show_smoothing_title()
+        if self.is_preview_active:
+            self.show_preview_title()
         else:
             self.update_axes_title()
 
@@ -186,12 +204,25 @@ class CubevizImageViewer(ImageViewer):
 
     def draw_contour(self):
         self._delete_contour()
+
+        if self.is_contour_preview_active:
+            settings = self.contour_preview_settings
+        else:
+            settings = self.contour_settings
+
         if self.contour_component is None:
             arr = self.state.layers[0].get_sliced_data()
         else:
             data = self.state.layers_data[0]
             arr = data[self.contour_component][self.slice_index]
-        self.contour = self.axes.contour(arr, **self.contour_settings.options)
+
+        if settings.spacing is None:
+            self.contour = self.axes.contour(arr, **settings.options)
+        else:
+            spacing = settings.spacing
+            levels = np.arange(arr.min(), arr.max(), spacing)
+            self.contour = self.axes.contour(arr, levels=levels, **settings.options)
+
         self.axes.figure.canvas.draw()
 
     def default_contour(self, *args):
@@ -206,7 +237,7 @@ class CubevizImageViewer(ImageViewer):
                                            title='Custom Contour',
                                            label='Pick a component')
         if self.contour_component is None:
-            # Make toolbar menu to check the off option
+            # Edit toolbar menu to check the off option
             menu = self.toolbar.actions['cubeviz:contour'].menu()
             actions = menu.actions()
             for action in actions:
@@ -217,13 +248,28 @@ class CubevizImageViewer(ImageViewer):
         else:
             self.draw_contour()
 
-    def edit_contour_settings(self, *args):
-        self.contour_settings.options_dialog()
-
     def remove_contour(self, *args):
         self.is_contour_active = False
         self._delete_contour()
         self.axes.figure.canvas.draw()
+
+    def set_contour_preview(self, contour_preview_settings):
+        self.is_contour_preview_active = True
+        self.show_preview_title()
+        self.contour_preview_settings = contour_preview_settings
+        self.draw_contour()
+
+    def end_contour_preview(self):
+        self.is_contour_preview_active = False
+        self.hide_preview_title()
+        self.contour_preview_settings = None
+        if self.is_contour_active:
+            self.draw_contour()
+        else:
+            self.remove_contour()
+
+    def edit_contour_settings(self, *args):
+        self.contour_settings.options_dialog()
 
     def _synced_checkbox_callback(self, event):
         if self._synced_checkbox.isChecked():
