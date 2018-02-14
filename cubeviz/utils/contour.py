@@ -20,7 +20,6 @@ ICON_PATH = os.path.abspath(
         "..",
         "..",
         "data",
-        "qt",
         "resources",
         "contour_icon.png"
     )
