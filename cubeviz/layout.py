@@ -256,11 +256,15 @@ class CubeVizLayout(QtWidgets.QWidget):
             moment_maps.MomentMapsGUI(
                 self._data, self.session.data_collection, parent=self)
 
-    @dispatch.register_listener("apply_function")
-    def apply_to_cube(self, func):
-        """Apply operation from spectral analysis to the entire cube."""
+    @dispatch.register_listener("apply_operations")
+    def apply_to_cube(self, stack):
+        """
+        Listen for messages from specviz about possible spectral analysis
+        operations that may be applied to the entire cube.
+        """
         # Retrieve the current cube data object
-        operation_handler = SpectralOperationHandler(self._data, function=func, parent=self)
+        operation_handler = SpectralOperationHandler(self._data, stack=stack,
+                                                     parent=self)
         operation_handler.exec_()
 
     def add_new_data_component(self, name):

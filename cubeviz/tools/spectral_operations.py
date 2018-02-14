@@ -3,11 +3,9 @@ import os
 import numpy as np
 from glue.core import Subset
 from qtpy.QtCore import QThread, Signal
-from qtpy.QtWidgets import QApplication, QDialog
+from qtpy.QtWidgets import QDialog, QDialogButtonBox
 from qtpy.uic import loadUi
 from spectral_cube import BooleanArrayMask, SpectralCube
-
-from specviz.core.events import dispatch
 
 __all__ = ['SpectralOperationHandler']
 
@@ -30,10 +28,12 @@ class SpectralOperationHandler(QDialog):
         Python class instance whose `call` function will be performed on the
         :class:`~spectral_cube.SpectralCube` object.
     """
-    def __init__(self, data, function, *args, **kwargs):
+
+    def __init__(self, data, stack, *args, **kwargs):
         super(SpectralOperationHandler, self).__init__(*args, **kwargs)
         self.data = data
-        self.function = function
+        self.stack = stack
+        self.function = stack[0] if len(stack) > 0 else None
         self.component_id = self.data.component_ids()[0]
         self._operation_thread = None
 
@@ -45,20 +45,35 @@ class SpectralOperationHandler(QDialog):
         # Load the ui dialog
         loadUi(os.path.join(UI_PATH, "apply_operation.ui"), self)
 
-        # Hide the progress bar initially
-        self.progress_bar.hide()
-        self.adjustSize()
-
         component_ids = [str(i) for i in self.data.component_ids()]
 
         # Populate combo box
         self.data_component_combo_box.addItems(component_ids)
 
+        # Populate the operation combo box
+        operation_stack = ["{}({})".format(
+            oper.function.__name__,
+            ", ".join(
+                ["{}".format(arg) for arg in oper.args] + ["{}={}".format(k, v)
+                                                           for k, v in
+                                                           oper.kwargs.items()]))
+            for oper in self.stack]
+
+        self.operation_combo_box.addItems(operation_stack)
+
+        # Disable the button box if there are no available operations
+        if self.function is None:
+            self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
+
     def setup_connections(self):
         """Setup signal/slot connections for this dialog."""
+        # When an operation is selected, update the function reference
+        self.operation_combo_box.currentIndexChanged.connect(
+            self.on_operation_index_changed)
+
         # When a data component is selected, update the data object reference
         self.data_component_combo_box.currentIndexChanged.connect(
-            self.on_index_changed)
+            self.on_data_component_index_changed)
 
         # If the abort button is clicked, attempted to stop execution
         self.abort_button.clicked.connect(self.on_aborted)
@@ -81,14 +96,18 @@ class SpectralOperationHandler(QDialog):
 
         return SpectralCube(data[self.component_id], wcs=wcs, mask=mask)
 
-    def on_index_changed(self, index):
+    def on_operation_index_changed(self, index):
+        """Called when the index of the operation combo box has changed."""
+        self.function = self.stack[index]
+
+    def on_data_component_index_changed(self, index):
         """Called when the index of the component combo box has changed."""
         self.component_id = self.data.component_ids()[index]
 
     def accept(self):
         """Called when the user clicks the "Okay" button of the dialog."""
         # Show the progress bar and abort button
-        self.progress_bar.show()
+        self.progress_bar.setEnabled(True)
         self.abort_button.setEnabled(True)
 
         self._operation_thread = OperationThread(self._compose_cube(),
@@ -155,6 +174,7 @@ class SimpleProgressTracker():
     total_value : float
         The maximum value of the progress.
     """
+
     def __init__(self, total_value):
         self._current_value = 0.0
         self._total_value = total_value
@@ -221,7 +241,7 @@ class OperationThread(QThread):
 
     def abort(self):
         """
-        Abort the operation. Haults and returns immediately by raising an
+        Abort the operation. Halts and returns immediately by raising an
         error.
         """
         self._tracker.abort()
