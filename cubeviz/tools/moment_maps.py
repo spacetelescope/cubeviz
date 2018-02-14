@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 from qtpy.QtCore import Qt
 from qtpy import QtGui
 from qtpy.QtWidgets import (
-    QDialog, QComboBox, QPushButton, QLineEdit,
+    QDialog, QComboBox, QPushButton,
     QLabel, QWidget, QHBoxLayout, QVBoxLayout
 )
 
@@ -45,7 +45,7 @@ class MomentMapsGUI(QDialog):
         self.data_label.setFont(boldFont)
 
         self.data_combobox = QComboBox()
-        self.data_combobox.addItems(["FLUX", "ERROR", "DQ"])
+        self.data_combobox.addItems([str(x).strip() for x in self.data.component_ids() if not x in self.data.coordinate_components])
         self.data_combobox.setMinimumWidth(200)
 
         hbl1 = QHBoxLayout()
@@ -59,19 +59,12 @@ class MomentMapsGUI(QDialog):
         self.order_label.setFont(boldFont)
 
         self.order_combobox = QComboBox()
-        self.order_combobox.addItems(["0","1", "2", "3", "4", "5", "6", "7", "8"])
+        self.order_combobox.addItems(["1", "2", "3", "4", "5", "6", "7", "8"])
         self.order_combobox.setMinimumWidth(200)
 
         hbl2 = QHBoxLayout()
         hbl2.addWidget(self.order_label)
         hbl2.addWidget(self.order_combobox)
-
-        self.robel_label = QLabel("Slice")
-        self.slice_range = QLineEdit("2703:2712")
-
-        hbl4 = QHBoxLayout()
-        hbl4.addWidget(self.robel_label)
-        hbl4.addWidget(self.slice_range)
 
         # Create Calculate and Cancel buttons
         self.calculateButton = QPushButton("Calculate")
@@ -90,7 +83,6 @@ class MomentMapsGUI(QDialog):
         vbl = QVBoxLayout()
         vbl.addLayout(hbl1)
         vbl.addLayout(hbl2)
-        vbl.addLayout(hbl4)
         vbl.addLayout(hbl5)
 
         self.setLayout(vbl)
@@ -108,17 +100,9 @@ class MomentMapsGUI(QDialog):
         order = int(self.order_combobox.currentText())
         data_name = self.data_combobox.currentText()
 
-        string = self.slice_range.text()
-        import spectral_cube
-        if string != "":
-            start, end = [int(i) for i in string.split(":")]
-            cube = spectral_cube.SpectralCube(self.data[data_name][start:end], wcs=self.data.coords.wcs)
-        else:
-            cube = spectral_cube.SpectralCube(self.data[data_name], wcs=self.data.coords.wcs)
-
         # Grab spectral-cube
-
-
+        import spectral_cube
+        cube = spectral_cube.SpectralCube(self.data[data_name], wcs=self.data.coords.wcs)
 
         # Use the package asteval to do the calculation, we are going to
         # assume here that the lhs of the equals sign is going to be the output named variable
