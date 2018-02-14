@@ -14,17 +14,21 @@ from glue.utils.qt import QColormapCombo
 from glue.viewers.common.qt.tool import Tool
 
 DEFAULT_GLUE_COLORMAP_INDEX = 3
-
-@viewer_tool
-class ContourButton(Tool):
-    icon = os.path.join(
-        os.path.dirname(
-            os.path.dirname(os.path.abspath(__file__))
-        ),
+ICON_PATH = os.path.abspath(
+    os.path.join(
+        os.path.abspath(__file__),
+        "..",
+        "..",
         "data",
         "qt",
         "resources",
-        "contour_icon.png")
+        "contour_icon.png"
+    )
+)
+
+@viewer_tool
+class ContourButton(Tool):
+    icon = ICON_PATH
     tool_id = 'cubeviz:contour'
     action_text = 'Toggles contour map'
     tool_tip = 'Toggles contour map'
