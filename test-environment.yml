@@ -18,6 +18,7 @@
 name: cubeviz-testing
 channels:
   - glueviz/label/dev
+  - glueviz
 dependencies:
   - python=3.6
   - pyqt
@@ -27,7 +28,6 @@ dependencies:
   # installed as a framework
   - matplotlib
   - glue-core>=0.12
-  - glueviz
   - pip:
     - asteval
     - git+https://github.com/spacetelescope/specviz#egg=specviz
