@@ -2,7 +2,7 @@ from glue.config import keyboard_shortcut
 from qtpy import QtCore, QtWidgets, QtGui, compat
 
 
-@keyboard_shortcut(QtCore.Qt.Key_A, None)
+@keyboard_shortcut(QtCore.Qt.Key_Left, None)
 def move_slider_left(session):
     """
     Move slider index one to the left
@@ -13,7 +13,7 @@ def move_slider_left(session):
     curr_layout.change_slice_index(-1)
 
 
-@keyboard_shortcut(QtCore.Qt.Key_D, None)
+@keyboard_shortcut(QtCore.Qt.Key_Right, None)
 def move_slider_right(session):
     """
     Move slider index one to the right
