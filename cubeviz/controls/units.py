@@ -8,7 +8,7 @@ class UnitController:
         self._original_wavelengths = self._cv_layout._wavelengths
         self._new_wavelengths = []
         self._original_units = u.m
-        self._new_units = u.m
+        self._new_units = self._original_units
         self._wcs = None
 
         # This is the Wavelength conversion/combobox code
