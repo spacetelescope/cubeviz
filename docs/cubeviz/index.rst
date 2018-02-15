@@ -53,8 +53,7 @@ Reference/API
 .. toctree::
    :maxdepth: 2
 
-   installation
-   functionality
-   readingindata
-   api
+   installation.rst
+   functionality.rst
+   readingindata.rst
 
