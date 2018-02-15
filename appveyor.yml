@@ -21,7 +21,7 @@ environment:
       # are in astropy-ci-extras. If your package uses either of these,
       # add the channels to CONDA_CHANNELS along with any other channels
       # you want to use.
-      CONDA_CHANNELS: "astropy-ci-extras astropy glue/label/dev"
+      CONDA_CHANNELS: "glueviz/label/dev glueviz astropy-ci-extras astropy"
 
   matrix:
 

@@ -8,6 +8,9 @@ This is the documentation for CubeViz.
   :maxdepth: 2
 
   cubeviz/index.rst
+  cubeviz/installation.rst
+  cubeviz/functionality.rst
+  cubeviz/readingindata.rst
 
 .. note:: The layout of this directory is simply a suggestion.  To follow
           traditional practice, do *not* edit this page, but instead place

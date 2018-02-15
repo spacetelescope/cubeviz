@@ -98,7 +98,7 @@ class DataConfiguration:
         :return:
         """
 
-        # Check the "first filename in the list" which might be the "only filename" in the list. 
+        # Check the "first filename in the list" which might be the "only filename" in the list.
         filename = filename.split(',')[0]
         self._fits = fits.open(filename)
 
@@ -208,7 +208,7 @@ class DataConfiguration:
 
     def summarize(self):
         """
-        High level summarize function for the YAML configuration file. 
+        High level summarize function for the YAML configuration file.
         """
 
         print('# {}'.format(self._name))
@@ -244,7 +244,7 @@ class DataConfiguration:
 
     def _get_func_docstring(self, func):
         """
-        Given the string representation of one of the functions, get the 
+        Given the string representation of one of the functions, get the
         docstring and return it to be used in the markup.
         """
         ds = func.__doc__
@@ -298,13 +298,18 @@ class DataFactoryConfiguration:
             dc = DataConfiguration(config_file)
             print(dc.summarize())
 
-    def __init__(self, in_configs=[], show_only=False):
+    def __init__(self, in_configs=[], show_only=False, remove_defaults=False):
         """
         The IFC takes either a directory (that contains YAML files), a list of directories (each of which contain
         YAML files) or a list of YAML files.  Each YAML file defines requirements
 
         :param in_configs: Directory, list of directories, or list of files.
         """
+
+        # Remove all pre-defined data configuration loaders in Glue. Then, if a user tries to open an IFU FITS
+        # file that is not known to us a popup will come up saying cubeviz does not recognize the data format.
+        if remove_defaults:
+            data_factory._members = []
 
         if show_only:
             logger.setLevel(logging.DEBUG)
@@ -348,4 +353,3 @@ class DataFactoryConfiguration:
             dc = DataConfiguration(config_file)
             wrapper = data_factory(name, dc.matches, priority=priority)
             wrapper(dc.load_data)
-

@@ -4,7 +4,7 @@ from collections import OrderedDict
 import numpy as np
 
 from qtpy import QtWidgets, QtCore
-from qtpy.QtWidgets import QMenu, QAction
+from qtpy.QtWidgets import QMenu, QAction, QInputDialog
 
 from glue.utils.qt import load_ui
 from glue.utils.qt import get_qapp
@@ -16,13 +16,16 @@ from glue.core.message import SettingsChangeMessage
 from glue.utils.matplotlib import freeze_margins
 
 from specviz.third_party.glue.data_viewer import SpecVizViewer
+from specviz.core.events import dispatch
 
 from .toolbar import CubevizToolbar
 from .image_viewer import CubevizImageViewer
 
 from .controls.slice import SliceController
 from .controls.overlay import OverlayController
+from .controls.units import UnitController
 from .tools import arithmetic_gui, moment_maps, smoothing
+from .tools.spectral_operations import SpectralOperationHandler
 
 class WidgetWrapper(QtWidgets.QWidget):
 
@@ -127,6 +130,7 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         self._slice_controller = SliceController(self)
         self._overlay_controller = OverlayController(self)
+        self._units_controller = UnitController(self)
 
         # Add menu buttons to the cubeviz toolbar.
         self._init_menu_buttons()
@@ -152,6 +156,9 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui.button_toggle_image_mode.setText('Single Image Viewer')
         self.ui.viewer_control_frame.setCurrentIndex(0)
 
+        # Add this class to the specviz dispatcher watcher
+        dispatch.setup(self)
+
     def _init_menu_buttons(self):
         """
         Add the two menu buttons to the tool bar. Currently two are defined:
@@ -171,7 +178,8 @@ class CubeVizLayout(QtWidgets.QWidget):
             ('RA-Spectral', lambda: None),
             ('DEC-Spectral', lambda: None),
             ('Hide Axes', ['checkable', self._toggle_viewer_axes]),
-            ('Hide Toolbars', ['checkable', self._toggle_toolbars])
+            ('Hide Toolbars', ['checkable', self._toggle_toolbars]),
+            ('Wavelength Units', lambda: self._open_dialog('Wavelength Units', None))
         ]))
         self.ui.view_option_button.setMenu(view_menu)
 
@@ -251,6 +259,19 @@ class CubeVizLayout(QtWidgets.QWidget):
             moment_maps.MomentMapsGUI(
                 self._data, self.session.data_collection, parent=self)
 
+        if name == 'Wavelength Units':
+            current_unit = self._units_controller.units_titles.index(self._units_controller._new_units.long_names[0].title())
+            wavelength, ok_pressed = QInputDialog.getItem(self, "Pick a wavelength", "Wavelengths:", self._units_controller.units_titles, current_unit, False)
+            if ok_pressed:
+                self._units_controller.on_combobox_change(wavelength)
+
+    @dispatch.register_listener("apply_function")
+    def apply_to_cube(self, func):
+        """Apply operation from spectral analysis to the entire cube."""
+        # Retrieve the current cube data object
+        operation_handler = SpectralOperationHandler(self._data, function=func, parent=self)
+        operation_handler.exec_()
+
     def add_new_data_component(self, name):
         self._component_labels.append(str(name))
 
@@ -272,7 +293,6 @@ class CubeVizLayout(QtWidgets.QWidget):
         return change_viewer
 
     def _enable_viewer_combo(self, data, index, combo_label, selection_label):
-        print('enable_viewer_combo {} {} {}'.format(index, combo_label, selection_label))
         combo = getattr(self.ui, combo_label)
         connect_combo_selection(self, selection_label, combo)
         helper = ComponentIDComboHelper(self, selection_label)
@@ -334,6 +354,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         # Pass WCS and wavelength information to slider controller and enable
         wcs = self.session.data_collection.data[0].coords.wcs
         self._slice_controller.enable(wcs, self._wavelengths)
+        self._units_controller.enable(wcs, self._wavelengths)
 
         self._enable_option_buttons()
         self._setup_syncing()
@@ -496,3 +517,13 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     def change_slice_index(self, amount):
         self._slice_controller.change_slider_value(amount)
+
+    def get_wavelengths(self):
+        return self._wavelengths
+
+    def get_wavelengths_units(self):
+        return self._units_controller.get_new_units()
+
+    def set_wavelengths(self, new_wavelengths, new_units):
+        self._wavelengths = new_wavelengths
+        self._slice_controller.set_wavelengths(new_wavelengths, new_units)
