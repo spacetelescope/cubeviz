@@ -30,5 +30,6 @@ dependencies:
   - glue-core>=0.12
   - pip:
     - asteval
+    - git+https://github.com/radio-astro-tools/spectral-cube#egg=spectral-cube
     - git+https://github.com/spacetelescope/specviz#egg=specviz
     - git+https://github.com/spacetelescope/cubeviz#egg=cubeviz
