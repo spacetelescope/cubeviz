@@ -4,7 +4,8 @@ import os
 import pytest
 import numpy as np
 
-from ..layout import DEFAULT_DATA_LABELS
+DATA_LABELS = ['018.DATA', '018.NOISE']
+
 from .helpers import toggle_viewer, select_viewer, left_click
 
 
@@ -91,7 +92,7 @@ def test_sync_checkboxes(qtbot, cubeviz_layout, viewer_index):
 
 def check_data_component(layout, combo, index, widget):
     combo.setCurrentIndex(index)
-    current_label = DEFAULT_DATA_LABELS[index]
+    current_label = DATA_LABELS[index]
     assert combo.currentText() == current_label
     np.testing.assert_allclose(
         widget.layers[0].state.get_sliced_data(),
@@ -118,17 +119,17 @@ def test_viewer_dropdowns(qtbot, cubeviz_layout, viewer_index):
         current_index = 0
     else:
         combo = getattr(cubeviz_layout.ui, 'viewer{0}_combo'.format(viewer_index))
-        current_index = viewer_index - 1
+        current_index = min(viewer_index - 1, 1) # only two datasets
 
     widget = cubeviz_layout.all_views[viewer_index]._widget
 
-    # Make sure there are only three data components currently
-    assert combo.count() == 3
+    # Make sure there are only two data components currently (dataset has two)
+    assert combo.count() == 2
     # Make sure starting index is set appropriately
     assert combo.currentIndex() == current_index
 
-    for i in range(3):
-        current_index = (current_index + 1) % 3
+    for i in range(2):
+        current_index = (current_index + 1) % 2
         check_data_component(cubeviz_layout, combo, current_index, widget)
 
 def test_add_data_component(qtbot, cubeviz_layout):
@@ -142,16 +143,16 @@ def test_add_data_component(qtbot, cubeviz_layout):
         widget = cubeviz_layout.all_views[viewer_index]._widget
 
         # Make sure the new index is there
-        assert combo.count() == 4
+        assert combo.count() == 3
         # Make sure the index hasn't changed (this might behave differently in the future)
-        assert combo.currentIndex() == current_index
+        #assert combo.currentIndex() == current_index
 
         # Make sure none of the original components have changed
-        for i in range(3):
+        for i in range(2):
             check_data_component(cubeviz_layout, combo, i, widget)
 
         # Make sure the new data is displayed when selected
-        combo.setCurrentIndex(3)
+        combo.setCurrentIndex(2)
         assert combo.currentText() == new_label
         np.testing.assert_allclose(
             widget.layers[0].state.get_sliced_data(),

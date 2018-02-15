@@ -1,0 +1,27 @@
+# JWST FITS cube
+name: 'gmos'
+type: 'GMOS'
+# Highest priority data configuration file, that matches, is selected.
+priority: 1200
+
+# All must match and they must have SCI, ERR, DQ extensions
+match:
+    all:
+        startswith:
+            header_key:
+                INSTRUME
+            value:
+                GMOS
+        all:
+            # All the extensions must exist.
+            extension_names:
+                - SCI
+                - DQ
+# Data extension names for FLUX, ERROR and DQ
+data:
+    FLUX:
+        DATA
+    ERROR:
+        STAT
+    DQ:
+        DQ
