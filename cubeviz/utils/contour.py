@@ -28,6 +28,9 @@ ICON_PATH = os.path.abspath(
 
 @viewer_tool
 class ContourButton(Tool):
+    """
+    Contour map tool bar menu and button
+    """
     icon = ICON_PATH
     tool_id = 'cubeviz:contour'
     action_text = 'Toggles contour map'
@@ -85,39 +88,43 @@ class ContourButton(Tool):
 
 
 class ContourOptionsDialog(QDialog):
+    """
+    Dialog box for selecting contour options
+    """
     def __init__(self, contour_settings):
         super(ContourOptionsDialog, self).__init__(contour_settings.cubeviz_layout)
         self.setWindowFlags(self.windowFlags() | Qt.Tool)
         self.setWindowTitle("Contour Options")
 
-        self.is_preview_active = False
+        self.is_preview_active = False  # preview mode?
 
-        self.contour_settings = contour_settings
-        self.image_viewer = self.contour_settings.image_viewer
-        self.options = self.contour_settings.options
+        self.contour_settings = contour_settings  # ref to caller ContourSettings
+        self.image_viewer = self.contour_settings.image_viewer  # ref to image viewer
+        self.options = self.contour_settings.options  # ref to ContourSettings options
 
-        self._colormap_members = self.contour_settings.colormap_members
-        self._colormap_index = DEFAULT_GLUE_COLORMAP_INDEX
+        self._colormap_members = self.contour_settings.colormap_members  # Colormap options
+        self._colormap_index = DEFAULT_GLUE_COLORMAP_INDEX  # Currently selected colormap
         if "cmap" in self.options:
             if self.options["cmap"] in self._colormap_members:
                 self._colormap_index = self._colormap_members.index(self.options["cmap"])
 
+        # Is there a user spacing?
         if self.contour_settings.spacing is None:
             self.is_custom_spacing = False
         else:
             self.is_custom_spacing = True
-
+        # Is there a user min?
         if self.contour_settings.vmin is None:
             self.is_vmin = False
         else:
             self.is_vmin = True
-
+        # Is there a user max?
         if self.contour_settings.vmax is None:
             self.is_vmax = False
         else:
             self.is_vmax = True
 
-        self.add_contour_label = self.contour_settings.add_contour_label
+        self.add_contour_label = self.contour_settings.add_contour_label  # bool
 
         self._init_ui()
 
@@ -164,24 +171,36 @@ class ContourOptionsDialog(QDialog):
         self.spacing_input = QLineEdit()
         self.spacing_input.setFixedWidth(150)
         self.spacing_input.setDisabled(not self.is_custom_spacing)
+        spacing = ""
         if self.is_custom_spacing:
-            self.spacing_input.setText(str(self.contour_settings.spacing))
+            spacing = str(self.contour_settings.spacing)
+        elif self.contour_settings.data_spacing is not None:
+            spacing = self.contour_settings.data_spacing
+            spacing = "{0:1.4f}".format(spacing)
+        self.spacing_default_text = spacing
+        self.spacing_input.setText(spacing)
 
         hbl3 = QHBoxLayout()
         hbl3.addWidget(self.custom_spacing_checkBox)
         hbl3.addWidget(self.spacing_input)
 
         # Line 4: Vmax
-        self.vmax_checkBox = QCheckBox("Max pixel value:")
+        self.vmax_checkBox = QCheckBox("Set max:")
 
         self.vmax_input = QLineEdit()
         self.vmax_input.setFixedWidth(150)
         self.vmax_input.setDisabled(not self.is_vmax)
 
+        vmax = ""
         if self.is_vmax:
             self.vmax_checkBox.setChecked(True)
             vmax = str(self.contour_settings.vmax)
-            self.vmax_input.setText(vmax)
+        elif self.contour_settings.data_max is not None:
+            vmax = self.contour_settings.data_max
+            vmax = "{0:1.4f}".format(vmax)
+        self.vmax_input.setText(vmax)
+        self.vmax_default_text = vmax
+
         self.vmax_checkBox.toggled.connect(self.toggle_vmax)
 
         hbl4 = QHBoxLayout()
@@ -189,16 +208,22 @@ class ContourOptionsDialog(QDialog):
         hbl4.addWidget(self.vmax_input)
 
         # Line 5: Vmin
-        self.vmin_checkBox = QCheckBox("Min pixel value:")
+        self.vmin_checkBox = QCheckBox("Set min:")
 
         self.vmin_input = QLineEdit()
         self.vmin_input.setFixedWidth(150)
         self.vmin_input.setDisabled(not self.is_vmin)
 
+        vmin = ""
         if self.is_vmin:
             self.vmin_checkBox.setChecked(True)
             vmin = str(self.contour_settings.vmin)
-            self.vmin_input.setText(vmin)
+        elif self.contour_settings.data_min is not None:
+            vmin = self.contour_settings.data_min
+            vmin = "{0:1.4f}".format(vmin)
+        self.vmin_input.setText(vmin)
+        self.vmin_default_text = vmin
+
         self.vmin_checkBox.toggled.connect(self.toggle_vmin)
 
         hbl5 = QHBoxLayout()
@@ -206,11 +231,11 @@ class ContourOptionsDialog(QDialog):
         hbl5.addWidget(self.vmin_input)
 
         # Line f:
-        self.defaultButton = QPushButton("Apply Defaults")
-        self.defaultButton.clicked.connect(self.default)
-
         self.previewButton = QPushButton("Preview")
         self.previewButton.clicked.connect(self.preview)
+
+        self.defaultButton = QPushButton("Reset")
+        self.defaultButton.clicked.connect(self.default)
 
         self.okButton = QPushButton("OK")
         self.okButton.clicked.connect(self.finish)
@@ -221,47 +246,55 @@ class ContourOptionsDialog(QDialog):
 
         hblf = QHBoxLayout()
         hblf.addStretch(1)
-        hblf.addWidget(self.defaultButton)
         hblf.addWidget(self.previewButton)
+        hblf.addWidget(self.defaultButton)
         hblf.addWidget(self.cancelButton)
         hblf.addWidget(self.okButton)
 
-        def make_spacer():
-            spacer = QHBoxLayout()
-            spacer.addWidget(QLabel())
-            return spacer
-
         vbl = QVBoxLayout()
         vbl.addLayout(hbl1)
-        #vbl.addLayout(make_spacer())
         vbl.addLayout(hbl2)
         vbl.addLayout(hbl3)
-        #vbl.addLayout(make_spacer())
         vbl.addLayout(hbl4)
         vbl.addLayout(hbl5)
-        #vbl.addLayout(make_spacer())
-        #vbl.addLayout(hbl6)
-        #vbl.addLayout(hbl7)
         vbl.addLayout(hblf)
 
         self.setLayout(vbl)
 
         self.show()
 
+    def update_data_vals(self, vmin="", vmax="", spacing="1"):
+
+        self.vmin_default_text = vmin
+
+        if not self.is_vmin:
+            self.vmin_input.setText(vmin)
+
+        self.vmax_default_text = vmax
+        if not self.is_vmax:
+            self.vmax_input.setText(vmax)
+
+        self.spacing_default_text = spacing
+        if not self.is_custom_spacing:
+            self.spacing_input.setText(spacing)
+
     def _on_colormap_change(self, index):
+        """Combo index changed handler"""
         self._colormap_index = index
 
     def custom_spacing(self):
+        """Checkbox toggled handler"""
         if self.is_custom_spacing:
             self.is_custom_spacing = False
             self.spacing_input.setDisabled(True)
-            self.spacing_input.setText("")
+            self.spacing_input.setText(self.spacing_default_text)
             self.spacing_input.setStyleSheet("")
         else:
             self.is_custom_spacing = True
             self.spacing_input.setDisabled(False)
 
     def toggle_labels(self):
+        """Checkbox toggled handler"""
         if self.add_contour_label:
             self.add_contour_label = False
             self.font_size_input.setDisabled(True)
@@ -273,20 +306,22 @@ class ContourOptionsDialog(QDialog):
             self.font_size_input.setDisabled(False)
 
     def toggle_vmax(self):
+        """Checkbox toggled handler"""
         if self.is_vmax:
             self.is_vmax = False
             self.vmax_input.setDisabled(True)
-            self.vmax_input.setText("")
+            self.vmax_input.setText(self.vmax_default_text)
             self.vmax_input.setStyleSheet("")
         else:
             self.is_vmax = True
             self.vmax_input.setDisabled(False)
 
     def toggle_vmin(self):
+        """Checkbox toggled handler"""
         if self.is_vmin:
             self.is_vmin = False
             self.vmin_input.setDisabled(True)
-            self.vmin_input.setText("")
+            self.vmin_input.setText(self.vmin_default_text)
             self.vmin_input.setStyleSheet("")
         else:
             self.is_vmin = True
@@ -295,16 +330,17 @@ class ContourOptionsDialog(QDialog):
     def input_validation(self):
         red = "background-color: rgba(255, 0, 0, 128);"
 
-        def float_check(min_val=0):
+        def float_check(min_val=None):
             if user_input.text() == "":
                 user_input.setStyleSheet(red)
                 return False
             else:
                 try:
                     value = float(user_input.text())
-                    if value <= min_val:
-                        user_input.setStyleSheet(red)
-                        return False
+                    if min_val is not None:
+                        if value <= min_val:
+                            user_input.setStyleSheet(red)
+                            return False
                     else:
                         user_input.setStyleSheet("")
                 except ValueError:
@@ -312,16 +348,17 @@ class ContourOptionsDialog(QDialog):
                     return False
             return True
 
-        def int_check(min_val=0):
+        def int_check(min_val=None):
             if user_input.text() == "":
                 user_input.setStyleSheet(red)
                 return False
             else:
                 try:
                     value = int(user_input.text())
-                    if value <= min_val:
-                        user_input.setStyleSheet(red)
-                        return False
+                    if min_val is not None:
+                        if value <= min_val:
+                            user_input.setStyleSheet(red)
+                            return False
                     else:
                         user_input.setStyleSheet("")
                 except ValueError:
@@ -334,13 +371,13 @@ class ContourOptionsDialog(QDialog):
         # Check 1: spacing_input
         if self.is_custom_spacing:
             user_input = self.spacing_input
-            float_check()
+            float_check(0)
             success = success and float_check()
 
         # Check 2: font_size_input
         if self.add_contour_label:
             user_input = self.font_size_input
-            int_check()
+            int_check(0)
             success = success and int_check()
 
         # Check 3: vmax
@@ -360,13 +397,17 @@ class ContourOptionsDialog(QDialog):
             vmax = float(self.vmax_input.text())
             vmin = float(self.vmin_input.text())
             if vmax <= vmin:
-                success = False
                 self.vmax_input.setStyleSheet(red)
                 self.vmin_input.setStyleSheet(red)
+                success = False
 
         return success
 
     def finish(self):
+        """
+        Ok button pressed. Finalize
+        options and send to image viewer
+         """
         success = self.input_validation()
 
         if not success:
@@ -418,6 +459,10 @@ class ContourOptionsDialog(QDialog):
         self.close()
 
     def preview(self):
+        """
+        Prepare preview contour settings
+        and send to image viewer
+        """
         success = self.input_validation()
 
         if not success:
@@ -425,6 +470,7 @@ class ContourOptionsDialog(QDialog):
 
         image_viewer = self.contour_settings.image_viewer
         preview_settings = ContourSettings(image_viewer)
+        preview_settings.dialog = self
         preview_settings.options = self.contour_settings.options.copy()
         preview_settings.spacing = self.contour_settings.spacing
 
@@ -477,14 +523,19 @@ class ContourOptionsDialog(QDialog):
             info = QMessageBox.critical(self, "Error", message)
 
     def default(self):
+        """
+        Set options back to default
+        and send to image viewer
+        """
         self.contour_settings.options = self.contour_settings.default_options()
         self.contour_settings.spacing = None
         self.contour_settings.font_size = DEFAULT_CONTOUR_FONT_SIZE
         self.contour_settings.vmax = None
         self.contour_settings.vmin = None
+        self.contour_settings.add_contour_label = False
         if self.contour_settings.image_viewer.is_contour_active:
             self.contour_settings.draw_function()
-        self.close()
+        self.contour_settings.options_dialog()
 
     def cancel(self):
         if self.contour_settings.image_viewer.is_contour_active:
@@ -492,28 +543,51 @@ class ContourOptionsDialog(QDialog):
         self.close()
 
     def closeEvent(self, event):
+        """closeEvent handler"""
         if self.is_preview_active:
             self.contour_settings.image_viewer.end_contour_preview()
 
 
 class ContourSettings(object):
-    def __init__(self, image_viewer):
+    """
+    A class that contains contour settings.
+    Settings
+    ---------
+    options : dict
+        Holds kwargs to matplotlib.axes.Axes.contour
+    spacing : int
+        Spacing between contours
+    vmax and vmin: float and float
+        max and min values of the contour
+    """
+    def __init__(self, image_viewer, data_max=None,
+                 data_min=None, data_spacing=None):
         self.image_viewer = image_viewer
         self.cubeviz_layout = self.image_viewer.cubeviz_layout
         self.draw_function = self.image_viewer.draw_contour
 
         self.options = self.default_options()
 
-        self.spacing = None
+        self.spacing = None  # contour spacing
 
-        self.add_contour_label = False
+        self.add_contour_label = False  # add valye labels?
         self.font_size = DEFAULT_CONTOUR_FONT_SIZE
 
-        self.vmax = None
-        self.vmin = None
+        self.vmax = None # Max value of contour
+        self.vmin = None # Min value of contour
 
+        # Load colormap options
+        #   Add viridis to drop down
         self.colormap_members = [m[1] for m in glue_colormaps.members]
         self.colormap_members.append(cm.viridis)
+
+        # Default data values
+        self.data_max = data_max
+        self.data_min = data_min
+        self.data_spacing = data_spacing
+
+        # Dialog
+        self.dialog = None
 
     @staticmethod
     def default_options():
@@ -522,9 +596,34 @@ class ContourSettings(object):
         return options
 
     def options_dialog(self):
-        return ContourOptionsDialog(self)
+        """
+        Open UI to change settings
+        :return: qtpy.QtWidgets.QDialog
+        """
+        if self.dialog is not None:
+            self.dialog.close()
+        self.dialog = ContourOptionsDialog(self)
+        return self.dialog
+
+    def update_dialog(self):
+        vmin = ""
+        if self.data_min is not None:
+            vmin = "{0:1.4f}".format(self.data_min)
+        vmax = ""
+        if self.data_max is not None:
+            vmax = "{0:1.4f}".format(self.data_max)
+
+        spacing = ""
+        if self.data_spacing is not None:
+            spacing = "{0:1.4f}".format(self.data_spacing)
+
+        self.dialog.update_data_vals(vmin, vmax, spacing)
 
     def is_simple_contour(self):
+        """
+        Check to see if settings are simple enough
+        to use `contour(arr, **settings.options)?`
+        """
         is_simple = True
         if self.vmax is not None:
             is_simple = False

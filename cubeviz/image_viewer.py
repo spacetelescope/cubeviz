@@ -66,12 +66,12 @@ class CubevizImageViewer(ImageViewer):
         self.x_mouse = None  # x position of mouse in pix
         self.y_mouse = None  # y position of mouse in pix
 
-        self.is_contour_active = False
-        self.is_contour_preview_active = False
-        self.contour = None
-        self.contour_component = None
-        self.contour_settings = ContourSettings(self)
-        self.contour_preview_settings = None
+        self.is_contour_active = False  # Is contour being displayed
+        self.is_contour_preview_active = False # Is contour in preview mode
+        self.contour = None  # matplotlib.axes.Axes.contour
+        self.contour_component = None  # component label for contour
+        self.contour_settings = ContourSettings(self)  # ContourSettings
+        self.contour_preview_settings = None  # Temporary ContourSettings
 
         self.is_smoothing_preview_active = False  # Smoothing preview flag
         self.smoothing_preview_title = ""
@@ -206,6 +206,14 @@ class CubevizImageViewer(ImageViewer):
             del self.contour
             self.contour = None
 
+    def get_contour_array(self):
+        if self.contour_component is None:
+            arr = self.state.layers[0].get_sliced_data()
+        else:
+            data = self.state.layers_data[0]
+            arr = data[self.contour_component][self.slice_index]
+        return arr
+
     def draw_contour(self):
         self._delete_contour()
 
@@ -214,41 +222,52 @@ class CubevizImageViewer(ImageViewer):
         else:
             settings = self.contour_settings
 
-        if self.contour_component is None:
-            arr = self.state.layers[0].get_sliced_data()
-        else:
-            data = self.state.layers_data[0]
-            arr = data[self.contour_component][self.slice_index]
+        arr = self.get_contour_array()
 
-        if settings.is_simple_contour():
-            self.contour = self.axes.contour(arr, **settings.options)
-        else:
-            vmax = arr.max()
-            if settings.vmax is not None:
-                vmax = settings.vmax
+        vmax = arr.max()
+        if settings.vmax is not None:
+            vmax = settings.vmax
 
-            vmin = arr.min()
-            if settings.vmin is not None:
-                vmin = settings.vmin
+        vmin = arr.min()
+        if settings.vmin is not None:
+            vmin = settings.vmin
 
-            if settings.spacing is None:
+        if settings.spacing is None:
+            spacing = 1
+            if vmax != vmin:
                 spacing = (vmax-vmin)/6
-            else:
-                spacing = settings.spacing
-            levels = np.arange(vmin, vmax, spacing)
-            self.contour = self.axes.contour(arr, levels=levels, **settings.options)
+        else:
+            spacing = settings.spacing
+        levels = np.arange(vmin, vmax+spacing, spacing)
+        self.contour = self.axes.contour(arr, levels=levels, **settings.options)
 
         if settings.add_contour_label:
             self.axes.clabel(self.contour, fontsize=settings.font_size)
 
+        if settings.dialog is not None:
+            settings.data_max = arr.max()
+            settings.data_min = arr.min()
+            settings.data_spacing = spacing
+            settings.update_dialog()
+
         self.axes.figure.canvas.draw()
 
     def default_contour(self, *args):
+        """
+        Draw contour of current component
+        :param args: arguments from toolbar
+        """
         self.is_contour_active = True
         self.contour_component = None
         self.draw_contour()
 
     def custom_contour(self, *args):
+        """
+        Draw contour of a specified component
+        To change component programmatically
+        change the `contour_component` class var
+        :param args: arguments from toolbar
+        """
         self.is_contour_active = True
         components = self.cubeviz_layout.component_labels
         self.contour_component = pick_item(components, components,
@@ -267,17 +286,44 @@ class CubevizImageViewer(ImageViewer):
             self.draw_contour()
 
     def remove_contour(self, *args):
+        """
+        Turn contour off
+        :param args: arguments from toolbar
+        """
         self.is_contour_active = False
         self._delete_contour()
         self.axes.figure.canvas.draw()
 
+    def edit_contour_settings(self, *args):
+        """
+        Edit contour settings using UI
+        :param args: arguments from toolbar
+        :return: settings UI
+        """
+        arr = self.get_contour_array()
+        vmax = arr.max()
+        vmin = arr.min()
+        spacing = 1
+        if vmax != vmin:
+            spacing = (vmax - vmin) / 6
+        self.contour_settings.data_max = vmax
+        self.contour_settings.data_min = vmin
+        self.contour_settings.data_spacing = spacing
+
+        return self.contour_settings.options_dialog()
+
     def set_contour_preview(self, contour_preview_settings):
+        """
+        Apply contour preview settings.
+        :param contour_preview_settings: ContourSettings
+        """
         self.is_contour_preview_active = True
         self.show_preview_title()
         self.contour_preview_settings = contour_preview_settings
         self.draw_contour()
 
     def end_contour_preview(self):
+        """ End contour preview"""
         self.is_contour_preview_active = False
         self.hide_preview_title()
         self.contour_preview_settings = None
@@ -285,9 +331,6 @@ class CubevizImageViewer(ImageViewer):
             self.draw_contour()
         else:
             self.remove_contour()
-
-    def edit_contour_settings(self, *args):
-        return self.contour_settings.options_dialog()
 
     def _synced_checkbox_callback(self, event):
         if self._synced_checkbox.isChecked():
