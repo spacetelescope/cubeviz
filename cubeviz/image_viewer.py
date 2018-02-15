@@ -200,6 +200,10 @@ class CubevizImageViewer(ImageViewer):
         if self.contour is not None:
             for c in self.contour.collections:
                 c.remove()
+
+            for c in self.contour.labelTexts:
+                c.remove()
+            del self.contour
             self.contour = None
 
     def draw_contour(self):
@@ -216,12 +220,26 @@ class CubevizImageViewer(ImageViewer):
             data = self.state.layers_data[0]
             arr = data[self.contour_component][self.slice_index]
 
-        if settings.spacing is None:
+        if settings.is_simple_contour():
             self.contour = self.axes.contour(arr, **settings.options)
         else:
-            spacing = settings.spacing
-            levels = np.arange(arr.min(), arr.max(), spacing)
+            vmax = arr.max()
+            if settings.vmax is not None:
+                vmax = settings.vmax
+
+            vmin = arr.min()
+            if settings.vmin is not None:
+                vmin = settings.vmin
+
+            if settings.spacing is None:
+                spacing = (vmax-vmin)/6
+            else:
+                spacing = settings.spacing
+            levels = np.arange(vmin, vmax, spacing)
             self.contour = self.axes.contour(arr, levels=levels, **settings.options)
+
+        if settings.add_contour_label:
+            self.axes.clabel(self.contour, fontsize=settings.font_size)
 
         self.axes.figure.canvas.draw()
 
@@ -269,7 +287,7 @@ class CubevizImageViewer(ImageViewer):
             self.remove_contour()
 
     def edit_contour_settings(self, *args):
-        self.contour_settings.options_dialog()
+        return self.contour_settings.options_dialog()
 
     def _synced_checkbox_callback(self, event):
         if self._synced_checkbox.isChecked():
