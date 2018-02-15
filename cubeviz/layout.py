@@ -281,8 +281,7 @@ class CubeVizLayout(QtWidgets.QWidget):
     def remove_component(self, name):
         if str(name) not in self._component_labels:
             return
-        index = self._component_labels.index(str(name))
-        item = self._component_labels.pop(index)
+        self._component_labels.remove(str(name))
 
     def _enable_option_buttons(self):
         for button in self._option_buttons:
