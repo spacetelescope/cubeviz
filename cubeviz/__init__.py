@@ -9,3 +9,7 @@ This is an Astropy affiliated package.
 # ----------------------------------------------------------------------------
 from ._astropy_init import *
 # ----------------------------------------------------------------------------
+
+# This ensures that all custom toolbar modes are imported so that they are
+# registered by @viewer_tool and are available for use by CubeViz.
+from .toolbar_modes import *
