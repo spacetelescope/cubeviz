@@ -12,12 +12,8 @@ class UnitController:
         self._wcs = None
 
         # This is the Wavelength conversion/combobox code
-        # self._wavelength_combobox = ui.unitcomboBox
         self.units = [u.m, u.cm, u.mm, u.um, u.nm, u.AA]
         self.units_titles = list(u.long_names[0].title() for u in self.units)
-        # self._wavelength_combobox.addItems(self.units_titles)
-        #
-        # self._wavelength_combobox.activated.connect(self._on_combobox_change)
 
         # This is the label for the wavelength units
         self._wavelength_textbox_label = ui.wavelength_textbox_label
