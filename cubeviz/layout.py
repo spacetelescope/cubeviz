@@ -258,14 +258,13 @@ class CubeVizLayout(QtWidgets.QWidget):
         if name == "Moment Maps":
             moment_maps.MomentMapsGUI(
                 self._data, self.session.data_collection, parent=self)
-
         if name == 'Wavelength Units':
             current_unit = self._units_controller.units_titles.index(self._units_controller._new_units.long_names[0].title())
             wavelength, ok_pressed = QInputDialog.getItem(self, "Pick a wavelength", "Wavelengths:", self._units_controller.units_titles, current_unit, False)
             if ok_pressed:
                 self._units_controller.on_combobox_change(wavelength)
-                
-   def refresh_viewer_combo_helpers(self):
+
+    def refresh_viewer_combo_helpers(self):
         for i, helper in enumerate(self._viewer_combo_helpers):
             helper.refresh()
 
