@@ -515,6 +515,9 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._activate_split_image_mode()
         self._update_active_view(self.left_view)
 
+    def change_slice_index(self, amount):
+        self._slice_controller.change_slider_value(amount)
+
     def get_wavelengths(self):
         return self._wavelengths
 

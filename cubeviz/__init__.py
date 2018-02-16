@@ -8,4 +8,5 @@ This is an Astropy affiliated package.
 # should keep this content at the top.
 # ----------------------------------------------------------------------------
 from ._astropy_init import *
+from . import keyboard_shortcuts
 # ----------------------------------------------------------------------------

@@ -14,6 +14,14 @@ TEST_DATA_PATH = os.path.join(os.path.dirname(__file__), 'data')
 def left_click(qtbot, widget):
     qtbot.mouseClick(widget, QtCore.Qt.LeftButton)
 
+def left_button_press(qtbot, layout):
+    widget = layout._slice_controller._slice_slider
+    qtbot.keyPress(widget, QtCore.Qt.Key_Left)
+
+def right_button_press(qtbot, layout):
+    widget = layout._slice_controller._slice_slider
+    qtbot.keyPress(widget, QtCore.Qt.Key_Right)
+
 def toggle_viewer(qtbot, layout):
     left_click(qtbot, layout.button_toggle_image_mode)
 
