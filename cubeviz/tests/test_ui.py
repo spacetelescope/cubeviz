@@ -170,4 +170,3 @@ def test_key_shortcuts(qtbot, cubeviz_layout):
     assert cubeviz_layout._slice_controller._slice_slider.value() == slice_val
     right_button_press(qtbot, cubeviz_layout)
     assert cubeviz_layout._slice_controller._slice_slider.value() == slice_val + 1
-
