@@ -4,7 +4,7 @@ from collections import OrderedDict
 import numpy as np
 
 from qtpy import QtWidgets, QtCore
-from qtpy.QtWidgets import QMenu, QAction
+from qtpy.QtWidgets import QMenu, QAction, QInputDialog
 
 from glue.utils.qt import load_ui
 from glue.utils.qt import get_qapp
@@ -16,24 +16,16 @@ from glue.core.message import SettingsChangeMessage
 from glue.utils.matplotlib import freeze_margins
 
 from specviz.third_party.glue.data_viewer import SpecVizViewer
+from specviz.core.events import dispatch
 
 from .toolbar import CubevizToolbar
 from .image_viewer import CubevizImageViewer
 
 from .controls.slice import SliceController
 from .controls.overlay import OverlayController
+from .controls.units import UnitController
 from .tools import arithmetic_gui, moment_maps, smoothing
-
-FLUX = 'FLUX'
-ERROR = 'ERROR'
-MASK = 'MASK'
-DEFAULT_DATA_LABELS = [FLUX, ERROR, MASK]
-
-COLOR = {}
-COLOR[FLUX] = '#888888'
-COLOR[ERROR] = '#ffaa66'
-COLOR[MASK] = '#66aaff'
-
+from .tools.spectral_operations import SpectralOperationHandler
 
 class WidgetWrapper(QtWidgets.QWidget):
 
@@ -138,12 +130,13 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         self._slice_controller = SliceController(self)
         self._overlay_controller = OverlayController(self)
+        self._units_controller = UnitController(self)
 
         # Add menu buttons to the cubeviz toolbar.
         self._init_menu_buttons()
 
         # This maps the combo box indicies to the glue data component labels
-        self._component_labels = DEFAULT_DATA_LABELS.copy()
+        self._component_labels = []
 
         self.sync = {}
         # Track the slice index of the synced viewers. This is updated by the
@@ -162,6 +155,9 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._single_viewer_mode = False
         self.ui.button_toggle_image_mode.setText('Single Image Viewer')
         self.ui.viewer_control_frame.setCurrentIndex(0)
+
+        # Add this class to the specviz dispatcher watcher
+        dispatch.setup(self)
 
     def _init_menu_buttons(self):
         """
@@ -182,7 +178,8 @@ class CubeVizLayout(QtWidgets.QWidget):
             ('RA-Spectral', lambda: None),
             ('DEC-Spectral', lambda: None),
             ('Hide Axes', ['checkable', self._toggle_viewer_axes]),
-            ('Hide Toolbars', ['checkable', self._toggle_toolbars])
+            ('Hide Toolbars', ['checkable', self._toggle_toolbars]),
+            ('Wavelength Units', lambda: self._open_dialog('Wavelength Units', None))
         ]))
         self.ui.view_option_button.setMenu(view_menu)
 
@@ -262,6 +259,19 @@ class CubeVizLayout(QtWidgets.QWidget):
             moment_maps.MomentMapsGUI(
                 self._data, self.session.data_collection, parent=self)
 
+        if name == 'Wavelength Units':
+            current_unit = self._units_controller.units_titles.index(self._units_controller._new_units.long_names[0].title())
+            wavelength, ok_pressed = QInputDialog.getItem(self, "Pick a wavelength", "Wavelengths:", self._units_controller.units_titles, current_unit, False)
+            if ok_pressed:
+                self._units_controller.on_combobox_change(wavelength)
+
+    @dispatch.register_listener("apply_function")
+    def apply_to_cube(self, func):
+        """Apply operation from spectral analysis to the entire cube."""
+        # Retrieve the current cube data object
+        operation_handler = SpectralOperationHandler(self._data, function=func, parent=self)
+        operation_handler.exec_()
+
     def add_new_data_component(self, name):
         self._component_labels.append(str(name))
 
@@ -335,12 +345,16 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._last_active_view = self.single_view
         self._active_split_cube = self.left_view
 
+        # Set the component labels to what was actually in the file.
+        self._component_labels = [str(x).strip() for x in data.component_ids() if not x in data.coordinate_components]
+
         # Store pointer to wavelength information
-        self._wavelengths = self.single_view._widget._data[0].get_component('Wave')[:,0,0]
+        self._wavelengths = self.single_view._widget._data[0].coords.world_axis(self.single_view._widget._data[0], axis=0)
 
         # Pass WCS and wavelength information to slider controller and enable
         wcs = self.session.data_collection.data[0].coords.wcs
         self._slice_controller.enable(wcs, self._wavelengths)
+        self._units_controller.enable(wcs, self._wavelengths)
 
         self._enable_option_buttons()
         self._setup_syncing()
@@ -500,3 +514,13 @@ class CubeVizLayout(QtWidgets.QWidget):
         # Make split image mode the default layout
         self._activate_split_image_mode()
         self._update_active_view(self.left_view)
+
+    def get_wavelengths(self):
+        return self._wavelengths
+
+    def get_wavelengths_units(self):
+        return self._units_controller.get_new_units()
+
+    def set_wavelengths(self, new_wavelengths, new_units):
+        self._wavelengths = new_wavelengths
+        self._slice_controller.set_wavelengths(new_wavelengths, new_units)

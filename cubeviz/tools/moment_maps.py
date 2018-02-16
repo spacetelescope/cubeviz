@@ -45,7 +45,7 @@ class MomentMapsGUI(QDialog):
         self.data_label.setFont(boldFont)
 
         self.data_combobox = QComboBox()
-        self.data_combobox.addItems(["FLUX", "ERROR", "DQ"])
+        self.data_combobox.addItems([str(x).strip() for x in self.data.component_ids() if not x in self.data.coordinate_components])
         self.data_combobox.setMinimumWidth(200)
 
         hbl1 = QHBoxLayout()
