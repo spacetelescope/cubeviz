@@ -3,6 +3,7 @@ from qtpy import QtCore, QtWidgets, QtGui, compat
 
 
 @keyboard_shortcut(QtCore.Qt.Key_Left, None)
+@keyboard_shortcut(QtCore.Qt.Key_A, None)
 def move_slider_left(session):
     """
     Move slider index one to the left
@@ -14,6 +15,7 @@ def move_slider_left(session):
 
 
 @keyboard_shortcut(QtCore.Qt.Key_Right, None)
+@keyboard_shortcut(QtCore.Qt.Key_D, None)
 def move_slider_right(session):
     """
     Move slider index one to the right
