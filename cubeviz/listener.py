@@ -1,7 +1,7 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 
 from glue.core import Hub, HubListener, Data, DataCollection
-from glue.core.message import (DataCollectionAddMessage,
+from glue.core.message import (DataCollectionAddMessage, DataRemoveComponentMessage,
                                DataAddComponentMessage, SettingsChangeMessage)
 from .layout import CubeVizLayout
 
@@ -27,6 +27,8 @@ class CubevizManager(HubListener):
             self, DataAddComponentMessage, handler=self.handle_new_component)
         self._hub.subscribe(
             self, SettingsChangeMessage, handler=self.handle_settings_change)
+        self._hub.subscribe(
+            self, DataRemoveComponentMessage, handler=self.handle_remove_component)
 
         # Look for any cube data files that were loaded from the command line
         for data in session.data_collection:
@@ -53,6 +55,9 @@ class CubevizManager(HubListener):
     def handle_new_component(self, message):
         #self._layout.add_new_data_component(str(message.component_id))
         self._layout.add_new_data_component(message.component_id)
+
+    def handle_remove_component(self, message):
+        self._layout.remove_component(message.component_id)
 
     def handle_settings_change(self, message):
         if self._layout is not None:
