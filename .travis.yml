@@ -138,6 +138,8 @@ install:
     # other dependencies.
 
 script:
+   - conda info
+   - conda list
    - $MAIN_CMD $SETUP_CMD
    - find cubeviz -name "*.ui" -exec grep "pointsize" {} \; >& font.log
    - test ! -s font.log
