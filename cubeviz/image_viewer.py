@@ -238,7 +238,10 @@ class CubevizImageViewer(ImageViewer):
                 spacing = (vmax-vmin)/6
         else:
             spacing = settings.spacing
-        levels = np.arange(vmin, vmax+spacing, spacing)
+
+        levels = np.arange(vmin, vmax, spacing)
+        levels = np.append(levels, vmax)
+
         self.contour = self.axes.contour(arr, levels=levels, **settings.options)
 
         if settings.add_contour_label:
