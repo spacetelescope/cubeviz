@@ -56,4 +56,3 @@ Reference/API
    installation
    functionality
    readingindata
-   api
