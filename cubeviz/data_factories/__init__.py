@@ -5,9 +5,10 @@ import os
 import glob
 import logging
 
-from glue.core import Data
+from glue.core import Data, Subset
 from glue.core.coordinates import coordinates_from_header
-from glue.config import data_factory
+from glue.config import data_factory, data_exporter
+from glue.core.data_exporters.gridded_fits import fits_writer
 from astropy.io import fits
 import numpy as np
 
@@ -19,6 +20,7 @@ logger.setLevel(logging.INFO)
 
 DEFAULT_DATA_CONFIGS = os.path.join(os.path.dirname(__file__), 'configurations')
 CUBEVIZ_DATA_CONFIGS = 'CUBEVIZ_DATA_CONFIGS'
+
 
 class DataConfiguration:
     """
@@ -41,13 +43,20 @@ class DataConfiguration:
 
             try:
                 self._priority = int(cfg.get('priority', 0))
-            except:
+            except Exception:
                 self._priority = 0
 
             self._configuration = cfg['match']
 
             self._data = cfg.get('data', None)
 
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def type(self):
+        return self._type
 
     def load_data(self, data_filenames):
         """
@@ -62,13 +71,15 @@ class DataConfiguration:
         data = None
 
         for data_filename in data_filenames.split(','):
+
             hdulist = fits.open(data_filename)
 
             if not label:
                 label = "{}: {}".format(self._name, splitext(basename(data_filename))[0])
                 data = Data(label=label)
 
-                # this attribute is used to indicate to the cubeviz layout that this is a cubeviz-specific data component.
+                # this attribute is used to indicate to the cubeviz layout that
+                # this is a cubeviz-specific data component.
                 data.meta[CUBEVIZ_LAYOUT] = self._name
 
             data_coords_set = False
@@ -86,6 +97,9 @@ class DataConfiguration:
 
                         # The data must be floating point as spectralcube is expecting floating point data
                         data.add_component(component=hdu.data.astype(np.float), label=component_name)
+
+            # For the purposes of exporting, we keep a reference to the original HDUList object
+            data._cubeviz_hdulist = hdulist
 
         return data
 
@@ -254,6 +268,7 @@ class DataConfiguration:
 
         return ''
 
+
 class DataFactoryConfiguration:
     """
     This class takes in lists of files or directories that are or contain data configuration YAML files. These
@@ -353,3 +368,44 @@ class DataFactoryConfiguration:
             dc = DataConfiguration(config_file)
             wrapper = data_factory(name, dc.matches, priority=priority)
             wrapper(dc.load_data)
+
+
+@data_exporter('CubeViz FITS exporter', extension=['fits', 'fit'])
+def cubeviz_fits_exporter(filename, data, components=None):
+
+    if isinstance(data, Subset):
+        raise NotImplementedError("Can't export subsets yet")
+
+    if not hasattr(data, '_cubeviz_hdulist'):
+        return fits_writer(filename, data, components=components)
+
+    if components is None:
+        components = data.visible_components
+
+    hdulist = fits.HDUList(data._cubeviz_hdulist.copy())
+
+    component_labels = [cid.label for cid in components]
+
+    # Remove any HDUs with data that don't have a matching component
+    for hdu in hdulist[::-1]:
+        if hdu.data is not None and hdu.name not in component_labels:
+            hdulist.remove(hdu)
+
+    # Add any other components
+    for cid in components:
+
+        if cid.label in hdulist:
+            continue
+
+        comp = data.get_component(cid)
+
+        if comp.categorical:
+            raise NotImplementedError()
+
+        hdu = fits.ImageHDU(comp.data, data.coords.wcs.to_header(), name=cid.label)
+        hdulist.append(hdu)
+
+    try:
+        hdulist.writeto(filename, overwrite=True)
+    except TypeError:
+        hdulist.writeto(filename, clobber=True)
