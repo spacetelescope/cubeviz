@@ -268,13 +268,16 @@ class CubeVizLayout(QtWidgets.QWidget):
         for i, helper in enumerate(self._viewer_combo_helpers):
             helper.refresh()
 
-    @dispatch.register_listener("apply_function")
-    def apply_to_cube(self, func):
-        """Apply operation from spectral analysis to the entire cube."""
+    @dispatch.register_listener("apply_operations")
+    def apply_to_cube(self, stack):
+        """
+        Listen for messages from specviz about possible spectral analysis
+        operations that may be applied to the entire cube.
+        """
         # Retrieve the current cube data object
-        operation_handler = SpectralOperationHandler(self._data, function=func, parent=self)
+        operation_handler = SpectralOperationHandler(self._data, stack=stack,
+                                                     parent=self)
         operation_handler.exec_()
-
 
     def add_new_data_component(self, name):
         self._component_labels.append(str(name))
