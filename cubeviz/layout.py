@@ -75,10 +75,10 @@ class CubeVizLayout(QtWidgets.QWidget):
                           directory=os.path.dirname(__file__))
 
         # Create the views and register to the hub.
-        self.single_view = WidgetWrapper(CubevizImageViewer(self.session), tab_widget=self)
-        self.left_view = WidgetWrapper(CubevizImageViewer(self.session), tab_widget=self)
-        self.middle_view = WidgetWrapper(CubevizImageViewer(self.session), tab_widget=self)
-        self.right_view = WidgetWrapper(CubevizImageViewer(self.session), tab_widget=self)
+        self.single_view = WidgetWrapper(CubevizImageViewer(self.session, cubeviz_layout=self), tab_widget=self)
+        self.left_view = WidgetWrapper(CubevizImageViewer(self.session, cubeviz_layout=self), tab_widget=self)
+        self.middle_view = WidgetWrapper(CubevizImageViewer(self.session, cubeviz_layout=self), tab_widget=self)
+        self.right_view = WidgetWrapper(CubevizImageViewer(self.session, cubeviz_layout=self), tab_widget=self)
         self.specviz = WidgetWrapper(SpecVizViewer(self.session), tab_widget=self)
 
         self.single_view._widget.register_to_hub(self.session.hub)
@@ -88,6 +88,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.specviz._widget.register_to_hub(self.session.hub)
 
         self.all_views = [self.single_view, self.left_view, self.middle_view, self.right_view]
+
         # TODO: determine whether to rename this or get rid of it
         self.cube_views = self.all_views
         self.split_views = self.cube_views[1:]
@@ -258,11 +259,16 @@ class CubeVizLayout(QtWidgets.QWidget):
         if name == "Moment Maps":
             moment_maps.MomentMapsGUI(
                 self._data, self.session.data_collection, parent=self)
+
         if name == 'Wavelength Units':
             current_unit = self._units_controller.units_titles.index(self._units_controller._new_units.long_names[0].title())
             wavelength, ok_pressed = QInputDialog.getItem(self, "Pick a wavelength", "Wavelengths:", self._units_controller.units_titles, current_unit, False)
             if ok_pressed:
                 self._units_controller.on_combobox_change(wavelength)
+
+    @property
+    def component_labels(self):
+        return self._component_labels
 
     def refresh_viewer_combo_helpers(self):
         for i, helper in enumerate(self._viewer_combo_helpers):
@@ -274,6 +280,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         Listen for messages from specviz about possible spectral analysis
         operations that may be applied to the entire cube.
         """
+
         # Retrieve the current cube data object
         operation_handler = SpectralOperationHandler(self._data, stack=stack,
                                                      parent=self)
@@ -281,6 +288,7 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     def add_new_data_component(self, name):
         self._component_labels.append(str(name))
+
         self.refresh_viewer_combo_helpers()
 
         if self._active_view in self.all_views:
@@ -307,6 +315,8 @@ class CubeVizLayout(QtWidgets.QWidget):
             view.update_axes_title(title=str(label))
             view.state.layers[0]._update_attribute()
             view.state.layers[0].attribute = self._data.id[label]
+            if view.is_contour_active:
+                view.draw_contour()
         return change_viewer
 
     def _enable_viewer_combo(self, data, index, combo_label, selection_label):
