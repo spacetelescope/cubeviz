@@ -50,6 +50,14 @@ class DataConfiguration:
 
             self._data = cfg.get('data', None)
 
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def type(self):
+        return self._type
+
     def load_data(self, data_filenames):
         """
         Load the data based on the extensions defined in the matching YAML file.  THen
