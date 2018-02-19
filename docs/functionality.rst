@@ -16,8 +16,10 @@ In addition to the image viewers which display the data cube in
 its spatial axes (RA, DEC), a spectrum viewer shows the spectral axis
 (wavelength).
 
-.. figure::  images/CubeViz_splitviewer.png
-             images/CubeViz_singleviewer.png	     
+.. image::  images/CubeViz_splitviewer.png 
+   :align:   center
+
+.. image::  images/CubeViz_singleviewer.png	     
    :align:   center
 
 Caption: Screen shots of the split image viewer (top) and single
