@@ -6,7 +6,7 @@ import numpy as np
 
 DATA_LABELS = ['018.DATA', '018.NOISE']
 
-from .helpers import toggle_viewer, select_viewer, left_click
+from .helpers import toggle_viewer, select_viewer, left_click, left_button_press, right_button_press
 
 
 def test_starting_state(cubeviz_layout):
@@ -161,3 +161,12 @@ def test_add_data_component(qtbot, cubeviz_layout):
         # Toggle back to split viewer mode if necessary
         if viewer_index == 0:
             toggle_viewer(qtbot, cubeviz_layout)
+
+def test_key_shortcuts(qtbot, cubeviz_layout):
+    slice_val = cubeviz_layout._slice_controller._slice_slider.value()
+    left_button_press(qtbot, cubeviz_layout)
+    assert cubeviz_layout._slice_controller._slice_slider.value() == slice_val - 1
+    right_button_press(qtbot, cubeviz_layout)
+    assert cubeviz_layout._slice_controller._slice_slider.value() == slice_val
+    right_button_press(qtbot, cubeviz_layout)
+    assert cubeviz_layout._slice_controller._slice_slider.value() == slice_val + 1

@@ -258,12 +258,15 @@ class CubeVizLayout(QtWidgets.QWidget):
         if name == "Moment Maps":
             moment_maps.MomentMapsGUI(
                 self._data, self.session.data_collection, parent=self)
-
         if name == 'Wavelength Units':
             current_unit = self._units_controller.units_titles.index(self._units_controller._new_units.long_names[0].title())
             wavelength, ok_pressed = QInputDialog.getItem(self, "Pick a wavelength", "Wavelengths:", self._units_controller.units_titles, current_unit, False)
             if ok_pressed:
                 self._units_controller.on_combobox_change(wavelength)
+
+    def refresh_viewer_combo_helpers(self):
+        for i, helper in enumerate(self._viewer_combo_helpers):
+            helper.refresh()
 
     @dispatch.register_listener("apply_operations")
     def apply_to_cube(self, stack):
@@ -278,8 +281,17 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     def add_new_data_component(self, name):
         self._component_labels.append(str(name))
+        self.refresh_viewer_combo_helpers()
 
-        # TODO: udpate the active view with the new component
+        if self._active_view in self.all_views:
+            view_index = self.all_views.index(self._active_view)
+            component_index = self._component_labels.index(str(name))
+            self.change_viewer_component(view_index, component_index)
+
+    def remove_component(self, name):
+        if str(name) not in self._component_labels:
+            return
+        self._component_labels.remove(str(name))
 
     def _enable_option_buttons(self):
         for button in self._option_buttons:
@@ -293,6 +305,7 @@ class CubeVizLayout(QtWidgets.QWidget):
             if view.is_smoothing_preview_active:
                 view.end_smoothing_preview()
             view.update_axes_title(title=str(label))
+            view.state.layers[0]._update_attribute()
             view.state.layers[0].attribute = self._data.id[label]
         return change_viewer
 
@@ -326,6 +339,25 @@ class CubeVizLayout(QtWidgets.QWidget):
             view = self.all_views[i].widget()
             view.update_axes_title(str(getattr(self, selection_label)))
 
+    def change_viewer_component(self, view_index,
+                                component_index,
+                                force=False):
+        """
+        Given a viewer at an index view_index, change combo
+        selection to component at an index component_index.
+        :param view_index: int: Viewer index
+        :param component_index: int: Component index in viewer combo
+        :param force: bool: force change if component is already displayed.
+        """
+        if view_index == 0:
+            combo_label = 'single_viewer_combo'
+        else:
+            combo_label = 'viewer{0}_combo'.format(view_index)
+        combo = getattr(self.ui, combo_label)
+        if combo.currentIndex() == component_index and force:
+            combo.currentIndexChanged.emit(component_index)
+        else:
+            combo.setCurrentIndex(component_index)
 
     def add_overlay(self, data, label):
         self._overlay_controller.add_overlay(data, label)
@@ -489,13 +521,8 @@ class CubeVizLayout(QtWidgets.QWidget):
         # For single and first viewer:
         for view_index in [0, 1]:
             view = self.all_views[view_index].widget()
-            if view_index == 0:
-                combo_label = 'single_viewer_combo'
-            else:
-                combo_label = 'viewer{0}_combo'.format(view_index)
-            combo = getattr(self.ui, combo_label)
             component_index = self._component_labels.index(component_id)
-            combo.setCurrentIndex(component_index)
+            self.change_viewer_component(view_index, component_index, force=True)
             view.set_smoothing_preview(preview_function, preview_title)
 
     def end_smoothing_preview(self):
@@ -505,19 +532,16 @@ class CubeVizLayout(QtWidgets.QWidget):
         for view_index in [0,1]:
             view = self.all_views[view_index].widget()
             view.end_smoothing_preview()
-            if view_index == 0:
-                combo_label = 'single_viewer_combo'
-            else:
-                combo_label = 'viewer{0}_combo'.format(view_index)
-            combo = getattr(self.ui, combo_label)
-            combo.setCurrentIndex(0)
-            combo.currentIndexChanged.emit(0)
+            self.change_viewer_component(view_index, 0, force=True)
 
     def showEvent(self, event):
         super(CubeVizLayout, self).showEvent(event)
         # Make split image mode the default layout
         self._activate_split_image_mode()
         self._update_active_view(self.left_view)
+
+    def change_slice_index(self, amount):
+        self._slice_controller.change_slider_value(amount)
 
     def get_wavelengths(self):
         return self._wavelengths
