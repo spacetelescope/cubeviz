@@ -526,7 +526,12 @@ class AbortWindow(QDialog):
 
     def print_error(self, exception):
         """Print error message"""
-        message = "Smoothing Failed!\n\n" + str(exception)
+
+        if "signal only works in main thread" in str(exception):
+            message = "Smoothing Failed!\n\n" + "Please update your SpectralCube package"
+        else:
+            message = "Smoothing Failed!\n\n" + str(exception)
+
         info = QMessageBox.critical(self, "Error", message)
         self.clean_up()
 
