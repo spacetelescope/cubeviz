@@ -153,22 +153,18 @@ class CollapseCube(QDialog):
             self.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
             self.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
             self.error_label_text.setText('Must set at least one of start or end value')
+            return
 
         if start_value and end_value and start_value > end_value:
             self.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
             self.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
             self.error_label_text.setText('Start value must be less than end value')
+            return
 
         data_name = self.data_combobox.currentText()
 
-        # Grab spectral-cube
-        import spectral_cube
-        cube = spectral_cube.SpectralCube(self.data[data_name], wcs=self.data.coords.wcs)
-        print('created spectral cube {}'.format(spectral_cube))
+        # Do calculation if we bggot this
 
-        # cube_moment = cube.moment(order=order, axis=0)
-        #
-        # label = '{}-moment-{}'.format(data_name, order)
         # self.parent.add_overlay(cube_moment.value, label)
 
         self.close()
