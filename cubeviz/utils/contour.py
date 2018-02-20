@@ -547,6 +547,10 @@ class ContourOptionsDialog(QDialog):
         if self.is_preview_active:
             self.contour_settings.image_viewer.end_contour_preview()
 
+    def keyPressEvent(self, e):
+        if e.key() == Qt.Key_Escape:
+            self.cancel()
+
 
 class ContourSettings(object):
     """
