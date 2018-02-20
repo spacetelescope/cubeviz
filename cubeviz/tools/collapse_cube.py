@@ -13,7 +13,9 @@ import numpy as np
 operations = {
     'mean': np.mean,
     'median': np.median,
-    'std': np.std
+    'std': np.std,
+    'max': np.max,
+    'min': np.min
 }
 
 class CollapseCube(QDialog):
