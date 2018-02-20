@@ -61,8 +61,8 @@ class CubevizImageViewer(ImageViewer):
 
         self.is_mouse_over = False  # If mouse cursor is over viewer
         self.hold_coords = False  # Switch to hold current displayed coords
-        self._coords_in_degrees = True  # Switch display coords to True=deg or False=Deg/Hr:Min:Sec
-        self._coords_format_function = self._format_to_degree_string  # Function to format ra and dec
+        self._coords_in_degrees = False  # Switch display coords to True=deg or False=Deg/Hr:Min:Sec
+        self._coords_format_function = self._format_to_hex_string  # Function to format ra and dec
         self.x_mouse = None  # x position of mouse in pix
         self.y_mouse = None  # y position of mouse in pix
 
