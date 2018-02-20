@@ -181,3 +181,7 @@ class SelectArithmetic(QDialog):
         :return:
         """
         self.close()
+
+    def keyPressEvent(self, e):
+        if e.key() == Qt.Key_Escape:
+            self.cancel_callback()

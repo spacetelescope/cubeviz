@@ -538,6 +538,10 @@ class AbortWindow(QDialog):
     def clean_up(self):
         self.parent.clean_up()
 
+    def keyPressEvent(self, e):
+        if e.key() == Qt.Key_Escape:
+            self.abort()
+
 
 class SelectSmoothing(QDialog):
     """
@@ -859,3 +863,7 @@ class SelectSmoothing(QDialog):
         if self.is_preview_active:
             self.parent.end_smoothing_preview()
             self.is_preview_active = False
+
+    def keyPressEvent(self, e):
+        if e.key() == Qt.Key_Escape:
+            self.clean_up()
