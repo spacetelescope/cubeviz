@@ -4,12 +4,12 @@ from qtpy.QtCore import Qt
 from qtpy import QtGui
 from qtpy.QtWidgets import (
     QDialog, QApplication, QPushButton,
-    QLabel, QWidget, QHBoxLayout, QVBoxLayout, QLineEdit
+    QLabel, QWidget, QHBoxLayout, QVBoxLayout, QLineEdit, QComboBox
 )
 
 
 class CollapseCube(QDialog):
-    def __init__(self, data, data_collection, parent=None):
+    def __init__(self, data, data_collection=[], allow_preview=False, parent=None):
         super(CollapseCube,self).__init__(parent)
 
         # Get the data_components (e.g., FLUX, DQ, ERROR etc)
@@ -17,7 +17,7 @@ class CollapseCube(QDialog):
         self.data_components = [str(x).strip() for x in data.component_ids() if not x in data.coordinate_components]
 
         self.setWindowFlags(self.windowFlags() | Qt.Tool)
-        self.title = "Arithmetic Calculation"
+        self.title = "Cube Collapse"
         self.data = data
         self.data_collection = data_collection
         self.parent = parent
@@ -25,6 +25,7 @@ class CollapseCube(QDialog):
         self.currentAxes = None
         self.currentKernel = None
 
+        print('Going to call createUI')
         self.createUI()
 
     def createUI(self):
@@ -33,22 +34,38 @@ class CollapseCube(QDialog):
 
         :return:
         """
+        print("In createUI")
+
         boldFont = QtGui.QFont()
         boldFont.setBold(True)
 
-        # Create calculation label and input box
-        self.calculation_label = QLabel("Calculation:")
-        self.calculation_label.setFixedWidth(100)
-        self.calculation_label.setAlignment((Qt.AlignRight | Qt.AlignTop))
-        self.calculation_label.setFont(boldFont)
+        # Create data component label and input box
+        self.data_label = QLabel("Data:")
+        self.data_label.setFixedWidth(100)
+        self.data_label.setAlignment((Qt.AlignRight | Qt.AlignTop))
+        self.data_label.setFont(boldFont)
 
-        self.calculation_text = QLineEdit()
-        self.calculation_text.setMinimumWidth(200)
-        self.calculation_text.setAlignment((Qt.AlignLeft | Qt.AlignTop))
+        self.data_combobox = QComboBox()
+        self.data_combobox.addItems([str(x).strip() for x in self.data.component_ids() if not x in self.data.coordinate_components])
+        self.data_combobox.setMinimumWidth(200)
 
-        hbl1 = QHBoxLayout()
-        hbl1.addWidget(self.calculation_label)
-        hbl1.addWidget(self.calculation_text)
+        hb_data = QHBoxLayout()
+        hb_data.addWidget(self.data_label)
+        hb_data.addWidget(self.data_combobox)
+
+        # Create operation label and input box
+        self.operation_label = QLabel("Operation:")
+        self.operation_label.setFixedWidth(100)
+        self.operation_label.setAlignment((Qt.AlignRight | Qt.AlignTop))
+        self.operation_label.setFont(boldFont)
+
+        self.operation_combobox = QComboBox()
+        self.operation_combobox.addItems(['mean', 'median', 'std'])
+        self.operation_combobox.setMinimumWidth(200)
+
+        hb_operation = QHBoxLayout()
+        hb_operation.addWidget(self.operation_label)
+        hb_operation.addWidget(self.operation_combobox)
 
         # Create calculation label and input box
         self.error_label = QLabel("")
@@ -62,42 +79,33 @@ class CollapseCube(QDialog):
         hbl_error.addWidget(self.error_label)
         hbl_error.addWidget(self.error_label_text)
 
-        # Show the available data
-        self.data_available_text_label = QLabel("Data available: ")
-        self.data_available_text_label.setFixedWidth(100)
-        self.data_available_text_label.setAlignment((Qt.AlignRight | Qt.AlignTop))
-        self.data_available_text_label.setFont(boldFont)
+        # Create start label and input box
+        self.start_label = QLabel("Start:")
+        self.start_label.setFixedWidth(100)
+        self.start_label.setAlignment((Qt.AlignRight | Qt.AlignTop))
+        self.start_label.setFont(boldFont)
 
-        self.data_available_label = QLabel(', '.join(self.data_components))
-        self.data_available_label.setMinimumWidth(200)
-        self.data_available_label.setAlignment((Qt.AlignLeft | Qt.AlignTop))
+        self.start_text = QLineEdit()
+        self.start_text.setMinimumWidth(200)
+        self.start_text.setAlignment((Qt.AlignLeft | Qt.AlignTop))
 
-        hbl2 = QHBoxLayout()
-        hbl2.addWidget(self.data_available_text_label)
-        hbl2.addWidget(self.data_available_label)
+        hb_start = QHBoxLayout()
+        hb_start.addWidget(self.start_label)
+        hb_start.addWidget(self.start_text)
 
-        # Show the examples
-        self.example_text_label = QLabel("Examples: ")
-        self.example_text_label.setFixedWidth(100)
-        self.example_text_label.setAlignment((Qt.AlignRight | Qt.AlignTop))
-        self.example_text_label.setFont(boldFont)
+        # Create end label and input box
+        self.end_label = QLabel("End:")
+        self.end_label.setFixedWidth(100)
+        self.end_label.setAlignment((Qt.AlignRight | Qt.AlignTop))
+        self.end_label.setFont(boldFont)
 
-        examples = """Assuming we have data available called FLUX and ERROR:
+        self.end_text = QLineEdit()
+        self.end_text.setMinimumWidth(200)
+        self.end_text.setAlignment((Qt.AlignLeft | Qt.AlignTop))
 
-        - Subtract 1000 from {0}:  {0}new = {0} - 1000
-        - Double the FLUX:  {0}new = {0} * 2
-        - Scale FLUX between 0 and 1:  {0}norm = ({0} - min({0})) - (max({0})-min({0}))
-        - Signal to noise: SNR = {0} / {1}
-        - Masking: {0}new = {0} * ({1} < 0.1*mean({1}))
-        """.format(self.data_components[0], self.data_components[1])
-
-        self.examples_label = QLabel(examples)
-        self.examples_label.setMinimumWidth(200)
-        self.examples_label.setAlignment((Qt.AlignLeft | Qt.AlignTop))
-
-        hbl_examples = QHBoxLayout()
-        hbl_examples.addWidget(self.example_text_label)
-        hbl_examples.addWidget(self.examples_label)
+        hb_end = QHBoxLayout()
+        hb_end.addWidget(self.end_label)
+        hb_end.addWidget(self.end_text)
 
         # Create Calculate and Cancel buttons
         self.calculateButton = QPushButton("Calculate")
@@ -107,18 +115,21 @@ class CollapseCube(QDialog):
         self.cancelButton = QPushButton("Cancel")
         self.cancelButton.clicked.connect(self.cancel_callback)
 
-        hbl5 = QHBoxLayout()
-        hbl5.addStretch(1)
-        hbl5.addWidget(self.cancelButton)
-        hbl5.addWidget(self.calculateButton)
+        hb_buttons = QHBoxLayout()
+        hb_buttons.addStretch(1)
+        hb_buttons.addWidget(self.cancelButton)
+        hb_buttons.addWidget(self.calculateButton)
+
+        print('here')
 
         # Add calculation and buttons to popup box
         vbl = QVBoxLayout()
-        vbl.addLayout(hbl1)
+        vbl.addLayout(hb_data)
+        vbl.addLayout(hb_operation)
+        vbl.addLayout(hb_start)
+        vbl.addLayout(hb_end)
         vbl.addLayout(hbl_error)
-        vbl.addLayout(hbl2)
-        vbl.addLayout(hbl_examples)
-        vbl.addLayout(hbl5)
+        vbl.addLayout(hb_buttons)
 
         self.setLayout(vbl)
         self.setMaximumWidth(700)
@@ -130,47 +141,37 @@ class CollapseCube(QDialog):
         :return:
         """
 
-        # Create the interpreter
-        from asteval import Interpreter
-        aeval = Interpreter()
+        # Grab the values of interest
+        start_value = self.start_text.text().strip()
+        end_value = self.end_text.text().strip()
 
-        # Grab the calculation from the text box which the user wants to do
-        calculation = str(self.calculation_text.text())
+        self.error_label_text.setText(' ')
+        self.error_label_text.setStyleSheet("color: rgba(255, 0, 0, 128)")
 
-        lhs = calculation.split('=')[0].strip()
+        # Sanity checks first
+        if not start_value and not end_value:
+            self.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.error_label_text.setText('Must set at least one of start or end value')
 
-        # Use the package asteval to do the calculation, we are going to
-        # assume here that the lhs of the equals sign is going to be the output named variable
+        if start_value and end_value and start_value > end_value:
+            self.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.error_label_text.setText('Start value must be less than end value')
 
-        try:
-            if lhs in self.data_components:
-                raise KeyError('{} is already in the data components, use a different variable on the left hand side.'.format(lhs))
+        data_name = self.data_combobox.currentText()
 
-            # Pull in the required data and run the calculation
-            for dc in self.data_components:
-                if dc in calculation:
-                    aeval.symtable[dc] = self.data[dc]
-            aeval(calculation)
+        # Grab spectral-cube
+        import spectral_cube
+        cube = spectral_cube.SpectralCube(self.data[data_name], wcs=self.data.coords.wcs)
+        print('created spectral cube {}'.format(spectral_cube))
 
-            # Pull out the output data and add to the proper drop-downs
-            out_data = aeval.symtable[lhs]
-            self.data.add_component(out_data, lhs)
+        # cube_moment = cube.moment(order=order, axis=0)
+        #
+        # label = '{}-moment-{}'.format(data_name, order)
+        # self.parent.add_overlay(cube_moment.value, label)
 
-            # Add the new data to the list of available data for arithemitic operations
-            self.data_components.append(lhs)
-
-            self.close()
-
-        except KeyError as e:
-            self.calculation_text.setStyleSheet("background-color: rgba(255, 0, 0, 128);")
-
-            # Display the error in the Qt popup
-            if aeval.error_msg:
-                self.error_label_text.setText('{}'.format(aeval.error_msg))
-            else:
-                self.error_label_text.setText('{}'.format(e))
-
-            self.error_label_text.setStyleSheet("color: rgba(255, 0, 0, 128)")
+        self.close()
 
     def cancel_callback(self, caller=0):
         """
@@ -180,3 +181,31 @@ class CollapseCube(QDialog):
         :return:
         """
         self.close()
+
+
+def collapse_cube(data_component, wcs, operation, start, end):
+    """
+
+    :param data_component:  Component from the data object
+    :param wcs:
+    :param operation:
+    :param start:
+    :param end:
+    :return:
+    """
+
+    # Grab spectral-cube
+    import spectral_cube
+
+    # Create a spectral cube instance
+    cube = spectral_cube.SpectralCube(data_component, wcs=wcs)
+    print('created spectral cube {}'.format(spectral_cube))
+
+    # Do collapsing of the cube
+    # cube_moment = cube.moment(order=order, axis=0)
+    #
+    # label = '{}-moment-{}'.format(data_name, order)
+    # self.parent.add_overlay(cube_moment.value, label)
+
+    # Send collapsed cube back to cubeviz
+    #return cube_moment, label
