@@ -7,6 +7,14 @@ from qtpy.QtWidgets import (
     QLabel, QWidget, QHBoxLayout, QVBoxLayout, QLineEdit, QComboBox
 )
 
+import numpy as np
+
+# The operations we understand
+operations = {
+    'mean': np.mean,
+    'median': np.median,
+    'std': np.std
+}
 
 class CollapseCube(QDialog):
     def __init__(self, data, data_collection=[], allow_preview=False, parent=None):
@@ -60,7 +68,7 @@ class CollapseCube(QDialog):
         self.operation_label.setFont(boldFont)
 
         self.operation_combobox = QComboBox()
-        self.operation_combobox.addItems(['mean', 'median', 'std'])
+        self.operation_combobox.addItems(operations.keys())
         self.operation_combobox.setMinimumWidth(200)
 
         hb_operation = QHBoxLayout()
@@ -161,9 +169,35 @@ class CollapseCube(QDialog):
             self.error_label_text.setText('Start value must be less than end value')
             return
 
-        data_name = self.data_combobox.currentText()
+        # Set the start and end values if they are not set.
+        if not start_value:
+            start_value = 0
 
-        # Do calculation if we bggot this
+        if not end_value:
+            end_value = self.data[data_name].shape[0]
+
+        try:
+            start_value = int(start_value)
+        except TypeError as e:
+            self.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.error_label_text.setText('Start value, {}, does not appear to be an number'.format(start_value))
+            return
+
+        try:
+            end_value = int(end_value)
+        except TypeError as e:
+            self.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.error_label_text.setText('End value, {}, does not appear to be an number'.format(end_value))
+            return
+
+        end_value = int(end_value)
+
+        data_name = self.data_combobox.currentText()
+        operation = self.operation_combobox.currentText()
+
+        # Do calculation if we got this far
+        new_component, label = collapse_cube(self.data[data_name], self.data.coords.wcs,
+                                             operation, start_value, end_value)
 
         # self.parent.add_overlay(cube_moment.value, label)
 
@@ -179,7 +213,7 @@ class CollapseCube(QDialog):
         self.close()
 
 
-def collapse_cube(data_component, wcs, operation, start, end):
+def collapse_cube(data_component, wcs, operation, start_value, end_value):
     """
 
     :param data_component:  Component from the data object
@@ -195,13 +229,13 @@ def collapse_cube(data_component, wcs, operation, start, end):
 
     # Create a spectral cube instance
     cube = spectral_cube.SpectralCube(data_component, wcs=wcs)
-    print('created spectral cube {}'.format(spectral_cube))
 
     # Do collapsing of the cube
-    # cube_moment = cube.moment(order=order, axis=0)
-    #
-    # label = '{}-moment-{}'.format(data_name, order)
-    # self.parent.add_overlay(cube_moment.value, label)
+    sub_cube = cube[start_value:end_value]
+    calculated = sub_cube.apply_numpy_function(operations[operation], axis=0)
+    print(calculated)
+
+    label = '{}-collapse-{}'.format(str(data_component), operation)
 
     # Send collapsed cube back to cubeviz
-    #return cube_moment, label
+    return calculated, label
