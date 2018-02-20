@@ -48,8 +48,6 @@ Future functionality will include the ability to:
 Reference/API
 =============
 
-.. automodapi:: cubeviz  
-
 .. toctree::
    :maxdepth: 2
 
