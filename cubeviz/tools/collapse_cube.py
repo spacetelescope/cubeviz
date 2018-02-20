@@ -196,10 +196,10 @@ class CollapseCube(QDialog):
         operation = self.operation_combobox.currentText()
 
         # Do calculation if we got this far
-        new_component, label = collapse_cube(self.data[data_name], self.data.coords.wcs,
+        new_component, label = collapse_cube(self.data[data_name], data_name, self.data.coords.wcs,
                                              operation, start_value, end_value)
 
-        # self.parent.add_overlay(cube_moment.value, label)
+        self.parent.add_overlay(new_component, label)
 
         self.close()
 
@@ -213,7 +213,7 @@ class CollapseCube(QDialog):
         self.close()
 
 
-def collapse_cube(data_component, wcs, operation, start_value, end_value):
+def collapse_cube(data_component, data_name, wcs, operation, start_value, end_value):
     """
 
     :param data_component:  Component from the data object
@@ -233,9 +233,8 @@ def collapse_cube(data_component, wcs, operation, start_value, end_value):
     # Do collapsing of the cube
     sub_cube = cube[start_value:end_value]
     calculated = sub_cube.apply_numpy_function(operations[operation], axis=0)
-    print(calculated)
 
-    label = '{}-collapse-{}'.format(str(data_component), operation)
+    label = '{}-collapse-{}'.format(data_name, operation)
 
     # Send collapsed cube back to cubeviz
     return calculated, label
