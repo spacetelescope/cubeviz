@@ -8,14 +8,22 @@ from qtpy.QtWidgets import (
 )
 
 import numpy as np
+import re
 
 # The operations we understand
 operations = {
-    'mean': np.mean,
-    'median': np.median,
-    'std': np.std,
-    'max': np.max,
-    'min': np.min
+    'Sum': np.sum,
+    'Mean': np.mean,
+    'Median': np.median,
+    'Standard Deviation': np.std,
+    'Maximum': np.max,
+    'Minimum': np.min,
+    'Sum (ignore NaNs)': np.nansum,
+    'Mean (ignore NaNs)': np.nanmean,
+    'Median (ignore NaNs)': np.nanmedian,
+    'Standard Deviation (ignore NaNs)': np.nanstd,
+    'Maximum (ignore NaNs)': np.nanmax,
+    'Minimum (ignore NaNs)': np.nanmin
 }
 
 class CollapseCube(QDialog):
@@ -35,7 +43,6 @@ class CollapseCube(QDialog):
         self.currentAxes = None
         self.currentKernel = None
 
-        print('Going to call createUI')
         self.createUI()
 
     def createUI(self):
@@ -50,13 +57,22 @@ class CollapseCube(QDialog):
         boldFont.setBold(True)
 
         # Create data component label and input box
+        self.widget_desc = QLabel("Collapse the data cube over the spectral range based on the mathematical operation.")
+        self.widget_desc.setFixedWidth(200)
+        self.widget_desc.setAlignment((Qt.AlignRight | Qt.AlignTop))
+
+        hb_desc = QHBoxLayout()
+        hb_desc.addWidget(self.widget_desc)
+
+        # Create data component label and input box
         self.data_label = QLabel("Data:")
         self.data_label.setFixedWidth(100)
         self.data_label.setAlignment((Qt.AlignRight | Qt.AlignTop))
         self.data_label.setFont(boldFont)
 
         self.data_combobox = QComboBox()
-        self.data_combobox.addItems([str(x).strip() for x in self.data.component_ids() if not x in self.data.coordinate_components])
+        self.data_combobox.addItems([str(x).strip() for x in self.data.component_ids()
+                                     if not x in self.data.coordinate_components])
         self.data_combobox.setMinimumWidth(200)
 
         hb_data = QHBoxLayout()
@@ -77,7 +93,27 @@ class CollapseCube(QDialog):
         hb_operation.addWidget(self.operation_label)
         hb_operation.addWidget(self.operation_combobox)
 
-        # Create calculation label and input box
+        # Create region label and input box
+        self.region_label = QLabel("region:")
+        self.region_label.setFixedWidth(100)
+        self.region_label.setAlignment((Qt.AlignRight | Qt.AlignTop))
+        self.region_label.setFont(boldFont)
+
+        self.region_combobox = QComboBox()
+
+        # Get the Specviz regions and add them in to the Combo box
+        for roi in self.parent.specviz._widget.roi_bounds:
+            self.region_combobox.addItem("Specviz ROI ({:.3}, {:.3})".format(roi[0], roi[1]))
+
+        self.region_combobox.addItems(["Custom (Wavelengths)", "Custom (Indices)"])
+        self.region_combobox.setMinimumWidth(200)
+        self.region_combobox.currentIndexChanged.connect(self._region_selection_change)
+
+        hb_region = QHBoxLayout()
+        hb_region.addWidget(self.region_label)
+        hb_region.addWidget(self.region_combobox)
+
+        # Create error label
         self.error_label = QLabel("")
         self.error_label.setFixedWidth(100)
 
@@ -130,20 +166,77 @@ class CollapseCube(QDialog):
         hb_buttons.addWidget(self.cancelButton)
         hb_buttons.addWidget(self.calculateButton)
 
-        print('here')
-
         # Add calculation and buttons to popup box
         vbl = QVBoxLayout()
         vbl.addLayout(hb_data)
         vbl.addLayout(hb_operation)
+        vbl.addLayout(hb_region)
         vbl.addLayout(hb_start)
         vbl.addLayout(hb_end)
         vbl.addLayout(hbl_error)
         vbl.addLayout(hb_buttons)
 
+        # Fire the callback to set the default values for everything
+        self._region_selection_change(0)
+
         self.setLayout(vbl)
         self.setMaximumWidth(700)
         self.show()
+
+    def _region_selection_change(self, index):
+        """
+        Callback for a change on the region selection combo box.
+
+        :param newvalue:
+        :return:
+        """
+
+        newvalue = self.region_combobox.currentText()
+
+        # First, let's see if this is one of the custom options
+        if 'Custom' in newvalue and 'Wavelength' in newvalue:
+            # Custom Wavelengths
+            self.hide_start_end(False)
+            self.start_label.setText("Start Wavelength:")
+            self.end_label.setText("End Wavelength:")
+
+        elif 'Custom' in newvalue and 'Indices' in newvalue:
+            # Custom indices
+            self.hide_start_end(False)
+            self.start_label.setText("Start Index:")
+            self.end_label.setText("End Index:")
+
+        else:
+            # Region defined in specviz
+            self.hide_start_end(True)
+
+            # We are going to store the start and end wavelengths in the text boxes even though
+            # they are hidden. This way we can use the text boxes later as a hidden storage container.
+            # TODO: Should probably save the ROIs so the start and end values are more accurate.
+            regex = r"-?(?:0|[1-9]\d*)(?:\.\d*)?(?:[eE][+\-]?\d+)?"
+            floating = re.findall(regex, newvalue)
+            self.start_text.setText(floating[0])
+            self.end_text.setText(floating[1])
+
+
+    def hide_start_end(self, dohide):
+        """
+        Show or hide the start and end indices depending if the region
+        is defined from the specviz plot OR if we are using custom limits.
+
+        :param dohide:
+        :return:
+        """
+        if dohide:
+            self.start_label.hide()
+            self.start_text.hide()
+            self.end_label.hide()
+            self.end_text.hide()
+        else:
+            self.start_label.show()
+            self.start_text.show()
+            self.end_label.show()
+            self.end_text.show()
 
     def calculate_callback(self):
         """
@@ -152,8 +245,15 @@ class CollapseCube(QDialog):
         """
 
         # Grab the values of interest
-        start_value = self.start_text.text().strip()
-        end_value = self.end_text.text().strip()
+        data_name = self.data_combobox.currentText()
+        start_value = float(self.start_text.text().strip())
+        end_value = float(self.end_text.text().strip())
+
+        # Convert wavelengths to indices IF the region combo box is not the Indices selection
+        if not 'Indices' in self.region_combobox.currentText():
+            wavelengths = np.array(self.parent._wavelengths)
+            start_value = np.argsort(np.abs(wavelengths - start_value))[0]
+            end_value = np.argsort(np.abs(wavelengths - end_value))[0]
 
         self.error_label_text.setText(' ')
         self.error_label_text.setStyleSheet("color: rgba(255, 0, 0, 128)")
@@ -191,8 +291,6 @@ class CollapseCube(QDialog):
             self.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
             self.error_label_text.setText('End value, {}, does not appear to be an number'.format(end_value))
             return
-
-        end_value = int(end_value)
 
         data_name = self.data_combobox.currentText()
         operation = self.operation_combobox.currentText()
@@ -236,7 +334,12 @@ def collapse_cube(data_component, data_name, wcs, operation, start_value, end_va
     sub_cube = cube[start_value:end_value]
     calculated = sub_cube.apply_numpy_function(operations[operation], axis=0)
 
-    label = '{}-collapse-{}'.format(data_name, operation)
+    # Get the start and end wavelengths from the newly created spectral cube and use for labeling the cube.
+    wavelengths = sub_cube.spectral_axis
+    start_wavelength = wavelengths[0]
+    end_wavelength = wavelengths[-1]
+
+    label = '{}-collapse-{} ({:0.3}, {:0.3})'.format(data_name, operation, start_wavelength, end_wavelength)
 
     # Send collapsed cube back to cubeviz
     return calculated, label
