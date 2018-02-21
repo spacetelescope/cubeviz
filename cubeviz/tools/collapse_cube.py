@@ -306,8 +306,17 @@ class CollapseCube(QDialog):
         operation = self.operation_combobox.currentText()
 
         # Do calculation if we got this far
-        new_component, label = collapse_cube(self.data[data_name], data_name, self.data.coords.wcs,
+        wavelengths, new_component = collapse_cube(self.data[data_name], data_name, self.data.coords.wcs,
                                              operation, start_value, end_value)
+
+        # Get the start and end wavelengths from the newly created spectral cube and use for labeling the cube.
+        # Convert to the current units.
+        start_wavelength = wavelengths[0].to(self.parent._units_controller._new_units)
+        end_wavelength = wavelengths[-1].to(self.parent._units_controller._new_units)
+
+        label = '{}-collapse-{} ({:0.3}, {:0.3})'.format(data_name, operation,
+                                                         start_wavelength,
+                                                         end_wavelength)
 
         self.parent.add_overlay(new_component, label)
 
@@ -344,12 +353,7 @@ def collapse_cube(data_component, data_name, wcs, operation, start_value, end_va
     sub_cube = cube[start_value:end_value]
     calculated = sub_cube.apply_numpy_function(operations[operation], axis=0)
 
-    # Get the start and end wavelengths from the newly created spectral cube and use for labeling the cube.
     wavelengths = sub_cube.spectral_axis
-    start_wavelength = wavelengths[0]
-    end_wavelength = wavelengths[-1]
-
-    label = '{}-collapse-{} ({:0.3}, {:0.3})'.format(data_name, operation, start_wavelength, end_wavelength)
 
     # Send collapsed cube back to cubeviz
-    return calculated, label
+    return wavelengths, calculated
