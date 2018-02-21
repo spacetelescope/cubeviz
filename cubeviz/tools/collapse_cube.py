@@ -30,6 +30,8 @@ class CollapseCube(QDialog):
     def __init__(self, data, data_collection=[], allow_preview=False, parent=None):
         super(CollapseCube,self).__init__(parent)
 
+        self.setWindowTitle("Collapse Cube Along Spectral Axis")
+
         # Get the data_components (e.g., FLUX, DQ, ERROR etc)
         # Using list comprehension to keep the order of the component_ids
         self.data_components = [str(x).strip() for x in data.component_ids() if not x in data.coordinate_components]
@@ -39,6 +41,9 @@ class CollapseCube(QDialog):
         self.data = data
         self.data_collection = data_collection
         self.parent = parent
+
+        self._general_description = "Collapse the data cube over the spectral range based on the mathematical operation."
+        self._custom_description = "To use the spectral viewer to define a region to collapse over, cancel this, create an ROI and then select this Collapse Cube again."
 
         self.currentAxes = None
         self.currentKernel = None
@@ -51,15 +56,14 @@ class CollapseCube(QDialog):
 
         :return:
         """
-        print("In createUI")
-
         boldFont = QtGui.QFont()
         boldFont.setBold(True)
 
         # Create data component label and input box
-        self.widget_desc = QLabel("Collapse the data cube over the spectral range based on the mathematical operation.")
-        self.widget_desc.setFixedWidth(200)
-        self.widget_desc.setAlignment((Qt.AlignRight | Qt.AlignTop))
+        self.widget_desc = QLabel(self._general_description)
+        self.widget_desc.setWordWrap(True)
+        self.widget_desc.setFixedWidth(350)
+        self.widget_desc.setAlignment((Qt.AlignLeft | Qt.AlignTop))
 
         hb_desc = QHBoxLayout()
         hb_desc.addWidget(self.widget_desc)
@@ -168,6 +172,7 @@ class CollapseCube(QDialog):
 
         # Add calculation and buttons to popup box
         vbl = QVBoxLayout()
+        vbl.addLayout(hb_desc)
         vbl.addLayout(hb_data)
         vbl.addLayout(hb_operation)
         vbl.addLayout(hb_region)
@@ -218,6 +223,11 @@ class CollapseCube(QDialog):
             self.start_text.setText(floating[0])
             self.end_text.setText(floating[1])
 
+        # Let's update the text on the widget
+        if 'Custom' in newvalue:
+            self.widget_desc.setText(self._general_description + "\n\n" + self._custom_description)
+        else:
+            self.widget_desc.setText(self._general_description)
 
     def hide_start_end(self, dohide):
         """
