@@ -317,6 +317,7 @@ class CubeVizLayout(QtWidgets.QWidget):
             view.state.layers[0].attribute = self._data.id[label]
             if view.is_contour_active:
                 view.draw_contour()
+            view.update_component_unit_label(label)
         return change_viewer
 
     def _enable_viewer_combo(self, data, index, combo_label, selection_label):
@@ -340,14 +341,18 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._enable_viewer_combo(
             data, 0, 'single_viewer_combo', 'single_viewer_attribute')
         view = self.all_views[0].widget()
-        view.update_axes_title(str(getattr(self, 'single_viewer_attribute')))
+        component_label = str(getattr(self, 'single_viewer_attribute'))
+        view.update_axes_title(component_label)
+        view.update_component_unit_label(component_label)
 
         for i in range(1,4):
             combo_label = 'viewer{0}_combo'.format(i)
             selection_label = 'viewer{0}_attribute'.format(i)
             self._enable_viewer_combo(data, i, combo_label, selection_label)
             view = self.all_views[i].widget()
-            view.update_axes_title(str(getattr(self, selection_label)))
+            component_label = str(getattr(self, selection_label))
+            view.update_axes_title(component_label)
+            view.update_component_unit_label(component_label)
 
     def change_viewer_component(self, view_index,
                                 component_index,
@@ -381,6 +386,8 @@ class CubeVizLayout(QtWidgets.QWidget):
         """
         self._data = data
         self.specviz._widget.add_data(data)
+        cid = self.specviz._widget._options_widget.file_att
+        dispatch.changed_units.emit(y=data.get_component(cid).units)
 
         for checkbox in self._synced_checkboxes:
             checkbox.setEnabled(True)

@@ -98,6 +98,10 @@ class DataConfiguration:
                         # The data must be floating point as spectralcube is expecting floating point data
                         data.add_component(component=hdu.data.astype(np.float), label=component_name)
 
+                        if 'BUNIT' in hdu.header:
+                            c = data.get_component(component_name)
+                            c.units = str(hdu.header['BUNIT'])
+
             # For the purposes of exporting, we keep a reference to the original HDUList object
             data._cubeviz_hdulist = hdulist
 
