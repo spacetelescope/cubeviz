@@ -50,6 +50,11 @@ class DataConfiguration:
 
             self._data = cfg.get('data', None)
 
+            if 'flux_unit_replacements' in cfg:
+                self.flux_unit_replacements = cfg['flux_unit_replacements']
+            else:
+                self.flux_unit_replacements = {}
+
     @property
     def name(self):
         return self._name
@@ -60,15 +65,17 @@ class DataConfiguration:
 
     def get_units(self, header):
         """
-        Extract BUNIT from header
+        Extract BUNIT from header.
+        BUNIT contains the flux units
         :param header: header
         :return: str: Shortened unit
         """
         units = str(header['BUNIT'])
 
         # Unit label shorten depending on data type here
-        if 'MANGA' == self.type:
-            units = units.replace("Ang", "A")
+        for key in self.flux_unit_replacements:
+            if key in units:
+                units = units.replace(key, self.flux_unit_replacements[key])
         return units
 
     def load_data(self, data_filenames):
