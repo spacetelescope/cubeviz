@@ -58,6 +58,19 @@ class DataConfiguration:
     def type(self):
         return self._type
 
+    def get_units(self, header):
+        """
+        Extract BUNIT from header
+        :param header: header
+        :return: str: Shortened unit
+        """
+        units = str(header['BUNIT'])
+
+        # Unit label shorten depending on data type here
+        if 'MANGA' == self.type:
+            units = units.replace("Ang", "A")
+        return units
+
     def load_data(self, data_filenames):
         """
         Load the data based on the extensions defined in the matching YAML file.  THen
@@ -100,7 +113,7 @@ class DataConfiguration:
 
                         if 'BUNIT' in hdu.header:
                             c = data.get_component(component_name)
-                            c.units = str(hdu.header['BUNIT'])
+                            c.units = self.get_units(hdu.header)
 
             # For the purposes of exporting, we keep a reference to the original HDUList object
             data._cubeviz_hdulist = hdulist

@@ -378,7 +378,7 @@ class CubevizImageViewer(ImageViewer):
         data = self.state.layers_data[0]
         unit = str(data.get_component(component_label).units)
         if unit:
-            self.component_unit_label = "[{0}]".format(unit)
+            self.component_unit_label = "{0}".format(unit)
         else:
             self.component_unit_label = ""
 
