@@ -482,6 +482,12 @@ class CollapseCube(QDialog):
         self.final_dialog(label)
 
     def final_dialog(self, label):
+        """
+        Final dialog that to show where the calculated collapsed cube was put.
+
+        :param label:
+        :return:
+        """
 
         final_dialog = QDialog()
 
@@ -503,7 +509,7 @@ class CollapseCube(QDialog):
         hb_buttons.addStretch(1)
         hb_buttons.addWidget(okButton)
 
-        # Add calculation and buttons to popup box
+        # Add description and buttons to popup box
         vbl = QVBoxLayout()
         vbl.addLayout(hb_desc)
         vbl.addLayout(hb_buttons)
