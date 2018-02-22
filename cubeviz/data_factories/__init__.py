@@ -67,6 +67,22 @@ class DataConfiguration:
         """
         Extract BUNIT from header.
         BUNIT contains the flux units
+            KEYWORD:   BUNIT
+            REFERENCE: FITS Standard
+            STATUS:    reserved
+            HDU:       image
+            VALUE:     string
+            COMMENT:   physical units of the array values
+            DEFINITION: The value field shall contain a character string,
+            describing the physical units in which the quantities in the array,
+            after application of BSCALE and BZERO, are expressed.   The units of
+            all FITS header keyword values, with the exception of measurements of
+            angles, should conform with the recommendations in the IAU Style
+            Manual. For angular measurements given as floating point values and
+            specified with reserved keywords, degrees are the recommended units
+            (with the units, if specified, given as 'deg').
+        For more info on header keys:
+        https://heasarc.gsfc.nasa.gov/docs/fcg/standard_dict.html
         :param header: header
         :return: str: Shortened unit
         """
