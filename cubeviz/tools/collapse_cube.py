@@ -7,6 +7,7 @@ from qtpy.QtWidgets import (
     QLabel, QWidget, QHBoxLayout, QVBoxLayout, QLineEdit, QComboBox
 )
 
+from astropy.stats import sigma_clip
 import numpy as np
 import re
 
@@ -412,6 +413,67 @@ class CollapseCube(QDialog):
                                                          start_wavelength,
                                                          end_wavelength)
 
+        # Apply sigma clipping
+        sigma = self.sigma_text.text().strip()
+
+        if len(sigma) > 0:
+            try:
+                sigma = float(sigma)
+            except ValueError as e:
+                self.sigma_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+                self.error_label_text.setText('If sigma set, it must be a floating point number')
+                return
+            
+            sigma_lower = self.sigma_lower_text.text().strip()
+            if len(sigma_lower) > 0:
+                try:
+                    sigma_lower = float(sigma_lower)
+                except ValueError as e:
+                    self.sigma_lower_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+                    self.error_label_text.setText('If sigma lower set, it must be a floating point number')
+                    return
+            else:
+                sigma_lower = None
+
+            sigma_upper = self.sigma_upper_text.text().strip()
+            if len(sigma_upper) > 0:
+                try:
+                    sigma_upper = float(sigma_upper)
+                except ValueError as e:
+                    self.sigma_upper_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+                    self.error_label_text.setText('If sigma upper set, it must be a floating point number')
+                    return
+            else:
+                sigma_upper = None
+
+            sigma_iters = self.sigma_iters_text.text().strip()
+            if len(sigma_iters) > 0:
+                try:
+                    sigma_iters = float(sigma_iters)
+                except ValueError as e:
+                    self.sigma_iters_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+                    self.error_label_text.setText('If sigma iters set, it must be a floating point number')
+                    return
+            else:
+                sigma_iters = None
+
+            new_component = sigma_clip(new_component, sigma=sigma, sigma_lower=sigma_lower,
+                                                     sigma_upper=sigma_upper, iters=sigma_iters)
+
+            # Add to label so it is clear which overlay/component is which
+            if sigma:
+                label += ' sigma={}'.format(sigma)
+
+            if sigma_lower:
+                label += ' sigma_lower={}'.format(sigma_lower)
+
+            if sigma_upper:
+                label += ' sigma_upper={}'.format(sigma_upper)
+
+            if sigma_iters:
+                label += ' sigma_iters={}'.format(sigma_iters)
+
+        # Add new overlay/component to cubeviz
         self.parent.add_overlay(new_component, label)
 
         self.close()
