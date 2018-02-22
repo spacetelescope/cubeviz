@@ -170,6 +170,71 @@ class CollapseCube(QDialog):
         hb_buttons.addWidget(self.cancelButton)
         hb_buttons.addWidget(self.calculateButton)
 
+        
+        #
+        #  Sigma clipping
+        #
+        vbox_sigma_clipping = QVBoxLayout()
+
+        self.sigma_description = QLabel("Sigma clipping is implemented using <a href='http://docs.astropy.org/en/stable/api/astropy.stats.sigma_clip.html'>astropy.stats.sigma_clip</a>. Empty values will use defaults listed on the webpage, <b>but</b> if the first sigma is empty, then no clipping will be done.")
+        self.sigma_description.setWordWrap(True)
+        hb_sigma = QHBoxLayout()
+        hb_sigma.addWidget(self.sigma_description)
+        vbox_sigma_clipping.addLayout(hb_sigma)
+
+        # Create sigma
+        self.sigma_label = QLabel("Sigma:")
+        self.sigma_label.setFixedWidth(100)
+        self.sigma_label.setAlignment((Qt.AlignRight | Qt.AlignTop))
+        self.sigma_label.setFont(boldFont)
+        self.sigma_text = QLineEdit()
+        self.sigma_text.setMinimumWidth(200)
+        self.sigma_text.setAlignment((Qt.AlignLeft | Qt.AlignTop))
+        hb_sigma = QHBoxLayout()
+        hb_sigma.addWidget(self.sigma_label)
+        hb_sigma.addWidget(self.sigma_text)
+        vbox_sigma_clipping.addLayout(hb_sigma)
+
+        # Create sigma_lower
+        self.sigma_lower_label = QLabel("Sigma Lower:")
+        self.sigma_lower_label.setFixedWidth(100)
+        self.sigma_lower_label.setAlignment((Qt.AlignRight | Qt.AlignTop))
+        self.sigma_lower_label.setFont(boldFont)
+        self.sigma_lower_text = QLineEdit()
+        self.sigma_lower_text.setMinimumWidth(200)
+        self.sigma_lower_text.setAlignment((Qt.AlignLeft | Qt.AlignTop))
+        hb_sigma_lower = QHBoxLayout()
+        hb_sigma_lower.addWidget(self.sigma_lower_label)
+        hb_sigma_lower.addWidget(self.sigma_lower_text)
+        vbox_sigma_clipping.addLayout(hb_sigma_lower)
+
+        # Create sigma_upper
+        self.sigma_upper_label = QLabel("Sigma Upper:")
+        self.sigma_upper_label.setFixedWidth(100)
+        self.sigma_upper_label.setAlignment((Qt.AlignRight | Qt.AlignTop))
+        self.sigma_upper_label.setFont(boldFont)
+        self.sigma_upper_text = QLineEdit()
+        self.sigma_upper_text.setMinimumWidth(200)
+        self.sigma_upper_text.setAlignment((Qt.AlignLeft | Qt.AlignTop))
+        hb_sigma_upper = QHBoxLayout()
+        hb_sigma_upper.addWidget(self.sigma_upper_label)
+        hb_sigma_upper.addWidget(self.sigma_upper_text)
+        vbox_sigma_clipping.addLayout(hb_sigma_upper)
+
+        # Create sigma_iters
+        self.sigma_iters_label = QLabel("Sigma Iterations:")
+        self.sigma_iters_label.setFixedWidth(100)
+        self.sigma_iters_label.setAlignment((Qt.AlignRight | Qt.AlignTop))
+        self.sigma_iters_label.setFont(boldFont)
+        self.sigma_iters_text = QLineEdit()
+        self.sigma_iters_text.setMinimumWidth(200)
+        self.sigma_iters_text.setAlignment((Qt.AlignLeft | Qt.AlignTop))
+        hb_sigma_iters = QHBoxLayout()
+        hb_sigma_iters.addWidget(self.sigma_iters_label)
+        hb_sigma_iters.addWidget(self.sigma_iters_text)
+        vbox_sigma_clipping.addLayout(hb_sigma_iters)
+
+
         # Add calculation and buttons to popup box
         vbl = QVBoxLayout()
         vbl.addLayout(hb_desc)
@@ -178,6 +243,7 @@ class CollapseCube(QDialog):
         vbl.addLayout(hb_region)
         vbl.addLayout(hb_start)
         vbl.addLayout(hb_end)
+        vbl.addLayout(vbox_sigma_clipping)
         vbl.addLayout(hbl_error)
         vbl.addLayout(hb_buttons)
 
@@ -256,14 +322,8 @@ class CollapseCube(QDialog):
 
         # Grab the values of interest
         data_name = self.data_combobox.currentText()
-        start_value = float(self.start_text.text().strip())
-        end_value = float(self.end_text.text().strip())
-
-        # Convert wavelengths to indices IF the region combo box is not the Indices selection
-        if not 'Indices' in self.region_combobox.currentText():
-            wavelengths = np.array(self.parent._wavelengths)
-            start_value = np.argsort(np.abs(wavelengths - start_value))[0]
-            end_value = np.argsort(np.abs(wavelengths - end_value))[0]
+        start_value = self.start_text.text().strip()
+        end_value = self.end_text.text().strip()
 
         self.error_label_text.setText(' ')
         self.error_label_text.setStyleSheet("color: rgba(255, 0, 0, 128)")
@@ -281,33 +341,67 @@ class CollapseCube(QDialog):
             self.error_label_text.setText('Start value must be less than end value')
             return
 
-        # Set the start and end values if they are not set.
-        if not start_value:
-            start_value = 0
+        wavelengths = np.array(self.parent._wavelengths)
 
-        if not end_value:
-            end_value = self.data[data_name].shape[0]
+        # If indicies, get them and check to see if the inputs are good.
+        if 'Indices' in self.region_combobox.currentText():
+            if len(start_value) == 0:
+                start_index = 0
+            else:
+                try:
+                    start_index = int(start_value)
+                except ValueError as e:
+                    self.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+                    self.error_label_text.setText('Start value must be an integer')
+                    return
 
-        try:
-            start_value = int(start_value)
-        except TypeError as e:
-            self.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-            self.error_label_text.setText('Start value, {}, does not appear to be an number'.format(start_value))
-            return
+            if len(end_value) == 0:
+                end_index = len(wavelengths)-1
+            else:
+                try:
+                    end_index = int(end_value)
+                except ValueError as e:
+                    self.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+                    self.error_label_text.setText('End value must be an integer')
+                    return
+        else:
+            # Wavelength inputs
+            if len(start_value) == 0:
+                start_index = 0
+            else:
+                # convert wavelength to float value
+                try:
+                    start_value = float(start_value)
+                except ValueError as e:
+                    self.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+                    self.error_label_text.setText('Start value must be a floating point number')
+                    return
 
-        try:
-            end_value = int(end_value)
-        except TypeError as e:
-            self.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-            self.error_label_text.setText('End value, {}, does not appear to be an number'.format(end_value))
-            return
+                # Look up index
+                start_index = np.argsort(np.abs(wavelengths - start_value))[0]
+
+            if len(end_value) == 0:
+                end_index = len(wavelengths)-1
+
+            else:
+                # convert wavelength to float value
+                try:
+                    end_value = float(end_value)
+                except ValueError as e:
+                    self.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+                    self.error_label_text.setText('End value must be a floating point number')
+                    return
+
+                # Look up index
+                end_index = np.argsort(np.abs(wavelengths - end_value))[0]
+
 
         data_name = self.data_combobox.currentText()
         operation = self.operation_combobox.currentText()
 
         # Do calculation if we got this far
         wavelengths, new_component = collapse_cube(self.data[data_name], data_name, self.data.coords.wcs,
-                                             operation, start_value, end_value)
+                                             operation, start_index, end_index)
 
         # Get the start and end wavelengths from the newly created spectral cube and use for labeling the cube.
         # Convert to the current units.
@@ -332,7 +426,7 @@ class CollapseCube(QDialog):
         self.close()
 
 
-def collapse_cube(data_component, data_name, wcs, operation, start_value, end_value):
+def collapse_cube(data_component, data_name, wcs, operation, start_index, end_index):
     """
 
     :param data_component:  Component from the data object
@@ -350,7 +444,7 @@ def collapse_cube(data_component, data_name, wcs, operation, start_value, end_va
     cube = spectral_cube.SpectralCube(data_component, wcs=wcs)
 
     # Do collapsing of the cube
-    sub_cube = cube[start_value:end_value]
+    sub_cube = cube[start_index:end_index]
     calculated = sub_cube.apply_numpy_function(operations[operation], axis=0)
 
     wavelengths = sub_cube.spectral_axis
