@@ -478,6 +478,40 @@ class CollapseCube(QDialog):
 
         self.close()
 
+        # Show new dialog
+        self.final_dialog(label)
+
+    def final_dialog(self, label):
+
+        final_dialog = QDialog()
+
+        # Create data component label and input box
+        widget_desc = QLabel('The collapsed cube was added as an overlay with label "{}"'.format(label))
+        widget_desc.setWordWrap(True)
+        widget_desc.setFixedWidth(350)
+        widget_desc.setAlignment((Qt.AlignLeft | Qt.AlignTop))
+
+        hb_desc = QHBoxLayout()
+        hb_desc.addWidget(widget_desc)
+
+        # Create Ok button
+        okButton = QPushButton("Ok")
+        okButton.clicked.connect(lambda: final_dialog.close())
+        okButton.setDefault(True)
+
+        hb_buttons = QHBoxLayout()
+        hb_buttons.addStretch(1)
+        hb_buttons.addWidget(okButton)
+
+        # Add calculation and buttons to popup box
+        vbl = QVBoxLayout()
+        vbl.addLayout(hb_desc)
+        vbl.addLayout(hb_buttons)
+
+        final_dialog.setLayout(vbl)
+        final_dialog.setMaximumWidth(400)
+        final_dialog.show()
+
     def cancel_callback(self, caller=0):
         """
         Cancel callback when the person hits the cancel button
