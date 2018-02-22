@@ -32,5 +32,5 @@ data:
 
 # Unit label replacements
 flux_unit_replacements:
-    "erg/s/cm^2/Ang/spaxel":
+    erg/s/cm^2/Ang/spaxel:
         "erg/s/cm^2/A/spaxel"

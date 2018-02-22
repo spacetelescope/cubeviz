@@ -372,7 +372,7 @@ class CubevizImageViewer(ImageViewer):
 
     def update_component_unit_label(self, component_label):
         """
-        Update component's label
+        Update component's unit label.
         :param component_label: component id as a string
         """
         data = self.state.layers_data[0]
@@ -412,7 +412,15 @@ class CubevizImageViewer(ImageViewer):
             self._coords_format_function = self._format_to_degree_string
 
     def message_changed_callback(self, event):
-        """Update current message"""
+        """
+        This will be used to swap tool messages and coords messages.
+        When coords are displayed, tool message is cleared.
+        So we save the tool message and update it when it changes.
+        This callback is for when the tool message changes and the
+        boolean associated is to ignore the tool messages from the
+        coordinate display.
+        :param event: str: New status bar message.
+        """
         if self._dont_update_status:
             return
         self.status_message = event
