@@ -247,12 +247,12 @@ class CollapseCube(QDialog):
         vbl.addLayout(hbl_error)
         vbl.addLayout(hb_buttons)
 
-        # Fire the callback to set the default values for everything
-        self._region_selection_change(0)
-
         self.setLayout(vbl)
         self.setMaximumWidth(700)
         self.show()
+
+        # Fire the callback to set the default values for everything
+        self._region_selection_change(0)
 
     def _region_selection_change(self, index):
         """
