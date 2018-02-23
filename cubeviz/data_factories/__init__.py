@@ -50,6 +50,11 @@ class DataConfiguration:
 
             self._data = cfg.get('data', None)
 
+            if 'flux_unit_replacements' in cfg:
+                self.flux_unit_replacements = cfg['flux_unit_replacements']
+            else:
+                self.flux_unit_replacements = {}
+
     @property
     def name(self):
         return self._name
@@ -57,6 +62,37 @@ class DataConfiguration:
     @property
     def type(self):
         return self._type
+
+    def get_units(self, header):
+        """
+        Extract BUNIT from header.
+        BUNIT contains the flux units
+            KEYWORD:   BUNIT
+            REFERENCE: FITS Standard
+            STATUS:    reserved
+            HDU:       image
+            VALUE:     string
+            COMMENT:   physical units of the array values
+            DEFINITION: The value field shall contain a character string,
+            describing the physical units in which the quantities in the array,
+            after application of BSCALE and BZERO, are expressed.   The units of
+            all FITS header keyword values, with the exception of measurements of
+            angles, should conform with the recommendations in the IAU Style
+            Manual. For angular measurements given as floating point values and
+            specified with reserved keywords, degrees are the recommended units
+            (with the units, if specified, given as 'deg').
+        For more info on header keys:
+        https://heasarc.gsfc.nasa.gov/docs/fcg/standard_dict.html
+        :param header: header
+        :return: str: Shortened unit
+        """
+        units = str(header['BUNIT'])
+
+        # Unit label shorten depending on data type here
+        for key in self.flux_unit_replacements:
+            if key in units:
+                units = units.replace(key, self.flux_unit_replacements[key])
+        return units
 
     def load_data(self, data_filenames):
         """
@@ -97,6 +133,10 @@ class DataConfiguration:
 
                         # The data must be floating point as spectralcube is expecting floating point data
                         data.add_component(component=hdu.data.astype(np.float), label=component_name)
+
+                        if 'BUNIT' in hdu.header:
+                            c = data.get_component(component_name)
+                            c.units = self.get_units(hdu.header)
 
             # For the purposes of exporting, we keep a reference to the original HDUList object
             data._cubeviz_hdulist = hdulist

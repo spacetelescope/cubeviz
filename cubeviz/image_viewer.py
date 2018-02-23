@@ -59,6 +59,8 @@ class CubevizImageViewer(ImageViewer):
         self._synced_checkbox = None
         self._slice_index = None
 
+        self.component_unit_label = ""  # String to hold units of data values
+
         self.is_mouse_over = False  # If mouse cursor is over viewer
         self.hold_coords = False  # Switch to hold current displayed coords
         self._coords_in_degrees = False  # Switch display coords to True=deg or False=Deg/Hr:Min:Sec
@@ -83,8 +85,12 @@ class CubevizImageViewer(ImageViewer):
         self.statusBar().addPermanentWidget(self.coord_label)
 
         # Connect matplotlib events to event handlers
+        self.statusBar().messageChanged.connect(self.message_changed_callback)
         self.figure.canvas.mpl_connect('motion_notify_event', self.mouse_move)
         self.figure.canvas.mpl_connect('axes_leave_event', self.mouse_exited)
+
+        self._dont_update_status = False  # Don't save statusBar message when coords are changing
+        self.status_message = self.statusBar().currentMessage()
 
     def get_data_layer_artist(self, layer=None, layer_state=None):
         if layer.ndim == 1:
@@ -364,6 +370,18 @@ class CubevizImageViewer(ImageViewer):
     def slice_index(self):
         return self._slice_index
 
+    def update_component_unit_label(self, component_label):
+        """
+        Update component's unit label.
+        :param component_label: component id as a string
+        """
+        data = self.state.layers_data[0]
+        unit = str(data.get_component(component_label).units)
+        if unit:
+            self.component_unit_label = "{0}".format(unit)
+        else:
+            self.component_unit_label = ""
+
     def get_coords(self):
         """
         Returns coord display string.
@@ -393,6 +411,20 @@ class CubevizImageViewer(ImageViewer):
             self._coords_in_degrees = True
             self._coords_format_function = self._format_to_degree_string
 
+    def message_changed_callback(self, event):
+        """
+        This will be used to swap tool messages and coords messages.
+        When coords are displayed, tool message is cleared.
+        So we save the tool message and update it when it changes.
+        This callback is for when the tool message changes and the
+        boolean associated is to ignore the tool messages from the
+        coordinate display.
+        :param event: str: New status bar message.
+        """
+        if self._dont_update_status:
+            return
+        self.status_message = event
+
     def clear_coords(self):
         """
         Reset coord display and mouse tracking variables.
@@ -405,6 +437,7 @@ class CubevizImageViewer(ImageViewer):
         self.x_mouse = None
         self.y_mouse = None
         self.coord_label.setText('')
+        self.statusBar().showMessage(self.status_message)
 
     def _format_to_degree_string(self, ra, dec):
         """
@@ -495,9 +528,12 @@ class CubevizImageViewer(ImageViewer):
                             string = string + " " + self._coords_format_function(ra, dec)
                 # Pixel Value:
                 v = arr[y][x]
-                string = "{:1.4f} ".format(v) + string
+                string = "{0:1.4f} {1} ".format(v, self.component_unit_label) + string
         # Add a gap to string and add to viewer.
         string += " "
+        self._dont_update_status = True
+        self.statusBar().clearMessage()
+        self._dont_update_status = False
         self.coord_label.setText(string)
         return
 
