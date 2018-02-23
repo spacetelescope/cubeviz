@@ -43,7 +43,7 @@ class CollapseCube(QDialog):
         self.data_collection = data_collection
         self.parent = parent
 
-        self._general_description = "Collapse the data cube over the spectral range based on the mathematical operation."
+        self._general_description = "Collapse the data cube over the spectral range based on the mathematical operation.  The nearest index or wavelength will be chosen if a specified number is out of bounds"
         self._custom_description = "To use the spectral viewer to define a region to collapse over, cancel this, create an ROI and then select this Collapse Cube again."
 
         self.currentAxes = None
@@ -336,12 +336,6 @@ class CollapseCube(QDialog):
             self.error_label_text.setText('Must set at least one of start or end value')
             return
 
-        if start_value and end_value and start_value > end_value:
-            self.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-            self.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-            self.error_label_text.setText('Start value must be less than end value')
-            return
-
         wavelengths = np.array(self.parent._wavelengths)
 
         # If indicies, get them and check to see if the inputs are good.
@@ -356,6 +350,9 @@ class CollapseCube(QDialog):
                     self.error_label_text.setText('Start value must be an integer')
                     return
 
+                if start_index < 0:
+                    start_index = 0
+
             if len(end_value) == 0:
                 end_index = len(wavelengths)-1
             else:
@@ -365,6 +362,9 @@ class CollapseCube(QDialog):
                     self.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
                     self.error_label_text.setText('End value must be an integer')
                     return
+
+                if end_index > len(wavelengths) - 1:
+                    end_index = len(wavelengths) - 1
         else:
             # Wavelength inputs
             if len(start_value) == 0:
@@ -395,6 +395,37 @@ class CollapseCube(QDialog):
 
                 # Look up index
                 end_index = np.argsort(np.abs(wavelengths - end_value))[0]
+
+        # Check to make sure at least one of start or end is within the range of the wavelengths.
+        if (start_index < 0 and end_index < 0) or (start_index > len(wavelengths) and end_index > len(wavelengths)):
+            self.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.error_label_text.setText('Can not have both start and end outside of the wavelength range.')
+            return
+
+        if start_index > end_index:
+            self.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.error_label_text.setText('Start value must be less than end value')
+            return
+
+
+        # Check to see if the wavelength (indices) are the same.
+        if start_index == end_index:
+            self.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.error_label_text.setText('Can not have both start and end wavelengths be the same.')
+            return
+
+        print('start_index {}  end_index {}'.format(start_index, end_index))
+
+        # Set the start and end values in the text boxes -- in case they enter one way out of range then
+        # we'll fix it.
+        ts = start_index if 'Indices' in self.region_combobox.currentText() else wavelengths[start_index]
+        self.start_text.setText('{}'.format(ts))
+
+        te = end_index if 'Indices' in self.region_combobox.currentText() else wavelengths[end_index]
+        self.end_text.setText('{}'.format(te))
 
 
         data_name = self.data_combobox.currentText()
