@@ -171,7 +171,6 @@ class CollapseCube(QDialog):
         hb_buttons.addWidget(self.cancelButton)
         hb_buttons.addWidget(self.calculateButton)
 
-        
         #
         #  Sigma clipping
         #
@@ -454,7 +453,7 @@ class CollapseCube(QDialog):
                 self.sigma_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
                 self.error_label_text.setText('If sigma set, it must be a floating point number')
                 return
-            
+
             sigma_lower = self.sigma_lower_text.text().strip()
             if len(sigma_lower) > 0:
                 try:
