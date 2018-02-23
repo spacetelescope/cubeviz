@@ -25,6 +25,7 @@ from .controls.slice import SliceController
 from .controls.overlay import OverlayController
 from .controls.units import UnitController
 from .tools import arithmetic_gui, moment_maps, smoothing
+from .tools import collapse_cube
 from .tools.spectral_operations import SpectralOperationHandler
 
 class WidgetWrapper(QtWidgets.QWidget):
@@ -186,6 +187,7 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         # Create the Data Processing Menu
         cube_menu = self._dict_to_menu(OrderedDict([
+            ('Collapse Cube', lambda: self._open_dialog('Collapse Cube', None)),
             ('Spatial Smoothing', lambda: self._open_dialog('Spatial Smoothing', None)),
             ('Moment Maps', lambda: self._open_dialog('Moment Maps', None)),
             ('Arithmetic Operations', lambda: self._open_dialog('Arithmetic Operations', None))
@@ -249,6 +251,9 @@ class CubeVizLayout(QtWidgets.QWidget):
             viewer._widget.toolbar.setVisible(self._toolbars_visible)
 
     def _open_dialog(self, name, widget):
+
+        if name == 'Collapse Cube':
+            ex = collapse_cube.CollapseCube(self._data, parent=self, allow_preview=True)
 
         if name == 'Spatial Smoothing':
             ex = smoothing.SelectSmoothing(self._data, parent=self, allow_preview=True)
