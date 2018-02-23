@@ -312,12 +312,13 @@ class CubeVizLayout(QtWidgets.QWidget):
             label = self._component_labels[dropdown_index]
             if view.is_smoothing_preview_active:
                 view.end_smoothing_preview()
+            view.update_component_unit_label(label)
             view.update_axes_title(title=str(label))
             view.state.layers[0]._update_attribute()
             view.state.layers[0].attribute = self._data.id[label]
             if view.is_contour_active:
                 view.draw_contour()
-            view.update_component_unit_label(label)
+
         return change_viewer
 
     def _enable_viewer_combo(self, data, index, combo_label, selection_label):
@@ -342,8 +343,8 @@ class CubeVizLayout(QtWidgets.QWidget):
             data, 0, 'single_viewer_combo', 'single_viewer_attribute')
         view = self.all_views[0].widget()
         component_label = str(getattr(self, 'single_viewer_attribute'))
-        view.update_axes_title(component_label)
         view.update_component_unit_label(component_label)
+        view.update_axes_title(component_label)
 
         for i in range(1,4):
             combo_label = 'viewer{0}_combo'.format(i)
@@ -351,8 +352,8 @@ class CubeVizLayout(QtWidgets.QWidget):
             self._enable_viewer_combo(data, i, combo_label, selection_label)
             view = self.all_views[i].widget()
             component_label = str(getattr(self, selection_label))
-            view.update_axes_title(component_label)
             view.update_component_unit_label(component_label)
+            view.update_axes_title(component_label)
 
     def change_viewer_component(self, view_index,
                                 component_index,
