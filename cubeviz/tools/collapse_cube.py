@@ -416,8 +416,6 @@ class CollapseCube(QDialog):
             self.error_label_text.setText('Can not have both start and end wavelengths be the same.')
             return
 
-        print('start_index {}  end_index {}'.format(start_index, end_index))
-
         # Set the start and end values in the text boxes -- in case they enter one way out of range then
         # we'll fix it.
         ts = start_index if 'Indices' in self.region_combobox.currentText() else wavelengths[start_index]
