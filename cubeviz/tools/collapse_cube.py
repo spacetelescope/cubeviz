@@ -557,6 +557,10 @@ class CollapseCube(QDialog):
         """
         self.close()
 
+    def keyPressEvent(self, e):
+        if e.key() == Qt.Key_Escape:
+            self.cancel_callback()
+
 
 def collapse_cube(data_component, data_name, wcs, operation, start_index, end_index):
     """
