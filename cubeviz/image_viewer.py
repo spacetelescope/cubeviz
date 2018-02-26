@@ -109,7 +109,10 @@ class CubevizImageViewer(ImageViewer):
         :param title: str: Plot title
         """
         if title is not None:
-            self.axes_title = title
+            if self.component_unit_label:
+                self.axes_title = "{0} [{1}]".format(title, self.component_unit_label)
+            else:
+                self.axes_title = title
 
         if self.is_contour_preview_active:
             return
@@ -381,6 +384,7 @@ class CubevizImageViewer(ImageViewer):
             self.component_unit_label = "{0}".format(unit)
         else:
             self.component_unit_label = ""
+        return self.component_unit_label
 
     def get_coords(self):
         """
