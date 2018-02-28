@@ -32,13 +32,17 @@ class CubevizImageLayerState(ImageLayerState):
     """
 
     preview_function = None
+    arr = None
 
     def get_sliced_data(self, view=None):
-        if self.preview_function is None:
-            return super(CubevizImageLayerState, self).get_sliced_data(view=view)
-        else:
+        if self.preview_function is not None:
             data = super(CubevizImageLayerState, self).get_sliced_data()
             return self.preview_function(data)
+        elif self.arr is not None:
+            print('array override')
+            return self.arr
+        else:
+            return super(CubevizImageLayerState, self).get_sliced_data(view=view)
 
 
 class CubevizImageLayerArtist(ImageLayerArtist):
@@ -91,6 +95,8 @@ class CubevizImageViewer(ImageViewer):
 
         self._dont_update_status = False  # Don't save statusBar message when coords are changing
         self.status_message = self.statusBar().currentMessage()
+
+        self.background = None
 
     def get_data_layer_artist(self, layer=None, layer_state=None):
         if layer.ndim == 1:
@@ -352,11 +358,47 @@ class CubevizImageViewer(ImageViewer):
         self._synced_checkbox.stateChanged.connect(self._synced_checkbox_callback)
 
     def update_slice_index(self, index):
+        for layer in self.layers:
+            if isinstance(layer, CubevizImageLayerArtist):
+                layer.state.arr = None
+
         self._slice_index = index
         z, y, x = self.state.slices
         self.state.slices = (self._slice_index, y, x)
         if self.is_contour_active:
             self.draw_contour()
+
+
+    def preview_slice_at_index(self, index):
+        from time import time
+        t1 = time()
+        #print(index, self.contour_component)
+        component = self.state.layers[0].attribute
+        data = self.state.layers_data[0]
+        arr = data[component][index]
+        print("array", time()-t1)
+
+        t1 = time()
+        ax = self.axes
+        fig = self.axes.figure
+        if self.background is None:
+            self.background = ax.figure.canvas.copy_from_bbox(ax.bbox)
+
+        for layer in self.layers:
+            if isinstance(layer, CubevizImageLayerArtist):
+                layer.state.arr = arr
+        #ax.figure.canvas.restore_region(self.background)
+        im = self.axes.get_images()[0]
+        #im.set_array(arr)
+        im.invalidate_cache()
+        ax.draw_artist(im)
+        fig.canvas.update()
+        #fig.canvas.flush_events()
+        #ax.redraw_in_frame()
+        #ax.draw_artist(im)
+        #ax.figure.canvas.blit(ax.bbox)
+        #self.axes.figure.canvas.draw()
+        print("draw", time() - t1)
 
     @property
     def synced(self):

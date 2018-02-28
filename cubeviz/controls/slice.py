@@ -21,6 +21,10 @@ class SliceController:
         self._wavelength_textbox_label = ui.wavelength_textbox_label
 
         self._slice_slider.valueChanged.connect(self._on_slider_change)
+        self._slice_slider.sliderPressed.connect(self._on_slider_pressed)
+        self._slice_slider.sliderReleased.connect(self._on_slider_released)
+        self._slider_flag = False
+
         self._slice_textbox.returnPressed.connect(self._on_text_slice_change)
         self._wavelength_textbox.returnPressed.connect(self._on_text_wavelength_change)
 
@@ -102,16 +106,67 @@ class SliceController:
         :param event:
         :return:
         """
+        from time import time
+        from threading import Thread
+        t1 = time()
         index = self._slice_slider.value()
         cube_views = self._cv_layout.cube_views
         active_cube = self._cv_layout._active_cube
         active_widget = active_cube._widget
 
         # Update the image displayed in the slice in the active view
-        active_widget.update_slice_index(index)
+        if self._slider_flag:
+            active_widget.preview_slice_at_index(index)
+        else:
+            active_widget.update_slice_index(index)
 
         # If the active widget is synced then we need to update the image
         # in all the other synced views.
+        threads = []
+        if active_widget.synced and not self._cv_layout._single_viewer_mode:
+            for view in cube_views:
+                if view != active_cube and view._widget.synced:
+                    if self._slider_flag:
+                        target = view._widget.preview_slice_at_index(index)
+                        t = Thread(target=target, args=(index,))
+                        t.start()
+                        threads.append(t)
+                    else:
+                        view._widget.update_slice_index(index)
+                        #target = view._widget.update_slice_index
+            self._cv_layout.synced_index = index
+
+        # Now update the slice and wavelength text boxes
+        self._update_slice_textboxes(index)
+
+        specviz_dispatch.changed_dispersion_position.emit(pos=index)
+        for t in threads:
+            t.join()
+        print(time()-t1, "\n")
+
+    def _on_slider_pressed(self):
+        self._slider_flag = True
+
+    def _on_slider_released(self):
+        self._slider_flag = False
+
+        from time import time
+        from threading import Thread
+        t1 = time()
+        index = self._slice_slider.value()
+        cube_views = self._cv_layout.cube_views
+        active_cube = self._cv_layout._active_cube
+        active_widget = active_cube._widget
+
+        # Update the image displayed in the slice in the active view
+        if self._slider_flag:
+            active_widget.preview_slice_at_index(index)
+        else:
+            active_widget.update_slice_index(index)
+
+        # If the active widget is synced then we need to update the image
+        # in all the other synced views.
+
         if active_widget.synced and not self._cv_layout._single_viewer_mode:
             for view in cube_views:
                 if view != active_cube and view._widget.synced:
@@ -123,6 +178,7 @@ class SliceController:
 
         specviz_dispatch.changed_dispersion_position.emit(pos=index)
 
+        print(time() - t1, " Release\n")
 
     def _update_slice_textboxes(self, index):
         """
