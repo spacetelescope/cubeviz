@@ -35,14 +35,17 @@ class CubevizImageLayerState(ImageLayerState):
     arr = None
 
     def get_sliced_data(self, view=None):
-        if self.preview_function is not None:
+        if self.arr is not None:
+            data = self.arr
+        elif self.preview_function is not None:
             data = super(CubevizImageLayerState, self).get_sliced_data()
-            return self.preview_function(data)
-        elif self.arr is not None:
-            return self.arr
         else:
-            return super(CubevizImageLayerState, self).get_sliced_data(view=view)
+            data = super(CubevizImageLayerState, self).get_sliced_data(view=view)
 
+        if self.preview_function is not None:
+            return self.preview_function(data)
+        else:
+            return data
 
 class CubevizImageLayerArtist(ImageLayerArtist):
 
@@ -223,7 +226,7 @@ class CubevizImageViewer(ImageViewer):
             arr = data[self.contour_component][self.slice_index]
         return arr
 
-    def draw_contour(self):
+    def draw_contour(self, draw=True):
         self._delete_contour()
 
         if self.is_contour_preview_active:
@@ -261,8 +264,8 @@ class CubevizImageViewer(ImageViewer):
             settings.data_min = arr.min()
             settings.data_spacing = spacing
             settings.update_dialog()
-
-        self.axes.figure.canvas.draw()
+        if draw:
+            self.axes.figure.canvas.draw()
 
     def default_contour(self, *args):
         """
@@ -380,7 +383,13 @@ class CubevizImageViewer(ImageViewer):
         im = self.axes.get_images()[0]
         im.invalidate_cache()
         ax.draw_artist(im)
+        if self.is_contour_active:
+            self.draw_contour(draw=False)
+            for c in self.contour.collections:
+                ax.draw_artist(c)
+
         fig.canvas.update()
+
 
     @property
     def synced(self):
