@@ -127,7 +127,7 @@ class SliceController:
             for view in cube_views:
                 if view != active_cube and view._widget.synced:
                     if self._slider_flag:
-                        target = view._widget.preview_slice_at_index(index)
+                        target = view._widget.preview_slice_at_index
                         t = Thread(target=target, args=(index,))
                         t.start()
                         threads.append(t)
