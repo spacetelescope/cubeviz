@@ -142,7 +142,10 @@ class SliceController:
         specviz_dispatch.changed_dispersion_position.emit(pos=index)
         for t in threads:
             t.join()
-        print(time()-t1, "\n")
+        if self._slider_flag:
+            print("Total Time[_on_slider_change][Optimized]:", time()-t1, "\n")
+        else:
+            print("Total Time[_on_slider_change][Default]:", time() - t1, "\n")
 
     def _on_slider_pressed(self):
         self._slider_flag = True
@@ -151,7 +154,6 @@ class SliceController:
         self._slider_flag = False
 
         from time import time
-        from threading import Thread
         t1 = time()
         index = self._slice_slider.value()
         cube_views = self._cv_layout.cube_views
@@ -178,7 +180,7 @@ class SliceController:
 
         specviz_dispatch.changed_dispersion_position.emit(pos=index)
 
-        print(time() - t1, " Release\n")
+        print("Total Time[_on_slider_released][Default]:", time() - t1, "\n")
 
     def _update_slice_textboxes(self, index):
         """

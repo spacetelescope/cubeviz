@@ -39,7 +39,6 @@ class CubevizImageLayerState(ImageLayerState):
             data = super(CubevizImageLayerState, self).get_sliced_data()
             return self.preview_function(data)
         elif self.arr is not None:
-            print('array override')
             return self.arr
         else:
             return super(CubevizImageLayerState, self).get_sliced_data(view=view)
@@ -368,17 +367,11 @@ class CubevizImageViewer(ImageViewer):
         if self.is_contour_active:
             self.draw_contour()
 
-
     def preview_slice_at_index(self, index):
-        from time import time
-        t1 = time()
-        #print(index, self.contour_component)
         component = self.state.layers[0].attribute
         data = self.state.layers_data[0]
         arr = data[component][index]
-        print("array", time()-t1)
 
-        t1 = time()
         ax = self.axes
         fig = self.axes.figure
         if self.background is None:
@@ -387,18 +380,11 @@ class CubevizImageViewer(ImageViewer):
         for layer in self.layers:
             if isinstance(layer, CubevizImageLayerArtist):
                 layer.state.arr = arr
-        #ax.figure.canvas.restore_region(self.background)
+
         im = self.axes.get_images()[0]
-        #im.set_array(arr)
         im.invalidate_cache()
         ax.draw_artist(im)
         fig.canvas.update()
-        #fig.canvas.flush_events()
-        #ax.redraw_in_frame()
-        #ax.draw_artist(im)
-        #ax.figure.canvas.blit(ax.bbox)
-        #self.axes.figure.canvas.draw()
-        print("draw", time() - t1)
 
     @property
     def synced(self):
