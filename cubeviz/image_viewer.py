@@ -95,8 +95,6 @@ class CubevizImageViewer(ImageViewer):
         self._dont_update_status = False  # Don't save statusBar message when coords are changing
         self.status_message = self.statusBar().currentMessage()
 
-        self.background = None
-
     def get_data_layer_artist(self, layer=None, layer_state=None):
         if layer.ndim == 1:
             cls = self._scatter_artist
@@ -374,8 +372,6 @@ class CubevizImageViewer(ImageViewer):
 
         ax = self.axes
         fig = self.axes.figure
-        if self.background is None:
-            self.background = ax.figure.canvas.copy_from_bbox(ax.bbox)
 
         for layer in self.layers:
             if isinstance(layer, CubevizImageLayerArtist):
