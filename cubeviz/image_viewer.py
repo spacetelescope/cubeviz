@@ -388,8 +388,7 @@ class CubevizImageViewer(ImageViewer):
             for c in self.contour.collections:
                 ax.draw_artist(c)
 
-        fig.canvas.update()
-
+        fig.canvas.blit()
 
     @property
     def synced(self):
