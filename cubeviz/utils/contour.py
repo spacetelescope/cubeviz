@@ -636,3 +636,5 @@ class ContourSettings(object):
         elif self.spacing is not None:
             is_simple = False
         return is_simple
+    def bobo(self):
+        pass
