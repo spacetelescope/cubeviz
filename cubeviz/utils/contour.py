@@ -310,7 +310,11 @@ class ContourOptionsDialog(QDialog):
         if self.is_vmax:
             self.is_vmax = False
             self.vmax_input.setDisabled(True)
-            self.vmax_input.setText(self.vmax_default_text)
+            vmax = ""
+            if self.contour_settings.data_max:
+                vmax = self.contour_settings.data_max
+                vmax = "{0:1.4f}".format(vmax)
+            self.vmax_input.setText(vmax)
             self.vmax_input.setStyleSheet("")
         else:
             self.is_vmax = True
@@ -321,7 +325,11 @@ class ContourOptionsDialog(QDialog):
         if self.is_vmin:
             self.is_vmin = False
             self.vmin_input.setDisabled(True)
-            self.vmin_input.setText(self.vmin_default_text)
+            vmin = ""
+            if self.contour_settings.data_min:
+                vmin = self.contour_settings.data_min
+                vmin = "{0:1.4f}".format(vmin)
+            self.vmax_input.setText(vmin)
             self.vmin_input.setStyleSheet("")
         else:
             self.is_vmin = True
@@ -636,5 +644,3 @@ class ContourSettings(object):
         elif self.spacing is not None:
             is_simple = False
         return is_simple
-    def bobo(self):
-        pass

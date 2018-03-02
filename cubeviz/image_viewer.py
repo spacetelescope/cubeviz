@@ -256,10 +256,10 @@ class CubevizImageViewer(ImageViewer):
         if settings.add_contour_label:
             self.axes.clabel(self.contour, fontsize=settings.font_size)
 
+        settings.data_max = arr.max()
+        settings.data_min = arr.min()
+        settings.data_spacing = spacing
         if settings.dialog is not None:
-            settings.data_max = arr.max()
-            settings.data_min = arr.min()
-            settings.data_spacing = spacing
             settings.update_dialog()
 
         self.axes.figure.canvas.draw()
