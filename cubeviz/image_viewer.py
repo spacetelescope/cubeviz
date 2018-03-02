@@ -374,22 +374,40 @@ class CubevizImageViewer(ImageViewer):
         data = self.state.layers_data[0]
         arr = data[component][index]
 
-        ax = self.axes
         fig = self.axes.figure
 
         for layer in self.layers:
             if isinstance(layer, CubevizImageLayerArtist):
                 layer.state.arr = arr
+        self.axes._composite_image.invalidate_cache()
 
         for ax in fig.axes:
+            if ax is not self.axes:
+                continue
             renderer = ax._cachedRenderer
-            artists = ax.get_children()
-            artists = [a for a in artists
-                       if a in ax.images]
-            for im in artists:
-                if hasattr(im, "invalidate_cache"):
-                    im.invalidate_cache()
+            rasterization_zorder = ax._rasterization_zorder
+            artists = ax.images
             artists = sorted(artists, key=lambda x: x.zorder)
+
+            # for im in artists:
+            #     if hasattr(im, "invalidate_cache"):
+            #         im.invalidate_cache()
+
+            if (rasterization_zorder is not None and
+                    artists and artists[0].zorder < rasterization_zorder):
+                renderer.start_rasterizing()
+                artists_rasterized = [a for a in artists
+                                      if a.zorder < rasterization_zorder]
+                artists = [a for a in artists
+                           if a.zorder >= rasterization_zorder]
+            else:
+                artists_rasterized = []
+
+            if artists_rasterized:
+                for a in artists_rasterized:
+                    a.draw(renderer)
+                renderer.stop_rasterizing()
+
             mimage._draw_list_compositing_images(renderer, ax, artists)
 
         if self.is_contour_active:

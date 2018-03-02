@@ -106,6 +106,8 @@ class SliceController:
         :param event:
         :return:
         """
+        from time import time
+        t1 = time()
         index = self._slice_slider.value()
         cube_views = self._cv_layout.cube_views
         active_cube = self._cv_layout._active_cube
@@ -132,12 +134,16 @@ class SliceController:
         self._update_slice_textboxes(index)
 
         specviz_dispatch.changed_dispersion_position.emit(pos=index)
+        t = time()-t1
+        print("Time[_on_slider_change]: {}".format(t))
 
     def _on_slider_pressed(self):
         self._slider_flag = True
 
     def _on_slider_released(self):
         self._slider_flag = False
+        from time import time
+        t1 = time()
 
         index = self._slice_slider.value()
         cube_views = self._cv_layout.cube_views
@@ -159,6 +165,8 @@ class SliceController:
         self._update_slice_textboxes(index)
 
         specviz_dispatch.changed_dispersion_position.emit(pos=index)
+        t = time() - t1
+        print("Time[_on_slider_released]: {}".format(t))
 
     def _update_slice_textboxes(self, index):
         """
