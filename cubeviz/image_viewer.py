@@ -21,6 +21,7 @@ from glue.viewers.common.qt.tool import Tool
 
 from .utils.contour import ContourSettings
 
+import matplotlib.image as mimage
 
 __all__ = ['CubevizImageViewer']
 
@@ -368,7 +369,7 @@ class CubevizImageViewer(ImageViewer):
         if self.is_contour_active:
             self.draw_contour()
 
-    def preview_slice_at_index(self, index):
+    def fast_draw_slice_at_index(self, index):
         component = self.state.layers[0].attribute
         data = self.state.layers_data[0]
         arr = data[component][index]
@@ -380,9 +381,16 @@ class CubevizImageViewer(ImageViewer):
             if isinstance(layer, CubevizImageLayerArtist):
                 layer.state.arr = arr
 
-        im = self.axes.get_images()[0]
-        im.invalidate_cache()
-        ax.draw_artist(im)
+        for ax in fig.axes:
+            renderer = ax._cachedRenderer
+            artists = ax.get_children()
+            artists = [a for a in artists
+                       if a in ax.images]
+            for im in artists:
+                if hasattr(im, "invalidate_cache"):
+                    im.invalidate_cache()
+            artists = sorted(artists, key=lambda x: x.zorder)
+            mimage._draw_list_compositing_images(renderer, ax, artists)
 
         if self.is_contour_active:
             self.draw_contour(draw=False)

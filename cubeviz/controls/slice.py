@@ -117,14 +117,14 @@ class SliceController:
             for view in cube_views:
                 if view._widget.synced:
                     if self._slider_flag:
-                        view._widget.preview_slice_at_index(index)
+                        view._widget.fast_draw_slice_at_index(index)
                     else:
                         view._widget.update_slice_index(index)
             self._cv_layout.synced_index = index
         else:
             # Update the image displayed in the slice in the active view
             if self._slider_flag:
-                active_widget.preview_slice_at_index(index)
+                active_widget.fast_draw_slice_at_index(index)
             else:
                 active_widget.update_slice_index(index)
 
