@@ -287,7 +287,11 @@ class ContourOptionsDialog(QDialog):
         if self.is_custom_spacing:
             self.is_custom_spacing = False
             self.spacing_input.setDisabled(True)
-            self.spacing_input.setText(self.spacing_default_text)
+            spacing = ""
+            if self.contour_settings.data_spacing:
+                spacing = self.contour_settings.data_spacing
+                spacing = "{0:1.4f}".format(spacing)
+            self.spacing_input.setText(spacing)
             self.spacing_input.setStyleSheet("")
         else:
             self.is_custom_spacing = True
