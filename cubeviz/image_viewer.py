@@ -383,10 +383,13 @@ class CubevizImageViewer(ImageViewer):
         im = self.axes.get_images()[0]
         im.invalidate_cache()
         ax.draw_artist(im)
+
         if self.is_contour_active:
             self.draw_contour(draw=False)
             for c in self.contour.collections:
                 ax.draw_artist(c)
+            for t in self.contour.labelTexts:
+                ax.draw_artist(t)
 
         fig.canvas.blit()
 
