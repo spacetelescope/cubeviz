@@ -106,8 +106,6 @@ class SliceController:
         :param event:
         :return:
         """
-        from time import time
-        t1 = time()
         index = self._slice_slider.value()
         cube_views = self._cv_layout.cube_views
         active_cube = self._cv_layout._active_cube
@@ -134,16 +132,28 @@ class SliceController:
         self._update_slice_textboxes(index)
 
         specviz_dispatch.changed_dispersion_position.emit(pos=index)
-        t = time()-t1
-        print("Time[_on_slider_change]: {}".format(t))
 
     def _on_slider_pressed(self):
+        """
+        Callback for slider pressed.
+        activates fast_draw_slice_at_index flags
+        """
+        # This flag will activate fast_draw_slice_at_index
+        # Which will redraw sliced images quickly
         self._slider_flag = True
 
+    @specviz_dispatch.register_listener("finished_position_change")
     def _on_slider_released(self):
+        """
+        Callback for slider released (includes specviz slider).
+        Dactivates fast_draw_slice_at_index flags
+        Will do a full redraw of all synced viewers.
+        This is considered the final redraw after fast_draw_slice_at_index
+        blits images to the viewers. This function will redraw the axis,
+        tites, labels etc...
+        """
+        # This flag will deactivate fast_draw_slice_at_index
         self._slider_flag = False
-        from time import time
-        t1 = time()
 
         index = self._slice_slider.value()
         cube_views = self._cv_layout.cube_views
@@ -165,8 +175,6 @@ class SliceController:
         self._update_slice_textboxes(index)
 
         specviz_dispatch.changed_dispersion_position.emit(pos=index)
-        t = time() - t1
-        print("Time[_on_slider_released]: {}".format(t))
 
     def _update_slice_textboxes(self, index):
         """
@@ -214,8 +222,6 @@ class SliceController:
         # Update the slider.
         self._slice_slider.setValue(index)
 
-
-    @specviz_dispatch.register_listener("change_dispersion_position")
     def _on_text_wavelength_change(self, event=None, pos=None):
         """
         Callback for a change in wavelength input box. We want to find the
@@ -244,3 +250,22 @@ class SliceController:
 
         # Update the slider.
         self._slice_slider.setValue(index)
+
+    @specviz_dispatch.register_listener("change_dispersion_position")
+    def specviz_wavelength_slider_change(self, event=None, pos=None):
+        """
+        SpecViz slider index changed callback
+        """
+        # if self._slider_flag is active then
+        # something else is using it so don't
+        # deactivate it when done (deactivate_flag)
+        if self._slider_flag:
+            deactivate_flag = False
+        else:
+            deactivate_flag = True
+            self._slider_flag = True
+
+        self._on_text_wavelength_change(event, pos)
+
+        if deactivate_flag:
+            self._slider_flag = False
