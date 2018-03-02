@@ -329,7 +329,7 @@ class ContourOptionsDialog(QDialog):
             if self.contour_settings.data_min:
                 vmin = self.contour_settings.data_min
                 vmin = "{0:1.4f}".format(vmin)
-            self.vmax_input.setText(vmin)
+            self.vmin_input.setText(vmin)
             self.vmin_input.setStyleSheet("")
         else:
             self.is_vmin = True
