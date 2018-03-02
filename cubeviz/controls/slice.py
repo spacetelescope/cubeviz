@@ -111,6 +111,10 @@ class SliceController:
         active_cube = self._cv_layout._active_cube
         active_widget = active_cube._widget
 
+        # *** WARNING: DO NOT USE MULTI-THREADING! ***
+        #       fast_draw_slice_at_index will
+        #       cause a crash
+
         # If the active widget is synced then we need to update the image
         # in all the other synced views.
         if active_widget.synced and not self._cv_layout._single_viewer_mode:
