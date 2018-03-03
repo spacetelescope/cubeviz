@@ -1,6 +1,5 @@
-**************************************
 Overview of Basic CubeViz Functionality
-*************************************
+=======================================
 
 CubeViz has two main "modes:" Split Image Viewer and Single Image Viewer.
 CubeViz starts in the Split Image Viewer which shows the flux, error,
@@ -30,9 +29,8 @@ is displayed in the image viewer, and a spectrum of the entire cube
 (collapsed wavelength space using an average) is shown in black in the
 spectrum viewer.
 
-+++++++++++++++++++++++++++++++++++++++++++++++++++++
 Using the Image Viewers
-+++++++++++++++++++++++++++++++++++++++++++++++++++++
+-----------------------
 
 To manipulate an image displayed in an image viewer, the user should
 click on that image and then the "Show viewer options" button in the
@@ -75,9 +73,8 @@ to hide the coordinate axes and tool bars on the image viewers.
 (Finally, there is another button to sync the viewers?)
 
 
-+++++++++++++++++++++++++++++++++++++++++++++++++++++
 Selecting a Region in the Image Viewers 
-+++++++++++++++++++++++++++++++++++++++++++++++++++++	     
+----------------------------------------	     
 
 Regions can be selected in the image viewers. If they are spatial
 regions (RA, DEC), the cube will be collapsed in wavelength space
