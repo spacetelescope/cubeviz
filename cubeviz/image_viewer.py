@@ -244,7 +244,7 @@ class CubevizImageViewer(ImageViewer):
         if settings.spacing is None:
             spacing = 1
             if vmax != vmin:
-                spacing = (vmax-vmin)/6
+                spacing = (vmax-vmin)/8
         else:
             spacing = settings.spacing
 
