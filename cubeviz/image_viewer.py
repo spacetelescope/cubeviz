@@ -495,7 +495,7 @@ class CubevizImageViewer(ImageViewer):
 
         # Draw contour and its labels
         ax = self.axes
-        if self.is_contour_active:
+        if self.is_contour_active and self.contour is not None:
             self.draw_contour(draw=False)
             for c in self.contour.collections:
                 ax.draw_artist(c)
