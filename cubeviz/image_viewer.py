@@ -280,21 +280,15 @@ class CubevizImageViewer(ImageViewer):
         change the `contour_component` class var
         :param args: arguments from toolbar
         """
-        self.is_contour_active = True
+
         components = self.cubeviz_layout.component_labels
         self.contour_component = pick_item(components, components,
                                            title='Custom Contour',
                                            label='Pick a component')
         if self.contour_component is None:
-            # Edit toolbar menu to check the off option
-            menu = self.toolbar.actions['cubeviz:contour'].menu()
-            actions = menu.actions()
-            for action in actions:
-                if 'Off' == action.text():
-                    action.setChecked(True)
-                    break
-            self.remove_contour()
+            return
         else:
+            self.is_contour_active = True
             self.draw_contour()
 
     def remove_contour(self, *args):
