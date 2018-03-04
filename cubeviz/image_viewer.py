@@ -75,7 +75,7 @@ def only_draw_axes_images(ax):
 
     # This function will draw the images in the artist list
     mimage._draw_list_compositing_images(renderer, ax, artists)
-    
+
     if hasattr(ax, "coords"):
         ax.coords.frame.draw(renderer)
 
