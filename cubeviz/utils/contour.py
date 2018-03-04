@@ -61,7 +61,6 @@ class ContourButton(Tool):
         # WARNING: QAction labels are used to identify them.
         #          Changing them can cause problems unless
         #          all references are updated in this package.
-        
         component_action_group = QActionGroup(self.tool_bar)
 
         action = QAction("Off", self.tool_bar, checkable=True)
