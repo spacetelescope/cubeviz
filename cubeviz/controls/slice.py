@@ -21,6 +21,10 @@ class SliceController:
         self._wavelength_textbox_label = ui.wavelength_textbox_label
 
         self._slice_slider.valueChanged.connect(self._on_slider_change)
+        self._slice_slider.sliderPressed.connect(self._on_slider_pressed)
+        self._slice_slider.sliderReleased.connect(self._on_slider_released)
+        self._slider_flag = False
+
         self._slice_textbox.returnPressed.connect(self._on_text_slice_change)
         self._wavelength_textbox.returnPressed.connect(self._on_text_wavelength_change)
 
@@ -107,22 +111,74 @@ class SliceController:
         active_cube = self._cv_layout._active_cube
         active_widget = active_cube._widget
 
-        # Update the image displayed in the slice in the active view
-        active_widget.update_slice_index(index)
+        # *** WARNING: DO NOT USE MULTI-THREADING! ***
+        #       fast_draw_slice_at_index will
+        #       cause a crash
 
         # If the active widget is synced then we need to update the image
         # in all the other synced views.
         if active_widget.synced and not self._cv_layout._single_viewer_mode:
             for view in cube_views:
-                if view != active_cube and view._widget.synced:
-                    view._widget.update_slice_index(index)
+                if view._widget.synced:
+                    if self._slider_flag:
+                        view._widget.fast_draw_slice_at_index(index)
+                    else:
+                        view._widget.update_slice_index(index)
             self._cv_layout.synced_index = index
+        else:
+            # Update the image displayed in the slice in the active view
+            if self._slider_flag:
+                active_widget.fast_draw_slice_at_index(index)
+            else:
+                active_widget.update_slice_index(index)
 
         # Now update the slice and wavelength text boxes
         self._update_slice_textboxes(index)
 
         specviz_dispatch.changed_dispersion_position.emit(pos=index)
 
+    def _on_slider_pressed(self):
+        """
+        Callback for slider pressed.
+        activates fast_draw_slice_at_index flags
+        """
+        # This flag will activate fast_draw_slice_at_index
+        # Which will redraw sliced images quickly
+        self._slider_flag = True
+
+    @specviz_dispatch.register_listener("finished_position_change")
+    def _on_slider_released(self):
+        """
+        Callback for slider released (includes specviz slider).
+        Dactivates fast_draw_slice_at_index flags
+        Will do a full redraw of all synced viewers.
+        This is considered the final redraw after fast_draw_slice_at_index
+        blits images to the viewers. This function will redraw the axis,
+        tites, labels etc...
+        """
+        # This flag will deactivate fast_draw_slice_at_index
+        self._slider_flag = False
+
+        index = self._slice_slider.value()
+        cube_views = self._cv_layout.cube_views
+        active_cube = self._cv_layout._active_cube
+        active_widget = active_cube._widget
+
+        # If the active widget is synced then we need to update the image
+        # in all the other synced views.
+        if active_widget.synced and not self._cv_layout._single_viewer_mode:
+            for view in cube_views:
+                if view._widget.synced:
+                    view._widget.update_slice_index(index)
+            self._cv_layout.synced_index = index
+        else:
+            # Update the image displayed in the slice in the active view
+            active_widget.update_slice_index(index)
+
+        # Now update the slice and wavelength text boxes
+        self._update_slice_textboxes(index)
+
+        specviz_dispatch.changed_dispersion_position.emit(pos=index)
 
     def _update_slice_textboxes(self, index):
         """
@@ -170,8 +226,6 @@ class SliceController:
         # Update the slider.
         self._slice_slider.setValue(index)
 
-
-    @specviz_dispatch.register_listener("change_dispersion_position")
     def _on_text_wavelength_change(self, event=None, pos=None):
         """
         Callback for a change in wavelength input box. We want to find the
@@ -200,3 +254,22 @@ class SliceController:
 
         # Update the slider.
         self._slice_slider.setValue(index)
+
+    @specviz_dispatch.register_listener("change_dispersion_position")
+    def specviz_wavelength_slider_change(self, event=None, pos=None):
+        """
+        SpecViz slider index changed callback
+        """
+        # if self._slider_flag is active then
+        # something else is using it so don't
+        # deactivate it when done (deactivate_flag)
+        if self._slider_flag:
+            deactivate_flag = False
+        else:
+            deactivate_flag = True
+            self._slider_flag = True
+
+        self._on_text_wavelength_change(event, pos)
+
+        if deactivate_flag:
+            self._slider_flag = False
