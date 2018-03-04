@@ -3,6 +3,8 @@
 
 import numpy as np
 
+import matplotlib.image as mimage
+
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 
@@ -26,21 +28,118 @@ MAX_NUMBER_OF_CONTOUR_LEVELS = 1000
 __all__ = ['CubevizImageViewer']
 
 
+def only_draw_axes_images(ax):
+    """
+    This function is a modified version of
+    matplotlib.axes._base._AxesBase.draw
+    This version only updates the images
+    of the axes.
+    :param ax: axes with images to update
+    """
+    if not ax.get_visible():
+        return
+
+    renderer = ax._cachedRenderer
+    renderer.open_group('axes')
+
+    # prevent triggering call backs during the draw process
+    ax._stale = True
+
+    locator = ax.get_axes_locator()
+    if locator:
+        pos = locator(ax, renderer)
+        ax.apply_aspect(pos)
+    else:
+        ax.apply_aspect()
+
+    # This is the biggest modification
+    # Restrict the artists list to images
+    artists = ax.images
+    artists = sorted(artists, key=lambda x: x.zorder)
+
+    # rasterize artists with negative zorder
+    # if the minimum zorder is negative, start rasterization
+    rasterization_zorder = ax._rasterization_zorder
+    if (rasterization_zorder is not None and
+            artists and artists[0].zorder < rasterization_zorder):
+        renderer.start_rasterizing()
+        artists_rasterized = [a for a in artists
+                              if a.zorder < rasterization_zorder]
+        artists = [a for a in artists
+                   if a.zorder >= rasterization_zorder]
+    else:
+        artists_rasterized = []
+
+    if artists_rasterized:
+        for a in artists_rasterized:
+            a.draw(renderer)
+        renderer.stop_rasterizing()
+
+    # This function will draw the images in the artist list
+    mimage._draw_list_compositing_images(renderer, ax, artists)
+
+    if hasattr(ax, "coords"):
+        ax.coords.frame.draw(renderer)
+
+    renderer.close_group('axes')
+    ax._cachedRenderer = renderer
+    ax.stale = False
+
 class CubevizImageLayerState(ImageLayerState):
     """
     Sub-class of ImageLayerState that includes the ability to include smoothing
     on-the-fly.
     """
-
     preview_function = None
+    slice_index_override = None
 
     def get_sliced_data(self, view=None):
-        if self.preview_function is None:
-            return super(CubevizImageLayerState, self).get_sliced_data(view=view)
+        """
+        Override and modify ImageLayerState.get_sliced_data.
+        Modifications:
+            1)  If CubevizImageLayerState.preview_function is
+                defined, apply the function to data before return.
+            2)  If CubevizImageLayerState.slice_index_override is
+                defined, change slice index to that value
+        :param view: image view
+        :return: 2D np.ndarray
+        """
+        slices, agg_func, transpose = self.viewer_state.numpy_slice_aggregation_transpose
+        full_view = slices
+        if self.slice_index_override is not None:
+            full_view[0] = self.slice_index_override
+        if view is not None and len(view) == 2:
+            x_axis = self.viewer_state.x_att.axis
+            y_axis = self.viewer_state.y_att.axis
+            full_view[x_axis] = view[1]
+            full_view[y_axis] = view[0]
+            view_applied = True
         else:
-            data = super(CubevizImageLayerState, self).get_sliced_data()
-            return self.preview_function(data)
+            view_applied = False
+        image = self._get_image(view=full_view)
 
+        # Apply aggregation functions if needed
+        if image.ndim != len(agg_func):
+            raise ValueError("Sliced image dimensions ({0}) does not match "
+                             "aggregation function list ({1})"
+                             .format(image.ndim, len(agg_func)))
+        for axis in range(image.ndim - 1, -1, -1):
+            func = agg_func[axis]
+            if func is not None:
+                image = func(image, axis=axis)
+        if image.ndim != 2:
+            raise ValueError("Image after aggregation should have two dimensions")
+        if transpose:
+            image = image.transpose()
+        if view_applied or view is None or self.preview_function is not None:
+            data = image
+        else:
+            data = image[view]
+
+        if self.preview_function is not None:
+            return self.preview_function(data)
+        else:
+            return data
 
 class CubevizImageLayerArtist(ImageLayerArtist):
 
@@ -224,7 +323,7 @@ class CubevizImageViewer(ImageViewer):
             arr = data[self.contour_component][self.slice_index]
         return arr
 
-    def draw_contour(self):
+    def draw_contour(self, draw=True):
         self._delete_contour()
 
         if self.is_contour_preview_active:
@@ -276,8 +375,8 @@ class CubevizImageViewer(ImageViewer):
         settings.data_spacing = spacing
         if settings.dialog is not None:
             settings.update_dialog()
-
-        self.axes.figure.canvas.draw()
+        if draw:
+            self.axes.figure.canvas.draw()
 
     def default_contour(self, *args):
         """
@@ -364,11 +463,63 @@ class CubevizImageViewer(ImageViewer):
         self._synced_checkbox.stateChanged.connect(self._synced_checkbox_callback)
 
     def update_slice_index(self, index):
+        """
+        Function to update image and slice index.
+        Redraws figure.
+        :param index: (int) slice index
+        """
+        # Reset slice index override
+        for layer in self.layers:
+            if isinstance(layer, CubevizImageLayerArtist):
+                layer.state.slice_index_override = None
+
         self._slice_index = index
         z, y, x = self.state.slices
         self.state.slices = (self._slice_index, y, x)
         if self.is_contour_active:
             self.draw_contour()
+
+    def fast_draw_slice_at_index(self, index):
+        """
+        Function to update the displayed image at a slice index
+        quickly. Used when the user is scrolling using a slider.
+        Utilizes a modified version of matplotlib's `axes.draw()`
+        function to only draw images then uses `fig.canvas.blit()`
+        to update the canvas.
+        :param index: (int) slice index
+        """
+        # draw_artist can only be used after an
+        # initial draw which caches the render
+        if self.axes._cachedRenderer is None:
+            self.update_slice_index(index)
+            return
+
+        self._slice_index = index
+
+        # Set main image's slice index to index
+        for layer in self.layers:
+            if isinstance(layer, CubevizImageLayerArtist):
+                layer.state.slice_index_override = index
+        # Invalidate cached data for image viewer
+        # Or else it will not be redrawn
+        self.axes._composite_image.invalidate_cache()
+
+        # Redraw canvas images
+        fig = self.axes.figure
+        for ax in fig.axes:
+            only_draw_axes_images(ax)
+
+        # Draw contour and its labels
+        ax = self.axes
+        if self.is_contour_active and self.contour is not None:
+            self.draw_contour(draw=False)
+            for c in self.contour.collections:
+                ax.draw_artist(c)
+            for t in self.contour.labelTexts:
+                ax.draw_artist(t)
+
+        # update canvas using blit
+        fig.canvas.blit()
 
     @property
     def synced(self):

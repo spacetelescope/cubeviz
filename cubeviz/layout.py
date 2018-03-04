@@ -458,10 +458,12 @@ class CubeVizLayout(QtWidgets.QWidget):
             self._single_viewer_mode = False
             self.ui.button_toggle_image_mode.setText('Single Image Viewer')
             self.ui.viewer_control_frame.setCurrentIndex(0)
-            if self.single_view._widget.synced:
-                for view in self.split_views:
+
+            for view in self.split_views:
+                if self.single_view._widget.synced:
                     if view._widget.synced:
                         view._widget.update_slice_index(self.single_view._widget.slice_index)
+                view._widget.update()
         # Currently in split image, moving to single image
         else:
             self._active_split_cube = self._active_cube
@@ -471,6 +473,7 @@ class CubeVizLayout(QtWidgets.QWidget):
             self._single_viewer_mode = True
             self.ui.button_toggle_image_mode.setText('Split Image Viewer')
             self.ui.viewer_control_frame.setCurrentIndex(1)
+            self._active_view._widget.update()
 
         self.subWindowActivated.emit(new_active_view)
 
