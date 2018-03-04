@@ -326,7 +326,7 @@ class CubevizImageViewer(ImageViewer):
         vmin = arr.min()
         spacing = 1
         if vmax != vmin:
-            spacing = (vmax - vmin) / 6
+            spacing = (vmax - vmin)/DEFAULT_NUMBER_OF_CONTOUR_LEVELS
         self.contour_settings.data_max = vmax
         self.contour_settings.data_min = vmin
         self.contour_settings.data_spacing = spacing
