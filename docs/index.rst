@@ -1,7 +1,7 @@
-CubeViz: Visualization & Analysis Tool for Data Cubes from Integral Field Units (IFUs)
+CubeViz
 ######################################################################################
 
-CubeViz is an visualization and analysis toolbox for data cubes from `integral field units (IFUs) <https://jwst-docs.stsci.edu/display/JPP/Introduction+to+IFU+Spectroscopy>`.  It is built as part of the `glue visualiztion tool <http://glueviz.org>`.  CubeViz is designed to work with data cubes from the `NIRSpec <https://jwst-docs.stsci.edu/display/JTI/NIRSpec+IFU+Spectroscopy>` and `MIRI <https://jwst-docs.stsci.edu/display/JTI/MIRI+Medium-Resolution+Spectroscopy>` instruments on `JWST <https://jwst-docs.stsci.edu/display/HOM/JWST+User+Documentation+Home>`, and will work with data cubes from any IFU.  It uses the `specutils <https://specutils.readthedocs.io/en/latest/>` package from `Astropy <http://www.astropy.org>`.
+CubeViz is an visualization and analysis toolbox for data cubes from _`integral field units (IFUs) <https://jwst-docs.stsci.edu/display/JPP/Introduction+to+IFU+Spectroscopy>`_.  It is built as part of the _`glue visualiztion tool <http://glueviz.org>`_.  CubeViz is designed to work with data cubes from the _`NIRSpec <https://jwst-docs.stsci.edu/display/JTI/NIRSpec+IFU+Spectroscopy>`_ and _`MIRI <https://jwst-docs.stsci.edu/display/JTI/MIRI+Medium-Resolution+Spectroscopy>`_ instruments on _`JWST <https://jwst-docs.stsci.edu/display/HOM/JWST+User+Documentation+Home>`_, and will work with data cubes from any IFU.  It uses the _`specutils <https://specutils.readthedocs.io/en/latest/>_` package from _`Astropy <http://www.astropy.org>`_.
 
 The core functionality of CubeViz currently includes the ability to:
 
