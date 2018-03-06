@@ -22,8 +22,8 @@ from glue.viewers.common.qt.tool import Tool
 
 from .utils.contour import ContourSettings
 
-DEFAULT_NUMBER_OF_CONTOUR_LEVELS = 8
-MAX_NUMBER_OF_CONTOUR_LEVELS = 1000
+CONTOUR_DEFAULT_NUMBER_OF_LEVELSS = 8
+CONTOUR_MAX_NUMBER_OF_LEVELS = 1000
 
 __all__ = ['CubevizImageViewer']
 
@@ -344,14 +344,14 @@ class CubevizImageViewer(ImageViewer):
         if settings.spacing is None:
             spacing = 1
             if vmax != vmin:
-                spacing = (vmax-vmin)/DEFAULT_NUMBER_OF_CONTOUR_LEVELS
+                spacing = (vmax-vmin)/CONTOUR_DEFAULT_NUMBER_OF_LEVELSS
         else:
             spacing = settings.spacing
 
         levels = np.arange(vmin, vmax, spacing)
         levels = np.append(levels, vmax)
 
-        if levels.size > MAX_NUMBER_OF_CONTOUR_LEVELS:
+        if levels.size > CONTOUR_MAX_NUMBER_OF_LEVELS:
             message = "The current contour spacing is too small and " \
                       "results in too many levels. Contour spacing " \
                       "settings have been reset to auto."
@@ -361,7 +361,7 @@ class CubevizImageViewer(ImageViewer):
             settings.data_spacing = spacing
             if settings.dialog is not None:
                 settings.dialog.custom_spacing_checkBox.setChecked(False)
-            spacing = (vmax - vmin)/DEFAULT_NUMBER_OF_CONTOUR_LEVELS
+            spacing = (vmax - vmin)/CONTOUR_DEFAULT_NUMBER_OF_LEVELSS
             levels = np.arange(vmin, vmax, spacing)
             levels = np.append(levels, vmax)
 
@@ -425,7 +425,7 @@ class CubevizImageViewer(ImageViewer):
         vmin = arr.min()
         spacing = 1
         if vmax != vmin:
-            spacing = (vmax - vmin)/DEFAULT_NUMBER_OF_CONTOUR_LEVELS
+            spacing = (vmax - vmin)/CONTOUR_DEFAULT_NUMBER_OF_LEVELSS
         self.contour_settings.data_max = vmax
         self.contour_settings.data_min = vmin
         self.contour_settings.data_spacing = spacing
