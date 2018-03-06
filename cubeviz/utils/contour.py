@@ -58,6 +58,9 @@ class ContourButton(Tool):
         """
         self.options = []
 
+        # WARNING: QAction labels are used to identify them.
+        #          Changing them can cause problems unless
+        #          all references are updated in this package.
         component_action_group = QActionGroup(self.tool_bar)
 
         action = QAction("Off", self.tool_bar, checkable=True)
@@ -287,7 +290,11 @@ class ContourOptionsDialog(QDialog):
         if self.is_custom_spacing:
             self.is_custom_spacing = False
             self.spacing_input.setDisabled(True)
-            self.spacing_input.setText(self.spacing_default_text)
+            spacing = ""
+            if self.contour_settings.data_spacing:
+                spacing = self.contour_settings.data_spacing
+                spacing = "{0:1.4f}".format(spacing)
+            self.spacing_input.setText(spacing)
             self.spacing_input.setStyleSheet("")
         else:
             self.is_custom_spacing = True
@@ -310,7 +317,11 @@ class ContourOptionsDialog(QDialog):
         if self.is_vmax:
             self.is_vmax = False
             self.vmax_input.setDisabled(True)
-            self.vmax_input.setText(self.vmax_default_text)
+            vmax = ""
+            if self.contour_settings.data_max:
+                vmax = self.contour_settings.data_max
+                vmax = "{0:1.4f}".format(vmax)
+            self.vmax_input.setText(vmax)
             self.vmax_input.setStyleSheet("")
         else:
             self.is_vmax = True
@@ -321,7 +332,11 @@ class ContourOptionsDialog(QDialog):
         if self.is_vmin:
             self.is_vmin = False
             self.vmin_input.setDisabled(True)
-            self.vmin_input.setText(self.vmin_default_text)
+            vmin = ""
+            if self.contour_settings.data_min:
+                vmin = self.contour_settings.data_min
+                vmin = "{0:1.4f}".format(vmin)
+            self.vmin_input.setText(vmin)
             self.vmin_input.setStyleSheet("")
         else:
             self.is_vmin = True

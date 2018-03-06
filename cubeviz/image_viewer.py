@@ -3,11 +3,12 @@
 
 import numpy as np
 
+import matplotlib.image as mimage
+
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 
-from qtpy.QtWidgets import (QLabel, QAction, QActionGroup,
-                            QDialog, QHBoxLayout, QVBoxLayout)
+from qtpy.QtWidgets import (QLabel, QMessageBox)
 
 from glue.core.message import SettingsChangeMessage
 
@@ -21,7 +22,8 @@ from glue.viewers.common.qt.tool import Tool
 
 from .utils.contour import ContourSettings
 
-import matplotlib.image as mimage
+CONTOUR_DEFAULT_NUMBER_OF_LEVELSS = 8
+CONTOUR_MAX_NUMBER_OF_LEVELS = 1000
 
 __all__ = ['CubevizImageViewer']
 
@@ -342,22 +344,36 @@ class CubevizImageViewer(ImageViewer):
         if settings.spacing is None:
             spacing = 1
             if vmax != vmin:
-                spacing = (vmax-vmin)/6
+                spacing = (vmax-vmin)/CONTOUR_DEFAULT_NUMBER_OF_LEVELSS
         else:
             spacing = settings.spacing
 
         levels = np.arange(vmin, vmax, spacing)
         levels = np.append(levels, vmax)
 
+        if levels.size > CONTOUR_MAX_NUMBER_OF_LEVELS:
+            message = "The current contour spacing is too small and " \
+                      "results in too many levels. Contour spacing " \
+                      "settings have been reset to auto."
+            info = QMessageBox.critical(self, "Error", message)
+
+            settings.spacing = None
+            settings.data_spacing = spacing
+            if settings.dialog is not None:
+                settings.dialog.custom_spacing_checkBox.setChecked(False)
+            spacing = (vmax - vmin)/CONTOUR_DEFAULT_NUMBER_OF_LEVELSS
+            levels = np.arange(vmin, vmax, spacing)
+            levels = np.append(levels, vmax)
+
         self.contour = self.axes.contour(arr, levels=levels, **settings.options)
 
         if settings.add_contour_label:
             self.axes.clabel(self.contour, fontsize=settings.font_size)
 
+        settings.data_max = arr.max()
+        settings.data_min = arr.min()
+        settings.data_spacing = spacing
         if settings.dialog is not None:
-            settings.data_max = arr.max()
-            settings.data_min = arr.min()
-            settings.data_spacing = spacing
             settings.update_dialog()
         if draw:
             self.axes.figure.canvas.draw()
@@ -378,21 +394,15 @@ class CubevizImageViewer(ImageViewer):
         change the `contour_component` class var
         :param args: arguments from toolbar
         """
-        self.is_contour_active = True
+
         components = self.cubeviz_layout.component_labels
         self.contour_component = pick_item(components, components,
                                            title='Custom Contour',
                                            label='Pick a component')
         if self.contour_component is None:
-            # Edit toolbar menu to check the off option
-            menu = self.toolbar.actions['cubeviz:contour'].menu()
-            actions = menu.actions()
-            for action in actions:
-                if 'Off' == action.text():
-                    action.setChecked(True)
-                    break
-            self.remove_contour()
+            return
         else:
+            self.is_contour_active = True
             self.draw_contour()
 
     def remove_contour(self, *args):
@@ -415,7 +425,7 @@ class CubevizImageViewer(ImageViewer):
         vmin = arr.min()
         spacing = 1
         if vmax != vmin:
-            spacing = (vmax - vmin) / 6
+            spacing = (vmax - vmin)/CONTOUR_DEFAULT_NUMBER_OF_LEVELSS
         self.contour_settings.data_max = vmax
         self.contour_settings.data_min = vmin
         self.contour_settings.data_spacing = spacing
