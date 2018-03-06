@@ -24,7 +24,6 @@ class MomentMapsGUI(QDialog):
         self.data = data
         self.data_collection = data_collection
         self.parent = parent
-        self._moments_container = None
 
         self.currentAxes = None
         self.currentKernel = None
@@ -92,16 +91,18 @@ class MomentMapsGUI(QDialog):
         self.show()
 
     def add_to_moment_container(self, data, label):
-        if self._moments_container is None:
-            self._moments_container = Data(label='Moments')
+        if getattr(self.data, 'container_2d', None) is None:
+            self.data.container_2d = Data(label=self.data.label + " [2d]")
             first = True
-        self._moments_container.add_component(data, label)
+        else:
+            first = False
+        self.data.container_2d.add_component(data, label)
         if first:
-            self.data_collection.append(self._moments_container)
+            self.data_collection.append(self.data.container_2d)
             for helper in self.parent._viewer_combo_helpers:
-                helper.append_data(self._moments_container)
+                helper.append_data(self.data.container_2d)
             for viewer in self.parent.all_views:
-                viewer._widget.add_data(self._moments_container)
+                viewer._widget.add_data(self.data.container_2d)
 
     def calculate_callback(self):
         """

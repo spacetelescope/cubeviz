@@ -540,13 +540,14 @@ class CubevizImageViewer(ImageViewer):
     def slice_index(self):
         return self._slice_index
 
-    def update_component_unit_label(self, component_label):
+    def update_component_unit_label(self, component_id):
         """
         Update component's unit label.
-        :param component_label: component id as a string
+        :param component_id: component id
         """
-        data = self.state.layers_data[0]
-        unit = str(data.get_component(component_label).units)
+
+        data = component_id.parent
+        unit = str(data.get_component(component_id).units)
         if unit:
             self.component_unit_label = "{0}".format(unit)
         else:
@@ -679,14 +680,16 @@ class CubevizImageViewer(ImageViewer):
 
         # If viewer has a layer.
         if len(self.state.layers) > 0:
+
             # Get array arr that contains the image values
             # Default layer is layer at index 0.
             for layer in self.state.layers:
                 if layer.layer is self.state.reference_data:
                     arr = layer.get_sliced_data()
+                    break
             else:
                 raise Exception("Couldn't find layer corresponding to reference data")
-            arr = self.state.layers[0].get_sliced_data()
+
             if 0 <= y < arr.shape[0] and 0 <= x < arr.shape[1]:
                 # if x and y are in bounds. Note: x and y are swapped in array.
                 # get value and check if wcs is obtainable

@@ -1,8 +1,6 @@
 import os
 from collections import OrderedDict
 
-import numpy as np
-
 from qtpy import QtWidgets, QtCore
 from qtpy.QtWidgets import QMenu, QAction, QInputDialog
 
@@ -27,6 +25,7 @@ from .controls.units import UnitController
 from .tools import arithmetic_gui, moment_maps, smoothing
 from .tools import collapse_cube
 from .tools.spectral_operations import SpectralOperationHandler
+
 
 class WidgetWrapper(QtWidgets.QWidget):
 
@@ -314,15 +313,17 @@ class CubeVizLayout(QtWidgets.QWidget):
     def _get_change_viewer_func(self, combo, view_index):
         def change_viewer(dropdown_index):
             view = self.all_views[view_index].widget()
-            label = self._component_labels[dropdown_index]
+            label = combo.currentText()
+            component = combo.currentData()
             if view.is_smoothing_preview_active:
                 view.end_smoothing_preview()
-            view.update_component_unit_label(label)
+            view.update_component_unit_label(component)
             view.update_axes_title(title=str(label))
-            view.state.layers[0]._update_attribute()
-            component = combo.currentData()
             view.state.reference_data = component.parent
-            view.state.layers[0].attribute = component
+            for layer in view.state.layers:
+                layer._update_attribute()
+                if layer.layer is component.parent:
+                    layer.attribute = component
             if view.is_contour_active:
                 view.draw_contour()
 
@@ -349,18 +350,18 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._enable_viewer_combo(
             data, 0, 'single_viewer_combo', 'single_viewer_attribute')
         view = self.all_views[0].widget()
-        component_label = str(getattr(self, 'single_viewer_attribute'))
-        view.update_component_unit_label(component_label)
-        view.update_axes_title(component_label)
+        component = getattr(self, 'single_viewer_attribute')
+        view.update_component_unit_label(component)
+        view.update_axes_title(component.label)
 
         for i in range(1,4):
             combo_label = 'viewer{0}_combo'.format(i)
             selection_label = 'viewer{0}_attribute'.format(i)
             self._enable_viewer_combo(data, i, combo_label, selection_label)
             view = self.all_views[i].widget()
-            component_label = str(getattr(self, selection_label))
-            view.update_component_unit_label(component_label)
-            view.update_axes_title(component_label)
+            component = getattr(self, selection_label)
+            view.update_component_unit_label(component)
+            view.update_axes_title(component.label)
 
     def change_viewer_component(self, view_index,
                                 component_index,
