@@ -32,6 +32,10 @@ class SliceController:
         self._slice_textbox.setEnabled(False)
         self._wavelength_textbox.setEnabled(False)
 
+        # This should be used to distinguised between observed and rest wavelengths
+        # We are not going to enforce what the name should be at this level.
+        self._wavelength_label_text = 'Obs Wavelength'
+
         self._wavelength_format = '{}'
         self._wavelength_units = None
         self._wavelengths = None
@@ -40,6 +44,25 @@ class SliceController:
         # to specviz events
         specviz_dispatch.setup(self)
 
+    @property
+    def wavelength_label(self):
+        """
+        Get the wavelength label, though this probably will not be used much.
+        """
+        return self._wavelength_label_text
+
+    @wavelength_label.setter
+    def wavelength_label(self, new_label):
+        """
+        Set the wavelength label. The new label should probably be "Obs Wavelenght" 
+        or "Rest Wavelenght" but maybe could be other things.
+
+        :return: None
+        """
+        self._wavelength_label_text = new_label
+
+        self._wavelength_textbox_label.setText('{} ({})'.format(
+            self._wavelength_label_text, self._wavelength_units))
 
     def enable(self, wcs, wavelengths):
         """
@@ -56,7 +79,8 @@ class SliceController:
         # Store the wavelength units and format
         self._wavelength_units = str(wcs.wcs.cunit[2])
         self._wavelength_format = '{:.3}'
-        self._wavelength_textbox_label.setText('Wavelength ({})'.format(self._wavelength_units))
+        self._wavelength_textbox_label.setText('{} ({})'.format(
+            self._wavelength_label_text, self._wavelength_units))
 
         # Grab the wavelengths so they can be displayed in the text box
         self._wavelengths = wavelengths
@@ -76,7 +100,8 @@ class SliceController:
         new_units_name = new_units.short_names[0]
         self._wavelength_units = new_units_name
         self._wavelength_format = '{:.3}'
-        self._wavelength_textbox_label.setText('Wavelength ({})'.format(self._wavelength_units))
+        self._wavelength_textbox_label.setText('{} ({})'.format(
+            self._wavelength_label_text, self._wavelength_units))
 
         # Grab the wavelengths so they can be displayed in the text box
         self._wavelengths = new_wavelengths
