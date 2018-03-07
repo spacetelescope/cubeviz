@@ -11,12 +11,33 @@ class UnitController:
         self._new_units = self._original_units
         self._wcs = None
 
+        # Add the redshift z value 
+        self._redshift_z = 0
+
         # This is the Wavelength conversion/combobox code
         self.units = [u.m, u.cm, u.mm, u.um, u.nm, u.AA]
         self.units_titles = list(u.long_names[0].title() for u in self.units)
 
         # This is the label for the wavelength units
         self._wavelength_textbox_label = ui.wavelength_textbox_label
+
+    @property
+    def redshift_z(self):
+        """
+        Get the Z value for the redshift.
+
+        :return: Z redshift value
+        """
+        return self._redshift_z
+
+    @redshift_z.setter
+    def redshift_z(self, new_z):
+        """
+        Set the new Z value for the redshift.
+
+        :return: Z redshift value
+        """
+        self._redshift_z = new_z
 
     def on_combobox_change(self, new_unit_name):
         """
