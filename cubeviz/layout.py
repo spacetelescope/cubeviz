@@ -24,6 +24,7 @@ from .image_viewer import CubevizImageViewer
 from .controls.slice import SliceController
 from .controls.overlay import OverlayController
 from .controls.units import UnitController
+from .controls.units_ui import WavelengthUI
 from .tools import arithmetic_gui, moment_maps, smoothing
 from .tools import collapse_cube
 from .tools.spectral_operations import SpectralOperationHandler
@@ -181,7 +182,8 @@ class CubeVizLayout(QtWidgets.QWidget):
             ('DEC-Spectral', lambda: None),
             ('Hide Axes', ['checkable', self._toggle_viewer_axes]),
             ('Hide Toolbars', ['checkable', self._toggle_toolbars]),
-            ('Wavelength Units', lambda: self._open_dialog('Wavelength Units', None))
+            ('Wavelength Units', lambda: self._open_dialog('Wavelength Units', None)),
+            ('Wavelength Units 2', lambda: self._open_dialog('Wavelength Units 2', None))
         ]))
         self.ui.view_option_button.setMenu(view_menu)
 
@@ -264,6 +266,9 @@ class CubeVizLayout(QtWidgets.QWidget):
         if name == "Moment Maps":
             moment_maps.MomentMapsGUI(
                 self._data, self.session.data_collection, parent=self)
+
+        if name == "Wavelength Units 2":
+            WavelengthUI(self._units_controller.unit_titles, parent=self)
 
         if name == 'Wavelength Units':
             current_unit = self._units_controller.units_titles.index(self._units_controller._new_units.long_names[0].title())

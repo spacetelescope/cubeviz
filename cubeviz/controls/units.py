@@ -1,6 +1,5 @@
 from astropy import units as u
 
-
 class UnitController:
     def __init__(self, cubeviz_layout):
         self._cv_layout = cubeviz_layout
@@ -15,11 +14,19 @@ class UnitController:
         self._redshift_z = 0
 
         # This is the Wavelength conversion/combobox code
-        self.units = [u.m, u.cm, u.mm, u.um, u.nm, u.AA]
-        self.units_titles = list(u.long_names[0].title() for u in self.units)
+        self._units = [u.m, u.cm, u.mm, u.um, u.nm, u.AA]
+        self._units_titles = list(u.long_names[0].title() for u in self._units)
 
         # This is the label for the wavelength units
         self._wavelength_textbox_label = ui.wavelength_textbox_label
+
+    @property 
+    def units(self):
+        return self._units
+
+    @property 
+    def unit_titles(self):
+        return self._units_titles
 
     @property
     def redshift_z(self):
@@ -48,7 +55,7 @@ class UnitController:
         # Get the new unit name from the selected value in the comboBox and
         # set that as the new unit that wavelengths will be converted to
         # new_unit_name = self._wavelength_combobox.currentText()
-        self._new_units = self.units[self.units_titles.index(new_unit_name)]
+        self._new_units = self._units[self._units_titles.index(new_unit_name)]
 
         self._new_wavelengths = self.convert_wavelengths(self._original_wavelengths, self._original_units, self._new_units)
         if self._new_wavelengths is None:
