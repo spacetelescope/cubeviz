@@ -4,6 +4,7 @@ from qtpy.QtWidgets import QApplication
 from glue.config import viewer_tool
 import matplotlib.pyplot as plt
 
+from .controls.units_ui import WavelengthUI
 
 @keyboard_shortcut(QtCore.Qt.Key_A, None)
 def move_slider_left(session):
@@ -60,6 +61,17 @@ def copy_coordinates_to_clipboard(session):
         cb = QApplication.clipboard()
         cb.clear(mode=cb.Clipboard)
         cb.setText(coords_status, mode=cb.Clipboard)
+
+
+@keyboard_shortcut(QtCore.Qt.Key_1, None)
+def show_wavelength_dialog(session):
+    """
+    Popup the Wavelength dialog in order to change the units or redshift. 
+
+    :param session:
+    :return:
+    """
+    WavelengthUI(session.application.tab(0)._units_controller, parent=session.application.tab(0))
 
 
 def remove_mpl_shortcuts_and_check_dupes():
