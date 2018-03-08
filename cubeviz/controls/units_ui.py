@@ -12,7 +12,7 @@ import numpy as np
 import re
 
 class WavelengthUI(QDialog):
-    def __init__(self, wavelength_units=['mm', 'cm'], parent=None):
+    def __init__(self, wavelength_units, parent=None):
         super(WavelengthUI,self).__init__(parent)
 
         self.setWindowTitle("Wavelengths")
@@ -69,6 +69,7 @@ class WavelengthUI(QDialog):
         self.wavelengthdisplay_combobox = QComboBox()
         self.wavelengthdisplay_combobox.addItems(['Obs Wavelengths', 'Rest Wavelengths'])
         self.wavelengthdisplay_combobox.setMinimumWidth(200)
+        self.wavelengthdisplay_combobox.currentIndexChanged.connect(self._wavelengthdisplay_selection_change)
 
         hb_wavelengthdisplay = QHBoxLayout()
         hb_wavelengthdisplay.addWidget(self.wavelengthdisplay_label)
@@ -86,6 +87,11 @@ class WavelengthUI(QDialog):
         hb_redshift = QHBoxLayout()
         hb_redshift.addWidget(self.redshift_label)
         hb_redshift.addWidget(self.redshift_combobox)
+
+        # Going to hide these initially, when the "Rest Wavelengths is selected then
+        # we will show them.
+        self.redshift_label.hide()
+        self.redshift_combobox.hide()
 
         # Create error label
         self.error_label = QLabel("")
@@ -114,9 +120,9 @@ class WavelengthUI(QDialog):
         # Add calculation and buttons to popup box
         vbl = QVBoxLayout()
         vbl.addLayout(hb_desc)
-        vbl.addLayout(hb_redshift)
         vbl.addLayout(hb_wavelengthunits)
         vbl.addLayout(hb_wavelengthdisplay)
+        vbl.addLayout(hb_redshift)
         vbl.addLayout(hbl_error)
         vbl.addLayout(hb_buttons)
 
@@ -136,3 +142,21 @@ class WavelengthUI(QDialog):
     def keyPressEvent(self, e):
         if e.key() == Qt.Key_Escape:
             self.cancel_callback()
+
+    def _wavelengthdisplay_selection_change(self, index):
+        """
+        Callback for a change on the region selection combo box.
+
+        :param newvalue:
+        :return:
+        """
+        newvalue = self.wavelengthdisplay_combobox.currentText()
+
+        # Hide the redshift stuff if Observed wavelength is selected
+        if 'Obs' in newvalue:
+            self.redshift_label.hide()
+            self.redshift_combobox.hide()
+
+        elif 'Rest' in newvalue:
+            self.redshift_label.show()
+            self.redshift_combobox.show()
