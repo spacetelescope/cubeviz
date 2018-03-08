@@ -187,10 +187,17 @@ class CubevizImageViewer(ImageViewer):
         # Connect matplotlib events to event handlers
         self.statusBar().messageChanged.connect(self.message_changed_callback)
         self.figure.canvas.mpl_connect('motion_notify_event', self.mouse_move)
-        self.figure.canvas.mpl_connect('axes_leave_event', self.mouse_exited)
+        self.figure.canvas.mpl_connect('figure_enter_event', self.turn_mouse_on)
 
         self._dont_update_status = False  # Don't save statusBar message when coords are changing
         self.status_message = self.statusBar().currentMessage()
+
+        # Allow the CubeViz slider to respond to viewer-specific sliders in the glue pane
+        self.state.add_callback('slices', self._slice_callback)
+
+    def _slice_callback(self, new_slice):
+        if self._slice_index is not None:
+            self.cubeviz_layout._slice_controller.update_index(new_slice[0])
 
     def get_data_layer_artist(self, layer=None, layer_state=None):
         if layer.ndim == 1:
@@ -550,15 +557,16 @@ class CubevizImageViewer(ImageViewer):
         """
         Returns coord display string.
         """
-        if not self.is_mouse_over:
-            return None
-        return self.coord_label.text()
+        if self.is_mouse_over:
+            return self.coord_label.text()
+        return None
 
     def toggle_hold_coords(self):
         """
         Switch hold_coords state
         """
         if self.hold_coords:
+            self.statusBar().showMessage("")
             self.hold_coords = False
         else:
             self.statusBar().showMessage("Frozen Coordinates")
@@ -595,7 +603,6 @@ class CubevizImageViewer(ImageViewer):
         If hold_coords is active (True), make changes
         only to indicate that the mouse is no longer over viewer.
         """
-        self.is_mouse_over = False
         if self.hold_coords:
             return
         self.x_mouse = None
@@ -651,6 +658,7 @@ class CubevizImageViewer(ImageViewer):
         """
         # Check if mouse is in widget but not on plot
         if not event.inaxes:
+            self.is_mouse_over = False
             self.clear_coords()
             return
         self.is_mouse_over = True
@@ -718,4 +726,8 @@ class CubevizImageViewer(ImageViewer):
         :param event: QEvent
         """
         self.clear_coords()
+        self.is_mouse_over = False
         return
+
+    def turn_mouse_on(self, event):
+        self.is_mouse_over = True
