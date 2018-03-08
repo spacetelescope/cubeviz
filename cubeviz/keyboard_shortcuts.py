@@ -94,5 +94,4 @@ def remove_mpl_shortcuts_and_check_dupes():
                     plt.rcParams[param].remove(key)
 
 
-
 remove_mpl_shortcuts_and_check_dupes()

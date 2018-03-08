@@ -187,7 +187,6 @@ class CubevizImageViewer(ImageViewer):
         # Connect matplotlib events to event handlers
         self.statusBar().messageChanged.connect(self.message_changed_callback)
         self.figure.canvas.mpl_connect('motion_notify_event', self.mouse_move)
-        #self.figure.canvas.mpl_connect('axes_leave_event', self.mouse_exited)
         self.figure.canvas.mpl_connect('figure_enter_event', self.turn_mouse_on)
 
         self._dont_update_status = False  # Don't save statusBar message when coords are changing
