@@ -60,19 +60,6 @@ class WavelengthUI(QDialog):
         hb_wavelengthunits.addWidget(self.wavelengthunits_label)
         hb_wavelengthunits.addWidget(self.wavelengthunits_combobox)
 
-        # Create redshift label and input box
-        self.redshift_label = QLabel("RedShift:")
-        self.redshift_label.setFixedWidth(120)
-        self.redshift_label.setAlignment((Qt.AlignRight | Qt.AlignTop))
-        self.redshift_label.setFont(boldFont)
-
-        self.redshift_combobox = QLineEdit()
-        self.redshift_combobox.setMinimumWidth(200)
-
-        hb_redshift = QHBoxLayout()
-        hb_redshift.addWidget(self.redshift_label)
-        hb_redshift.addWidget(self.redshift_combobox)
-
         # Create wavelength units component label and input box
         self.wavelengthdisplay_label = QLabel("Wavelength Display:")
         self.wavelengthdisplay_label.setFixedWidth(120)
@@ -86,6 +73,19 @@ class WavelengthUI(QDialog):
         hb_wavelengthdisplay = QHBoxLayout()
         hb_wavelengthdisplay.addWidget(self.wavelengthdisplay_label)
         hb_wavelengthdisplay.addWidget(self.wavelengthdisplay_combobox)
+
+        # Create redshift label and input box
+        self.redshift_label = QLabel("RedShift:")
+        self.redshift_label.setFixedWidth(120)
+        self.redshift_label.setAlignment((Qt.AlignRight | Qt.AlignTop))
+        self.redshift_label.setFont(boldFont)
+
+        self.redshift_combobox = QLineEdit()
+        self.redshift_combobox.setMinimumWidth(200)
+
+        hb_redshift = QHBoxLayout()
+        hb_redshift.addWidget(self.redshift_label)
+        hb_redshift.addWidget(self.redshift_combobox)
 
         # Create error label
         self.error_label = QLabel("")
@@ -114,8 +114,8 @@ class WavelengthUI(QDialog):
         # Add calculation and buttons to popup box
         vbl = QVBoxLayout()
         vbl.addLayout(hb_desc)
-        vbl.addLayout(hb_wavelengthunits)
         vbl.addLayout(hb_redshift)
+        vbl.addLayout(hb_wavelengthunits)
         vbl.addLayout(hb_wavelengthdisplay)
         vbl.addLayout(hbl_error)
         vbl.addLayout(hb_buttons)
