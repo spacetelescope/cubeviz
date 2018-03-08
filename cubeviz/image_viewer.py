@@ -192,6 +192,13 @@ class CubevizImageViewer(ImageViewer):
         self._dont_update_status = False  # Don't save statusBar message when coords are changing
         self.status_message = self.statusBar().currentMessage()
 
+        # Allow the CubeViz slider to respond to viewer-specific sliders in the glue pane
+        self.state.add_callback('slices', self._slice_callback)
+
+    def _slice_callback(self, new_slice):
+        if self._slice_index is not None:
+            self.cubeviz_layout._slice_controller.update_index(new_slice[0])
+
     def get_data_layer_artist(self, layer=None, layer_state=None):
         if layer.ndim == 1:
             cls = self._scatter_artist
