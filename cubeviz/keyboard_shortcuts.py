@@ -85,11 +85,10 @@ def remove_mpl_shortcuts_and_check_dupes():
         elif ks >= 128:
             raise ValueError("Please refrain from using non-ASCII values for shortcuts")
 
-    # Remove matplotlib default shortcuts if they conflict with other shortcuts
+    # Remove MatPlotLib default shortcuts if they conflict with other shortcuts
     for param in plt.rcParams:
         if 'keymap' in param:
             for key in plt.rcParams[param]:
-                print(key.upper(), vt_shortcuts, ks_shortcuts)
                 if key.upper() in vt_shortcuts or key.upper() in ks_shortcuts:
                     plt.rcParams[param].remove(key)
 
