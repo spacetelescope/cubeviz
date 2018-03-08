@@ -46,6 +46,13 @@ class UnitController:
         """
         self._redshift_z = new_z
 
+        if new_z is not None and new_z > 0:
+            # Set the label
+            pass
+        else :
+            # Set the label
+            pass
+
     def on_combobox_change(self, new_unit_name):
         """
         Callback for change in unitcombobox value
