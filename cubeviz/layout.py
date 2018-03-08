@@ -267,7 +267,7 @@ class CubeVizLayout(QtWidgets.QWidget):
                 self._data, self.session.data_collection, parent=self)
 
         if name == "Wavelength Units":
-            WavelengthUI(self._units_controller.unit_titles, parent=self)
+            WavelengthUI(self._units_controller, parent=self)
 
     @property
     def component_labels(self):

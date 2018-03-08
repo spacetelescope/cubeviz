@@ -12,7 +12,7 @@ import numpy as np
 import re
 
 class WavelengthUI(QDialog):
-    def __init__(self, wavelength_units, parent=None):
+    def __init__(self, wavelength_controller, parent=None):
         super(WavelengthUI,self).__init__(parent)
 
         self.setWindowTitle("Wavelengths")
@@ -22,7 +22,7 @@ class WavelengthUI(QDialog):
 
         self._general_description = "From this dialog one may choose the wavelength units and/or display the Rest Wavelength units based on a red-shift Z value."
 
-        self.wavelength_units = wavelength_units
+        self.wavelength_controller = wavelength_controller
         self.currentAxes = None
         self.currentKernel = None
 
@@ -53,7 +53,7 @@ class WavelengthUI(QDialog):
         self.wavelengthunits_label.setFont(boldFont)
 
         self.wavelengthunits_combobox = QComboBox()
-        self.wavelengthunits_combobox.addItems(self.wavelength_units)
+        self.wavelengthunits_combobox.addItems(self.wavelength_controller.unit_titles)
         self.wavelengthunits_combobox.setMinimumWidth(200)
 
         hb_wavelengthunits = QHBoxLayout()

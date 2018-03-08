@@ -35,4 +35,4 @@ def wavelengthui(session):
     :return:
     """
     cubevizlayout = session.application.tab(0)
-    WavelengthUI(cubevizlayout._units_controller.unit_titles, parent=cubevizlayout)
+    WavelengthUI(cubevizlayout._units_controller, parent=cubevizlayout)
