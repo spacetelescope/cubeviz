@@ -20,7 +20,7 @@ class WavelengthUI(QDialog):
         self.setWindowFlags(self.windowFlags() | Qt.Tool)
         self.title = "Wavelengths"
 
-        self._general_description = "Choose the wavelength units and/or set a red-shift."
+        self._general_description = "From this dialog one may choose the wavelength units and/or display the Rest Wavelength units based on a red-shift Z value."
 
         self.wavelength_units = wavelength_units
         self.currentAxes = None
@@ -81,17 +81,17 @@ class WavelengthUI(QDialog):
         self.redshift_label.setAlignment((Qt.AlignRight | Qt.AlignTop))
         self.redshift_label.setFont(boldFont)
 
-        self.redshift_combobox = QLineEdit()
-        self.redshift_combobox.setMinimumWidth(200)
+        self.redshift_text = QLineEdit()
+        self.redshift_text.setMinimumWidth(200)
 
         hb_redshift = QHBoxLayout()
         hb_redshift.addWidget(self.redshift_label)
-        hb_redshift.addWidget(self.redshift_combobox)
+        hb_redshift.addWidget(self.redshift_text)
 
         # Going to hide these initially, when the "Rest Wavelengths is selected then
         # we will show them.
         self.redshift_label.hide()
-        self.redshift_combobox.hide()
+        self.redshift_text.hide()
 
         # Create error label
         self.error_label = QLabel("")
@@ -107,6 +107,7 @@ class WavelengthUI(QDialog):
 
         # Create Calculate and Cancel buttons
         self.calculateButton = QPushButton("Set")
+        self.calculateButton.clicked.connect(self.calculate_callback)
         self.calculateButton.setDefault(True)
 
         self.cancelButton = QPushButton("Cancel")
@@ -129,6 +130,25 @@ class WavelengthUI(QDialog):
         self.setLayout(vbl)
         self.setMaximumWidth(700)
         self.show()
+
+    def calculate_callback(self):
+
+        # Reset the errors
+        self.error_label_text.setText(' ')
+        self.error_label_text.setStyleSheet("color: rgba(255, 0, 0, 128)")
+
+        # Check the redshift value if we are using the Obs wavelengths
+        if 'Rest' in self.wavelengthdisplay_combobox.currentText():
+            redshift = self.redshift_text.text().strip()
+
+            try:
+                redshfit = float(redshift)
+            except Exception as e:
+                self.redshift_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+                self.error_label_text.setText('Redshift value {} does not appear to be a number'.format(redshift))
+                return
+
+        self.close()
 
     def cancel_callback(self, caller=0):
         """
@@ -155,8 +175,8 @@ class WavelengthUI(QDialog):
         # Hide the redshift stuff if Observed wavelength is selected
         if 'Obs' in newvalue:
             self.redshift_label.hide()
-            self.redshift_combobox.hide()
+            self.redshift_text.hide()
 
         elif 'Rest' in newvalue:
             self.redshift_label.show()
-            self.redshift_combobox.show()
+            self.redshift_text.show()
