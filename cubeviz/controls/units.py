@@ -20,6 +20,14 @@ class UnitController:
         # This is the label for the wavelength units
         self._wavelength_textbox_label = ui.wavelength_textbox_label
 
+    @property
+    def wavelength_label(self):
+        return self._wavelength_textbox_label
+
+    @wavelength_label.setter
+    def wavelength_label(self, value):
+        self._wavelength_textbox_label = value
+
     @property 
     def units(self):
         return self._units
@@ -48,10 +56,12 @@ class UnitController:
 
         if new_z is not None and new_z > 0:
             # Set the label
-            pass
+            self._wavelength_textbox_label = 'Rest Wavelength'
+            self._cv_layout._slice_controller.wavelength_label = 'Rest Wavelength'
         else :
             # Set the label
-            pass
+            self._wavelength_textbox_label = 'Obs Wavelength'
+            self._cv_layout._slice_controller.wavelength_label = 'Obs Wavelength'
 
     def on_combobox_change(self, new_unit_name):
         """

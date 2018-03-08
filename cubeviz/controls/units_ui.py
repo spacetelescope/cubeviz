@@ -142,11 +142,16 @@ class WavelengthUI(QDialog):
             redshift = self.redshift_text.text().strip()
 
             try:
-                redshfit = float(redshift)
+                redshift = float(redshift)
             except Exception as e:
                 self.redshift_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
                 self.error_label_text.setText('Redshift value {} does not appear to be a number'.format(redshift))
                 return
+
+            # Set it back in the wavelength controller
+            self.wavelength_controller.redshift_z = redshift 
+
+        self.wavelength_controller.wavelength_label = self.wavelengthdisplay_combobox.currentText() 
 
         self.close()
 

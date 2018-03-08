@@ -59,6 +59,7 @@ class SliceController:
 
         :return: None
         """
+        print('SETTING LABLE TO {}'.format(new_label))
         self._wavelength_label_text = new_label
 
         self._wavelength_textbox_label.setText('{} ({})'.format(
