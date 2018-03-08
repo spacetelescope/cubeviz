@@ -26,7 +26,7 @@ dependencies:
   - scipy
   # This is necessary in some OSX environments to ensure that Python is
   # installed as a framework
-  - matplotlib
+  - matplotlib=2.1
   - glue-core>=0.12
   - pip:
     - asteval
