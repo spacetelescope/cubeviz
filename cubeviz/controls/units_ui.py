@@ -90,8 +90,8 @@ class WavelengthUI(QDialog):
 
         # Going to hide these initially, when the "Rest Wavelengths is selected then
         # we will show them.
-        self.redshift_label.hide()
-        self.redshift_text.hide()
+        self.redshift_label.setDisabled(True)
+        self.redshift_text.setDisabled(True)
 
         # Create error label
         self.error_label = QLabel("")
@@ -179,9 +179,9 @@ class WavelengthUI(QDialog):
 
         # Hide the redshift stuff if Observed wavelength is selected
         if 'Obs' in newvalue:
-            self.redshift_label.hide()
-            self.redshift_text.hide()
+            self.redshift_label.setDisabled(True)
+            self.redshift_text.setDisabled(True)
 
         elif 'Rest' in newvalue:
-            self.redshift_label.show()
-            self.redshift_text.show()
+            self.redshift_label.setDisabled(False)
+            self.redshift_text.setDisabled(False)
