@@ -681,11 +681,10 @@ class CubevizImageViewer(ImageViewer):
         # If viewer has a layer.
         if len(self.state.layers) > 0:
 
-            # Get array arr that contains the image values
-            # Default layer is layer at index 0.
-            for layer in self.state.layers:
-                if layer.layer is self.state.reference_data:
-                    arr = layer.get_sliced_data()
+            # Pick first enabled layer
+            for layer_artist in self.layers:
+                if layer_artist.enabled and layer_artist.visible:
+                    arr = layer_artist.state.get_sliced_data()
                     break
             else:
                 raise Exception("Couldn't find layer corresponding to reference data")
