@@ -8,6 +8,7 @@ from astropy import convolution
 from glue.core import Data, Subset
 from glue.core.coordinates import coordinates_from_header, WCSCoordinates
 from glue.core.exceptions import IncompatibleAttribute
+from glue.utils.qt import update_combobox
 
 from spectral_cube import SpectralCube, BooleanArrayMask
 
@@ -422,7 +423,7 @@ class SmoothCube(object):
             return ndimage.filters.median_filter(data, self.kernel_size)
         else:
             kernel = self.get_kernel()
-            return convolution.convolve(data, kernel, normalize_kernel = True)
+            return convolution.convolve(data, kernel, normalize_kernel=True)
 
     def get_preview_title(self):
         title = "Smoothing Preview: "
@@ -627,15 +628,17 @@ class SelectSmoothing(QDialog):
         self.component_prompt.setWordWrap(True)
         self.component_prompt.setMinimumWidth(150)
         # Load component_ids and add to drop down
-        component_ids = [str(i) for i in self.data.component_ids()]
-        if self.parent is not None:
-            if hasattr(self.parent, "_component_labels"):
-                component_ids = self.parent._component_labels
+
+        # Add the data component labels to the drop down, with the ComponentID
+        # set as the userData:
+
+        if self.parent is not None and hasattr(self.parent, 'data_components'):
+            labeldata = [(str(cid), cid) for cid in self.parent.data_components]
+        else:
+            labeldata = [(str(cid), cid) for cid in self.data.main_components()]
 
         self.component_combo = QComboBox()
-        self.component_combo.addItems(
-            component_ids
-        )
+        update_combobox(self.component_combo, labeldata)
 
         self.component_combo.setMaximumWidth(150)
         self.component_combo.setCurrentIndex(0)

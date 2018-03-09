@@ -136,9 +136,6 @@ class CubeVizLayout(QtWidgets.QWidget):
         # Add menu buttons to the cubeviz toolbar.
         self._init_menu_buttons()
 
-        # This maps the combo box indicies to the glue data component labels
-        self._component_labels = []
-
         self.sync = {}
         # Track the slice index of the synced viewers. This is updated by the
         # slice controller
@@ -271,8 +268,12 @@ class CubeVizLayout(QtWidgets.QWidget):
                 self._units_controller.on_combobox_change(wavelength)
 
     @property
+    def data_components(self):
+        return self._data.main_components + self._data.derived_components
+
+    @property
     def component_labels(self):
-        return self._component_labels
+        return [str(cid) for cid in self.data_components]
 
     def refresh_viewer_combo_helpers(self):
         for i, helper in enumerate(self._viewer_combo_helpers):
@@ -405,22 +406,24 @@ class CubeVizLayout(QtWidgets.QWidget):
         :param force: bool: force change if component is already displayed.
         """
 
-        if view_index == 0:
-            combo_label = 'single_viewer_combo'
-        else:
-            combo_label = 'viewer{0}_combo'.format(view_index)
+        combo = self.get_viewer_combo(view_index)
 
-        combo = getattr(self.ui, combo_label)
-
-        if isinstance(component_id, int):
-            component_index = component_id
-        else:
-            component_index = combo.findData(component_id)
+        component_index = combo.findData(component_id)
 
         if combo.currentIndex() == component_index and force:
             combo.currentIndexChanged.emit(component_index)
         else:
             combo.setCurrentIndex(component_index)
+
+    def get_viewer_combo(self, view_index):
+        """
+        Get viewer combo for a given viewer index
+        """
+        if view_index == 0:
+            combo_label = 'single_viewer_combo'
+        else:
+            combo_label = 'viewer{0}_combo'.format(view_index)
+        return getattr(self.ui, combo_label)
 
     def add_overlay(self, data, label):
         self._overlay_controller.add_overlay(data, label)
@@ -445,9 +448,6 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._active_cube = self.left_view
         self._last_active_view = self.single_view
         self._active_split_cube = self.left_view
-
-        # Set the component labels to what was actually in the file.
-        self._component_labels = [str(x).strip() for x in data.component_ids() if not x in data.coordinate_components]
 
         # Store pointer to wavelength information
         self._wavelengths = self.single_view._widget._data[0].coords.world_axis(self.single_view._widget._data[0], axis=0)
@@ -587,7 +587,10 @@ class CubeVizLayout(QtWidgets.QWidget):
         :param preview_title: str: Title displayed when previewing
         """
         # For single and first viewer:
+        self._original_components = {}
         for view_index in [0, 1]:
+            combo = self.get_viewer_combo(view_index)
+            self._original_components[view_index] = combo.currentData()
             view = self.all_views[view_index].widget()
             self.change_viewer_component(view_index, component_id, force=True)
             view.set_smoothing_preview(preview_function, preview_title)
@@ -599,10 +602,10 @@ class CubeVizLayout(QtWidgets.QWidget):
         for view_index in [0, 1]:
             view = self.all_views[view_index].widget()
             view.end_smoothing_preview()
-            # TODO: we shouldn't refer to the index in the combo, it would be
-            # better to refer to the component ID. Also not clear why we
-            # go back to the very fist item in the combo.
-            self.change_viewer_component(view_index, 0, force=True)
+            if view_index in self._original_components:
+                component_id = self._original_components[view_index]
+                self.change_viewer_component(view_index, component_id, force=True)
+        self._original_components = {}
 
     def showEvent(self, event):
         super(CubeVizLayout, self).showEvent(event)
