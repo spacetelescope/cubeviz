@@ -3,7 +3,7 @@
 conda_env=`conda env list | grep '*' | cut -d\  -f1`
 
 if [ "$conda_env" == "test-cubeviz-conda" ]; then
-    conda update -c glueviz/label/dev -c glueviz -c http://ssb.stsci.edu/astroconda-dev cubeviz --yes
+    conda update --update-deps -c glueviz/label/dev -c glueviz -c http://ssb.stsci.edu/astroconda-dev cubeviz --yes
 else
     echo "Must be in the test-cubeviz-conda conda environment"
 fi
