@@ -59,13 +59,15 @@ class UnitController:
             # Set the label
             self._wavelength_textbox_label = 'Rest Wavelength'
             self._cv_layout._slice_controller.wavelength_label = 'Rest Wavelength'
+            self._cv_layout.set_wavelengths((1+new_z)*self._original_wavelengths, self._new_units)
         else :
             # Set the label
             self._wavelength_textbox_label = 'Obs Wavelength'
             self._cv_layout._slice_controller.wavelength_label = 'Obs Wavelength'
+            self._cv_layout.set_wavelengths(self._original_wavelengths, self._new_units)
     
         # Send the redshift value to specviz
-        specviz_dispatch.redshift_changed.emit(z=0.01)
+        #specviz_dispatch.redshift_changed.emit(z=0.01)
 
     def on_combobox_change(self, new_unit_name):
         """
