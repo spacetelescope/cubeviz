@@ -324,7 +324,8 @@ class CubevizImageViewer(ImageViewer):
 
     def get_contour_array(self):
         if self.contour_component is None:
-            arr = self.state.layers[0].get_sliced_data()
+            layer_artist = self.first_visible_layer()
+            arr = layer_artist.state.get_sliced_data()
         else:
             data = self.state.layers_data[0]
             arr = data[self.contour_component][self.slice_index]
@@ -681,13 +682,7 @@ class CubevizImageViewer(ImageViewer):
         # If viewer has a layer.
         if len(self.state.layers) > 0:
 
-            # Pick first enabled layer
-            for layer_artist in self.layers:
-                if layer_artist.enabled and layer_artist.visible:
-                    arr = layer_artist.state.get_sliced_data()
-                    break
-            else:
-                raise Exception("Couldn't find layer corresponding to reference data")
+            arr = self.first_visible_layer().state.get_sliced_data()
 
             if 0 <= y < arr.shape[0] and 0 <= x < arr.shape[1]:
                 # if x and y are in bounds. Note: x and y are swapped in array.
@@ -715,6 +710,20 @@ class CubevizImageViewer(ImageViewer):
         self._dont_update_status = False
         self.coord_label.setText(string)
         return
+
+    def first_visible_layer(self):
+        layers = self.visible_layers()
+        if len(layers) == 0:
+            raise Exception("Couldn't find any visible layers")
+        else:
+            return layers[0]
+
+    def visible_layers(self):
+        layers = []
+        for layer_artist in self.layers:
+            if layer_artist.enabled and layer_artist.visible:
+                layers.append(layer_artist)
+        return layers
 
     def mouse_exited(self, event):
         """
