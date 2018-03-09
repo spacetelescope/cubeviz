@@ -115,8 +115,8 @@ class MomentMapsGUI(QDialog):
             self.data_collection.add_link(link2)
             for helper in self.parent._viewer_combo_helpers:
                 helper.append_data(self.data.container_2d)
-            # for viewer in self.parent.all_views:
-            #     viewer._widget.add_data(self.data.container_2d)
+            for viewer in self.parent.all_views:
+                viewer._widget.add_data(self.data.container_2d)
 
     def calculate_callback(self):
         """

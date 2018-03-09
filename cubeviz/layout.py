@@ -310,24 +310,61 @@ class CubeVizLayout(QtWidgets.QWidget):
             button.setEnabled(True)
         self.ui.sync_button.setEnabled(True)
 
-    def _get_change_viewer_func(self, combo, view_index):
-        def change_viewer(dropdown_index):
-            view = self.all_views[view_index].widget()
+    def _get_change_viewer_combo_func(self, combo, view_index):
+
+        def _on_viewer_combo_change(dropdown_index):
+
+            # This function gets called whenever one of the viewer combos gets
+            # changed. The active combo is the one that comes from the parent
+            # _get_change_viewer_combo_func function.
+
+            # Find the relevant viewer
+            viewer = self.all_views[view_index].widget()
+
+            # Get the label of the component and the component ID itself
             label = combo.currentText()
             component = combo.currentData()
-            if view.is_smoothing_preview_active:
-                view.end_smoothing_preview()
-            view.update_component_unit_label(component)
-            view.update_axes_title(title=str(label))
-            view.state.reference_data = component.parent
-            for layer in view.state.layers:
-                layer._update_attribute()
-                if layer.layer is component.parent:
-                    layer.attribute = component
-            if view.is_contour_active:
-                view.draw_contour()
 
-        return change_viewer
+            # If the user changed the current component, stop previewing
+            # smoothing.
+            if viewer.is_smoothing_preview_active:
+                viewer.end_smoothing_preview()
+
+            # Change the title and unit shown in the viwer
+            viewer.update_component_unit_label(component)
+            viewer.update_axes_title(title=str(label))
+
+            # Change the viewer's reference data to be the data containing the
+            # current component.
+            viewer.state.reference_data = component.parent
+
+            # The viewer may have multiple layers, for instance layers for
+            # the main cube and for any overlay datasets, as well as subset
+            # layers. We go through all the layers and make sure that for the
+            # layer which corresponds to the current dataset, the correct
+            # attribute is shown.
+            for layer_artist in viewer.layers:
+                layer_state = layer_artist.state
+                if layer_state.layer is component.parent:
+
+                    # We call _update_attribute here manually so that if this
+                    # function gets called before _update_attribute, it gets
+                    # called before we try and set the attribute below
+                    # (_update_attribute basically updates the internal list
+                    # of available attributes for the attribute combo)
+                    layer_state._update_attribute()
+                    layer_state.attribute = component
+
+                    # We then also make sure that this layer artist is the
+                    # one that is selected so that if the user uses e.g. the
+                    # contrast tool, it will change the right layer
+                    viewer._view.layer_list.select_artist(layer_artist)
+
+            # If contours are being currently shown, we need to force a redraw
+            if viewer.is_contour_active:
+                viewer.draw_contour()
+
+        return _on_viewer_combo_change
 
     def _enable_viewer_combo(self, data, index, combo_label, selection_label):
         combo = getattr(self.ui, combo_label)
@@ -335,7 +372,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         helper = ComponentIDComboHelper(self, selection_label)
         helper.set_multiple_data([data])
         combo.setEnabled(True)
-        combo.currentIndexChanged.connect(self._get_change_viewer_func(combo, index))
+        combo.currentIndexChanged.connect(self._get_change_viewer_combo_func(combo, index))
         self._viewer_combo_helpers.append(helper)
 
     def _enable_all_viewer_combos(self, data):
