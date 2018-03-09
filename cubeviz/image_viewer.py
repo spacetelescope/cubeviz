@@ -708,7 +708,7 @@ class CubevizImageViewer(ImageViewer):
                             string = string + " " + self._coords_format_function(ra, dec)
                 # Pixel Value:
                 v = arr[y][x]
-                string = "{0:1.4f} {1} ".format(v, self.component_unit_label) + string
+                string = "{0:.3e} {1} ".format(v, self.component_unit_label) + string
         # Add a gap to string and add to viewer.
         string += " "
         self._dont_update_status = True
