@@ -842,7 +842,7 @@ class SelectSmoothing(QDialog):
 
         preview_function = self.smooth_cube.preview_smoothing
         preview_title = self.smooth_cube.get_preview_title()
-        component_id = str(self.component_combo.currentText())
+        component_id = self.component_combo.currentData()
         self.parent.start_smoothing_preview(preview_function, component_id, preview_title)
 
         self.is_preview_active = True

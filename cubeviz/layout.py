@@ -290,20 +290,16 @@ class CubeVizLayout(QtWidgets.QWidget):
                                                      parent=self)
         operation_handler.exec_()
 
-    def add_new_data_component(self, name):
-        self._component_labels.append(str(name))
+    def add_new_data_component(self, component_id):
 
         self.refresh_viewer_combo_helpers()
 
         if self._active_view in self.all_views:
             view_index = self.all_views.index(self._active_view)
-            component_index = self._component_labels.index(str(name))
-            self.change_viewer_component(view_index, component_index)
+            self.change_viewer_component(view_index, component_id)
 
-    def remove_component(self, name):
-        if str(name) not in self._component_labels:
-            return
-        self._component_labels.remove(str(name))
+    def remove_data_component(self, component_id):
+        pass
 
     def _enable_option_buttons(self):
         for button in self._option_buttons:
@@ -400,21 +396,27 @@ class CubeVizLayout(QtWidgets.QWidget):
             view.update_component_unit_label(component)
             view.update_axes_title(component.label)
 
-    def change_viewer_component(self, view_index,
-                                component_index,
-                                force=False):
+    def change_viewer_component(self, view_index, component_id, force=False):
         """
         Given a viewer at an index view_index, change combo
         selection to component at an index component_index.
         :param view_index: int: Viewer index
-        :param component_index: int: Component index in viewer combo
+        :param component_id: ComponentID: Component ID in viewer combo
         :param force: bool: force change if component is already displayed.
         """
+
         if view_index == 0:
             combo_label = 'single_viewer_combo'
         else:
             combo_label = 'viewer{0}_combo'.format(view_index)
+
         combo = getattr(self.ui, combo_label)
+
+        if isinstance(component_id, int):
+            component_index = component_id
+        else:
+            component_index = combo.findData(component_id)
+
         if combo.currentIndex() == component_index and force:
             combo.currentIndexChanged.emit(component_index)
         else:
@@ -587,17 +589,19 @@ class CubeVizLayout(QtWidgets.QWidget):
         # For single and first viewer:
         for view_index in [0, 1]:
             view = self.all_views[view_index].widget()
-            component_index = self._component_labels.index(component_id)
-            self.change_viewer_component(view_index, component_index, force=True)
+            self.change_viewer_component(view_index, component_id, force=True)
             view.set_smoothing_preview(preview_function, preview_title)
 
     def end_smoothing_preview(self):
         """
         End preview and change viewer combo index to the first component.
         """
-        for view_index in [0,1]:
+        for view_index in [0, 1]:
             view = self.all_views[view_index].widget()
             view.end_smoothing_preview()
+            # TODO: we shouldn't refer to the index in the combo, it would be
+            # better to refer to the component ID. Also not clear why we
+            # go back to the very fist item in the combo.
             self.change_viewer_component(view_index, 0, force=True)
 
     def showEvent(self, event):
