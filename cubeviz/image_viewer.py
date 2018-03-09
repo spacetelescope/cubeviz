@@ -340,18 +340,18 @@ class CubevizImageViewer(ImageViewer):
 
         arr = self.get_contour_array()
 
-        vmax = arr.max()
+        vmax = np.nanmax(arr)
         if settings.vmax is not None:
             vmax = settings.vmax
 
-        vmin = arr.min()
+        vmin = np.nanmin(arr)
         if settings.vmin is not None:
             vmin = settings.vmin
 
         if settings.spacing is None:
             spacing = 1
             if vmax != vmin:
-                spacing = (vmax-vmin)/CONTOUR_DEFAULT_NUMBER_OF_LEVELSS
+                spacing = (vmax - vmin)/CONTOUR_DEFAULT_NUMBER_OF_LEVELSS
         else:
             spacing = settings.spacing
 
