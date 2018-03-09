@@ -3,6 +3,10 @@ from specviz.third_party.glue.data_viewer import dispatch as specviz_dispatch
 
 RED_BACKGROUND = "background-color: rgba(255, 0, 0, 128);"
 
+import logging
+logging.basicConfig(format='%(levelname)-6s: %(name)-10s %(asctime)-15s  %(message)s')
+log = logging.getLogger("SliceController")
+log.setLevel(logging.DEBUG)
 
 class SliceController:
 
@@ -31,6 +35,7 @@ class SliceController:
         self._slice_slider.setEnabled(False)
         self._slice_textbox.setEnabled(False)
         self._wavelength_textbox.setEnabled(False)
+        self._wavelength_textbox_label.setWordWrap(True)
 
         # This should be used to distinguised between observed and rest wavelengths
         # We are not going to enforce what the name should be at this level.
@@ -59,7 +64,6 @@ class SliceController:
 
         :return: None
         """
-        print('SETTING LABLE TO {}'.format(new_label))
         self._wavelength_label_text = new_label
 
         self._wavelength_textbox_label.setText('{} ({})'.format(
@@ -214,10 +218,13 @@ class SliceController:
         :return:
         """
 
+        log.debug('Entering update_slice_textboxes with index {}'.format(index))
+
         # Update the input text box for slice number
         self._slice_textbox.setText(str(index))
 
         # Update the wavelength for the corresponding slice number.
+        log.debug('\tGoing to call wavelength_textbox with wavelength {}'.format(self._wavelengths[index]))
         self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[index]))
 
 
@@ -229,11 +236,13 @@ class SliceController:
         :param event:
         :return:
         """
+        log.debug('Entering _on_text_slice_change')
 
         # Get the value they typed in, but if not a number, then let's just use
         # the first slice.
         try:
             index = int(self._slice_textbox.text())
+            log.debug('\tCalculated index as {}'.format(index)) 
             self._slice_textbox.setStyleSheet("")
         except ValueError:
             self._slice_textbox.setStyleSheet(RED_BACKGROUND)
@@ -266,10 +275,14 @@ class SliceController:
                     SpecViz event system.
         :return:
         """
+        log.debug('Entered _on_text_wavelength_change')
+
         try:
             # Find the closest real wavelength and use the index of it
             wavelength = pos if pos is not None else float(self._wavelength_textbox.text())
             index = np.argsort(abs(self._wavelengths - wavelength))[0]
+            log.debug('\twavelength is {} ({} {}) index is {}'.format(
+                wavelength, min(self._wavelengths), max(self._wavelengths),index)) 
             self._wavelength_textbox.setStyleSheet("")
         except ValueError:
             self._wavelength_textbox.setStyleSheet(RED_BACKGROUND)
