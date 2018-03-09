@@ -1,4 +1,5 @@
 from astropy import units as u
+from specviz.third_party.glue.data_viewer import dispatch as specviz_dispatch
 
 class UnitController:
     def __init__(self, cubeviz_layout):
@@ -62,6 +63,9 @@ class UnitController:
             # Set the label
             self._wavelength_textbox_label = 'Obs Wavelength'
             self._cv_layout._slice_controller.wavelength_label = 'Obs Wavelength'
+    
+        # Send the redshift value to specviz
+        specviz_dispatch.redshift_changed.emit(z=0.01)
 
     def on_combobox_change(self, new_unit_name):
         """
