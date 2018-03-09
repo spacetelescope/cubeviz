@@ -1,14 +1,11 @@
 from __future__ import absolute_import, division, print_function
 
-from glue.core import Data
-from glue.core.link_helpers import LinkSame
-from glue.core.coordinates import WCSCoordinates
 from qtpy.QtCore import Qt
 from qtpy import QtGui
-from qtpy.QtWidgets import (
-    QDialog, QComboBox, QPushButton,
-    QLabel, QWidget, QHBoxLayout, QVBoxLayout
-)
+from qtpy.QtWidgets import (QDialog, QComboBox, QPushButton,
+                            QLabel, QWidget, QHBoxLayout, QVBoxLayout)
+
+from .common import add_to_2d_container
 
 
 # TODO: In the future, it might be nice to be able to work across data_collection elements
@@ -92,32 +89,6 @@ class MomentMapsGUI(QDialog):
         self.setMaximumWidth(700)
         self.show()
 
-    def add_to_moment_container(self, data, label):
-        if getattr(self.data, 'container_2d', None) is None:
-            # For now, we assume that the moments are always computed along
-            # the spectral axis, so that the resulting WCS is always celestial
-            coords = WCSCoordinates(wcs=self.data.coords.wcs.celestial)
-            self.data.container_2d = Data(label=self.data.label + " [2d]", coords=coords)
-            first = True
-        else:
-            first = False
-        self.data.container_2d.add_component(data, label)
-        if first:
-            self.data_collection.append(self.data.container_2d)
-            # Set up pixel links so that selections in the image plane propagate
-            # between 1D and 2D views. Again this assumes as above that the
-            # moments are computed along the spectral axis
-            link1 = LinkSame(self.data.pixel_component_ids[2],
-                             self.data.container_2d.pixel_component_ids[1])
-            link2 = LinkSame(self.data.pixel_component_ids[1],
-                             self.data.container_2d.pixel_component_ids[0])
-            self.data_collection.add_link(link1)
-            self.data_collection.add_link(link2)
-            for helper in self.parent._viewer_combo_helpers:
-                helper.append_data(self.data.container_2d)
-            for viewer in self.parent.all_views:
-                viewer._widget.add_data(self.data.container_2d)
-
     def calculate_callback(self):
         """
         Callback for when they hit calculate
@@ -139,7 +110,11 @@ class MomentMapsGUI(QDialog):
             cube_moment = cube.moment(order=order, axis=0)
 
             label = '{}-moment-{}'.format(data_name, order)
-            self.add_to_moment_container(cube_moment.value, label)
+
+            # Add new overlay/component to cubeviz. We add this both to the 2D
+            # container Data object and also as an overlay. In future we might be
+            # able to use the 2D container Data object for the overlays directly.
+            add_to_2d_container(self.parent, self.data, cube_moment.value, label)
             self.parent.add_overlay(cube_moment.value, label)
 
         except Exception as e:

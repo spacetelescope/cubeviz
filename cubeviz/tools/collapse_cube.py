@@ -1,15 +1,17 @@
 from __future__ import absolute_import, division, print_function
 
+import re
+
+import numpy as np
+
 from qtpy.QtCore import Qt
 from qtpy import QtGui
-from qtpy.QtWidgets import (
-    QDialog, QApplication, QPushButton,
-    QLabel, QWidget, QHBoxLayout, QVBoxLayout, QLineEdit, QComboBox
-)
+from qtpy.QtWidgets import (QDialog, QApplication, QPushButton, QLabel, QWidget,
+                            QHBoxLayout, QVBoxLayout, QLineEdit, QComboBox)
 
 from astropy.stats import sigma_clip
-import numpy as np
-import re
+
+from .common import add_to_2d_container
 
 # The operations we understand
 operations = {
@@ -486,7 +488,7 @@ class CollapseCube(QDialog):
                 sigma_iters = None
 
             new_component = sigma_clip(new_component, sigma=sigma, sigma_lower=sigma_lower,
-                                                     sigma_upper=sigma_upper, iters=sigma_iters)
+                                       sigma_upper=sigma_upper, iters=sigma_iters)
 
             # Add to label so it is clear which overlay/component is which
             if sigma:
@@ -501,7 +503,10 @@ class CollapseCube(QDialog):
             if sigma_iters:
                 label += ' sigma_iters={}'.format(sigma_iters)
 
-        # Add new overlay/component to cubeviz
+        # Add new overlay/component to cubeviz. We add this both to the 2D
+        # container Data object and also as an overlay. In future we might be
+        # able to use the 2D container Data object for the overlays directly.
+        add_to_2d_container(self.parent, self.data, new_component, label)
         self.parent.add_overlay(new_component, label)
 
         self.close()
