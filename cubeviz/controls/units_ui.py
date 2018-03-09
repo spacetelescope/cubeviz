@@ -150,6 +150,8 @@ class WavelengthUI(QDialog):
 
             # Set it back in the wavelength controller
             self.wavelength_controller.redshift_z = redshift 
+        else:
+            self.wavelength_controller.redshift_z = 0.0 
 
         self.wavelength_controller.wavelength_label = self.wavelengthdisplay_combobox.currentText() 
 
