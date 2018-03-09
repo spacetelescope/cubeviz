@@ -1,6 +1,8 @@
 from __future__ import absolute_import, division, print_function
 
 from glue.core import Data
+from glue.core.link_helpers import LinkSame
+from glue.core.coordinates import WCSCoordinates
 from qtpy.QtCore import Qt
 from qtpy import QtGui
 from qtpy.QtWidgets import (
@@ -92,17 +94,29 @@ class MomentMapsGUI(QDialog):
 
     def add_to_moment_container(self, data, label):
         if getattr(self.data, 'container_2d', None) is None:
-            self.data.container_2d = Data(label=self.data.label + " [2d]")
+            # For now, we assume that the moments are always computed along
+            # the spectral axis, so that the resulting WCS is always celestial
+            coords = WCSCoordinates(wcs=self.data.coords.wcs.celestial)
+            self.data.container_2d = Data(label=self.data.label + " [2d]", coords=coords)
             first = True
         else:
             first = False
         self.data.container_2d.add_component(data, label)
         if first:
             self.data_collection.append(self.data.container_2d)
+            # Set up pixel links so that selections in the image plane propagate
+            # between 1D and 2D views. Again this assumes as above that the
+            # moments are computed along the spectral axis
+            link1 = LinkSame(self.data.pixel_component_ids[2],
+                             self.data.container_2d.pixel_component_ids[1])
+            link2 = LinkSame(self.data.pixel_component_ids[1],
+                             self.data.container_2d.pixel_component_ids[0])
+            self.data_collection.add_link(link1)
+            self.data_collection.add_link(link2)
             for helper in self.parent._viewer_combo_helpers:
                 helper.append_data(self.data.container_2d)
-            for viewer in self.parent.all_views:
-                viewer._widget.add_data(self.data.container_2d)
+            # for viewer in self.parent.all_views:
+            #     viewer._widget.add_data(self.data.container_2d)
 
     def calculate_callback(self):
         """
