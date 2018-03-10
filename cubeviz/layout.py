@@ -15,6 +15,7 @@ from glue.external.echo.qt import connect_combo_selection
 from glue.core.data_combo_helper import ComponentIDComboHelper
 from glue.core.message import SettingsChangeMessage, SubsetUpdateMessage, SubsetDeleteMessage
 from glue.utils.matplotlib import freeze_margins
+from glue.dialogs.component_arithmetic.qt import ArithmeticEditorWidget
 
 from specviz.third_party.glue.data_viewer import SpecVizViewer
 from specviz.core.events import dispatch
@@ -28,7 +29,7 @@ from .controls.overlay import OverlayController
 from .controls.flux_units import FluxUnitController
 from .controls.wavelengths import WavelengthController
 from .tools import collapse_cube
-from .tools import arithmetic_gui, moment_maps, smoothing
+from .tools import moment_maps, smoothing
 from .tools.wavelengths_ui import WavelengthUI
 from .tools.spectral_operations import SpectralOperationHandler
 
@@ -304,7 +305,8 @@ class CubeVizLayout(QtWidgets.QWidget):
             ex = smoothing.SelectSmoothing(self._data, parent=self, allow_preview=True)
 
         if name == 'Arithmetic Operations':
-            ex = arithmetic_gui.SelectArithmetic(self._data, self.session.data_collection, parent=self)
+            dialog = ArithmeticEditorWidget(self.session.data_collection)
+            dialog.exec_()
 
         if name == "Moment Maps":
             mm_gui = moment_maps.MomentMapsGUI(
