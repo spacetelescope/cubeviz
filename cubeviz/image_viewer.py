@@ -152,6 +152,8 @@ class CubevizImageViewer(ImageViewer):
              'select:circle', 'select:polygon', 'image:contrast_bias',
              'cubeviz:contour']
 
+    _close_on_last_layer_removed = False
+
     def __init__(self,  *args, cubeviz_layout=None, **kwargs):
         super(CubevizImageViewer, self).__init__(*args, **kwargs)
         self.cubeviz_layout = cubeviz_layout
