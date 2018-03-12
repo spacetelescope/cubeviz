@@ -440,7 +440,10 @@ class CubeVizLayout(QtWidgets.QWidget):
                 for viewer in self.subWindowList():
                     relative_click_pos = viewer.mapFromGlobal(click_pos)
                     if viewer.rect().contains(relative_click_pos):
-                        self.subWindowActivated.emit(viewer)
+                        # We should only emit an event if the active subwindow
+                        # has actually changed.
+                        if viewer is not self.activeSubWindow():
+                            self.subWindowActivated.emit(viewer)
                         break
 
                 self._last_click = click_pos
