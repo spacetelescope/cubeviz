@@ -176,9 +176,6 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         # Create the View Menu
         view_menu = self._dict_to_menu(OrderedDict([
-            ('RA-DEC', lambda: None),
-            ('RA-Spectral', lambda: None),
-            ('DEC-Spectral', lambda: None),
             ('Hide Axes', ['checkable', self._toggle_viewer_axes]),
             ('Hide Toolbars', ['checkable', self._toggle_toolbars]),
             ('Wavelength Units', lambda: self._open_dialog('Wavelength Units', None))
