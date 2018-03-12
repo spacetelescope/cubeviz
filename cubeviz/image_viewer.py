@@ -326,7 +326,8 @@ class CubevizImageViewer(ImageViewer):
 
     def get_contour_array(self):
         if self.contour_component is None:
-            arr = self.state.layers[0].get_sliced_data()
+            layer_artist = self.first_visible_layer()
+            arr = layer_artist.state.get_sliced_data()
         else:
             data = self.state.layers_data[0]
             arr = data[self.contour_component][self.slice_index]
@@ -342,18 +343,18 @@ class CubevizImageViewer(ImageViewer):
 
         arr = self.get_contour_array()
 
-        vmax = arr.max()
+        vmax = np.nanmax(arr)
         if settings.vmax is not None:
             vmax = settings.vmax
 
-        vmin = arr.min()
+        vmin = np.nanmin(arr)
         if settings.vmin is not None:
             vmin = settings.vmin
 
         if settings.spacing is None:
             spacing = 1
             if vmax != vmin:
-                spacing = (vmax-vmin)/CONTOUR_DEFAULT_NUMBER_OF_LEVELSS
+                spacing = (vmax - vmin)/CONTOUR_DEFAULT_NUMBER_OF_LEVELSS
         else:
             spacing = settings.spacing
 
@@ -542,13 +543,14 @@ class CubevizImageViewer(ImageViewer):
     def slice_index(self):
         return self._slice_index
 
-    def update_component_unit_label(self, component_label):
+    def update_component_unit_label(self, component_id):
         """
         Update component's unit label.
-        :param component_label: component id as a string
+        :param component_id: component id
         """
-        data = self.state.layers_data[0]
-        unit = str(data.get_component(component_label).units)
+
+        data = component_id.parent
+        unit = str(data.get_component(component_id).units)
         if unit:
             self.component_unit_label = "{0}".format(unit)
         else:
@@ -681,9 +683,9 @@ class CubevizImageViewer(ImageViewer):
 
         # If viewer has a layer.
         if len(self.state.layers) > 0:
-            # Get array arr that contains the image values
-            # Default layer is layer at index 0.
-            arr = self.state.layers[0].get_sliced_data()
+
+            arr = self.first_visible_layer().state.get_sliced_data()
+
             if 0 <= y < arr.shape[0] and 0 <= x < arr.shape[1]:
                 # if x and y are in bounds. Note: x and y are swapped in array.
                 # get value and check if wcs is obtainable
@@ -702,7 +704,7 @@ class CubevizImageViewer(ImageViewer):
                             string = string + " " + self._coords_format_function(ra, dec)
                 # Pixel Value:
                 v = arr[y][x]
-                string = "{0:1.4f} {1} ".format(v, self.component_unit_label) + string
+                string = "{0:.3e} {1} ".format(v, self.component_unit_label) + string
         # Add a gap to string and add to viewer.
         string += " "
         self._dont_update_status = True
@@ -710,6 +712,20 @@ class CubevizImageViewer(ImageViewer):
         self._dont_update_status = False
         self.coord_label.setText(string)
         return
+
+    def first_visible_layer(self):
+        layers = self.visible_layers()
+        if len(layers) == 0:
+            raise Exception("Couldn't find any visible layers")
+        else:
+            return layers[0]
+
+    def visible_layers(self):
+        layers = []
+        for layer_artist in self.layers:
+            if layer_artist.enabled and layer_artist.visible:
+                layers.append(layer_artist)
+        return layers
 
     def mouse_exited(self, event):
         """

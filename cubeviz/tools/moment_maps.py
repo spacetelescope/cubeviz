@@ -2,10 +2,10 @@ from __future__ import absolute_import, division, print_function
 
 from qtpy.QtCore import Qt
 from qtpy import QtGui
-from qtpy.QtWidgets import (
-    QDialog, QComboBox, QPushButton,
-    QLabel, QWidget, QHBoxLayout, QVBoxLayout
-)
+from qtpy.QtWidgets import (QDialog, QComboBox, QPushButton,
+                            QLabel, QWidget, QHBoxLayout, QVBoxLayout)
+
+from .common import add_to_2d_container
 
 
 # TODO: In the future, it might be nice to be able to work across data_collection elements
@@ -89,7 +89,6 @@ class MomentMapsGUI(QDialog):
         self.setMaximumWidth(700)
         self.show()
 
-
     def calculate_callback(self):
         """
         Callback for when they hit calculate
@@ -111,6 +110,11 @@ class MomentMapsGUI(QDialog):
             cube_moment = cube.moment(order=order, axis=0)
 
             label = '{}-moment-{}'.format(data_name, order)
+
+            # Add new overlay/component to cubeviz. We add this both to the 2D
+            # container Data object and also as an overlay. In future we might be
+            # able to use the 2D container Data object for the overlays directly.
+            add_to_2d_container(self.parent, self.data, cube_moment.value, label)
             self.parent.add_overlay(cube_moment.value, label)
 
         except Exception as e:

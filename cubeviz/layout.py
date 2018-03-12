@@ -1,8 +1,6 @@
 import os
 from collections import OrderedDict
 
-import numpy as np
-
 from qtpy import QtWidgets, QtCore
 from qtpy.QtWidgets import QMenu, QAction, QInputDialog
 
@@ -27,6 +25,7 @@ from .controls.units import UnitController
 from .tools import arithmetic_gui, moment_maps, smoothing
 from .tools import collapse_cube
 from .tools.spectral_operations import SpectralOperationHandler
+
 
 class WidgetWrapper(QtWidgets.QWidget):
 
@@ -136,9 +135,6 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         # Add menu buttons to the cubeviz toolbar.
         self._init_menu_buttons()
-
-        # This maps the combo box indicies to the glue data component labels
-        self._component_labels = []
 
         self.sync = {}
         # Track the slice index of the synced viewers. This is updated by the
@@ -269,8 +265,12 @@ class CubeVizLayout(QtWidgets.QWidget):
                 self._units_controller.on_combobox_change(wavelength)
 
     @property
+    def data_components(self):
+        return self._data.main_components + self._data.derived_components
+
+    @property
     def component_labels(self):
-        return self._component_labels
+        return [str(cid) for cid in self.data_components]
 
     def refresh_viewer_combo_helpers(self):
         for i, helper in enumerate(self._viewer_combo_helpers):
@@ -288,40 +288,77 @@ class CubeVizLayout(QtWidgets.QWidget):
                                                      parent=self)
         operation_handler.exec_()
 
-    def add_new_data_component(self, name):
-        self._component_labels.append(str(name))
+    def add_new_data_component(self, component_id):
 
         self.refresh_viewer_combo_helpers()
 
         if self._active_view in self.all_views:
             view_index = self.all_views.index(self._active_view)
-            component_index = self._component_labels.index(str(name))
-            self.change_viewer_component(view_index, component_index)
+            self.change_viewer_component(view_index, component_id)
 
-    def remove_component(self, name):
-        if str(name) not in self._component_labels:
-            return
-        self._component_labels.remove(str(name))
+    def remove_data_component(self, component_id):
+        pass
 
     def _enable_option_buttons(self):
         for button in self._option_buttons:
             button.setEnabled(True)
         self.ui.sync_button.setEnabled(True)
 
-    def _get_change_viewer_func(self, view_index):
-        def change_viewer(dropdown_index):
-            view = self.all_views[view_index].widget()
-            label = self._component_labels[dropdown_index]
-            if view.is_smoothing_preview_active:
-                view.end_smoothing_preview()
-            view.update_component_unit_label(label)
-            view.update_axes_title(title=str(label))
-            view.state.layers[0]._update_attribute()
-            view.state.layers[0].attribute = self._data.id[label]
-            if view.is_contour_active:
-                view.draw_contour()
+    def _get_change_viewer_combo_func(self, combo, view_index):
 
-        return change_viewer
+        def _on_viewer_combo_change(dropdown_index):
+
+            # This function gets called whenever one of the viewer combos gets
+            # changed. The active combo is the one that comes from the parent
+            # _get_change_viewer_combo_func function.
+
+            # Find the relevant viewer
+            viewer = self.all_views[view_index].widget()
+
+            # Get the label of the component and the component ID itself
+            label = combo.currentText()
+            component = combo.currentData()
+
+            # If the user changed the current component, stop previewing
+            # smoothing.
+            if viewer.is_smoothing_preview_active:
+                viewer.end_smoothing_preview()
+
+            # Change the title and unit shown in the viwer
+            viewer.update_component_unit_label(component)
+            viewer.update_axes_title(title=str(label))
+
+            # Change the viewer's reference data to be the data containing the
+            # current component.
+            viewer.state.reference_data = component.parent
+
+            # The viewer may have multiple layers, for instance layers for
+            # the main cube and for any overlay datasets, as well as subset
+            # layers. We go through all the layers and make sure that for the
+            # layer which corresponds to the current dataset, the correct
+            # attribute is shown.
+            for layer_artist in viewer.layers:
+                layer_state = layer_artist.state
+                if layer_state.layer is component.parent:
+
+                    # We call _update_attribute here manually so that if this
+                    # function gets called before _update_attribute, it gets
+                    # called before we try and set the attribute below
+                    # (_update_attribute basically updates the internal list
+                    # of available attributes for the attribute combo)
+                    layer_state._update_attribute()
+                    layer_state.attribute = component
+
+                    # We then also make sure that this layer artist is the
+                    # one that is selected so that if the user uses e.g. the
+                    # contrast tool, it will change the right layer
+                    viewer._view.layer_list.select_artist(layer_artist)
+
+            # If contours are being currently shown, we need to force a redraw
+            if viewer.is_contour_active:
+                viewer.draw_contour()
+
+        return _on_viewer_combo_change
 
     def _enable_viewer_combo(self, data, index, combo_label, selection_label):
         combo = getattr(self.ui, combo_label)
@@ -329,7 +366,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         helper = ComponentIDComboHelper(self, selection_label)
         helper.set_multiple_data([data])
         combo.setEnabled(True)
-        combo.currentIndexChanged.connect(self._get_change_viewer_func(index))
+        combo.currentIndexChanged.connect(self._get_change_viewer_combo_func(combo, index))
         self._viewer_combo_helpers.append(helper)
 
     def _enable_all_viewer_combos(self, data):
@@ -344,38 +381,46 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._enable_viewer_combo(
             data, 0, 'single_viewer_combo', 'single_viewer_attribute')
         view = self.all_views[0].widget()
-        component_label = str(getattr(self, 'single_viewer_attribute'))
-        view.update_component_unit_label(component_label)
-        view.update_axes_title(component_label)
+        component = getattr(self, 'single_viewer_attribute')
+        view.update_component_unit_label(component)
+        view.update_axes_title(component.label)
 
         for i in range(1,4):
             combo_label = 'viewer{0}_combo'.format(i)
             selection_label = 'viewer{0}_attribute'.format(i)
             self._enable_viewer_combo(data, i, combo_label, selection_label)
             view = self.all_views[i].widget()
-            component_label = str(getattr(self, selection_label))
-            view.update_component_unit_label(component_label)
-            view.update_axes_title(component_label)
+            component = getattr(self, selection_label)
+            view.update_component_unit_label(component)
+            view.update_axes_title(component.label)
 
-    def change_viewer_component(self, view_index,
-                                component_index,
-                                force=False):
+    def change_viewer_component(self, view_index, component_id, force=False):
         """
         Given a viewer at an index view_index, change combo
         selection to component at an index component_index.
         :param view_index: int: Viewer index
-        :param component_index: int: Component index in viewer combo
+        :param component_id: ComponentID: Component ID in viewer combo
         :param force: bool: force change if component is already displayed.
+        """
+
+        combo = self.get_viewer_combo(view_index)
+
+        component_index = combo.findData(component_id)
+
+        if combo.currentIndex() == component_index and force:
+            combo.currentIndexChanged.emit(component_index)
+        else:
+            combo.setCurrentIndex(component_index)
+
+    def get_viewer_combo(self, view_index):
+        """
+        Get viewer combo for a given viewer index
         """
         if view_index == 0:
             combo_label = 'single_viewer_combo'
         else:
             combo_label = 'viewer{0}_combo'.format(view_index)
-        combo = getattr(self.ui, combo_label)
-        if combo.currentIndex() == component_index and force:
-            combo.currentIndexChanged.emit(component_index)
-        else:
-            combo.setCurrentIndex(component_index)
+        return getattr(self.ui, combo_label)
 
     def add_overlay(self, data, label):
         self._overlay_controller.add_overlay(data, label)
@@ -400,9 +445,6 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._active_cube = self.left_view
         self._last_active_view = self.single_view
         self._active_split_cube = self.left_view
-
-        # Set the component labels to what was actually in the file.
-        self._component_labels = [str(x).strip() for x in data.component_ids() if not x in data.coordinate_components]
 
         # Store pointer to wavelength information
         self._wavelengths = self.single_view._widget._data[0].coords.world_axis(self.single_view._widget._data[0], axis=0)
@@ -545,20 +587,25 @@ class CubeVizLayout(QtWidgets.QWidget):
         :param preview_title: str: Title displayed when previewing
         """
         # For single and first viewer:
+        self._original_components = {}
         for view_index in [0, 1]:
+            combo = self.get_viewer_combo(view_index)
+            self._original_components[view_index] = combo.currentData()
             view = self.all_views[view_index].widget()
-            component_index = self._component_labels.index(component_id)
-            self.change_viewer_component(view_index, component_index, force=True)
+            self.change_viewer_component(view_index, component_id, force=True)
             view.set_smoothing_preview(preview_function, preview_title)
 
     def end_smoothing_preview(self):
         """
         End preview and change viewer combo index to the first component.
         """
-        for view_index in [0,1]:
+        for view_index in [0, 1]:
             view = self.all_views[view_index].widget()
             view.end_smoothing_preview()
-            self.change_viewer_component(view_index, 0, force=True)
+            if view_index in self._original_components:
+                component_id = self._original_components[view_index]
+                self.change_viewer_component(view_index, component_id, force=True)
+        self._original_components = {}
 
     def showEvent(self, event):
         super(CubeVizLayout, self).showEvent(event)
