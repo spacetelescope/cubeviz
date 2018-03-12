@@ -1,0 +1,28 @@
+#! /bin/sh
+
+glue_hash="cc1dc09bff7113ab679a75dd7617456c5f85e005"
+spectral_cube_hash="cd06db6c5658baa2e182565b4fc6b337e383c8f1"           
+specviz_hash="437e5ca0d1da6b1099f89d2ee6230b19ff785796"
+cubeviz_hash="029302d36722d765a8dea2f38638ff1856c23e65"
+specutils_hash="legacy-specutils"
+astropy_hash="46b59dddfba1e24f39e64dccbd9eb6488e1f8df0"
+
+set -eu
+
+if [ "$conda_env" != "test-cubeviz-conda" ]; then
+    echo "Must be in the test-cubeviz-conda conda environment"
+    exit 1
+fi
+
+# Remove anything installed by conda
+conda remove astropy glue-core spectral-cube specviz cubeviz specutils
+
+# Install specific versions of each packages
+pip install --upgrade \
+    git+https://github.com/glue-viz/glue@${glue_hash} \
+    git+https://github.com/radio-astro-tools/spectral-cube@${spectral_cube_hash} \
+    git+https://github.com/spacetelescope/specviz@${specviz_hash} \
+    git+https://github.com/spacetelescope/cubeviz@${cubeviz_hash}  \
+    git+https://github.com/astropy/specutils.git@${specutils_hash} \
+    git+https://github.com/astropy/astropy@${astropy_hash}#egg=astropy
+
