@@ -356,6 +356,11 @@ class CubeVizLayout(QtWidgets.QWidget):
                     # contrast tool, it will change the right layer
                     viewer._view.layer_list.select_artist(layer_artist)
 
+            # If the combo corresponds to the currently active cube viewer,
+            # either activate or deactivate the slice slider as appropriate.
+            if self.all_views[view_index] is self._active_cube:
+                self._slice_controller.set_enabled(not viewer.has_2d_data)
+
             # If contours are being currently shown, we need to force a redraw
             if viewer.is_contour_active:
                 viewer.draw_contour()
@@ -553,7 +558,11 @@ class CubeVizLayout(QtWidgets.QWidget):
             if isinstance(view._widget, CubevizImageViewer):
                 self._active_cube = view
                 index = self._active_cube._widget.slice_index
-                self._slice_controller.update_index(index)
+                if view._widget.has_2d_data:
+                    self._slice_controller.set_enabled(False)
+                else:
+                    self._slice_controller.set_enabled(True)
+                    self._slice_controller.update_index(index)
 
     def activeSubWindow(self):
         return self._active_view

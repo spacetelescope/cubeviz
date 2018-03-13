@@ -47,9 +47,7 @@ class SliceController:
 
         :return:
         """
-        self._slice_slider.setEnabled(True)
-        self._slice_textbox.setEnabled(True)
-        self._wavelength_textbox.setEnabled(True)
+        self.set_enabled(True)
 
         self._slice_slider.setMinimum(0)
 
@@ -69,6 +67,11 @@ class SliceController:
         self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[middle_index]))
 
         self._cv_layout.synced_index = middle_index
+
+    def set_enabled(self, value):
+        self._slice_slider.setEnabled(value)
+        self._slice_textbox.setEnabled(value)
+        self._wavelength_textbox.setEnabled(value)
 
     def set_wavelengths(self, new_wavelengths, new_units):
 
