@@ -29,7 +29,7 @@ def test_starting_state(cubeviz_layout):
     assert cubeviz_layout._active_view is cubeviz_layout.split_views[0]
     assert cubeviz_layout._active_cube is cubeviz_layout.split_views[0]
 
-    for viewer in cubeviz_layout.all_views:
+    for viewer in cubeviz_layout.cube_views:
         assert viewer._widget.synced == True
 
 def assert_active_view_and_cube(layout, viewer):
@@ -95,7 +95,7 @@ def test_sync_checkboxes(qtbot, cubeviz_layout, viewer_index):
         toggle_viewer(qtbot, cubeviz_layout)
 
     checkbox = cubeviz_layout._synced_checkboxes[viewer_index]
-    viewer = cubeviz_layout.all_views[viewer_index]
+    viewer = cubeviz_layout.cube_views[viewer_index]
 
     left_click(qtbot, checkbox)
     assert viewer._widget.synced == False
@@ -134,7 +134,7 @@ def test_viewer_dropdowns(qtbot, cubeviz_layout, viewer_index):
         combo = getattr(cubeviz_layout.ui, 'viewer{0}_combo'.format(viewer_index))
         current_index = min(viewer_index - 1, 1) # only two datasets
 
-    widget = cubeviz_layout.all_views[viewer_index]._widget
+    widget = cubeviz_layout.cube_views[viewer_index]._widget
 
     # Make sure there are only two data components currently (dataset has two)
     assert combo.count() == 2
@@ -153,7 +153,7 @@ def test_add_data_component(qtbot, cubeviz_layout):
     for viewer_index in range(4):
         combo, current_index = setup_combo_and_index(
                                     qtbot, cubeviz_layout, viewer_index)
-        widget = cubeviz_layout.all_views[viewer_index]._widget
+        widget = cubeviz_layout.cube_views[viewer_index]._widget
 
         # Make sure the new index is there
         assert combo.count() == 3

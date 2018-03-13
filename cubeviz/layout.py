@@ -82,21 +82,19 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui = load_ui('layout.ui', self,
                           directory=os.path.dirname(__file__))
 
-        self.all_views = []
+        self.cube_views = []
 
         # Create the cube viewers and register to the hub.
         for _ in range(DEFAULT_NUM_SPLIT_VIEWERS + 1):
             ww = WidgetWrapper(CubevizImageViewer(
                     self.session, cubeviz_layout=self), tab_widget=self)
-            self.all_views.append(ww)
+            self.cube_views.append(ww)
             ww._widget.register_to_hub(self.session.hub)
 
         # Create specviz viewer and register to the hub.
         self.specviz = WidgetWrapper(SpecVizViewer(self.session), tab_widget=self)
         self.specviz._widget.register_to_hub(self.session.hub)
 
-        # TODO: determine whether to rename this or get rid of it
-        self.cube_views = self.all_views
         self.single_view = self.cube_views[0]
         self.split_views = self.cube_views[1:]
 
@@ -107,7 +105,7 @@ class CubeVizLayout(QtWidgets.QWidget):
             self.ui.viewer3_synced_checkbox
         ]
 
-        for view, checkbox in zip(self.all_views, self._synced_checkboxes):
+        for view, checkbox in zip(self.cube_views, self._synced_checkboxes):
             view._widget.assign_synced_checkbox(checkbox)
 
         # Add the views to the layouts.
@@ -331,8 +329,8 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         self.refresh_viewer_combo_helpers()
 
-        if self._active_view in self.all_views:
-            view_index = self.all_views.index(self._active_view)
+        if self._active_view in self.cube_views:
+            view_index = self.cube_views.index(self._active_view)
             self.change_viewer_component(view_index, component_id)
 
     def remove_data_component(self, component_id):
@@ -352,7 +350,7 @@ class CubeVizLayout(QtWidgets.QWidget):
             # _get_change_viewer_combo_func function.
 
             # Find the relevant viewer
-            viewer = self.all_views[view_index].widget()
+            viewer = self.cube_views[view_index].widget()
 
             # Get the label of the component and the component ID itself
             label = combo.currentText()
@@ -397,7 +395,7 @@ class CubeVizLayout(QtWidgets.QWidget):
 
             # If the combo corresponds to the currently active cube viewer,
             # either activate or deactivate the slice slider as appropriate.
-            if self.all_views[view_index] is self._active_cube:
+            if self.cube_views[view_index] is self._active_cube:
                 self._slice_controller.set_enabled(not viewer.has_2d_data)
 
             # If contours are being currently shown, we need to force a redraw
@@ -426,7 +424,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         """
         self._enable_viewer_combo(
             data, 0, 'single_viewer_combo', 'single_viewer_attribute')
-        view = self.all_views[0].widget()
+        view = self.cube_views[0].widget()
         component = getattr(self, 'single_viewer_attribute')
         view.update_component_unit_label(component)
         view.update_axes_title(component.label)
@@ -435,7 +433,7 @@ class CubeVizLayout(QtWidgets.QWidget):
             combo_label = 'viewer{0}_combo'.format(i)
             selection_label = 'viewer{0}_attribute'.format(i)
             self._enable_viewer_combo(data, i, combo_label, selection_label)
-            view = self.all_views[i].widget()
+            view = self.cube_views[i].widget()
             component = getattr(self, selection_label)
             view.update_component_unit_label(component)
             view.update_axes_title(component.label)
@@ -641,7 +639,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         return self._active_view
 
     def subWindowList(self):
-        return self.all_views + [self.specviz]
+        return self.cube_views + [self.specviz]
 
     def _setup_syncing(self):
         for attribute in ['x_min', 'x_max', 'y_min', 'y_max']:
@@ -677,7 +675,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         for view_index in [0, 1]:
             combo = self.get_viewer_combo(view_index)
             self._original_components[view_index] = combo.currentData()
-            view = self.all_views[view_index].widget()
+            view = self.cube_views[view_index].widget()
             self.change_viewer_component(view_index, component_id, force=True)
             view.set_smoothing_preview(preview_function, preview_title)
 
@@ -686,7 +684,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         End preview and change viewer combo index to the first component.
         """
         for view_index in [0, 1]:
-            view = self.all_views[view_index].widget()
+            view = self.cube_views[view_index].widget()
             view.end_smoothing_preview()
             if view_index in self._original_components:
                 component_id = self._original_components[view_index]

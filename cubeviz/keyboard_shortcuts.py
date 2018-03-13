@@ -35,7 +35,7 @@ def lock_coordinates(session):
     :return:
     """
     lay = session.application.current_tab
-    for w in lay.all_views:
+    for w in lay.cube_views:
         civ = w._widget
         if civ.is_mouse_over:
             civ.toggle_hold_coords()
@@ -50,7 +50,7 @@ def copy_coordinates_to_clipboard(session):
     """
     coords_status = False
     lay = session.application.current_tab
-    for w in lay.all_views:
+    for w in lay.cube_views:
         civ = w._widget
         if civ.is_mouse_over:
             coords_status = civ.get_coords()

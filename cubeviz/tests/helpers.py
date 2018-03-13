@@ -48,7 +48,7 @@ def assert_viewer_indices(viewer_array, index):
         assert viewer._widget.slice_index == index
 
 def assert_all_viewer_indices(layout, index):
-    assert_viewer_indices(layout.all_views, index)
+    assert_viewer_indices(layout.cube_views, index)
 
 def assert_wavelength_text(layout, text):
     assert layout._slice_controller._wavelength_textbox.text() == str(text)
