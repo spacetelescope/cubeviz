@@ -21,6 +21,9 @@ class CubevizManager(HubListener):
         self._app.close_tab(0, warn=False)
         self.hide_sidebar()
 
+        # For cubeviz, ROI selection should be in 'NewMode' by default
+        self._app._mode_toolbar.set_mode('new')
+
         self._hub.subscribe(
             self, DataCollectionAddMessage, handler=self.handle_new_dataset)
         self._hub.subscribe(
