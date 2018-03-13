@@ -6,7 +6,7 @@ set -eu
 
 conda_env=`conda env list | grep '*' | cut -d\  -f1`
 min_conda_version="4.4"
-download_location="https://raw.githubusercontent.com/brechmos-stsci/cubeviz/tester-script/scripts/update_cubeviz_test_env_pip"
+download_location="https://raw.githubusercontent.com/spacetelescope/cubeviz/master/scripts/update_cubeviz_test_env_pip"
 
 if [ "$conda_env" != "test-cubeviz-conda" ]; then
     echo "Must be in the test-cubeviz-conda conda environment"
