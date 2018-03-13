@@ -9,8 +9,8 @@ astropy_hash="46b59dddfba1e24f39e64dccbd9eb6488e1f8df0"
 
 set -eu
 
+echo "Checking to make sure we are in the right conda environment"
 conda_env=`conda env list | grep '*' | cut -d\  -f1`
-
 if [ "$conda_env" != "test-cubeviz-conda" ]; then
     echo "Must be in the test-cubeviz-conda conda environment"
     exit 1
@@ -18,9 +18,11 @@ fi
 
 # Remove anything installed by conda, if there is an error, i.e., no packages
 # then continue processing
+echo "Remove a few of the conda packages we want to replace"
 conda remove astropy glue-core spectral-cube specviz cubeviz specutils || true
 
 # Install specific versions of each packages
+echo "pip install the packages based on the commit hashes"
 pip install --upgrade \
     git+https://github.com/glue-viz/glue@${glue_hash} \
     git+https://github.com/radio-astro-tools/spectral-cube@${spectral_cube_hash} \
