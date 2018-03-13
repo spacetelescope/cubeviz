@@ -255,8 +255,9 @@ class CubeVizLayout(QtWidgets.QWidget):
             ex = arithmetic_gui.SelectArithmetic(self._data, self.session.data_collection, parent=self)
 
         if name == "Moment Maps":
-            moment_maps.MomentMapsGUI(
+            mm_gui = moment_maps.MomentMapsGUI(
                 self._data, self.session.data_collection, parent=self)
+            mm_gui.display()
 
         if name == 'Wavelength Units':
             current_unit = self._units_controller.units_titles.index(self._units_controller._new_units.long_names[0].title())
