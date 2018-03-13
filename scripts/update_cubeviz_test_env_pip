@@ -9,6 +9,8 @@ astropy_hash="46b59dddfba1e24f39e64dccbd9eb6488e1f8df0"
 
 set -eu
 
+conda_env=`conda env list | grep '*' | cut -d\  -f1`
+
 if [ "$conda_env" != "test-cubeviz-conda" ]; then
     echo "Must be in the test-cubeviz-conda conda environment"
     exit 1

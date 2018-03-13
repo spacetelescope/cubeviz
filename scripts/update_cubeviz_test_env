@@ -17,5 +17,5 @@ echo "Downloading the update script"
 output_file=`mktemp`
 wget -O - --no-check-certificate https://raw.githubusercontent.com/brechmos-stsci/cubeviz/tester-script/scripts/update_cubeviz_test_env_pip > $output_file
 
-echo "Running the update script"
-`sh $output`
+echo "Running the update script $output_file"
+`sh $output_file`
