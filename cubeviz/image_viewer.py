@@ -7,6 +7,8 @@ import matplotlib.image as mimage
 
 from astropy import units as u
 from astropy.coordinates import SkyCoord
+from astropy.wcs.utils import wcs_to_celestial_frame
+from astropy.coordinates import BaseRADecFrame
 
 from qtpy.QtWidgets import (QLabel, QMessageBox)
 
@@ -22,7 +24,7 @@ from glue.viewers.common.qt.tool import Tool
 
 from .utils.contour import ContourSettings
 
-CONTOUR_DEFAULT_NUMBER_OF_LEVELSS = 8
+CONTOUR_DEFAULT_NUMBER_OF_LEVELS = 8
 CONTOUR_MAX_NUMBER_OF_LEVELS = 1000
 
 __all__ = ['CubevizImageViewer']
@@ -354,7 +356,7 @@ class CubevizImageViewer(ImageViewer):
         if settings.spacing is None:
             spacing = 1
             if vmax != vmin:
-                spacing = (vmax - vmin)/CONTOUR_DEFAULT_NUMBER_OF_LEVELSS
+                spacing = (vmax - vmin)/CONTOUR_DEFAULT_NUMBER_OF_LEVELS
         else:
             spacing = settings.spacing
 
@@ -371,7 +373,7 @@ class CubevizImageViewer(ImageViewer):
             settings.data_spacing = spacing
             if settings.dialog is not None:
                 settings.dialog.custom_spacing_checkBox.setChecked(False)
-            spacing = (vmax - vmin)/CONTOUR_DEFAULT_NUMBER_OF_LEVELSS
+            spacing = (vmax - vmin)/CONTOUR_DEFAULT_NUMBER_OF_LEVELS
             levels = np.arange(vmin, vmax, spacing)
             levels = np.append(levels, vmax)
 
@@ -435,7 +437,7 @@ class CubevizImageViewer(ImageViewer):
         vmin = arr.min()
         spacing = 1
         if vmax != vmin:
-            spacing = (vmax - vmin)/CONTOUR_DEFAULT_NUMBER_OF_LEVELSS
+            spacing = (vmax - vmin)/CONTOUR_DEFAULT_NUMBER_OF_LEVELS
         self.contour_settings.data_max = vmax
         self.contour_settings.data_min = vmin
         self.contour_settings.data_spacing = spacing
@@ -576,16 +578,46 @@ class CubevizImageViewer(ImageViewer):
             self.statusBar().showMessage("Frozen Coordinates")
             self.hold_coords = True
 
+    def init_ra_dec(self):
+        """
+        Initialize the format of RA and DEC
+        on the image viewers.
+        Options:
+            1) Sexagesimal:
+                _coords_in_degrees -> False
+                formatter_0 -> 'hh:mm:ss'
+                formatter_1 -> 'dd:mm:ss'
+            2) Decimal Degrees:
+                _coords_in_degrees -> True
+                formatter_0 -> 'd.dddd'
+                formatter_1 -> 'd.dddd'
+        """
+        self._coords_in_degrees = False
+        self.axes.coords[0].set_major_formatter('hh:mm:ss')
+        self.axes.coords[1].set_major_formatter('dd:mm:ss')
+        self.figure.canvas.draw()
+
     def toggle_coords_in_degrees(self):
         """
         Switch coords_in_degrees state
         """
+        data = self.state.layers_data[0]
+        is_ra_dec = isinstance(wcs_to_celestial_frame(data.coords.wcs),
+                               BaseRADecFrame)
         if self._coords_in_degrees:
             self._coords_in_degrees = False
             self._coords_format_function = self._format_to_hex_string
+            if is_ra_dec:
+                self.axes.coords[0].set_major_formatter('hh:mm:ss')
+                self.axes.coords[1].set_major_formatter('dd:mm:ss')
+                self.figure.canvas.draw()
         else:
             self._coords_in_degrees = True
             self._coords_format_function = self._format_to_degree_string
+            if is_ra_dec:
+                self.axes.coords[0].set_major_formatter('d.dddd')
+                self.axes.coords[1].set_major_formatter('d.dddd')
+                self.figure.canvas.draw()
 
     def message_changed_callback(self, event):
         """

@@ -1,8 +1,11 @@
 import os
 from collections import OrderedDict
 
+from astropy.wcs.utils import wcs_to_celestial_frame
+from astropy.coordinates import BaseRADecFrame
+
 from qtpy import QtWidgets, QtCore
-from qtpy.QtWidgets import QMenu, QAction, QInputDialog
+from qtpy.QtWidgets import QMenu, QAction, QInputDialog, QActionGroup
 
 from glue.utils.qt import load_ui
 from glue.utils.qt import get_qapp
@@ -134,6 +137,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._units_controller = UnitController(self)
 
         # Add menu buttons to the cubeviz toolbar.
+        self.ra_dec_format_menu = None
         self._init_menu_buttons()
 
         self.sync = {}
@@ -176,6 +180,22 @@ class CubeVizLayout(QtWidgets.QWidget):
             ('Hide Toolbars', ['checkable', self._toggle_toolbars]),
             ('Wavelength Units', lambda: self._open_dialog('Wavelength Units', None))
         ]))
+
+        # Add toggle RA-DEC format:
+        format_menu = view_menu.addMenu("RA-DEC Format")
+        format_action_group = QActionGroup(format_menu)
+        self.ra_dec_format_menu = format_menu
+
+        # Make sure to change all instances of the the names
+        # of the formats if modifications are made to them.
+        for format_name in ["Sexagesimal", "Decimal Degrees"]:
+            act = QAction(format_name, format_menu)
+            act.triggered.connect(self._toggle_all_coords_in_degrees)
+            act.setActionGroup(format_action_group)
+            act.setCheckable(True)
+            act.setChecked(True) if format == "Sexagesimal" else act.setChecked(False)
+            format_menu.addAction(act)
+
         self.ui.view_option_button.setMenu(view_menu)
 
         # Create the Data Processing Menu
@@ -263,6 +283,21 @@ class CubeVizLayout(QtWidgets.QWidget):
             wavelength, ok_pressed = QInputDialog.getItem(self, "Pick a wavelength", "Wavelengths:", self._units_controller.units_titles, current_unit, False)
             if ok_pressed:
                 self._units_controller.on_combobox_change(wavelength)
+
+    def _toggle_all_coords_in_degrees(self):
+        """
+        Switch ra-dec b/w "Sexagesimal" and "Decimal Degrees"
+        """
+        menu = self.ra_dec_format_menu
+        for action in menu.actions():
+            if "Decimal Degrees" == action.text():
+                coords_in_degrees = action.isChecked()
+                break
+
+        for view in self.cube_views:
+            viewer = view.widget()
+            if viewer._coords_in_degrees != coords_in_degrees:
+                viewer.toggle_coords_in_degrees()
 
     @property
     def data_components(self):
@@ -425,6 +460,36 @@ class CubeVizLayout(QtWidgets.QWidget):
     def add_overlay(self, data, label):
         self._overlay_controller.add_overlay(data, label)
 
+    def _set_data_coord_system(self, data):
+        """
+        Check if data coordinates are in
+        RA-DEC first. Then set viewers to
+        the default coordinate system.
+        :param data: input data
+        """
+        is_ra_dec = isinstance(wcs_to_celestial_frame(data.coords.wcs),
+                               BaseRADecFrame)
+        self.ra_dec_format_menu.setDisabled(not is_ra_dec)
+        if not is_ra_dec:
+            return
+
+        is_coords_in_degrees = False
+        for view in self.cube_views:
+            viewer = view.widget()
+            viewer.init_ra_dec()
+            is_coords_in_degrees = viewer._coords_in_degrees
+
+        if is_coords_in_degrees:
+            format_name = "Decimal Degrees"
+        else:
+            format_name = "Sexagesimal"
+
+        menu = self.ra_dec_format_menu
+        for action in menu.actions():
+            if format_name == action.text():
+                action.setChecked(True)
+                break
+
     def add_data(self, data):
         """
         Called by a function outside the class in order to add data to cubeviz.
@@ -460,6 +525,10 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._enable_all_viewer_combos(data)
 
         self.subWindowActivated.emit(self._active_view)
+
+        # Check if coord system is RA and DEC (ie not galactic etc..)
+        self._set_data_coord_system(data)
+
 
     def eventFilter(self, obj, event):
 
