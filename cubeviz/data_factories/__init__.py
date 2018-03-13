@@ -41,6 +41,8 @@ class DataConfiguration:
             self._name = cfg['name']
             self._type = cfg['type']
 
+            print("in __init__", self._name, self._type)
+
             try:
                 self._priority = int(cfg.get('priority', 0))
             except Exception:
@@ -49,6 +51,8 @@ class DataConfiguration:
             self._configuration = cfg['match']
 
             self._data = cfg.get('data', None)
+
+            print("in __init__ under data,", self._data)
 
             if 'flux_unit_replacements' in cfg:
                 self.flux_unit_replacements = cfg['flux_unit_replacements']
@@ -110,6 +114,8 @@ class DataConfiguration:
 
             hdulist = fits.open(data_filename)
 
+            print(hdulist[0].data)
+
             if not label:
                 label = "{}: {}".format(self._name, splitext(basename(data_filename))[0])
                 data = Data(label=label)
@@ -137,6 +143,9 @@ class DataConfiguration:
                         if 'BUNIT' in hdu.header:
                             c = data.get_component(component_name)
                             c.units = self.get_units(hdu.header)
+                    else:
+                        component_name = os.path.basename(data_filename)
+                        data.add_component(component=hdu.data.astype(np.float), label=component_name)
 
             # For the purposes of exporting, we keep a reference to the original HDUList object
             data._cubeviz_hdulist = hdulist
@@ -393,6 +402,7 @@ class DataFactoryConfiguration:
             # Load the YAML file and get the name, priority and create the data factory wrapper
             with open(config_file, 'r') as yamlfile:
                 cfg = yaml.load(yamlfile)
+                print("checking yaml file", cfg)
 
             name = cfg['name']
 
