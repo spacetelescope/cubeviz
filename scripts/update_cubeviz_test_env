@@ -20,9 +20,5 @@ output_file=`mktemp`
 # https://stackoverlfow.com/questions/14411103/check-for-existence-of-wget-curl
 wget -O - --no-check-certificate $download_location > $output_file || curl -o $output_file $download_location
 
-echo "-------------"
-cat $output_file
-echo "-------------"
-
 echo "Running the update script $output_file"
 sh $output_file
