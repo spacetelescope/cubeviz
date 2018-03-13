@@ -7,24 +7,13 @@ import numpy as np
 
 from ...tests.helpers import (enter_slice_text, enter_wavelength_text,
                               left_click, select_viewer, enter_slice_text,
-                              toggle_viewer)
+                              toggle_viewer, assert_viewer_indices,
+                              assert_all_viewer_indices,
+                              assert_wavelength_text, assert_slice_text)
 
 
 def set_slider_index(layout, index):
     layout._slice_controller._slice_slider.setSliderPosition(index)
-
-def assert_viewer_indices(viewer_array, index):
-    for viewer in viewer_array:
-        assert viewer._widget.slice_index == index
-
-def assert_all_viewer_indices(layout, index):
-    assert_viewer_indices(layout.all_views, index)
-
-def assert_slice_text(layout, text):
-    assert layout._slice_controller._slice_textbox.text() == str(text)
-
-def assert_wavelength_text(layout, text):
-    assert layout._slice_controller._wavelength_textbox.text() == str(text)
 
 def find_nearest_slice(wavelengths, value):
     return np.argsort(abs(wavelengths - value))[0]
