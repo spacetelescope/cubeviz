@@ -19,7 +19,6 @@ class CubevizManager(HubListener):
 
         self._empty_layout = self._app.add_fixed_layout_tab(CubeVizLayout)
         self._app.close_tab(0, warn=False)
-        self.hide_sidebar()
 
         self._hub.subscribe(
             self, DataCollectionAddMessage, handler=self.handle_new_dataset)
