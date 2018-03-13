@@ -319,6 +319,8 @@ class CubeVizLayout(QtWidgets.QWidget):
             label = combo.currentText()
             component = combo.currentData()
 
+            viewer.has_2d_data = component.parent[label].ndim == 2
+
             # If the user changed the current component, stop previewing
             # smoothing.
             if viewer.is_smoothing_preview_active:

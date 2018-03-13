@@ -183,6 +183,9 @@ class CubevizImageViewer(ImageViewer):
         self.is_axes_hidden = False  # True if axes is hidden
         self.axes_title = ""  # Plot title
 
+        self._has_2d_data = False  # True if currently displayed data is 2D
+        self._toggle_3d = False  # True if we just toggled from 2D to 3D
+
         self.coord_label = QLabel("")  # Coord display
         self.statusBar().addPermanentWidget(self.coord_label)
 
@@ -198,8 +201,13 @@ class CubevizImageViewer(ImageViewer):
         self.state.add_callback('slices', self._slice_callback)
 
     def _slice_callback(self, new_slice):
-        if self._slice_index is not None:
+        if self._slice_index is not None and not self.has_2d_data:
             self.cubeviz_layout._slice_controller.update_index(new_slice[0])
+        # When toggling from 2D to 3D data component, update to synced index
+        elif self._toggle_3d:
+            self._toggle_3d = False
+            self.cubeviz_layout._slice_controller.update_index(self.cubeviz_layout.synced_index)
+            self.update_slice_index(self.cubeviz_layout.synced_index)
 
     def get_data_layer_artist(self, layer=None, layer_state=None):
         if layer.ndim == 1:
@@ -211,6 +219,16 @@ class CubevizImageViewer(ImageViewer):
     @property
     def is_preview_active(self):
         return self.is_contour_preview_active or self.is_smoothing_preview_active
+
+    @property
+    def has_2d_data(self):
+        return self._has_2d_data or self._toggle_3d
+
+    @has_2d_data.setter
+    def has_2d_data(self, value):
+        if self._has_2d_data and not value:
+            self._toggle_3d = True
+        self._has_2d_data = value
 
     def update_axes_title(self, title=None):
         """
@@ -483,6 +501,10 @@ class CubevizImageViewer(ImageViewer):
             if isinstance(layer, CubevizImageLayerArtist):
                 layer.state.slice_index_override = None
 
+        # Do not update if displaying a 2D data component
+        if len(self.state.slices) == 2:
+            return
+
         self._slice_index = index
         z, y, x = self.state.slices
         self.state.slices = (self._slice_index, y, x)
@@ -533,7 +555,7 @@ class CubevizImageViewer(ImageViewer):
 
     @property
     def synced(self):
-        return self._synced_checkbox.isChecked()
+        return self._synced_checkbox.isChecked() and not self.has_2d_data
 
     @synced.setter
     def synced(self, value):
