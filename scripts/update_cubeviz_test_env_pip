@@ -16,8 +16,9 @@ if [ "$conda_env" != "test-cubeviz-conda" ]; then
     exit 1
 fi
 
-# Remove anything installed by conda
-conda remove astropy glue-core spectral-cube specviz cubeviz specutils
+# Remove anything installed by conda, if there is an error, i.e., no packages
+# then continue processing
+conda remove astropy glue-core spectral-cube specviz cubeviz specutils || true
 
 # Install specific versions of each packages
 pip install --upgrade \
