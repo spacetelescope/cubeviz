@@ -30,6 +30,9 @@ from .tools import collapse_cube
 from .tools.spectral_operations import SpectralOperationHandler
 
 
+DEFAULT_NUM_SPLIT_VIEWERS = 3
+
+
 class WidgetWrapper(QtWidgets.QWidget):
 
     def __init__(self, widget=None, tab_widget=None, parent=None):
@@ -79,23 +82,22 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui = load_ui('layout.ui', self,
                           directory=os.path.dirname(__file__))
 
-        # Create the views and register to the hub.
-        self.single_view = WidgetWrapper(CubevizImageViewer(self.session, cubeviz_layout=self), tab_widget=self)
-        self.left_view = WidgetWrapper(CubevizImageViewer(self.session, cubeviz_layout=self), tab_widget=self)
-        self.middle_view = WidgetWrapper(CubevizImageViewer(self.session, cubeviz_layout=self), tab_widget=self)
-        self.right_view = WidgetWrapper(CubevizImageViewer(self.session, cubeviz_layout=self), tab_widget=self)
+        self.all_views = []
+
+        # Create the cube viewers and register to the hub.
+        for _ in range(DEFAULT_NUM_SPLIT_VIEWERS + 1):
+            ww = WidgetWrapper(CubevizImageViewer(
+                    self.session, cubeviz_layout=self), tab_widget=self)
+            self.all_views.append(ww)
+            ww._widget.register_to_hub(self.session.hub)
+
+        # Create specviz viewer and register to the hub.
         self.specviz = WidgetWrapper(SpecVizViewer(self.session), tab_widget=self)
-
-        self.single_view._widget.register_to_hub(self.session.hub)
-        self.left_view._widget.register_to_hub(self.session.hub)
-        self.middle_view._widget.register_to_hub(self.session.hub)
-        self.right_view._widget.register_to_hub(self.session.hub)
         self.specviz._widget.register_to_hub(self.session.hub)
-
-        self.all_views = [self.single_view, self.left_view, self.middle_view, self.right_view]
 
         # TODO: determine whether to rename this or get rid of it
         self.cube_views = self.all_views
+        self.single_view = self.cube_views[0]
         self.split_views = self.cube_views[1:]
 
         self._synced_checkboxes = [
@@ -110,9 +112,8 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         # Add the views to the layouts.
         self.ui.single_image_layout.addWidget(self.single_view)
-        self.ui.image_row_layout.addWidget(self.left_view)
-        self.ui.image_row_layout.addWidget(self.middle_view)
-        self.ui.image_row_layout.addWidget(self.right_view)
+        for viewer in self.split_views:
+            self.ui.image_row_layout.addWidget(viewer)
 
         self.ui.specviz_layout.addWidget(self.specviz)
 
@@ -516,10 +517,10 @@ class CubeVizLayout(QtWidgets.QWidget):
             checkbox.setEnabled(True)
 
         self._has_data = True
-        self._active_view = self.left_view
-        self._active_cube = self.left_view
+        self._active_view = self.split_views[0]
+        self._active_cube = self.split_views[0]
         self._last_active_view = self.single_view
-        self._active_split_cube = self.left_view
+        self._active_split_cube = self.split_views[0]
 
         # Store pointer to wavelength information
         self._wavelengths = self.single_view._widget._data[0].coords.world_axis(self.single_view._widget._data[0], axis=0)
@@ -640,14 +641,16 @@ class CubeVizLayout(QtWidgets.QWidget):
         return self._active_view
 
     def subWindowList(self):
-        return [self.single_view, self.left_view, self.middle_view, self.right_view, self.specviz]
+        return self.all_views + [self.specviz]
 
     def _setup_syncing(self):
         for attribute in ['x_min', 'x_max', 'y_min', 'y_max']:
-            sync1 = keep_in_sync(self.left_view._widget.state, attribute,
-                                 self.middle_view._widget.state, attribute)
-            sync2 = keep_in_sync(self.middle_view._widget.state, attribute,
-                                 self.right_view._widget.state, attribute)
+            # TODO: this will need to be generalized if we want to support an
+            # arbitrary number of viewers.
+            sync1 = keep_in_sync(self.split_views[0]._widget.state, attribute,
+                                 self.split_views[1]._widget.state, attribute)
+            sync2 = keep_in_sync(self.split_views[1]._widget.state, attribute,
+                                 self.split_views[2]._widget.state, attribute)
             self.sync[attribute] = sync1, sync2
         self._on_sync_click()
 
@@ -694,7 +697,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         super(CubeVizLayout, self).showEvent(event)
         # Make split image mode the default layout
         self._activate_split_image_mode()
-        self._update_active_view(self.left_view)
+        self._update_active_view(self.split_views[0])
 
     def change_slice_index(self, amount):
         self._slice_controller.change_slider_value(amount)

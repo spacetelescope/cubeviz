@@ -79,5 +79,5 @@ def reset_app_state(qtbot, layout):
     enter_slice_text(qtbot, layout, '1024')
     if layout._single_viewer_mode:
         toggle_viewer(qtbot, layout)
-    if layout._active_view is not layout.left_view:
-        select_viewer(qtbot, layout.left_view)
+    if layout._active_view is not layout.split_views[0]:
+        select_viewer(qtbot, layout.split_views[0])
