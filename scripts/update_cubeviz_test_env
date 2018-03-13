@@ -1,6 +1,6 @@
 #! /bin/sh
 
-echo "Going to update conda environment test=cubeviz-conda"
+echo "Going to update conda environment test-cubeviz-conda"
 
 set -eu
 
