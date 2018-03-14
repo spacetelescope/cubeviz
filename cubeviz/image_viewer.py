@@ -5,6 +5,7 @@ import numpy as np
 
 from matplotlib.axes import Axes
 import matplotlib.image as mimage
+from matplotlib.patches import Circle
 
 from astropy import units as u
 from astropy.coordinates import SkyCoord
@@ -225,9 +226,11 @@ class CubevizImageViewer(ImageViewer):
     def _create_stats_axes(self):
         rect = 0.01, 0.88, 0.12, 0.10
         axes = self.figure.add_axes(rect, xticks=[], yticks=[])
-        axes.text(x=0.05, y=0.75, s='slice: {}'.format(self._slice_index))
-        axes.text(x=0.05, y=0.50, s=r'$\mu = 0.15$')
-        axes.text(x=0.05, y=0.25, s=r'$\sigma = 0.10$')
+        circle = Circle((0.15,0.85), 0.05, color='r')
+        axes.add_artist(circle)
+        axes.text(x=0.05, y=0.55, s='slice: {}'.format(self._slice_index))
+        axes.text(x=0.05, y=0.30, s=r'$\mu = 0.15$')
+        axes.text(x=0.05, y=0.05, s=r'$\sigma = 0.10$')
         return axes
 
     def draw_stats_axes(self):
