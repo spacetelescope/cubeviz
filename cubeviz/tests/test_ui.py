@@ -4,10 +4,23 @@ import os
 import pytest
 import numpy as np
 
+from cubeviz.tools.moment_maps import MomentMapsGUI
+
+from .helpers import (toggle_viewer, select_viewer, left_click,
+                      left_button_press, right_button_press, enter_slice_text,
+                      assert_all_viewer_indices, assert_slice_text)
+
+
 DATA_LABELS = ['018.DATA', '018.NOISE']
 
-from .helpers import toggle_viewer, select_viewer, left_click, left_button_press, right_button_press
 
+@pytest.fixture(scope='module')
+def moment_map(cubeviz_layout):
+    cl = cubeviz_layout
+    mm_gui = MomentMapsGUI(cl._data, cl.session.data_collection, parent=cl)
+    mm_gui.do_calculation(1, DATA_LABELS[0])
+
+    return mm_gui.label
 
 def test_starting_state(cubeviz_layout):
     assert cubeviz_layout.isVisible() == True
@@ -170,3 +183,51 @@ def test_key_shortcuts(qtbot, cubeviz_layout):
     assert cubeviz_layout._slice_controller._slice_slider.value() == slice_val
     right_button_press(qtbot, cubeviz_layout)
     assert cubeviz_layout._slice_controller._slice_slider.value() == slice_val + 1
+
+def assert_slider_enabled(cubeviz_layout, enabled):
+    assert cubeviz_layout._slice_controller._slice_slider.isEnabled() == enabled
+    assert cubeviz_layout._slice_controller._slice_textbox.isEnabled() == enabled
+    assert cubeviz_layout._slice_controller._wavelength_textbox.isEnabled() == enabled
+
+@pytest.mark.parametrize('while_active', [True, False])
+def test_2d_data_components(qtbot, cubeviz_layout, moment_map, while_active):
+    """This test ensures that the slider behaves as expected when 2D data
+    components are present. It tests updating the viewer containing 2D data
+    both while it is the active viewer and while it is not the active
+    viewer."""
+
+    assert moment_map == DATA_LABELS[0] + '-moment-1'
+
+    assert_slider_enabled(cubeviz_layout, True)
+
+    combo, _ = setup_combo_and_index(qtbot, cubeviz_layout, 1)
+    combo.setCurrentIndex(combo.findText(moment_map))
+
+    assert_slider_enabled(cubeviz_layout, False)
+    assert cubeviz_layout.left_view._widget.has_2d_data == True
+    assert cubeviz_layout.left_view._widget.synced == False
+
+    # Change the active viewer and make sure the slider is re-enabled
+    select_viewer(qtbot, cubeviz_layout.middle_view)
+    assert_slider_enabled(cubeviz_layout, True)
+
+    enter_slice_text(qtbot, cubeviz_layout, 1234)
+
+    # Change back to the left viewer currently displaying 2D data
+    if while_active:
+        select_viewer(qtbot, cubeviz_layout.left_view)
+        assert cubeviz_layout.left_view._widget.has_2d_data == True
+        assert cubeviz_layout.left_view._widget.synced == False
+
+    # Return to displaying 3D data component
+    combo.setCurrentIndex(combo.findText(DATA_LABELS[0]))
+    assert_all_viewer_indices(cubeviz_layout, 1234)
+    assert cubeviz_layout.left_view._widget.has_2d_data == False
+    assert cubeviz_layout.left_view._widget.synced == True
+
+    if not while_active:
+        select_viewer(qtbot, cubeviz_layout.left_view)
+        assert_slider_enabled(cubeviz_layout, True)
+
+    assert_slider_enabled(cubeviz_layout, True)
+    assert_slice_text(cubeviz_layout, 1234)

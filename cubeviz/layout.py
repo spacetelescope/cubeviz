@@ -255,8 +255,9 @@ class CubeVizLayout(QtWidgets.QWidget):
             ex = arithmetic_gui.SelectArithmetic(self._data, self.session.data_collection, parent=self)
 
         if name == "Moment Maps":
-            moment_maps.MomentMapsGUI(
+            mm_gui = moment_maps.MomentMapsGUI(
                 self._data, self.session.data_collection, parent=self)
+            mm_gui.display()
 
         if name == 'Wavelength Units':
             current_unit = self._units_controller.units_titles.index(self._units_controller._new_units.long_names[0].title())
@@ -319,6 +320,8 @@ class CubeVizLayout(QtWidgets.QWidget):
             label = combo.currentText()
             component = combo.currentData()
 
+            viewer.has_2d_data = component.parent[label].ndim == 2
+
             # If the user changed the current component, stop previewing
             # smoothing.
             if viewer.is_smoothing_preview_active:
@@ -353,6 +356,11 @@ class CubeVizLayout(QtWidgets.QWidget):
                     # one that is selected so that if the user uses e.g. the
                     # contrast tool, it will change the right layer
                     viewer._view.layer_list.select_artist(layer_artist)
+
+            # If the combo corresponds to the currently active cube viewer,
+            # either activate or deactivate the slice slider as appropriate.
+            if self.all_views[view_index] is self._active_cube:
+                self._slice_controller.set_enabled(not viewer.has_2d_data)
 
             # If contours are being currently shown, we need to force a redraw
             if viewer.is_contour_active:
@@ -551,7 +559,11 @@ class CubeVizLayout(QtWidgets.QWidget):
             if isinstance(view._widget, CubevizImageViewer):
                 self._active_cube = view
                 index = self._active_cube._widget.slice_index
-                self._slice_controller.update_index(index)
+                if view._widget.has_2d_data:
+                    self._slice_controller.set_enabled(False)
+                else:
+                    self._slice_controller.set_enabled(True)
+                    self._slice_controller.update_index(index)
 
     def activeSubWindow(self):
         return self._active_view

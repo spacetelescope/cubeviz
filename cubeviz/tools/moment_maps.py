@@ -18,23 +18,21 @@ class MomentMapsGUI(QDialog):
         # Using list comprehension to keep the order of the component_ids
         self.data_components = [str(x).strip() for x in data.component_ids() if not x in data.coordinate_components]
 
-        self.setWindowFlags(self.windowFlags() | Qt.Tool)
-        self.title = "Arithmetic Calculation"
         self.data = data
         self.data_collection = data_collection
         self.parent = parent
 
-        self.currentAxes = None
-        self.currentKernel = None
+        self.label = ''
 
-        self.createUI()
-
-    def createUI(self):
+    def display(self):
         """
         Create the popup box with the calculation input area and buttons.
 
         :return:
         """
+        self.setWindowFlags(self.windowFlags() | Qt.Tool)
+        self.setWindowTitle("Create Moment Map")
+
         boldFont = QtGui.QFont()
         boldFont.setBold(True)
 
@@ -89,6 +87,25 @@ class MomentMapsGUI(QDialog):
         self.setMaximumWidth(700)
         self.show()
 
+    def do_calculation(self, order, data_name):
+        # Grab spectral-cube
+        import spectral_cube
+        cube = spectral_cube.SpectralCube(self.data[data_name], wcs=self.data.coords.wcs)
+
+        try:
+            cube_moment = cube.moment(order=order, axis=0)
+
+            self.label = '{}-moment-{}'.format(data_name, order)
+
+            # Add new overlay/component to cubeviz. We add this both to the 2D
+            # container Data object and also as an overlay. In future we might be
+            # able to use the 2D container Data object for the overlays directly.
+            add_to_2d_container(self.parent, self.data, cube_moment.value, self.label)
+            self.parent.add_overlay(cube_moment.value, self.label)
+
+        except Exception as e:
+            print('Error {}'.format(e))
+
     def calculate_callback(self):
         """
         Callback for when they hit calculate
@@ -99,26 +116,7 @@ class MomentMapsGUI(QDialog):
         order = int(self.order_combobox.currentText())
         data_name = self.data_combobox.currentText()
 
-        # Grab spectral-cube
-        import spectral_cube
-        cube = spectral_cube.SpectralCube(self.data[data_name], wcs=self.data.coords.wcs)
-
-        # Use the package asteval to do the calculation, we are going to
-        # assume here that the lhs of the equals sign is going to be the output named variable
-
-        try:
-            cube_moment = cube.moment(order=order, axis=0)
-
-            label = '{}-moment-{}'.format(data_name, order)
-
-            # Add new overlay/component to cubeviz. We add this both to the 2D
-            # container Data object and also as an overlay. In future we might be
-            # able to use the 2D container Data object for the overlays directly.
-            add_to_2d_container(self.parent, self.data, cube_moment.value, label)
-            self.parent.add_overlay(cube_moment.value, label)
-
-        except Exception as e:
-            print('Error {}'.format(e))
+        self.do_calculation(order, data_name)
 
         self.close()
 
