@@ -10,7 +10,7 @@ class CubevizToolbar(QtWidgets.QToolBar):
         self.application = application
 
         self._button_viewer_options = QtWidgets.QPushButton()
-        self._button_viewer_options.setText("Show viewer options")
+        self._button_viewer_options.setText("Hide viewer options")
         self._button_viewer_options.clicked.connect(self._toggle_sidebar)
 
         self.addWidget(self._button_viewer_options)
