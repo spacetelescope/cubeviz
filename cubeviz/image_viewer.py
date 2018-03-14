@@ -203,7 +203,6 @@ class CubevizImageViewer(ImageViewer):
         # Allow the CubeViz slider to respond to viewer-specific sliders in the glue pane
         self.state.add_callback('slices', self._slice_callback)
 
-        self.draw_stats_axes()
 
     def _slice_callback(self, new_slice):
         if self._slice_index is not None and not self.has_2d_data:

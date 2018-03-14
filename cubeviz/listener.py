@@ -1,8 +1,9 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 
 from glue.core import Hub, HubListener, Data, DataCollection
-from glue.core.message import (DataCollectionAddMessage, DataRemoveComponentMessage,
-                               DataAddComponentMessage, SettingsChangeMessage)
+from glue.core.message import (DataCollectionAddMessage, SettingsChangeMessage,
+                               DataRemoveComponentMessage, EditSubsetMessage,
+                               DataAddComponentMessage)
 from .layout import CubeVizLayout
 
 
@@ -31,6 +32,8 @@ class CubevizManager(HubListener):
             self, SettingsChangeMessage, handler=self.handle_settings_change)
         self._hub.subscribe(
             self, DataRemoveComponentMessage, handler=self.handle_remove_component)
+        self._hub.subscribe(
+            self, EditSubsetMessage, handler=self.handle_subset_message)
 
         # Look for any cube data files that were loaded from the command line
         for data in session.data_collection:
@@ -64,6 +67,10 @@ class CubevizManager(HubListener):
     def handle_settings_change(self, message):
         if self._layout is not None:
             self._layout.handle_settings_change(message)
+
+    def handle_subset_message(self, message):
+        if self._layout is not None:
+            self._layout.handle_subset_action(message)
 
     def hide_sidebar(self):
         self._app._ui.main_splitter.setSizes([0, 300])

@@ -232,6 +232,10 @@ class CubeVizLayout(QtWidgets.QWidget):
         if isinstance(message, SettingsChangeMessage):
             self._slice_controller.update_index(self.synced_index)
 
+    def handle_subset_action(self, message):
+        for viewer in self.cube_views:
+            viewer._widget.draw_stats_axes()
+
     def _set_pos_and_margin(self, axes, pos, marg):
         axes.set_position(pos)
         freeze_margins(axes, marg)
