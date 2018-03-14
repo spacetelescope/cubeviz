@@ -3,6 +3,7 @@
 
 import numpy as np
 
+from matplotlib.axes import Axes
 import matplotlib.image as mimage
 
 from astropy import units as u
@@ -202,6 +203,8 @@ class CubevizImageViewer(ImageViewer):
         # Allow the CubeViz slider to respond to viewer-specific sliders in the glue pane
         self.state.add_callback('slices', self._slice_callback)
 
+        self.draw_stats_axes()
+
     def _slice_callback(self, new_slice):
         if self._slice_index is not None and not self.has_2d_data:
             self.cubeviz_layout._slice_controller.update_index(new_slice[0])
@@ -217,6 +220,14 @@ class CubevizImageViewer(ImageViewer):
         else:
             cls = CubevizImageLayerArtist
         return self.get_layer_artist(cls, layer=layer, layer_state=layer_state)
+
+    def draw_stats_axes(self):
+        rect = 0.01, 0.88, 0.12, 0.10
+        axes = self.figure.add_axes(rect, xticks=[], yticks=[])
+        axes.text(x=0.05, y=0.75, s='slice: {}'.format(self._slice_index))
+        axes.text(x=0.05, y=0.50, s=r'$\mu = 0.15$')
+        axes.text(x=0.05, y=0.25, s=r'$\sigma = 0.10$')
+        self.redraw()
 
     @property
     def is_preview_active(self):
