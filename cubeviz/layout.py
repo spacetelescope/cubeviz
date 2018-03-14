@@ -228,7 +228,7 @@ class CubeVizLayout(QtWidgets.QWidget):
                 menu_widget.addAction(act)
         return menu_widget
 
-    def _handle_settings_change(self, message):
+    def handle_settings_change(self, message):
         if isinstance(message, SettingsChangeMessage):
             self._slice_controller.update_index(self.synced_index)
 
