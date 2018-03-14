@@ -189,6 +189,8 @@ class CubevizImageViewer(ImageViewer):
         self._has_2d_data = False  # True if currently displayed data is 2D
         self._toggle_3d = False  # True if we just toggled from 2D to 3D
 
+        self._stats_axes = None
+
         self.coord_label = QLabel("")  # Coord display
         self.statusBar().addPermanentWidget(self.coord_label)
 
@@ -220,13 +222,26 @@ class CubevizImageViewer(ImageViewer):
             cls = CubevizImageLayerArtist
         return self.get_layer_artist(cls, layer=layer, layer_state=layer_state)
 
-    def draw_stats_axes(self):
+    def _create_stats_axes(self):
         rect = 0.01, 0.88, 0.12, 0.10
         axes = self.figure.add_axes(rect, xticks=[], yticks=[])
         axes.text(x=0.05, y=0.75, s='slice: {}'.format(self._slice_index))
         axes.text(x=0.05, y=0.50, s=r'$\mu = 0.15$')
         axes.text(x=0.05, y=0.25, s=r'$\sigma = 0.10$')
+        return axes
+
+    def draw_stats_axes(self):
+        if self._stats_axes is None:
+            self._stats_axes = self._create_stats_axes()
+        else:
+            self._stats_axes.set_visible(True)
+
         self.redraw()
+
+    def hide_stats_axes(self):
+        if self._stats_axes is not None:
+            self._stats_axes.set_visible(False)
+            self.redraw()
 
     @property
     def is_preview_active(self):
