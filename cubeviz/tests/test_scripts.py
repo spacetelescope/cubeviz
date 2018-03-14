@@ -3,7 +3,7 @@ import re
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
 
-SCRIPT_FILE = os.path.join(os.path.dirname(__file__), '..', '..', 'scripts', 'update_cubeviz_test_env_pip')
+SCRIPT_FILE = os.path.join(os.path.dirname(__file__), '..', 'scripts', 'update_cubeviz_test_env_pip')
 
 github_dict = {
         'glue': 'https://github.com/glue-viz/glue/commit/HASH', 
