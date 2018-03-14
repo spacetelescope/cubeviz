@@ -356,6 +356,9 @@ class CubevizImageViewer(ImageViewer):
     def draw_contour(self, draw=True):
         self._delete_contour()
 
+        if len(self.visible_layers()) == 0:
+            return
+
         if self.is_contour_preview_active:
             settings = self.contour_preview_settings
         else:
@@ -736,7 +739,7 @@ class CubevizImageViewer(ImageViewer):
             string = "({:1.0f}, {:1.0f})".format(x, y)
 
         # If viewer has a layer.
-        if len(self.state.layers) > 0:
+        if len(self.visible_layers()) > 0:
 
             arr = self.first_visible_layer().state.get_sliced_data()
 
