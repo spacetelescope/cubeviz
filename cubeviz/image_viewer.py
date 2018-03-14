@@ -243,6 +243,10 @@ class CubevizImageViewer(ImageViewer):
             self._stats_axes.set_visible(False)
             self.redraw()
 
+    def update_stats(self):
+        slice_text = self._stats_axes.texts[0]
+        slice_text.set_text('slice: {}'.format(self._slice_index))
+
     @property
     def is_preview_active(self):
         return self.is_contour_preview_active or self.is_smoothing_preview_active
@@ -540,6 +544,9 @@ class CubevizImageViewer(ImageViewer):
         self.state.slices = (self._slice_index, y, x)
         if self.is_contour_active:
             self.draw_contour()
+
+        if self._stats_axes is not None:
+            self.update_stats()
 
     def fast_draw_slice_at_index(self, index):
         """
