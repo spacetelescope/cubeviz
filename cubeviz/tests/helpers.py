@@ -48,7 +48,7 @@ def assert_viewer_indices(viewer_array, index):
         assert viewer._widget.slice_index == index
 
 def assert_all_viewer_indices(layout, index):
-    assert_viewer_indices(layout.all_views, index)
+    assert_viewer_indices(layout.cube_views, index)
 
 def assert_wavelength_text(layout, text):
     assert layout._slice_controller._wavelength_textbox.text() == str(text)
@@ -79,5 +79,5 @@ def reset_app_state(qtbot, layout):
     enter_slice_text(qtbot, layout, '1024')
     if layout._single_viewer_mode:
         toggle_viewer(qtbot, layout)
-    if layout._active_view is not layout.left_view:
-        select_viewer(qtbot, layout.left_view)
+    if layout._active_view is not layout.split_views[0]:
+        select_viewer(qtbot, layout.split_views[0])

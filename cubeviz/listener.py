@@ -71,9 +71,9 @@ class CubevizManager(HubListener):
     def setup_data(self, cubeviz_layout, data):
         # Automatically add data to viewers and set attribute for split viewers
         image_viewers = [cubeviz_layout.single_view._widget,
-                         cubeviz_layout.left_view._widget,
-                         cubeviz_layout.middle_view._widget,
-                         cubeviz_layout.right_view._widget]
+                         cubeviz_layout.split_views[0]._widget,
+                         cubeviz_layout.split_views[1]._widget,
+                         cubeviz_layout.split_views[2]._widget]
 
         data_headers = [str(x).strip() for x in data.component_ids() if not x in data.coordinate_components]
 
