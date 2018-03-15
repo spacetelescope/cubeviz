@@ -13,7 +13,7 @@ from glue.config import qt_fixed_layout_tab
 from glue.external.echo import keep_in_sync, SelectionCallbackProperty
 from glue.external.echo.qt import connect_combo_selection
 from glue.core.data_combo_helper import ComponentIDComboHelper
-from glue.core.message import SettingsChangeMessage
+from glue.core.message import SettingsChangeMessage, SubsetUpdateMessage, SubsetDeleteMessage
 from glue.utils.matplotlib import freeze_margins
 
 from specviz.third_party.glue.data_viewer import SpecVizViewer
@@ -233,10 +233,10 @@ class CubeVizLayout(QtWidgets.QWidget):
             self._slice_controller.update_index(self.synced_index)
 
     def handle_subset_action(self, message):
-        if message.subset:
+        if isinstance(message, SubsetUpdateMessage):
             for combo, viewer in zip(self._viewer_combo_helpers, self.cube_views):
-                viewer._widget.draw_stats_axes(combo.selection, message.subset[0].subsets[0])
-        else:
+                viewer._widget.draw_stats_axes(combo.selection, message.subset)
+        elif isinstance(message, SubsetDeleteMessage):
             for viewer in self.cube_views:
                 viewer._widget.hide_stats_axes()
 

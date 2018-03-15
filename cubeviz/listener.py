@@ -2,7 +2,7 @@
 
 from glue.core import Hub, HubListener, Data, DataCollection
 from glue.core.message import (DataCollectionAddMessage, SettingsChangeMessage,
-                               DataRemoveComponentMessage, EditSubsetMessage,
+                               DataRemoveComponentMessage, SubsetMessage,
                                DataAddComponentMessage)
 from .layout import CubeVizLayout
 
@@ -33,7 +33,7 @@ class CubevizManager(HubListener):
         self._hub.subscribe(
             self, DataRemoveComponentMessage, handler=self.handle_remove_component)
         self._hub.subscribe(
-            self, EditSubsetMessage, handler=self.handle_subset_message)
+            self, SubsetMessage, handler=self.handle_subset_message)
 
         # Look for any cube data files that were loaded from the command line
         for data in session.data_collection:
