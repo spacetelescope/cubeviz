@@ -191,6 +191,8 @@ class CubevizImageViewer(ImageViewer):
         self._toggle_3d = False  # True if we just toggled from 2D to 3D
 
         self._stats_axes = None
+        self._stats_visible = True  # Global configuration setting
+        self._stats_hidden = False  # Internal configuration: are stats hidden?
         self._component = None # Keep track of name of currently displayed component
         self._subset = None # Keep track of currently active subset
 
@@ -262,13 +264,15 @@ class CubevizImageViewer(ImageViewer):
             circle = self._stats_axes.artists[0]
             circle.set_color(subset.style.color)
             self._update_stats_text(mu, sigma)
-            self._stats_axes.set_visible(True)
+            self._stats_axes.set_visible(True and self._stats_visible)
 
+        self._stats_hidden = False
         self.redraw()
 
     def hide_stats_axes(self):
         if self._stats_axes is not None:
             self._stats_axes.set_visible(False)
+            self._stats_hidden = True
             self.redraw()
 
     def update_stats(self):
@@ -282,6 +286,12 @@ class CubevizImageViewer(ImageViewer):
         self._component = component
         if self._stats_axes is not None:
             self.update_stats()
+
+    def set_stats_visible(self, visible):
+        self._stats_visible = visible
+        if self._stats_axes is not None:
+            self._stats_axes.set_visible(self._stats_visible and not self._stats_hidden)
+            self.redraw()
 
     @property
     def is_preview_active(self):
