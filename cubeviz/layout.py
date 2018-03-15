@@ -62,10 +62,12 @@ class CubeVizLayout(QtWidgets.QWidget):
     def __init__(self, session=None, parent=None):
         super(CubeVizLayout, self).__init__(parent=parent)
 
+        self._cubeviz_toolbar = None
+
         if not hasattr(session.application, '_has_cubeviz_toolbar'):
-            cubeviz_toolbar = CubevizToolbar(application=session.application)
+            self._cubeviz_toolbar = CubevizToolbar(application=session.application)
             session.application.insertToolBar(session.application._data_toolbar,
-                                              cubeviz_toolbar)
+                                              self._cubeviz_toolbar)
 
         self.session = session
         self._has_data = False
