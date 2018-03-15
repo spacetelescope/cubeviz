@@ -276,6 +276,12 @@ class CubevizImageViewer(ImageViewer):
         slice_text.set_text('slice: {}'.format(self._slice_index))
         mu, sigma = self._calculate_stats(self._component, self._subset)
         self._update_stats_text(mu, sigma)
+        self.redraw()
+
+    def update_component(self, component):
+        self._component = component
+        if self._stats_axes is not None:
+            self.update_stats()
 
     @property
     def is_preview_active(self):

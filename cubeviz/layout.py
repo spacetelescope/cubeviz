@@ -410,6 +410,8 @@ class CubeVizLayout(QtWidgets.QWidget):
             if viewer.is_contour_active:
                 viewer.draw_contour()
 
+            viewer.update_component(component)
+
         return _on_viewer_combo_change
 
     def _enable_viewer_combo(self, data, index, combo_label, selection_label):
