@@ -234,8 +234,8 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     def handle_subset_action(self, message):
         if message.subset:
-            for viewer in self.cube_views:
-                viewer._widget.draw_stats_axes(message.subset[0].subsets[0])
+            for combo, viewer in zip(self._viewer_combo_helpers, self.cube_views):
+                viewer._widget.draw_stats_axes(combo.selection, message.subset[0].subsets[0])
         else:
             for viewer in self.cube_views:
                 viewer._widget.hide_stats_axes()

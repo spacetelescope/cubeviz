@@ -240,7 +240,15 @@ class CubevizImageViewer(ImageViewer):
         circle = self._stats_axes.artists[0]
         circle.set_color(subset.style.color)
 
-    def draw_stats_axes(self, subset):
+    def _calculate_stats(self, component, subset):
+        mask = subset.to_mask()[self._slice_index]
+        data = self._data[0][component][self._slice_index][mask]
+        return data.mean(), data.std()
+
+    def draw_stats_axes(self, component, subset):
+        mu, sigma = self._calculate_stats(component, subset)
+        print(component, mu, sigma)
+
         if self._stats_axes is None:
             self._stats_axes = self._create_stats_axes(subset)
         else:
