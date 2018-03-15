@@ -223,10 +223,10 @@ class CubevizImageViewer(ImageViewer):
             cls = CubevizImageLayerArtist
         return self.get_layer_artist(cls, layer=layer, layer_state=layer_state)
 
-    def _create_stats_axes(self):
+    def _create_stats_axes(self, subset):
         rect = 0.01, 0.88, 0.15, 0.12
         axes = self.figure.add_axes(rect, xticks=[], yticks=[])
-        circle = Circle((0.15,0.85), 0.05, color='r')
+        circle = Circle((0.15,0.85), 0.05, color=subset.style.color)
         axes.add_artist(circle)
 
         text_opts = dict(x=0.05, size='smaller')
@@ -235,10 +235,16 @@ class CubevizImageViewer(ImageViewer):
         axes.text(**text_opts, y=0.05, s=r'$\sigma = 0.10$')
         return axes
 
-    def draw_stats_axes(self):
+    def _update_stats_axes(self, subset):
+        # TODO: we should probably stash a pointer to this in the long term
+        circle = self._stats_axes.artists[0]
+        circle.set_color(subset.style.color)
+
+    def draw_stats_axes(self, subset):
         if self._stats_axes is None:
-            self._stats_axes = self._create_stats_axes()
+            self._stats_axes = self._create_stats_axes(subset)
         else:
+            self._update_stats_axes(subset)
             self._stats_axes.set_visible(True)
 
         self.redraw()
