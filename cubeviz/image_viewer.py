@@ -223,7 +223,7 @@ class CubevizImageViewer(ImageViewer):
             cls = CubevizImageLayerArtist
         return self.get_layer_artist(cls, layer=layer, layer_state=layer_state)
 
-    def _create_stats_axes(self, subset):
+    def _create_stats_axes(self, subset, mu, sigma):
         rect = 0.01, 0.88, 0.15, 0.12
         axes = self.figure.add_axes(rect, xticks=[], yticks=[])
         circle = Circle((0.15,0.85), 0.05, color=subset.style.color)
@@ -231,14 +231,15 @@ class CubevizImageViewer(ImageViewer):
 
         text_opts = dict(x=0.05, size='smaller')
         axes.text(**text_opts, y=0.55, s='slice: {}'.format(self._slice_index))
-        axes.text(**text_opts, y=0.30, s=r'$\mu = 0.15$')
-        axes.text(**text_opts, y=0.05, s=r'$\sigma = 0.10$')
+        axes.text(**text_opts, y=0.30, s=r'$\mu = {:.3}$'.format(mu))
+        axes.text(**text_opts, y=0.05, s=r'$\sigma = {:.3}$'.format(sigma))
         return axes
 
-    def _update_stats_axes(self, subset):
-        # TODO: we should probably stash a pointer to this in the long term
-        circle = self._stats_axes.artists[0]
-        circle.set_color(subset.style.color)
+    def _update_stats_text(self, mu, sigma):
+        mu_text = self._stats_axes.texts[1]
+        mu_text.set_text(r'$\mu = {:.3}$'.format(mu))
+        sigma_text = self._stats_axes.texts[2]
+        sigma_text.set_text(r'$\sigma = {:.3}$'.format(sigma))
 
     def _calculate_stats(self, component, subset):
         mask = subset.to_mask()[self._slice_index]
@@ -247,12 +248,14 @@ class CubevizImageViewer(ImageViewer):
 
     def draw_stats_axes(self, component, subset):
         mu, sigma = self._calculate_stats(component, subset)
-        print(component, mu, sigma)
 
         if self._stats_axes is None:
-            self._stats_axes = self._create_stats_axes(subset)
+            self._stats_axes = self._create_stats_axes(subset, mu, sigma)
         else:
-            self._update_stats_axes(subset)
+            # TODO: we should probably stash a pointer to this in the long term
+            circle = self._stats_axes.artists[0]
+            circle.set_color(subset.style.color)
+            self._update_stats_text(mu, sigma)
             self._stats_axes.set_visible(True)
 
         self.redraw()
