@@ -507,7 +507,7 @@ class CollapseCube(QDialog):
         # container Data object and also as an overlay. In future we might be
         # able to use the 2D container Data object for the overlays directly.
         add_to_2d_container(self.parent, self.data, new_component, label)
-        self.parent.add_overlay(new_component, label)
+        self.parent.add_overlay(new_component, label, display_now=False)
 
         self.close()
 

@@ -466,8 +466,8 @@ class CubeVizLayout(QtWidgets.QWidget):
             combo_label = 'viewer{0}_combo'.format(view_index)
         return getattr(self.ui, combo_label)
 
-    def add_overlay(self, data, label):
-        self._overlay_controller.add_overlay(data, label)
+    def add_overlay(self, data, label, display_now=True):
+        self._overlay_controller.add_overlay(data, label, display=display_now)
 
     def _set_data_coord_system(self, data):
         """
