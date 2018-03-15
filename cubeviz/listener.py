@@ -55,8 +55,7 @@ class CubevizManager(HubListener):
             self._empty_layout = None
 
     def handle_new_component(self, message):
-        #self._layout.add_new_data_component(str(message.component_id))
-        self._layout.add_new_data_component(message.component_id)
+        self._layout.display_component(message.component_id)
 
     def handle_remove_component(self, message):
         self._layout.remove_data_component(message.component_id)

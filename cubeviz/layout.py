@@ -325,9 +325,6 @@ class CubeVizLayout(QtWidgets.QWidget):
                                                      parent=self)
         operation_handler.exec_()
 
-    def add_new_data_component(self, component_id):
-        self.display_component(component_id)
-
     def remove_data_component(self, component_id):
         pass
 
