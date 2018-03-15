@@ -191,6 +191,8 @@ class CubevizImageViewer(ImageViewer):
         self._toggle_3d = False  # True if we just toggled from 2D to 3D
 
         self._stats_axes = None
+        self._component = None # Keep track of name of currently displayed component
+        self._subset = None # Keep track of currently active subset
 
         self.coord_label = QLabel("")  # Coord display
         self.statusBar().addPermanentWidget(self.coord_label)
@@ -247,6 +249,10 @@ class CubevizImageViewer(ImageViewer):
         return data.mean(), data.std()
 
     def draw_stats_axes(self, component, subset):
+
+        self._component = component
+        self._subset = subset
+
         mu, sigma = self._calculate_stats(component, subset)
 
         if self._stats_axes is None:
@@ -268,6 +274,8 @@ class CubevizImageViewer(ImageViewer):
     def update_stats(self):
         slice_text = self._stats_axes.texts[0]
         slice_text.set_text('slice: {}'.format(self._slice_index))
+        mu, sigma = self._calculate_stats(self._component, self._subset)
+        self._update_stats_text(mu, sigma)
 
     @property
     def is_preview_active(self):
