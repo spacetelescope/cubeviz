@@ -224,13 +224,15 @@ class CubevizImageViewer(ImageViewer):
         return self.get_layer_artist(cls, layer=layer, layer_state=layer_state)
 
     def _create_stats_axes(self):
-        rect = 0.01, 0.88, 0.12, 0.10
+        rect = 0.01, 0.88, 0.15, 0.12
         axes = self.figure.add_axes(rect, xticks=[], yticks=[])
         circle = Circle((0.15,0.85), 0.05, color='r')
         axes.add_artist(circle)
-        axes.text(x=0.05, y=0.55, s='slice: {}'.format(self._slice_index))
-        axes.text(x=0.05, y=0.30, s=r'$\mu = 0.15$')
-        axes.text(x=0.05, y=0.05, s=r'$\sigma = 0.10$')
+
+        text_opts = dict(x=0.05, size='smaller')
+        axes.text(**text_opts, y=0.55, s='slice: {}'.format(self._slice_index))
+        axes.text(**text_opts, y=0.30, s=r'$\mu = 0.15$')
+        axes.text(**text_opts, y=0.05, s=r'$\sigma = 0.10$')
         return axes
 
     def draw_stats_axes(self):
