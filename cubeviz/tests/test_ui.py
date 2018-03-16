@@ -198,10 +198,13 @@ def test_2d_data_components(qtbot, cubeviz_layout, moment_map, while_active):
 
     assert moment_map == DATA_LABELS[0] + '-moment-1'
 
-    assert_slider_enabled(cubeviz_layout, True)
-
     combo, _ = setup_combo_and_index(qtbot, cubeviz_layout, 1)
-    combo.setCurrentIndex(combo.findText(moment_map))
+
+    # For the first test, the active viewer should now display a 2D moment map,
+    # so no action is required.
+    if not while_active:
+        select_viewer(qtbot, cubeviz_layout.split_views[0])
+        combo.setCurrentIndex(combo.findText(moment_map))
 
     assert_slider_enabled(cubeviz_layout, False)
     assert cubeviz_layout.split_views[0]._widget.has_2d_data == True
