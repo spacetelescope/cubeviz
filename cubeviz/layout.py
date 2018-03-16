@@ -342,14 +342,6 @@ class CubeVizLayout(QtWidgets.QWidget):
                                                      parent=self)
         operation_handler.exec_()
 
-    def add_new_data_component(self, component_id):
-
-        self.refresh_viewer_combo_helpers()
-
-        if self._active_view in self.cube_views:
-            view_index = self.cube_views.index(self._active_view)
-            self.change_viewer_component(view_index, component_id)
-
     def remove_data_component(self, component_id):
         pass
 
@@ -468,12 +460,23 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         combo = self.get_viewer_combo(view_index)
 
-        component_index = combo.findData(component_id)
+        if isinstance(component_id, str):
+            component_index = combo.findText(component_id)
+        else:
+            component_index = combo.findData(component_id)
 
         if combo.currentIndex() == component_index and force:
             combo.currentIndexChanged.emit(component_index)
         else:
             combo.setCurrentIndex(component_index)
+
+    def display_component(self, component_id):
+        """
+        Displays data with given component ID in the active cube viewer.
+        """
+        self.refresh_viewer_combo_helpers()
+        view_index = self.cube_views.index(self._active_cube)
+        self.change_viewer_component(view_index, component_id)
 
     def get_viewer_combo(self, view_index):
         """
@@ -485,8 +488,9 @@ class CubeVizLayout(QtWidgets.QWidget):
             combo_label = 'viewer{0}_combo'.format(view_index)
         return getattr(self.ui, combo_label)
 
-    def add_overlay(self, data, label):
-        self._overlay_controller.add_overlay(data, label)
+    def add_overlay(self, data, label, display_now=True):
+        self._overlay_controller.add_overlay(data, label, display=display_now)
+        self.display_component(label)
 
     def _set_data_coord_system(self, data):
         """

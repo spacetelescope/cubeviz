@@ -35,7 +35,7 @@ class OverlayController:
 
         self._alpha_slider.valueChanged.connect(self._on_alpha_change)
 
-    def add_overlay(self, data, label):
+    def add_overlay(self, data, label, display=True):
         self._overlays.add_component(data, label)
         # TODO: Is there a way to get this from the component ???
         self._overlay_image_combo.addItem(label)
@@ -46,8 +46,9 @@ class OverlayController:
         self._overlay_image_combo.setEnabled(True)
         self._overlay_colormap_combo.setEnabled(True)
 
-        # Setting the index will cause _on_overlay_change to fire
-        self._overlay_image_combo.setCurrentIndex(new_index)
+        if display:
+            # Setting the index will cause _on_overlay_change to fire
+            self._overlay_image_combo.setCurrentIndex(new_index)
 
     def _on_overlay_change(self, index):
         if index == 0:
