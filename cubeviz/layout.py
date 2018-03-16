@@ -13,7 +13,7 @@ from glue.config import qt_fixed_layout_tab
 from glue.external.echo import keep_in_sync, SelectionCallbackProperty
 from glue.external.echo.qt import connect_combo_selection
 from glue.core.data_combo_helper import ComponentIDComboHelper
-from glue.core.message import SettingsChangeMessage
+from glue.core.message import SettingsChangeMessage, SubsetUpdateMessage, SubsetDeleteMessage
 from glue.utils.matplotlib import freeze_margins
 
 from specviz.third_party.glue.data_viewer import SpecVizViewer
@@ -133,6 +133,9 @@ class CubeVizLayout(QtWidgets.QWidget):
         # Indicates whether cube viewer toolbars are currently visible or not
         self._toolbars_visible = True
 
+        # Indicates whether subset stats should be displayed or not
+        self._stats_visible = True
+
         self._slice_controller = SliceController(self)
         self._overlay_controller = OverlayController(self)
         self._units_controller = UnitController(self)
@@ -179,6 +182,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         view_menu = self._dict_to_menu(OrderedDict([
             ('Hide Axes', ['checkable', self._toggle_viewer_axes]),
             ('Hide Toolbars', ['checkable', self._toggle_toolbars]),
+            ('Hide Stats', ['checkable', self._toggle_stats_display]),
             ('Wavelength Units', lambda: self._open_dialog('Wavelength Units', None))
         ]))
 
@@ -228,9 +232,17 @@ class CubeVizLayout(QtWidgets.QWidget):
                 menu_widget.addAction(act)
         return menu_widget
 
-    def _handle_settings_change(self, message):
+    def handle_settings_change(self, message):
         if isinstance(message, SettingsChangeMessage):
             self._slice_controller.update_index(self.synced_index)
+
+    def handle_subset_action(self, message):
+        if isinstance(message, SubsetUpdateMessage):
+            for combo, viewer in zip(self._viewer_combo_helpers, self.cube_views):
+                viewer._widget.draw_stats_axes(combo.selection, message.subset)
+        elif isinstance(message, SubsetDeleteMessage):
+            for viewer in self.cube_views:
+                viewer._widget.hide_stats_axes()
 
     def _set_pos_and_margin(self, axes, pos, marg):
         axes.set_position(pos)
@@ -263,6 +275,11 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._toolbars_visible = not self._toolbars_visible
         for viewer in self.cube_views:
             viewer._widget.toolbar.setVisible(self._toolbars_visible)
+
+    def _toggle_stats_display(self):
+        self._stats_visible = not self._stats_visible
+        for viewer in self.cube_views:
+            viewer._widget.set_stats_visible(self._stats_visible)
 
     def _open_dialog(self, name, widget):
 
@@ -401,6 +418,8 @@ class CubeVizLayout(QtWidgets.QWidget):
             # If contours are being currently shown, we need to force a redraw
             if viewer.is_contour_active:
                 viewer.draw_contour()
+
+            viewer.update_component(component)
 
         return _on_viewer_combo_change
 
