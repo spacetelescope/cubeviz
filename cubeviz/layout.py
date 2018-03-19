@@ -475,8 +475,10 @@ class CubeVizLayout(QtWidgets.QWidget):
         Displays data with given component ID in the active cube viewer.
         """
         self.refresh_viewer_combo_helpers()
-        view_index = self.cube_views.index(self._active_cube)
-        self.change_viewer_component(view_index, component_id)
+        if self._single_viewer_mode:
+            self.change_viewer_component(0, component_id)
+        else:
+            self.change_viewer_component(1, component_id)
 
     def get_viewer_combo(self, view_index):
         """
