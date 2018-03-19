@@ -35,7 +35,7 @@ def lock_coordinates(session):
     :return:
     """
     lay = session.application.current_tab
-    for w in lay.all_views:
+    for w in lay.cube_views:
         civ = w._widget
         if civ.is_mouse_over:
             civ.toggle_hold_coords()
@@ -50,7 +50,7 @@ def copy_coordinates_to_clipboard(session):
     """
     coords_status = False
     lay = session.application.current_tab
-    for w in lay.all_views:
+    for w in lay.cube_views:
         civ = w._widget
         if civ.is_mouse_over:
             coords_status = civ.get_coords()
@@ -79,11 +79,11 @@ def remove_mpl_shortcuts_and_check_dupes():
     for ks in keyboard_shortcut.members[None]:
         if ks < 128 and chr(ks) in vt_shortcuts:
             print("Make sure the shortcuts are NOT one of the following {0}\n\n".format(vt_shortcuts))
-            raise ValueError("Keyboard shortcut '{0}' already registered in {1}".format(chr(ks), "glue.config.viewer_tool"))
+            print("Keyboard shortcut '{0}' already registered in {1}".format(chr(ks), "glue.config.viewer_tool"))
         elif ks < 128:
             ks_shortcuts.append(chr(ks))
         elif ks >= 128:
-            raise ValueError("Please refrain from using non-ASCII values for shortcuts")
+            print("Please refrain from using non-ASCII values for shortcuts")
 
     # Remove MatPlotLib default shortcuts if they conflict with other shortcuts
     for param in plt.rcParams:

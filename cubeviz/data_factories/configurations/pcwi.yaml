@@ -1,0 +1,23 @@
+# JWST FITS cube
+name: 'cwi-cube'
+type: 'CWI-CUBE'
+
+# Highest priority data configuration file, that matches, is selected.
+priority: 1200
+
+# All must match and they must have SCI, ERR, DQ extensions
+match:
+    all:
+        equal:
+            header_key:
+                INSTRUME
+            value:
+                PCWI
+# Data extension names for FLUX, ERROR and DQ
+data:
+    FLUX:
+        SCI
+    ERROR:
+        ERR
+    DQ:
+        DQ

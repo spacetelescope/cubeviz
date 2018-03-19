@@ -54,6 +54,7 @@ distribute-*.tar.gz
 *~
 .project
 .pydevproject
+.pytest_cache
 .settings
 
 # Mac OSX

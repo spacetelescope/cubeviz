@@ -41,6 +41,7 @@ class DataConfiguration:
             self._name = cfg['name']
             self._type = cfg['type']
 
+
             try:
                 self._priority = int(cfg.get('priority', 0))
             except Exception:
@@ -137,6 +138,9 @@ class DataConfiguration:
                         if 'BUNIT' in hdu.header:
                             c = data.get_component(component_name)
                             c.units = self.get_units(hdu.header)
+                    else:
+                        component_name = os.path.basename(data_filename)
+                        data.add_component(component=hdu.data.astype(np.float), label=component_name)
 
             # For the purposes of exporting, we keep a reference to the original HDUList object
             data._cubeviz_hdulist = hdulist

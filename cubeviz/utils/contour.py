@@ -74,7 +74,7 @@ class ContourButton(Tool):
         action.triggered.connect(self.viewer.default_contour)
         self.options.append(action)
 
-        action = QAction("Custom Component", self.tool_bar, checkable=True)
+        action = QAction("Other Component", self.tool_bar, checkable=True)
         action.setActionGroup(component_action_group)
         action.triggered.connect(self.viewer.custom_contour)
         self.options.append(action)

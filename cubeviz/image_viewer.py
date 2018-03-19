@@ -3,10 +3,14 @@
 
 import numpy as np
 
+from matplotlib.axes import Axes
 import matplotlib.image as mimage
+from matplotlib.patches import Circle
 
 from astropy import units as u
 from astropy.coordinates import SkyCoord
+from astropy.wcs.utils import wcs_to_celestial_frame
+from astropy.coordinates import BaseRADecFrame
 
 from qtpy.QtWidgets import (QLabel, QMessageBox)
 
@@ -22,7 +26,7 @@ from glue.viewers.common.qt.tool import Tool
 
 from .utils.contour import ContourSettings
 
-CONTOUR_DEFAULT_NUMBER_OF_LEVELSS = 8
+CONTOUR_DEFAULT_NUMBER_OF_LEVELS = 8
 CONTOUR_MAX_NUMBER_OF_LEVELS = 1000
 
 __all__ = ['CubevizImageViewer']
@@ -152,6 +156,8 @@ class CubevizImageViewer(ImageViewer):
              'select:circle', 'select:polygon', 'image:contrast_bias',
              'cubeviz:contour']
 
+    _close_on_last_layer_removed = False
+
     def __init__(self,  *args, cubeviz_layout=None, **kwargs):
         super(CubevizImageViewer, self).__init__(*args, **kwargs)
         self.cubeviz_layout = cubeviz_layout
@@ -181,6 +187,15 @@ class CubevizImageViewer(ImageViewer):
         self.is_axes_hidden = False  # True if axes is hidden
         self.axes_title = ""  # Plot title
 
+        self._has_2d_data = False  # True if currently displayed data is 2D
+        self._toggle_3d = False  # True if we just toggled from 2D to 3D
+
+        self._stats_axes = None
+        self._stats_visible = True  # Global configuration setting
+        self._stats_hidden = False  # Internal configuration: are stats hidden?
+        self._component = None # Keep track of name of currently displayed component
+        self._subset = None # Keep track of currently active subset
+
         self.coord_label = QLabel("")  # Coord display
         self.statusBar().addPermanentWidget(self.coord_label)
 
@@ -195,9 +210,15 @@ class CubevizImageViewer(ImageViewer):
         # Allow the CubeViz slider to respond to viewer-specific sliders in the glue pane
         self.state.add_callback('slices', self._slice_callback)
 
+
     def _slice_callback(self, new_slice):
-        if self._slice_index is not None:
+        if self._slice_index is not None and not self.has_2d_data:
             self.cubeviz_layout._slice_controller.update_index(new_slice[0])
+        # When toggling from 2D to 3D data component, update to synced index
+        elif self._toggle_3d:
+            self._toggle_3d = False
+            self.cubeviz_layout._slice_controller.update_index(self.cubeviz_layout.synced_index)
+            self.update_slice_index(self.cubeviz_layout.synced_index)
 
     def get_data_layer_artist(self, layer=None, layer_state=None):
         if layer.ndim == 1:
@@ -206,9 +227,85 @@ class CubevizImageViewer(ImageViewer):
             cls = CubevizImageLayerArtist
         return self.get_layer_artist(cls, layer=layer, layer_state=layer_state)
 
+    def _create_stats_axes(self, subset, mu, sigma):
+        rect = 0.01, 0.88, 0.15, 0.12
+        axes = self.figure.add_axes(rect, xticks=[], yticks=[])
+        circle = Circle((0.15,0.85), 0.05, color=subset.style.color)
+        axes.add_artist(circle)
+
+        text_opts = dict(x=0.05, size='smaller')
+        axes.text(**text_opts, y=0.55, s='slice: {}'.format(self._slice_index))
+        axes.text(**text_opts, y=0.30, s=r'$\mu = {:.3}$'.format(mu))
+        axes.text(**text_opts, y=0.05, s=r'$\sigma = {:.3}$'.format(sigma))
+        return axes
+
+    def _update_stats_text(self, mu, sigma):
+        mu_text = self._stats_axes.texts[1]
+        mu_text.set_text(r'$\mu = {:.3}$'.format(mu))
+        sigma_text = self._stats_axes.texts[2]
+        sigma_text.set_text(r'$\sigma = {:.3}$'.format(sigma))
+
+    def _calculate_stats(self, component, subset):
+        mask = subset.to_mask()[self._slice_index]
+        data = self._data[0][component][self._slice_index][mask]
+        return data.mean(), data.std()
+
+    def draw_stats_axes(self, component, subset):
+
+        self._component = component
+        self._subset = subset
+
+        mu, sigma = self._calculate_stats(component, subset)
+
+        if self._stats_axes is None:
+            self._stats_axes = self._create_stats_axes(subset, mu, sigma)
+        else:
+            # TODO: we should probably stash a pointer to this in the long term
+            circle = self._stats_axes.artists[0]
+            circle.set_color(subset.style.color)
+            self._update_stats_text(mu, sigma)
+            self._stats_axes.set_visible(True and self._stats_visible)
+
+        self._stats_hidden = False
+        self.redraw()
+
+    def hide_stats_axes(self):
+        if self._stats_axes is not None:
+            self._stats_axes.set_visible(False)
+            self._stats_hidden = True
+            self.redraw()
+
+    def update_stats(self):
+        slice_text = self._stats_axes.texts[0]
+        slice_text.set_text('slice: {}'.format(self._slice_index))
+        mu, sigma = self._calculate_stats(self._component, self._subset)
+        self._update_stats_text(mu, sigma)
+        self.redraw()
+
+    def update_component(self, component):
+        self._component = component
+        if self._stats_axes is not None:
+            self.update_stats()
+
+    def set_stats_visible(self, visible):
+        self._stats_visible = visible
+        if self._stats_axes is not None:
+            self._stats_axes.set_visible(self._stats_visible and not self._stats_hidden)
+            self.redraw()
+
     @property
     def is_preview_active(self):
         return self.is_contour_preview_active or self.is_smoothing_preview_active
+
+    @property
+    def has_2d_data(self):
+        return self._has_2d_data or self._toggle_3d
+
+    @has_2d_data.setter
+    def has_2d_data(self, value):
+        if self._has_2d_data and not value:
+            self._toggle_3d = True
+        self._has_2d_data = value
 
     def update_axes_title(self, title=None):
         """
@@ -324,7 +421,8 @@ class CubevizImageViewer(ImageViewer):
 
     def get_contour_array(self):
         if self.contour_component is None:
-            arr = self.state.layers[0].get_sliced_data()
+            layer_artist = self.first_visible_layer()
+            arr = layer_artist.state.get_sliced_data()
         else:
             data = self.state.layers_data[0]
             arr = data[self.contour_component][self.slice_index]
@@ -333,6 +431,9 @@ class CubevizImageViewer(ImageViewer):
     def draw_contour(self, draw=True):
         self._delete_contour()
 
+        if len(self.visible_layers()) == 0:
+            return
+
         if self.is_contour_preview_active:
             settings = self.contour_preview_settings
         else:
@@ -340,18 +441,18 @@ class CubevizImageViewer(ImageViewer):
 
         arr = self.get_contour_array()
 
-        vmax = arr.max()
+        vmax = np.nanmax(arr)
         if settings.vmax is not None:
             vmax = settings.vmax
 
-        vmin = arr.min()
+        vmin = np.nanmin(arr)
         if settings.vmin is not None:
             vmin = settings.vmin
 
         if settings.spacing is None:
             spacing = 1
             if vmax != vmin:
-                spacing = (vmax-vmin)/CONTOUR_DEFAULT_NUMBER_OF_LEVELSS
+                spacing = (vmax - vmin)/CONTOUR_DEFAULT_NUMBER_OF_LEVELS
         else:
             spacing = settings.spacing
 
@@ -368,7 +469,7 @@ class CubevizImageViewer(ImageViewer):
             settings.data_spacing = spacing
             if settings.dialog is not None:
                 settings.dialog.custom_spacing_checkBox.setChecked(False)
-            spacing = (vmax - vmin)/CONTOUR_DEFAULT_NUMBER_OF_LEVELSS
+            spacing = (vmax - vmin)/CONTOUR_DEFAULT_NUMBER_OF_LEVELS
             levels = np.arange(vmin, vmax, spacing)
             levels = np.append(levels, vmax)
 
@@ -432,7 +533,7 @@ class CubevizImageViewer(ImageViewer):
         vmin = arr.min()
         spacing = 1
         if vmax != vmin:
-            spacing = (vmax - vmin)/CONTOUR_DEFAULT_NUMBER_OF_LEVELSS
+            spacing = (vmax - vmin)/CONTOUR_DEFAULT_NUMBER_OF_LEVELS
         self.contour_settings.data_max = vmax
         self.contour_settings.data_min = vmin
         self.contour_settings.data_spacing = spacing
@@ -480,11 +581,18 @@ class CubevizImageViewer(ImageViewer):
             if isinstance(layer, CubevizImageLayerArtist):
                 layer.state.slice_index_override = None
 
+        # Do not update if displaying a 2D data component
+        if len(self.state.slices) == 2:
+            return
+
         self._slice_index = index
         z, y, x = self.state.slices
         self.state.slices = (self._slice_index, y, x)
         if self.is_contour_active:
             self.draw_contour()
+
+        if self._stats_axes is not None:
+            self.update_stats()
 
     def fast_draw_slice_at_index(self, index):
         """
@@ -530,7 +638,7 @@ class CubevizImageViewer(ImageViewer):
 
     @property
     def synced(self):
-        return self._synced_checkbox.isChecked()
+        return self._synced_checkbox.isChecked() and not self.has_2d_data
 
     @synced.setter
     def synced(self, value):
@@ -540,13 +648,14 @@ class CubevizImageViewer(ImageViewer):
     def slice_index(self):
         return self._slice_index
 
-    def update_component_unit_label(self, component_label):
+    def update_component_unit_label(self, component_id):
         """
         Update component's unit label.
-        :param component_label: component id as a string
+        :param component_id: component id
         """
-        data = self.state.layers_data[0]
-        unit = str(data.get_component(component_label).units)
+
+        data = component_id.parent
+        unit = str(data.get_component(component_id).units)
         if unit:
             self.component_unit_label = "{0}".format(unit)
         else:
@@ -572,16 +681,46 @@ class CubevizImageViewer(ImageViewer):
             self.statusBar().showMessage("Frozen Coordinates")
             self.hold_coords = True
 
+    def init_ra_dec(self):
+        """
+        Initialize the format of RA and DEC
+        on the image viewers.
+        Options:
+            1) Sexagesimal:
+                _coords_in_degrees -> False
+                formatter_0 -> 'hh:mm:ss'
+                formatter_1 -> 'dd:mm:ss'
+            2) Decimal Degrees:
+                _coords_in_degrees -> True
+                formatter_0 -> 'd.dddd'
+                formatter_1 -> 'd.dddd'
+        """
+        self._coords_in_degrees = False
+        self.axes.coords[0].set_major_formatter('hh:mm:ss')
+        self.axes.coords[1].set_major_formatter('dd:mm:ss')
+        self.figure.canvas.draw()
+
     def toggle_coords_in_degrees(self):
         """
         Switch coords_in_degrees state
         """
+        data = self.state.layers_data[0]
+        is_ra_dec = isinstance(wcs_to_celestial_frame(data.coords.wcs),
+                               BaseRADecFrame)
         if self._coords_in_degrees:
             self._coords_in_degrees = False
             self._coords_format_function = self._format_to_hex_string
+            if is_ra_dec:
+                self.axes.coords[0].set_major_formatter('hh:mm:ss')
+                self.axes.coords[1].set_major_formatter('dd:mm:ss')
+                self.figure.canvas.draw()
         else:
             self._coords_in_degrees = True
             self._coords_format_function = self._format_to_degree_string
+            if is_ra_dec:
+                self.axes.coords[0].set_major_formatter('d.dddd')
+                self.axes.coords[1].set_major_formatter('d.dddd')
+                self.figure.canvas.draw()
 
     def message_changed_callback(self, event):
         """
@@ -678,10 +817,10 @@ class CubevizImageViewer(ImageViewer):
             string = "({:1.0f}, {:1.0f})".format(x, y)
 
         # If viewer has a layer.
-        if len(self.state.layers) > 0:
-            # Get array arr that contains the image values
-            # Default layer is layer at index 0.
-            arr = self.state.layers[0].get_sliced_data()
+        if len(self.visible_layers()) > 0:
+
+            arr = self.first_visible_layer().state.get_sliced_data()
+
             if 0 <= y < arr.shape[0] and 0 <= x < arr.shape[1]:
                 # if x and y are in bounds. Note: x and y are swapped in array.
                 # get value and check if wcs is obtainable
@@ -700,7 +839,7 @@ class CubevizImageViewer(ImageViewer):
                             string = string + " " + self._coords_format_function(ra, dec)
                 # Pixel Value:
                 v = arr[y][x]
-                string = "{0:1.4f} {1} ".format(v, self.component_unit_label) + string
+                string = "{0:.3e} {1} ".format(v, self.component_unit_label) + string
         # Add a gap to string and add to viewer.
         string += " "
         self._dont_update_status = True
@@ -708,6 +847,20 @@ class CubevizImageViewer(ImageViewer):
         self._dont_update_status = False
         self.coord_label.setText(string)
         return
+
+    def first_visible_layer(self):
+        layers = self.visible_layers()
+        if len(layers) == 0:
+            raise Exception("Couldn't find any visible layers")
+        else:
+            return layers[0]
+
+    def visible_layers(self):
+        layers = []
+        for layer_artist in self.layers:
+            if layer_artist.enabled and layer_artist.visible:
+                layers.append(layer_artist)
+        return layers
 
     def mouse_exited(self, event):
         """
