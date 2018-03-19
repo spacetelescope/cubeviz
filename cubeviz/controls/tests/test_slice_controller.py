@@ -7,24 +7,13 @@ import numpy as np
 
 from ...tests.helpers import (enter_slice_text, enter_wavelength_text,
                               left_click, select_viewer, enter_slice_text,
-                              toggle_viewer)
+                              toggle_viewer, assert_viewer_indices,
+                              assert_all_viewer_indices,
+                              assert_wavelength_text, assert_slice_text)
 
 
 def set_slider_index(layout, index):
     layout._slice_controller._slice_slider.setSliderPosition(index)
-
-def assert_viewer_indices(viewer_array, index):
-    for viewer in viewer_array:
-        assert viewer._widget.slice_index == index
-
-def assert_all_viewer_indices(layout, index):
-    assert_viewer_indices(layout.all_views, index)
-
-def assert_slice_text(layout, text):
-    assert layout._slice_controller._slice_textbox.text() == str(text)
-
-def assert_wavelength_text(layout, text):
-    assert layout._slice_controller._wavelength_textbox.text() == str(text)
 
 def find_nearest_slice(wavelengths, value):
     return np.argsort(abs(wavelengths - value))[0]
@@ -174,8 +163,8 @@ def sync_params(cubeviz_layout, request):
 
     params = dict(
         checkbox=cubeviz_layout._synced_checkboxes[viewer_index],
-        unsynced_viewer=cubeviz_layout.all_views[viewer_index],
-        other_viewers=all_but_index(cubeviz_layout.all_views, viewer_index),
+        unsynced_viewer=cubeviz_layout.cube_views[viewer_index],
+        other_viewers=all_but_index(cubeviz_layout.cube_views, viewer_index),
         synced_viewer=all_but_index(
             cubeviz_layout.split_views, viewer_index-1)[0]
     )
@@ -266,17 +255,17 @@ def test_multiple_unsynced_viewers(qtbot, cubeviz_layout):
     # Sanity check to make sure all viewers are actually synced
     assert_all_viewer_indices(cubeviz_layout, synced_index)
 
-    unsync1 = cubeviz_layout.all_views[1]
+    unsync1 = cubeviz_layout.cube_views[1]
     checkbox1 = cubeviz_layout._synced_checkboxes[1]
     unsync_index1 = 42
 
-    unsync2 = cubeviz_layout.all_views[3]
+    unsync2 = cubeviz_layout.cube_views[3]
     checkbox2 = cubeviz_layout._synced_checkboxes[3]
     unsync_index2 = 1234
 
     remain_synced = [
-        cubeviz_layout.all_views[0],
-        cubeviz_layout.all_views[2]
+        cubeviz_layout.cube_views[0],
+        cubeviz_layout.cube_views[2]
     ]
 
     # Unsync the first viewer

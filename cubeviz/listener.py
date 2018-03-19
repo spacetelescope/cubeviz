@@ -1,8 +1,9 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 
 from glue.core import Hub, HubListener, Data, DataCollection
-from glue.core.message import (DataCollectionAddMessage, DataRemoveComponentMessage,
-                               DataAddComponentMessage, SettingsChangeMessage)
+from glue.core.message import (DataCollectionAddMessage, SettingsChangeMessage,
+                               DataRemoveComponentMessage, SubsetMessage,
+                               DataAddComponentMessage)
 from .layout import CubeVizLayout
 
 
@@ -19,7 +20,9 @@ class CubevizManager(HubListener):
 
         self._empty_layout = self._app.add_fixed_layout_tab(CubeVizLayout)
         self._app.close_tab(0, warn=False)
-        self.hide_sidebar()
+
+        # For cubeviz, ROI selection should be in 'NewMode' by default
+        self._app._mode_toolbar.set_mode('new')
 
         self._hub.subscribe(
             self, DataCollectionAddMessage, handler=self.handle_new_dataset)
@@ -29,6 +32,8 @@ class CubevizManager(HubListener):
             self, SettingsChangeMessage, handler=self.handle_settings_change)
         self._hub.subscribe(
             self, DataRemoveComponentMessage, handler=self.handle_remove_component)
+        self._hub.subscribe(
+            self, SubsetMessage, handler=self.handle_subset_message)
 
         # Look for any cube data files that were loaded from the command line
         for data in session.data_collection:
@@ -53,15 +58,18 @@ class CubevizManager(HubListener):
             self._empty_layout = None
 
     def handle_new_component(self, message):
-        #self._layout.add_new_data_component(str(message.component_id))
-        self._layout.add_new_data_component(message.component_id)
+        self._layout.display_component(message.component_id)
 
     def handle_remove_component(self, message):
-        self._layout.remove_component(message.component_id)
+        self._layout.remove_data_component(message.component_id)
 
     def handle_settings_change(self, message):
         if self._layout is not None:
-            self._layout._handle_settings_change(message)
+            self._layout.handle_settings_change(message)
+
+    def handle_subset_message(self, message):
+        if self._layout is not None:
+            self._layout.handle_subset_action(message)
 
     def hide_sidebar(self):
         self._app._ui.main_splitter.setSizes([0, 300])
@@ -69,9 +77,9 @@ class CubevizManager(HubListener):
     def setup_data(self, cubeviz_layout, data):
         # Automatically add data to viewers and set attribute for split viewers
         image_viewers = [cubeviz_layout.single_view._widget,
-                         cubeviz_layout.left_view._widget,
-                         cubeviz_layout.middle_view._widget,
-                         cubeviz_layout.right_view._widget]
+                         cubeviz_layout.split_views[0]._widget,
+                         cubeviz_layout.split_views[1]._widget,
+                         cubeviz_layout.split_views[2]._widget]
 
         data_headers = [str(x).strip() for x in data.component_ids() if not x in data.coordinate_components]
 

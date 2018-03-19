@@ -1,6 +1,8 @@
 # This file is used to configure the behavior of pytest when using the Astropy
 # test infrastructure.
 
+import sys
+
 from astropy.version import version as astropy_version
 if astropy_version < '3.0':
     # With older versions of Astropy, we actually need to import the pytest
@@ -66,6 +68,12 @@ from .tests.helpers import (toggle_viewer, select_viewer, create_glue_app,
 @pytest.fixture(scope='session')
 def cubeviz_layout():
     app = create_glue_app()
+    layout = app.tab(0)
+
+    # Cheap workaround for Windows test environment
+    if sys.platform.startswith('win'):
+        layout._cubeviz_toolbar._toggle_sidebar()
+
     return app.tab(0)
 
 @pytest.fixture(autouse=True)

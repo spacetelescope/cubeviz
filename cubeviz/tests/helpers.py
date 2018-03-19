@@ -5,7 +5,9 @@ from glue.app.qt import GlueApplication
 
 
 __all__ = ['toggle_viewer', 'select_viewer', 'create_glue_app',
-           'reset_app_state']
+           'enter_slice_text', 'enter_wavelength_text', 'reset_app_state',
+           'sync_all_viewers', 'assert_all_viewer_indices',
+           'assert_slice_text']
 
 
 TEST_DATA_PATH = os.path.join(os.path.dirname(__file__), 'data')
@@ -41,6 +43,20 @@ def enter_wavelength_text(qtbot, layout, text):
 def sync_all_viewers(qtbot, layout):
     left_click(qtbot, layout.ui.sync_button)
 
+def assert_viewer_indices(viewer_array, index):
+    for viewer in viewer_array:
+        assert viewer._widget.slice_index == index
+
+def assert_all_viewer_indices(layout, index):
+    assert_viewer_indices(layout.cube_views, index)
+
+def assert_wavelength_text(layout, text):
+    assert layout._slice_controller._wavelength_textbox.text() == str(text)
+
+def assert_slice_text(layout, text):
+    assert layout._slice_controller._slice_textbox.text() == str(text)
+
+
 def create_glue_app():
     filename = os.path.join(TEST_DATA_PATH, 'data_cube.fits.gz')
 
@@ -63,5 +79,5 @@ def reset_app_state(qtbot, layout):
     enter_slice_text(qtbot, layout, '1024')
     if layout._single_viewer_mode:
         toggle_viewer(qtbot, layout)
-    if layout._active_view is not layout.left_view:
-        select_viewer(qtbot, layout.left_view)
+    if layout._active_view is not layout.split_views[0]:
+        select_viewer(qtbot, layout.split_views[0])
