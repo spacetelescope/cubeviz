@@ -287,7 +287,9 @@ class CubeVizLayout(QtWidgets.QWidget):
         """
 
         # Retrieve the current cube data object
-        operation_handler = SpectralOperationHandler(self._data, stack=stack,
+        operation_handler = SpectralOperationHandler(self._data, 
+                                                     stack=stack, 
+                                                     session=self.session, 
                                                      parent=self)
         operation_handler.exec_()
 
