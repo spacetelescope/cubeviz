@@ -1,6 +1,7 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import sys
 import argparse
+import os
 
 from glue.app.qt import GlueApplication
 from glue.main import restore_session, get_splash, load_data_files, load_plugins
@@ -60,6 +61,12 @@ def main(argv=sys.argv):
     DataFactoryConfiguration(data_configs, data_configs_show, remove_defaults=True)
 
     datafiles = args[0].data_files
+
+    # Check to make sure each file exists and raise an Exception 
+    # that will show in the popup if it does not exist. 
+    for x in datafiles:
+        if not os.path.isfile(x):
+            raise IOError('The file {} does not exist'.format(x))
 
     # Show the splash screen for 1 second
     timer = QTimer()
