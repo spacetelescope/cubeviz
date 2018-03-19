@@ -121,7 +121,7 @@ class SpectralOperationHandler(QDialog):
 
         self._operation_thread = OperationThread(self._compose_cube(),
                                                  function=self.function)
-                                                 
+
         self._operation_thread.finished.connect(self.on_finished)
         self._operation_thread.status.connect(self.on_status_updated)
         self._operation_thread.start()
@@ -164,7 +164,7 @@ class SpectralOperationHandler(QDialog):
 
             super(SpectralOperationHandler, self).accept()
 
-        component_name = "{} {}".format(self.component_id, 
+        component_name = "{} {}".format(self.component_id,
                                         self.function.function.__name__)
 
         comp_count = len([x for x in self.data.component_ids()
