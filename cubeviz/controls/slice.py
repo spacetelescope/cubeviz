@@ -6,7 +6,7 @@ RED_BACKGROUND = "background-color: rgba(255, 0, 0, 128);"
 import logging
 logging.basicConfig(format='%(levelname)-6s: %(name)-10s %(asctime)-15s  %(message)s')
 log = logging.getLogger("SliceController")
-log.setLevel(logging.DEBUG)
+log.setLevel(logging.ERROR)
 
 class SliceController:
 

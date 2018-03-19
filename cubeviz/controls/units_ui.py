@@ -88,8 +88,8 @@ class WavelengthUI(QDialog):
         hb_redshift.addWidget(self.redshift_label)
         hb_redshift.addWidget(self.redshift_text)
 
-        # Going to hide these initially, when the "Rest Wavelengths is selected then
-        # we will show them.
+        # Going to hide these initially, when the "Rest Wavelengths is
+        # selected then we will show them.
         self.redshift_label.setDisabled(True)
         self.redshift_text.setDisabled(True)
 
@@ -127,6 +127,19 @@ class WavelengthUI(QDialog):
         vbl.addLayout(hbl_error)
         vbl.addLayout(hb_buttons)
 
+        # Enable or disable the redshift Z box depending on
+        # what they choose in the first combobox. Also need
+        # to add in the current redshift Z value if it is set.
+        if 'Rest' in self.wavelength_controller._wavelength_textbox_label:
+            self.redshift_label.setDisabled(False)
+            self.redshift_text.setDisabled(False)
+            self.wavelengthdisplay_combobox.setCurrentIndex(1)
+            self.redshift_text.setText('{}'.format(self.wavelength_controller.redshift_z))
+        else:
+            self.redshift_label.setDisabled(True)
+            self.redshift_text.setDisabled(True)
+            self.wavelengthdisplay_combobox.setCurrentIndex(0)
+
         self.setLayout(vbl)
         self.setMaximumWidth(700)
         self.show()
@@ -149,11 +162,11 @@ class WavelengthUI(QDialog):
                 return
 
             # Set it back in the wavelength controller
-            self.wavelength_controller.redshift_z = redshift 
+            self.wavelength_controller.redshift_z = redshift
         else:
-            self.wavelength_controller.redshift_z = 0.0 
+            self.wavelength_controller.redshift_z = 0.0
 
-        self.wavelength_controller.wavelength_label = self.wavelengthdisplay_combobox.currentText() 
+        self.wavelength_controller.wavelength_label = self.wavelengthdisplay_combobox.currentText()
 
         self.close()
 

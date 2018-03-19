@@ -1,5 +1,6 @@
 from astropy import units as u
 from specviz.third_party.glue.data_viewer import dispatch as specviz_dispatch
+from specviz.core.events import dispatch
 
 class UnitController:
     def __init__(self, cubeviz_layout):
@@ -11,7 +12,7 @@ class UnitController:
         self._new_units = self._original_units
         self._wcs = None
 
-        # Add the redshift z value 
+        # Add the redshift z value
         self._redshift_z = 0
 
         # This is the Wavelength conversion/combobox code
@@ -19,7 +20,9 @@ class UnitController:
         self._units_titles = list(u.long_names[0].title() for u in self._units)
 
         # This is the label for the wavelength units
-        self._wavelength_textbox_label = ui.wavelength_textbox_label
+        self._wavelength_textbox_label = ui.wavelength_textbox_label.text()
+
+        specviz_dispatch.setup(self)
 
     @property
     def wavelength_label(self):
@@ -29,11 +32,11 @@ class UnitController:
     def wavelength_label(self, value):
         self._wavelength_textbox_label = value
 
-    @property 
+    @property
     def units(self):
         return self._units
 
-    @property 
+    @property
     def unit_titles(self):
         return self._units_titles
 
@@ -53,6 +56,12 @@ class UnitController:
 
         :return: Z redshift value
         """
+
+        # We want to make sure there is no odd messaging looping that might
+        # happen if we receive the same value. In this case, we are done.
+        if self._redshift_z == new_z:
+            return
+
         self._redshift_z = new_z
 
         if new_z is not None and new_z > 0:
@@ -60,14 +69,30 @@ class UnitController:
             self._wavelength_textbox_label = 'Rest Wavelength'
             self._cv_layout._slice_controller.wavelength_label = 'Rest Wavelength'
             self._cv_layout.set_wavelengths((1+new_z)*self._original_wavelengths, self._new_units)
-        else :
+        else:
             # Set the label
             self._wavelength_textbox_label = 'Obs Wavelength'
             self._cv_layout._slice_controller.wavelength_label = 'Obs Wavelength'
             self._cv_layout.set_wavelengths(self._original_wavelengths, self._new_units)
-    
+
         # Send the redshift value to specviz
-        #specviz_dispatch.redshift_changed.emit(z=0.01)
+        specviz_dispatch.change_redshift.emit(redshift=self._redshift_z)
+
+    @specviz_dispatch.register_listener("change_redshift")
+    def change_redshift(self, redshift):
+        """
+        Change the redshift based on a message from specviz.
+
+        :paramter: redshift - the Z value.
+        :return: nothing
+        """
+        if self._redshift_z == redshift:
+            # If the input redshift is the current value we have
+            # then we are not going to do anything.
+            return
+        else:
+            # This calls the setter above, so really, the magic is there.
+            self.redshift_z = redshift
 
     def on_combobox_change(self, new_unit_name):
         """
