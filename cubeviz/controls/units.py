@@ -75,6 +75,12 @@ class UnitController:
             self._cv_layout._slice_controller.wavelength_label = 'Obs Wavelength'
             self._cv_layout.set_wavelengths(self._original_wavelengths, self._new_units)
 
+        # Calculate and set the new wavelengths
+        self._wavelengths = self._original_wavelengths / (1 + self._redshift_z)
+
+        # Send them to the slice controller
+        self._cv_layout._slice_controller.set_wavelengths(self._wavelengths, self._new_units)
+
         # Send the redshift value to specviz
         specviz_dispatch.change_redshift.emit(redshift=self._redshift_z)
 

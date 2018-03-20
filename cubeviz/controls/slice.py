@@ -6,7 +6,7 @@ RED_BACKGROUND = "background-color: rgba(255, 0, 0, 128);"
 import logging
 logging.basicConfig(format='%(levelname)-6s: %(name)-10s %(asctime)-15s  %(message)s')
 log = logging.getLogger("SliceController")
-log.setLevel(logging.ERROR)
+log.setLevel(logging.DEBUG)
 
 class SliceController:
 
@@ -64,6 +64,8 @@ class SliceController:
 
         :return: None
         """
+        log.debug('wavelength_label (setter) with {}'.format(new_label))
+
         self._wavelength_label_text = new_label
 
         self._wavelength_textbox_label.setText('{} ({})'.format(
@@ -75,6 +77,8 @@ class SliceController:
 
         :return:
         """
+        log.debug('enable')
+
         self.set_enabled(True)
 
         self._slice_slider.setMinimum(0)
@@ -103,6 +107,7 @@ class SliceController:
         self._wavelength_textbox.setEnabled(value)
 
     def set_wavelengths(self, new_wavelengths, new_units):
+        log.debug('set_wavelengths')
 
         # Store the wavelength units and format
         new_units_name = new_units.short_names[0]
@@ -124,10 +129,14 @@ class SliceController:
         specviz_dispatch.changed_units.emit(x=new_units)
 
     def update_index(self, index):
+        log.debug('update_index {}'.format(index))
+
         self._slice_slider.setValue(index)
         self._update_slice_textboxes(index)
 
     def change_slider_value(self, amount):
+        log.debug('change_slider_value {}'.format(amount))
+
         new_index = self._slice_slider.value() + amount
         self._slice_slider.setValue(new_index)
         specviz_dispatch.changed_dispersion_position.emit(pos=new_index)
@@ -139,6 +148,8 @@ class SliceController:
         :param event:
         :return:
         """
+        log.debug('_on_slider_change {}'.format(event))
+
         index = self._slice_slider.value()
         cube_views = self._cv_layout.cube_views
         active_cube = self._cv_layout._active_cube
@@ -175,6 +186,8 @@ class SliceController:
         Callback for slider pressed.
         activates fast_draw_slice_at_index flags
         """
+        log.debug('_on_slider_pressed')
+
         # This flag will activate fast_draw_slice_at_index
         # Which will redraw sliced images quickly
         self._slider_flag = True
@@ -189,6 +202,8 @@ class SliceController:
         blits images to the viewers. This function will redraw the axis,
         tites, labels etc...
         """
+        log.debug('_on_slider_released')
+
         # This flag will deactivate fast_draw_slice_at_index
         self._slider_flag = False
 
@@ -221,13 +236,20 @@ class SliceController:
         :return:
         """
 
-        log.debug('Entering update_slice_textboxes with index {}'.format(index))
+        log.debug('_update_slice_textboxes with index {} {}'.format(index, self._slice_textbox.text()))
+
+        try:
+            if int(index) == int(self._slice_textbox.text()):
+                log.debug('  index is the same so skipping the rest')
+                return
+        except:
+            pass
 
         # Update the input text box for slice number
         self._slice_textbox.setText(str(index))
 
         # Update the wavelength for the corresponding slice number.
-        log.debug('\tGoing to call wavelength_textbox with wavelength {}'.format(self._wavelengths[index]))
+        log.debug('  Going to call wavelength_textbox with wavelength {}'.format(self._wavelengths[index]))
         self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[index]))
 
 
@@ -239,7 +261,7 @@ class SliceController:
         :param event:
         :return:
         """
-        log.debug('Entering _on_text_slice_change')
+        log.debug('_on_text_slice_change')
 
         # Get the value they typed in, but if not a number, then let's just use
         # the first slice.
@@ -251,8 +273,12 @@ class SliceController:
             self._slice_textbox.setStyleSheet(RED_BACKGROUND)
             return
 
+        if index == self._slice_textbox.text():
+            return
+
         # If a number and out of range then set to the first or last slice
         # depending if they set the number too low or too high.
+        log.debug('  Checking on index values to see if they are out of range index is {}'.format(index))
         if index < 0:
             index = 0
         if index > len(self._wavelengths) - 1:
@@ -278,13 +304,13 @@ class SliceController:
                     SpecViz event system.
         :return:
         """
-        log.debug('Entered _on_text_wavelength_change')
+        log.debug('_on_text_wavelength_change')
 
         try:
             # Find the closest real wavelength and use the index of it
             wavelength = pos if pos is not None else float(self._wavelength_textbox.text())
             index = np.argsort(abs(self._wavelengths - wavelength))[0]
-            log.debug('\twavelength is {} ({} {}) index is {}'.format(
+            log.debug('   wavelength is {} ({} {}) index is {}'.format(
                 wavelength, min(self._wavelengths), max(self._wavelengths),index))
             self._wavelength_textbox.setStyleSheet("")
         except ValueError:
@@ -302,6 +328,8 @@ class SliceController:
         """
         SpecViz slider index changed callback
         """
+        log.debug('specviz_wavelength_slider_change')
+
         # if self._slider_flag is active then
         # something else is using it so don't
         # deactivate it when done (deactivate_flag)
@@ -311,7 +339,18 @@ class SliceController:
             deactivate_flag = True
             self._slider_flag = True
 
-        self._on_text_wavelength_change(event, pos)
+        # The "pos" value coming from specviz appears to be related to the
+        # index in the observed wavelength and so if there is a redshift
+        # then we need to convert the pos to the rest wavelength position.
+        if self._cv_layout._units_controller and not self._cv_layout._units_controller.redshift_z == 0.0:
+            log.debug('  pos passed from specviz is {}'.format(pos))
+            #rest_wavelength = self._cv_layout._units_controller._original_wavelengths[pos] / (1 + self._cv_layout._units_controller.redshift_z)
+            rest_wavelength = pos / (1 + self._cv_layout._units_controller.redshift_z)
+            log.debug('  calcualted rest wavelength is {}'.format(rest_wavelength))
+            pos = np.argsort(abs(self._wavelengths - rest_wavelength))[0]
+
+        log.debug('  calling _on_text_wavelength_change with pos {}'.format(pos))
+        #self._on_text_wavelength_change(event, pos)
 
         if deactivate_flag:
             self._slider_flag = False
