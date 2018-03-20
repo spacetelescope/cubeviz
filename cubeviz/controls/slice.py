@@ -59,7 +59,7 @@ class SliceController:
     @wavelength_label.setter
     def wavelength_label(self, new_label):
         """
-        Set the wavelength label. The new label should probably be "Obs Wavelenght" 
+        Set the wavelength label. The new label should probably be "Obs Wavelenght"
         or "Rest Wavelenght" but maybe could be other things.
 
         :return: None
@@ -245,7 +245,7 @@ class SliceController:
         # the first slice.
         try:
             index = int(self._slice_textbox.text())
-            log.debug('\tCalculated index as {}'.format(index)) 
+            log.debug('\tCalculated index as {}'.format(index))
             self._slice_textbox.setStyleSheet("")
         except ValueError:
             self._slice_textbox.setStyleSheet(RED_BACKGROUND)
@@ -285,7 +285,7 @@ class SliceController:
             wavelength = pos if pos is not None else float(self._wavelength_textbox.text())
             index = np.argsort(abs(self._wavelengths - wavelength))[0]
             log.debug('\twavelength is {} ({} {}) index is {}'.format(
-                wavelength, min(self._wavelengths), max(self._wavelengths),index)) 
+                wavelength, min(self._wavelengths), max(self._wavelengths),index))
             self._wavelength_textbox.setStyleSheet("")
         except ValueError:
             self._wavelength_textbox.setStyleSheet(RED_BACKGROUND)

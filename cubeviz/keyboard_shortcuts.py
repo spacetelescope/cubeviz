@@ -66,7 +66,7 @@ def copy_coordinates_to_clipboard(session):
 @keyboard_shortcut(QtCore.Qt.Key_1, None)
 def show_wavelength_dialog(session):
     """
-    Popup the Wavelength dialog in order to change the units or redshift. 
+    Popup the Wavelength dialog in order to change the units or redshift.
 
     :param session:
     :return:
