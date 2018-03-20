@@ -62,8 +62,8 @@ def main(argv=sys.argv):
 
     datafiles = args[0].data_files
 
-    # Check to make sure each file exists and raise an Exception 
-    # that will show in the popup if it does not exist. 
+    # Check to make sure each file exists and raise an Exception
+    # that will show in the popup if it does not exist.
     for x in datafiles:
         if not os.path.isfile(x):
             raise IOError('The file {} does not exist'.format(x))
