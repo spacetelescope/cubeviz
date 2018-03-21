@@ -704,7 +704,7 @@ class CubevizImageViewer(ImageViewer):
         c = SkyCoord(ra=ra * u.degree, dec=dec * u.degree)
         coord_string = "("
         coord_string += "{0:0>2.0f}h:{1:0>2.0f}m:{2:0>2.0f}s".format(*c.ra.hms)
-        coord_string += ",  "
+        coord_string += ", "
         coord_string += "{0:0>3.0f}d:{1:0>2.0f}m:{2:0>2.0f}s".format(*c.dec.dms)
 
         # Check if wavelength is available
