@@ -671,8 +671,6 @@ class CubevizImageViewer(ImageViewer):
         if self.hold_coords:
             return
         if QToolTip.text() == self.mouse_value:
-            pos = QCursor.pos()
-            QToolTip.showText(pos, " ", self)
             QToolTip.hideText()
         self.x_mouse = None
         self.y_mouse = None
@@ -730,9 +728,8 @@ class CubevizImageViewer(ImageViewer):
             self.is_mouse_over = False
             self.clear_coords()
             return
+        mouse_pos = QCursor.pos()
         self.is_mouse_over = True
-
-
 
         # If hold_coords is active, return
         if self.hold_coords:
@@ -779,9 +776,9 @@ class CubevizImageViewer(ImageViewer):
         self.statusBar().clearMessage()
         self._dont_update_status = False
         self.coord_label.setText(string)
-        pos = QCursor.pos()
-        QToolTip.showText(pos, "...", self)
-        QToolTip.showText(pos, self.mouse_value, self)
+
+        QToolTip.showText(mouse_pos, "...", self)
+        QToolTip.showText(mouse_pos, self.mouse_value, self)
         return
 
     def first_visible_layer(self):
