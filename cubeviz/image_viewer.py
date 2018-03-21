@@ -22,6 +22,9 @@ from glue.viewers.image.state import ImageLayerState
 from glue.viewers.image.qt.layer_style_editor import ImageLayerStyleEditor
 from glue.viewers.common.qt.tool import Tool
 
+from qtpy.QtWidgets import QToolTip
+from qtpy.QtGui import QCursor
+
 from .utils.contour import ContourSettings
 
 CONTOUR_DEFAULT_NUMBER_OF_LEVELS = 8
@@ -171,6 +174,7 @@ class CubevizImageViewer(ImageViewer):
         self._coords_format_function = self._format_to_hex_string  # Function to format ra and dec
         self.x_mouse = None  # x position of mouse in pix
         self.y_mouse = None  # y position of mouse in pix
+        self.mouse_value = ""  # Value under mouse as string
 
         self.is_contour_active = False  # Is contour being displayed
         self.is_contour_preview_active = False # Is contour in preview mode
@@ -666,6 +670,10 @@ class CubevizImageViewer(ImageViewer):
         """
         if self.hold_coords:
             return
+        if QToolTip.text() == self.mouse_value:
+            pos = QCursor.pos()
+            QToolTip.showText(pos, " ", self)
+            QToolTip.hideText()
         self.x_mouse = None
         self.y_mouse = None
         self.coord_label.setText('')
@@ -724,6 +732,8 @@ class CubevizImageViewer(ImageViewer):
             return
         self.is_mouse_over = True
 
+
+
         # If hold_coords is active, return
         if self.hold_coords:
             return
@@ -761,13 +771,17 @@ class CubevizImageViewer(ImageViewer):
                             string = string + " " + self._coords_format_function(ra, dec)
                 # Pixel Value:
                 v = arr[y][x]
-                string = "{0:.3e} {1} ".format(v, self.component_unit_label) + string
+                self.mouse_value = "{0:.3e} {1} ".format(v, self.component_unit_label)
+                string = "{0:.3e} ".format(v) + string
         # Add a gap to string and add to viewer.
         string += " "
         self._dont_update_status = True
         self.statusBar().clearMessage()
         self._dont_update_status = False
         self.coord_label.setText(string)
+        pos = QCursor.pos()
+        QToolTip.showText(pos, "...", self)
+        QToolTip.showText(pos, self.mouse_value, self)
         return
 
     def first_visible_layer(self):
