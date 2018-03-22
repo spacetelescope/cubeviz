@@ -6,7 +6,7 @@ RED_BACKGROUND = "background-color: rgba(255, 0, 0, 128);"
 import logging
 logging.basicConfig(format='%(levelname)-6s: %(name)-10s %(asctime)-15s  %(message)s')
 log = logging.getLogger("SliceController")
-log.setLevel(logging.WARNING)
+log.setLevel(logging.DEBUG)
 
 class SliceController:
 
@@ -224,20 +224,12 @@ class SliceController:
         :param index: Slice index number displayed.
         :return:
         """
-        try:
-            # If the index is the same as the current we don't need to do 
-            # anything else so we can just stop the process here.
-            if int(index) == int(self._slice_textbox.text()):
-                return
-        except:
-            pass
 
         # Update the input text box for slice number
         self._slice_textbox.setText(str(index))
 
         # Update the wavelength for the corresponding slice number.
         self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[index]))
-
 
     def _on_text_slice_change(self, event=None):
         """
