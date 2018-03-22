@@ -184,7 +184,7 @@ class CubeVizLayout(QtWidgets.QWidget):
             ('Hide Axes', ['checkable', self._toggle_viewer_axes]),
             ('Hide Toolbars', ['checkable', self._toggle_toolbars]),
             ('Hide Stats', ['checkable', self._toggle_stats_display]),
-            ('Wavelength Units', lambda: self._open_dialog('Wavelength Units', None))
+            ('Wavelength Units/Redshift', lambda: self._open_dialog('Wavelength Units/Redshift', None))
         ]))
 
         # Add toggle RA-DEC format:
@@ -298,7 +298,7 @@ class CubeVizLayout(QtWidgets.QWidget):
                 self._data, self.session.data_collection, parent=self)
             mm_gui.display()
 
-        if name == "Wavelength Units":
+        if name == "Wavelength Units/Redshift":
             WavelengthUI(self._units_controller, parent=self)
 
     def _toggle_all_coords_in_degrees(self):
