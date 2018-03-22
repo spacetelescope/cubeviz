@@ -183,6 +183,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         view_menu = self._dict_to_menu(OrderedDict([
             ('Hide Axes', ['checkable', self._toggle_viewer_axes]),
             ('Hide Toolbars', ['checkable', self._toggle_toolbars]),
+            ('Hide Spaxel Value Tooltip', ['checkable', self._toggle_hover_value]),
             ('Hide Stats', ['checkable', self._toggle_stats_display]),
             ('Wavelength Units/Redshift', lambda: self._open_dialog('Wavelength Units/Redshift', None))
         ]))
@@ -277,6 +278,10 @@ class CubeVizLayout(QtWidgets.QWidget):
         for viewer in self.cube_views:
             viewer._widget.toolbar.setVisible(self._toolbars_visible)
 
+    def _toggle_hover_value(self):
+        for viewer in self.cube_views:
+            viewer._widget._is_tooltip_on = not viewer._widget._is_tooltip_on
+
     def _toggle_stats_display(self):
         self._stats_visible = not self._stats_visible
         for viewer in self.cube_views:
@@ -336,7 +341,9 @@ class CubeVizLayout(QtWidgets.QWidget):
         """
 
         # Retrieve the current cube data object
-        operation_handler = SpectralOperationHandler(self._data, stack=stack,
+        operation_handler = SpectralOperationHandler(self._data,
+                                                     stack=stack,
+                                                     session=self.session,
                                                      parent=self)
         operation_handler.exec_()
 

@@ -123,10 +123,7 @@ for root, dirs, files in os.walk(PACKAGENAME):
                     os.path.relpath(root, PACKAGENAME), filename))
 package_info['package_data'][PACKAGENAME].extend(c_files)
 
-# I'm not sure whether it makes sense to duplicate this here or not
-default_install_requires = 'astropy asdf pytest>=3.1'
-install_requires = metadata.get(
-    'install_requires', default_install_requires).strip().split()
+install_requires = metadata.get('install_requires', '').strip().split()
 
 # Note that requires and provides should not be included in the call to
 # ``setup``, since these are now deprecated. See this link for more details:

@@ -1,8 +1,8 @@
 import os
 
 import numpy as np
-from glue.core import Subset
-from qtpy.QtCore import QThread, Signal
+from glue.core import Subset, Data
+from qtpy.QtCore import QThread, Signal, QEventLoop
 from qtpy.QtWidgets import QDialog, QDialogButtonBox
 from qtpy.uic import loadUi
 from spectral_cube import BooleanArrayMask, SpectralCube
@@ -29,13 +29,15 @@ class SpectralOperationHandler(QDialog):
         :class:`~spectral_cube.SpectralCube` object.
     """
 
-    def __init__(self, data, stack, *args, **kwargs):
+    def __init__(self, data, stack, session, parent, *args, **kwargs):
         super(SpectralOperationHandler, self).__init__(*args, **kwargs)
         self.data = data
         self.stack = stack
         self.function = stack[0] if len(stack) > 0 else None
         self.component_id = self.data.component_ids()[0]
         self._operation_thread = None
+        self._session = session
+        self._parent = parent
 
         self.setup_ui()
         self.setup_connections()
@@ -50,14 +52,18 @@ class SpectralOperationHandler(QDialog):
         # Populate combo box
         self.data_component_combo_box.addItems(component_ids)
 
-        # Populate the operation combo box
-        operation_stack = ["{}({})".format(
-            oper.function.__name__,
-            ", ".join(
-                ["{}".format(arg) for arg in oper.args] + ["{}={}".format(k, v)
-                                                           for k, v in
-                                                           oper.kwargs.items()]))
-            for oper in self.stack]
+        operation_stack = []
+
+        for oper in self.stack:
+            func_params = []
+
+            for arg in oper.args:
+                func_params.append("{}".format(arg))
+
+            for k, v in oper.kwargs.items():
+                func_params.append("{}={}".format(k, str(v)[:10] + "... " + str(v)[-5:] if len(str(v)) > 15 else str(v)))
+
+            operation_stack.append("{}({})".format(oper.function.__name__, ", ".join(func_params)))
 
         self.operation_combo_box.addItems(operation_stack)
 
@@ -110,6 +116,9 @@ class SpectralOperationHandler(QDialog):
         self.progress_bar.setEnabled(True)
         self.abort_button.setEnabled(True)
 
+        self.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
+        self.button_box.button(QDialogButtonBox.Cancel).setEnabled(False)
+
         self._operation_thread = OperationThread(self._compose_cube(),
                                                  function=self.function)
 
@@ -149,7 +158,14 @@ class SpectralOperationHandler(QDialog):
         data : ndarray
             The result of the operation performed on the `SpectralCube` object.
         """
-        component_name = "{} [Spectrally Smoothed]".format(self.component_id)
+        if self.function.axis == 'cube':
+            data = Data(x=data)
+            self._session.data_collection.append(data)
+
+            super(SpectralOperationHandler, self).accept()
+
+        component_name = "{} {}".format(self.component_id,
+                                        self.function.function.__name__)
 
         comp_count = len([x for x in self.data.component_ids()
                           if component_name in str(x)])
@@ -157,7 +173,10 @@ class SpectralOperationHandler(QDialog):
         if comp_count > 0:
             component_name = "{} {}".format(component_name, comp_count)
 
-        self.data.add_component(data, component_name)
+        if len(data.shape) < len(self.data.shape):
+            self._parent.add_overlay(data, component_name)
+        else:
+            self.data.add_component(data, component_name)
 
         super(SpectralOperationHandler, self).accept()
 
@@ -213,13 +232,20 @@ class OperationThread(QThread):
         The function-like callable used to perform the operation on the cube.
     """
     status = Signal(float)
-    finished = Signal(np.ndarray)
+    finished = Signal(object)
 
     def __init__(self, cube_data, function, parent=None):
         super(OperationThread, self).__init__(parent)
         self._cube_data = cube_data
         self._function = function
         self._tracker = None
+        self._axes =  {
+            'cube': None,
+            'spectral': self._cube_data.spectral_axis
+        }
+
+    def on_query_result(self, state):
+        self.block.emit(state)
 
     def run(self):
         """Run the thread."""
@@ -230,12 +256,15 @@ class OperationThread(QThread):
             self._tracker()
             self.status.emit(self._tracker.percent_value)
 
-        new_data = self._cube_data.apply_function(
-            self._function,
-            spectral_axis=self._cube_data.spectral_axis,
-            axis=0,
-            keep_shape=True,
-            update_function=progress_wrapper)
+        if self._function.axis == 'cube':
+            new_data = self._function(self._cube_data)
+        else:
+            new_data = self._cube_data.apply_function(
+                self._function,
+                spectral_axis=self._cube_data.spectral_axis,
+                axis=0,
+                keep_shape=self._function.keep_shape,
+                update_function=progress_wrapper)
 
         self.finished.emit(new_data)
 
