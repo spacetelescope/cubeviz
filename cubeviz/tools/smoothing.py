@@ -662,7 +662,7 @@ class SelectSmoothing(QDialog):
         self.previewButton = QPushButton("Preview Slice")
         self.previewButton.clicked.connect(self.call_preview)
 
-        self.okButton = QPushButton("Smooth Cube")
+        self.okButton = QPushButton("Smooth Spaxels")
         self.okButton.clicked.connect(self.call_main)
         self.okButton.setDefault(True)
 
