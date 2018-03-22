@@ -175,6 +175,7 @@ class CubevizImageViewer(ImageViewer):
         self.x_mouse = None  # x position of mouse in pix
         self.y_mouse = None  # y position of mouse in pix
         self.mouse_value = ""  # Value under mouse as string
+        self._is_tooltip_on = True  # Display mouse_value as tool tip
 
         self.is_contour_active = False  # Is contour being displayed
         self.is_contour_preview_active = False # Is contour in preview mode
@@ -777,8 +778,9 @@ class CubevizImageViewer(ImageViewer):
         self._dont_update_status = False
         self.coord_label.setText(string)
 
-        QToolTip.showText(mouse_pos, "...", self)
-        QToolTip.showText(mouse_pos, self.mouse_value, self)
+        if self._is_tooltip_on:
+            QToolTip.showText(mouse_pos, "...", self)
+            QToolTip.showText(mouse_pos, self.mouse_value, self)
         return
 
     def first_visible_layer(self):
