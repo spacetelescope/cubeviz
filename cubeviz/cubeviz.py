@@ -1,10 +1,13 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import sys
+import os
 import argparse
+import os
 
 from glue.app.qt import GlueApplication
 from glue.main import restore_session, get_splash, load_data_files, load_plugins
 from qtpy.QtCore import QTimer
+from qtpy import QtGui, QtWidgets
 
 try:
     from glue.utils.qt.decorators import die_on_error
@@ -14,6 +17,25 @@ except ImportError:
 from .version import version as cubeviz_version
 from .data_factories import DataFactoryConfiguration
 
+CUBEVIZ_ICON_PATH = os.path.abspath(
+    os.path.join(
+        os.path.abspath(__file__),
+        "..",
+        "data",
+        "resources",
+        "cubeviz_icon.png"
+    )
+)
+
+CUBEVIZ_LOGO_PATH = os.path.abspath(
+    os.path.join(
+        os.path.abspath(__file__),
+        "..",
+        "data",
+        "resources",
+        "cubeviz_logo.png"
+    )
+)
 
 def setup():
 
@@ -49,6 +71,7 @@ def main(argv=sys.argv):
 
     # Splash screen
     splash = get_splash()
+    splash.image = QtGui.QPixmap(CUBEVIZ_LOGO_PATH)
     splash.show()
 
     # Start off by loading plugins. We need to do this before restoring
@@ -60,6 +83,12 @@ def main(argv=sys.argv):
     DataFactoryConfiguration(data_configs, data_configs_show, remove_defaults=True)
 
     datafiles = args[0].data_files
+
+    # Check to make sure each file exists and raise an Exception
+    # that will show in the popup if it does not exist.
+    for x in datafiles:
+        if not os.path.isfile(x):
+            raise IOError('The file {} does not exist'.format(x))
 
     # Show the splash screen for 1 second
     timer = QTimer()
@@ -75,6 +104,10 @@ def main(argv=sys.argv):
 
     session = glue.core.Session(data_collection=data_collection, hub=hub)
     ga = GlueApplication(session=session)
+    ga.setWindowTitle('cubeviz ({})'.format(cubeviz_version))
+    qapp = QtWidgets.QApplication.instance()
+    qapp.setWindowIcon(QtGui.QIcon(CUBEVIZ_ICON_PATH))
+    ga.setWindowIcon(QtGui.QIcon(CUBEVIZ_ICON_PATH))
 
     ga.run_startup_action('cubeviz')
 
@@ -83,6 +116,5 @@ def main(argv=sys.argv):
         datasets = load_data_files(datafiles)
         ga.add_datasets(data_collection, datasets, auto_merge=False)
 
-    ga.setWindowTitle('cubeviz ({})'.format(cubeviz_version))
 
     sys.exit(ga.start(maximized=True))
