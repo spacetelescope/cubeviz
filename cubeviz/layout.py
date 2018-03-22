@@ -182,6 +182,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         view_menu = self._dict_to_menu(OrderedDict([
             ('Hide Axes', ['checkable', self._toggle_viewer_axes]),
             ('Hide Toolbars', ['checkable', self._toggle_toolbars]),
+            ('Hide Spaxel Value Tooltip', ['checkable', self._toggle_hover_value]),
             ('Hide Stats', ['checkable', self._toggle_stats_display]),
             ('Wavelength Units', lambda: self._open_dialog('Wavelength Units', None))
         ]))
@@ -275,6 +276,10 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._toolbars_visible = not self._toolbars_visible
         for viewer in self.cube_views:
             viewer._widget.toolbar.setVisible(self._toolbars_visible)
+
+    def _toggle_hover_value(self):
+        for viewer in self.cube_views:
+            viewer._widget._is_tooltip_on = not viewer._widget._is_tooltip_on
 
     def _toggle_stats_display(self):
         self._stats_visible = not self._stats_visible
