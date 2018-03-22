@@ -1,0 +1,45 @@
+# Define the following units on init
+#
+#   Define new units here. Add a name and base
+#   for each unit. The base is an astropy unit and
+#   should be kept as a sting that astropy.unit.Unit
+#   understands. I there is no base for the new unit
+#   only define the name key.
+new_units:
+    spaxel:
+        name:
+            "spaxel"
+        base:
+            "pix"
+
+## Unit Registry
+#
+#  Registered units are stored below. Each key is
+#  the unit as a sting and is broken down to its
+#  numeric, spectral_flux_density and area components.
+#  If a component is N/A place an empty sting.
+registered_units:
+    # Units from Manga
+    "1E-17 erg/s/cm^2/Ang/spaxel":
+        numeric:
+            "1E-17"
+        spectral_flux_density:
+            "erg/angstrom/cm^2/s"
+        area:
+            "spaxel"
+
+    "1E-17 erg/s/cm^2/A/spaxel":
+        numeric:
+            "1E-17"
+        spectral_flux_density:
+            "erg/angstrom/cm^2/s"
+        area:
+            "spaxel"
+
+    "erg/s/cm^2/Ang/spaxel":
+        numeric:
+            ""
+        spectral_flux_density:
+            "erg/angstrom/cm^2/s"
+        area:
+            "spaxel"
