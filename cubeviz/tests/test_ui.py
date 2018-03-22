@@ -26,10 +26,10 @@ def test_starting_state(cubeviz_layout):
     assert cubeviz_layout.isVisible() == True
 
     assert cubeviz_layout._single_viewer_mode == False
-    assert cubeviz_layout._active_view is cubeviz_layout.left_view
-    assert cubeviz_layout._active_cube is cubeviz_layout.left_view
+    assert cubeviz_layout._active_view is cubeviz_layout.split_views[0]
+    assert cubeviz_layout._active_cube is cubeviz_layout.split_views[0]
 
-    for viewer in cubeviz_layout.all_views:
+    for viewer in cubeviz_layout.cube_views:
         assert viewer._widget.synced == True
 
 def assert_active_view_and_cube(layout, viewer):
@@ -37,19 +37,19 @@ def assert_active_view_and_cube(layout, viewer):
     assert layout._active_cube is viewer
 
 def test_active_viewer(qtbot, cubeviz_layout):
-    select_viewer(qtbot, cubeviz_layout.middle_view)
-    assert_active_view_and_cube(cubeviz_layout, cubeviz_layout.middle_view)
+    select_viewer(qtbot, cubeviz_layout.split_views[1])
+    assert_active_view_and_cube(cubeviz_layout, cubeviz_layout.split_views[1])
 
-    select_viewer(qtbot, cubeviz_layout.right_view)
-    assert_active_view_and_cube(cubeviz_layout, cubeviz_layout.right_view)
+    select_viewer(qtbot, cubeviz_layout.split_views[2])
+    assert_active_view_and_cube(cubeviz_layout, cubeviz_layout.split_views[2])
 
     select_viewer(qtbot, cubeviz_layout.specviz)
     assert cubeviz_layout._active_view is cubeviz_layout.specviz
     # Selecting the specviz viewer should not affect the last active cube
-    assert cubeviz_layout._active_cube is cubeviz_layout.right_view
+    assert cubeviz_layout._active_cube is cubeviz_layout.split_views[2]
 
-    select_viewer(qtbot, cubeviz_layout.left_view)
-    assert_active_view_and_cube(cubeviz_layout, cubeviz_layout.left_view)
+    select_viewer(qtbot, cubeviz_layout.split_views[0])
+    assert_active_view_and_cube(cubeviz_layout, cubeviz_layout.split_views[0])
 
 def test_toggle_viewer_mode(qtbot, cubeviz_layout):
     toggle_viewer(qtbot, cubeviz_layout)
@@ -58,14 +58,14 @@ def test_toggle_viewer_mode(qtbot, cubeviz_layout):
 
     toggle_viewer(qtbot, cubeviz_layout)
     assert cubeviz_layout._single_viewer_mode == False
-    assert_active_view_and_cube(cubeviz_layout, cubeviz_layout.left_view)
+    assert_active_view_and_cube(cubeviz_layout, cubeviz_layout.split_views[0])
 
 def test_remember_active_viewer(qtbot, cubeviz_layout):
     """Make sure that the active viewer in the current layout is remembered"""
 
     # Change active viewer in the split mode viewer
-    select_viewer(qtbot, cubeviz_layout.right_view)
-    assert_active_view_and_cube(cubeviz_layout, cubeviz_layout.right_view)
+    select_viewer(qtbot, cubeviz_layout.split_views[2])
+    assert_active_view_and_cube(cubeviz_layout, cubeviz_layout.split_views[2])
 
     # Change to the single mode viewer
     toggle_viewer(qtbot, cubeviz_layout)
@@ -77,7 +77,7 @@ def test_remember_active_viewer(qtbot, cubeviz_layout):
 
     # Change back to the split mode viewer
     toggle_viewer(qtbot, cubeviz_layout)
-    assert_active_view_and_cube(cubeviz_layout, cubeviz_layout.right_view)
+    assert_active_view_and_cube(cubeviz_layout, cubeviz_layout.split_views[2])
 
     # Change back to the single mode viewer
     toggle_viewer(qtbot, cubeviz_layout)
@@ -95,7 +95,7 @@ def test_sync_checkboxes(qtbot, cubeviz_layout, viewer_index):
         toggle_viewer(qtbot, cubeviz_layout)
 
     checkbox = cubeviz_layout._synced_checkboxes[viewer_index]
-    viewer = cubeviz_layout.all_views[viewer_index]
+    viewer = cubeviz_layout.cube_views[viewer_index]
 
     left_click(qtbot, checkbox)
     assert viewer._widget.synced == False
@@ -134,7 +134,7 @@ def test_viewer_dropdowns(qtbot, cubeviz_layout, viewer_index):
         combo = getattr(cubeviz_layout.ui, 'viewer{0}_combo'.format(viewer_index))
         current_index = min(viewer_index - 1, 1) # only two datasets
 
-    widget = cubeviz_layout.all_views[viewer_index]._widget
+    widget = cubeviz_layout.cube_views[viewer_index]._widget
 
     # Make sure there are only two data components currently (dataset has two)
     assert combo.count() == 2
@@ -153,7 +153,7 @@ def test_add_data_component(qtbot, cubeviz_layout):
     for viewer_index in range(4):
         combo, current_index = setup_combo_and_index(
                                     qtbot, cubeviz_layout, viewer_index)
-        widget = cubeviz_layout.all_views[viewer_index]._widget
+        widget = cubeviz_layout.cube_views[viewer_index]._widget
 
         # Make sure the new index is there
         assert combo.count() == 3
@@ -198,35 +198,38 @@ def test_2d_data_components(qtbot, cubeviz_layout, moment_map, while_active):
 
     assert moment_map == DATA_LABELS[0] + '-moment-1'
 
-    assert_slider_enabled(cubeviz_layout, True)
-
     combo, _ = setup_combo_and_index(qtbot, cubeviz_layout, 1)
-    combo.setCurrentIndex(combo.findText(moment_map))
+
+    # For the first test, the active viewer should now display a 2D moment map,
+    # so no action is required.
+    if not while_active:
+        select_viewer(qtbot, cubeviz_layout.split_views[0])
+        combo.setCurrentIndex(combo.findText(moment_map))
 
     assert_slider_enabled(cubeviz_layout, False)
-    assert cubeviz_layout.left_view._widget.has_2d_data == True
-    assert cubeviz_layout.left_view._widget.synced == False
+    assert cubeviz_layout.split_views[0]._widget.has_2d_data == True
+    assert cubeviz_layout.split_views[0]._widget.synced == False
 
     # Change the active viewer and make sure the slider is re-enabled
-    select_viewer(qtbot, cubeviz_layout.middle_view)
+    select_viewer(qtbot, cubeviz_layout.split_views[1])
     assert_slider_enabled(cubeviz_layout, True)
 
     enter_slice_text(qtbot, cubeviz_layout, 1234)
 
     # Change back to the left viewer currently displaying 2D data
     if while_active:
-        select_viewer(qtbot, cubeviz_layout.left_view)
-        assert cubeviz_layout.left_view._widget.has_2d_data == True
-        assert cubeviz_layout.left_view._widget.synced == False
+        select_viewer(qtbot, cubeviz_layout.split_views[0])
+        assert cubeviz_layout.split_views[0]._widget.has_2d_data == True
+        assert cubeviz_layout.split_views[0]._widget.synced == False
 
     # Return to displaying 3D data component
     combo.setCurrentIndex(combo.findText(DATA_LABELS[0]))
     assert_all_viewer_indices(cubeviz_layout, 1234)
-    assert cubeviz_layout.left_view._widget.has_2d_data == False
-    assert cubeviz_layout.left_view._widget.synced == True
+    assert cubeviz_layout.split_views[0]._widget.has_2d_data == False
+    assert cubeviz_layout.split_views[0]._widget.synced == True
 
     if not while_active:
-        select_viewer(qtbot, cubeviz_layout.left_view)
+        select_viewer(qtbot, cubeviz_layout.split_views[0])
         assert_slider_enabled(cubeviz_layout, True)
 
     assert_slider_enabled(cubeviz_layout, True)

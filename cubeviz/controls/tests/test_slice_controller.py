@@ -163,8 +163,8 @@ def sync_params(cubeviz_layout, request):
 
     params = dict(
         checkbox=cubeviz_layout._synced_checkboxes[viewer_index],
-        unsynced_viewer=cubeviz_layout.all_views[viewer_index],
-        other_viewers=all_but_index(cubeviz_layout.all_views, viewer_index),
+        unsynced_viewer=cubeviz_layout.cube_views[viewer_index],
+        other_viewers=all_but_index(cubeviz_layout.cube_views, viewer_index),
         synced_viewer=all_but_index(
             cubeviz_layout.split_views, viewer_index-1)[0]
     )
@@ -255,17 +255,17 @@ def test_multiple_unsynced_viewers(qtbot, cubeviz_layout):
     # Sanity check to make sure all viewers are actually synced
     assert_all_viewer_indices(cubeviz_layout, synced_index)
 
-    unsync1 = cubeviz_layout.all_views[1]
+    unsync1 = cubeviz_layout.cube_views[1]
     checkbox1 = cubeviz_layout._synced_checkboxes[1]
     unsync_index1 = 42
 
-    unsync2 = cubeviz_layout.all_views[3]
+    unsync2 = cubeviz_layout.cube_views[3]
     checkbox2 = cubeviz_layout._synced_checkboxes[3]
     unsync_index2 = 1234
 
     remain_synced = [
-        cubeviz_layout.all_views[0],
-        cubeviz_layout.all_views[2]
+        cubeviz_layout.cube_views[0],
+        cubeviz_layout.cube_views[2]
     ]
 
     # Unsync the first viewer

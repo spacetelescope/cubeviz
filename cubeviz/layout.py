@@ -13,7 +13,7 @@ from glue.config import qt_fixed_layout_tab
 from glue.external.echo import keep_in_sync, SelectionCallbackProperty
 from glue.external.echo.qt import connect_combo_selection
 from glue.core.data_combo_helper import ComponentIDComboHelper
-from glue.core.message import SettingsChangeMessage
+from glue.core.message import SettingsChangeMessage, SubsetUpdateMessage, SubsetDeleteMessage
 from glue.utils.matplotlib import freeze_margins
 
 from specviz.third_party.glue.data_viewer import SpecVizViewer
@@ -28,6 +28,9 @@ from .controls.units import UnitController
 from .tools import arithmetic_gui, moment_maps, smoothing
 from .tools import collapse_cube
 from .tools.spectral_operations import SpectralOperationHandler
+
+
+DEFAULT_NUM_SPLIT_VIEWERS = 3
 
 
 class WidgetWrapper(QtWidgets.QWidget):
@@ -79,23 +82,20 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui = load_ui('layout.ui', self,
                           directory=os.path.dirname(__file__))
 
-        # Create the views and register to the hub.
-        self.single_view = WidgetWrapper(CubevizImageViewer(self.session, cubeviz_layout=self), tab_widget=self)
-        self.left_view = WidgetWrapper(CubevizImageViewer(self.session, cubeviz_layout=self), tab_widget=self)
-        self.middle_view = WidgetWrapper(CubevizImageViewer(self.session, cubeviz_layout=self), tab_widget=self)
-        self.right_view = WidgetWrapper(CubevizImageViewer(self.session, cubeviz_layout=self), tab_widget=self)
-        self.specviz = WidgetWrapper(SpecVizViewer(self.session), tab_widget=self)
+        self.cube_views = []
 
-        self.single_view._widget.register_to_hub(self.session.hub)
-        self.left_view._widget.register_to_hub(self.session.hub)
-        self.middle_view._widget.register_to_hub(self.session.hub)
-        self.right_view._widget.register_to_hub(self.session.hub)
+        # Create the cube viewers and register to the hub.
+        for _ in range(DEFAULT_NUM_SPLIT_VIEWERS + 1):
+            ww = WidgetWrapper(CubevizImageViewer(
+                    self.session, cubeviz_layout=self), tab_widget=self)
+            self.cube_views.append(ww)
+            ww._widget.register_to_hub(self.session.hub)
+
+        # Create specviz viewer and register to the hub.
+        self.specviz = WidgetWrapper(SpecVizViewer(self.session), tab_widget=self)
         self.specviz._widget.register_to_hub(self.session.hub)
 
-        self.all_views = [self.single_view, self.left_view, self.middle_view, self.right_view]
-
-        # TODO: determine whether to rename this or get rid of it
-        self.cube_views = self.all_views
+        self.single_view = self.cube_views[0]
         self.split_views = self.cube_views[1:]
 
         self._synced_checkboxes = [
@@ -105,14 +105,13 @@ class CubeVizLayout(QtWidgets.QWidget):
             self.ui.viewer3_synced_checkbox
         ]
 
-        for view, checkbox in zip(self.all_views, self._synced_checkboxes):
+        for view, checkbox in zip(self.cube_views, self._synced_checkboxes):
             view._widget.assign_synced_checkbox(checkbox)
 
         # Add the views to the layouts.
         self.ui.single_image_layout.addWidget(self.single_view)
-        self.ui.image_row_layout.addWidget(self.left_view)
-        self.ui.image_row_layout.addWidget(self.middle_view)
-        self.ui.image_row_layout.addWidget(self.right_view)
+        for viewer in self.split_views:
+            self.ui.image_row_layout.addWidget(viewer)
 
         self.ui.specviz_layout.addWidget(self.specviz)
 
@@ -133,6 +132,9 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         # Indicates whether cube viewer toolbars are currently visible or not
         self._toolbars_visible = True
+
+        # Indicates whether subset stats should be displayed or not
+        self._stats_visible = True
 
         self._slice_controller = SliceController(self)
         self._overlay_controller = OverlayController(self)
@@ -181,6 +183,7 @@ class CubeVizLayout(QtWidgets.QWidget):
             ('Hide Axes', ['checkable', self._toggle_viewer_axes]),
             ('Hide Toolbars', ['checkable', self._toggle_toolbars]),
             ('Hide Spaxel Value Tooltip', ['checkable', self._toggle_hover_value]),
+            ('Hide Stats', ['checkable', self._toggle_stats_display]),
             ('Wavelength Units', lambda: self._open_dialog('Wavelength Units', None))
         ]))
 
@@ -230,9 +233,17 @@ class CubeVizLayout(QtWidgets.QWidget):
                 menu_widget.addAction(act)
         return menu_widget
 
-    def _handle_settings_change(self, message):
+    def handle_settings_change(self, message):
         if isinstance(message, SettingsChangeMessage):
             self._slice_controller.update_index(self.synced_index)
+
+    def handle_subset_action(self, message):
+        if isinstance(message, SubsetUpdateMessage):
+            for combo, viewer in zip(self._viewer_combo_helpers, self.cube_views):
+                viewer._widget.draw_stats_axes(combo.selection, message.subset)
+        elif isinstance(message, SubsetDeleteMessage):
+            for viewer in self.cube_views:
+                viewer._widget.hide_stats_axes()
 
     def _set_pos_and_margin(self, axes, pos, marg):
         axes.set_position(pos)
@@ -269,6 +280,11 @@ class CubeVizLayout(QtWidgets.QWidget):
     def _toggle_hover_value(self):
         for viewer in self.cube_views:
             viewer._widget._is_tooltip_on = not viewer._widget._is_tooltip_on
+
+    def _toggle_stats_display(self):
+        self._stats_visible = not self._stats_visible
+        for viewer in self.cube_views:
+            viewer._widget.set_stats_visible(self._stats_visible)
 
     def _open_dialog(self, name, widget):
 
@@ -327,17 +343,11 @@ class CubeVizLayout(QtWidgets.QWidget):
         """
 
         # Retrieve the current cube data object
-        operation_handler = SpectralOperationHandler(self._data, stack=stack,
+        operation_handler = SpectralOperationHandler(self._data,
+                                                     stack=stack,
+                                                     session=self.session,
                                                      parent=self)
         operation_handler.exec_()
-
-    def add_new_data_component(self, component_id):
-
-        self.refresh_viewer_combo_helpers()
-
-        if self._active_view in self.all_views:
-            view_index = self.all_views.index(self._active_view)
-            self.change_viewer_component(view_index, component_id)
 
     def remove_data_component(self, component_id):
         pass
@@ -356,7 +366,7 @@ class CubeVizLayout(QtWidgets.QWidget):
             # _get_change_viewer_combo_func function.
 
             # Find the relevant viewer
-            viewer = self.all_views[view_index].widget()
+            viewer = self.cube_views[view_index].widget()
 
             # Get the label of the component and the component ID itself
             label = combo.currentText()
@@ -401,12 +411,14 @@ class CubeVizLayout(QtWidgets.QWidget):
 
             # If the combo corresponds to the currently active cube viewer,
             # either activate or deactivate the slice slider as appropriate.
-            if self.all_views[view_index] is self._active_cube:
+            if self.cube_views[view_index] is self._active_cube:
                 self._slice_controller.set_enabled(not viewer.has_2d_data)
 
             # If contours are being currently shown, we need to force a redraw
             if viewer.is_contour_active:
                 viewer.draw_contour()
+
+            viewer.update_component(component)
 
         return _on_viewer_combo_change
 
@@ -430,7 +442,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         """
         self._enable_viewer_combo(
             data, 0, 'single_viewer_combo', 'single_viewer_attribute')
-        view = self.all_views[0].widget()
+        view = self.cube_views[0].widget()
         component = getattr(self, 'single_viewer_attribute')
         view.update_component_unit_label(component)
         view.update_axes_title(component.label)
@@ -439,7 +451,7 @@ class CubeVizLayout(QtWidgets.QWidget):
             combo_label = 'viewer{0}_combo'.format(i)
             selection_label = 'viewer{0}_attribute'.format(i)
             self._enable_viewer_combo(data, i, combo_label, selection_label)
-            view = self.all_views[i].widget()
+            view = self.cube_views[i].widget()
             component = getattr(self, selection_label)
             view.update_component_unit_label(component)
             view.update_axes_title(component.label)
@@ -455,12 +467,25 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         combo = self.get_viewer_combo(view_index)
 
-        component_index = combo.findData(component_id)
+        if isinstance(component_id, str):
+            component_index = combo.findText(component_id)
+        else:
+            component_index = combo.findData(component_id)
 
         if combo.currentIndex() == component_index and force:
             combo.currentIndexChanged.emit(component_index)
         else:
             combo.setCurrentIndex(component_index)
+
+    def display_component(self, component_id):
+        """
+        Displays data with given component ID in the active cube viewer.
+        """
+        self.refresh_viewer_combo_helpers()
+        if self._single_viewer_mode:
+            self.change_viewer_component(0, component_id)
+        else:
+            self.change_viewer_component(1, component_id)
 
     def get_viewer_combo(self, view_index):
         """
@@ -472,8 +497,9 @@ class CubeVizLayout(QtWidgets.QWidget):
             combo_label = 'viewer{0}_combo'.format(view_index)
         return getattr(self.ui, combo_label)
 
-    def add_overlay(self, data, label):
-        self._overlay_controller.add_overlay(data, label)
+    def add_overlay(self, data, label, display_now=True):
+        self._overlay_controller.add_overlay(data, label, display=display_now)
+        self.display_component(label)
 
     def _set_data_coord_system(self, data):
         """
@@ -521,10 +547,10 @@ class CubeVizLayout(QtWidgets.QWidget):
             checkbox.setEnabled(True)
 
         self._has_data = True
-        self._active_view = self.left_view
-        self._active_cube = self.left_view
+        self._active_view = self.split_views[0]
+        self._active_cube = self.split_views[0]
         self._last_active_view = self.single_view
-        self._active_split_cube = self.left_view
+        self._active_split_cube = self.split_views[0]
 
         # Store pointer to wavelength information
         self._wavelengths = self.single_view._widget._data[0].coords.world_axis(self.single_view._widget._data[0], axis=0)
@@ -645,14 +671,16 @@ class CubeVizLayout(QtWidgets.QWidget):
         return self._active_view
 
     def subWindowList(self):
-        return [self.single_view, self.left_view, self.middle_view, self.right_view, self.specviz]
+        return self.cube_views + [self.specviz]
 
     def _setup_syncing(self):
         for attribute in ['x_min', 'x_max', 'y_min', 'y_max']:
-            sync1 = keep_in_sync(self.left_view._widget.state, attribute,
-                                 self.middle_view._widget.state, attribute)
-            sync2 = keep_in_sync(self.middle_view._widget.state, attribute,
-                                 self.right_view._widget.state, attribute)
+            # TODO: this will need to be generalized if we want to support an
+            # arbitrary number of viewers.
+            sync1 = keep_in_sync(self.split_views[0]._widget.state, attribute,
+                                 self.split_views[1]._widget.state, attribute)
+            sync2 = keep_in_sync(self.split_views[1]._widget.state, attribute,
+                                 self.split_views[2]._widget.state, attribute)
             self.sync[attribute] = sync1, sync2
         self._on_sync_click()
 
@@ -679,7 +707,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         for view_index in [0, 1]:
             combo = self.get_viewer_combo(view_index)
             self._original_components[view_index] = combo.currentData()
-            view = self.all_views[view_index].widget()
+            view = self.cube_views[view_index].widget()
             self.change_viewer_component(view_index, component_id, force=True)
             view.set_smoothing_preview(preview_function, preview_title)
 
@@ -688,7 +716,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         End preview and change viewer combo index to the first component.
         """
         for view_index in [0, 1]:
-            view = self.all_views[view_index].widget()
+            view = self.cube_views[view_index].widget()
             view.end_smoothing_preview()
             if view_index in self._original_components:
                 component_id = self._original_components[view_index]
@@ -699,7 +727,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         super(CubeVizLayout, self).showEvent(event)
         # Make split image mode the default layout
         self._activate_split_image_mode()
-        self._update_active_view(self.left_view)
+        self._update_active_view(self.split_views[0])
 
     def change_slice_index(self, amount):
         self._slice_controller.change_slider_value(amount)

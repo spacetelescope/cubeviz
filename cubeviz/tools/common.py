@@ -39,7 +39,7 @@ def add_to_2d_container(cubeviz_layout, data, component_data, label):
         for helper in cubeviz_layout._viewer_combo_helpers:
             helper.append_data(data.container_2d)
 
-        for viewer in cubeviz_layout.all_views:
+        for viewer in cubeviz_layout.cube_views:
             viewer._widget.add_data(data.container_2d)
 
     else:

@@ -3,7 +3,9 @@
 
 import numpy as np
 
+from matplotlib.axes import Axes
 import matplotlib.image as mimage
+from matplotlib.patches import Circle
 
 from astropy import units as u
 from astropy.coordinates import SkyCoord
@@ -193,6 +195,12 @@ class CubevizImageViewer(ImageViewer):
         self._has_2d_data = False  # True if currently displayed data is 2D
         self._toggle_3d = False  # True if we just toggled from 2D to 3D
 
+        self._stats_axes = None
+        self._stats_visible = True  # Global configuration setting
+        self._stats_hidden = False  # Internal configuration: are stats hidden?
+        self._component = None # Keep track of name of currently displayed component
+        self._subset = None # Keep track of currently active subset
+
         self.coord_label = QLabel("")  # Coord display
         self.statusBar().addPermanentWidget(self.coord_label)
 
@@ -206,6 +214,7 @@ class CubevizImageViewer(ImageViewer):
 
         # Allow the CubeViz slider to respond to viewer-specific sliders in the glue pane
         self.state.add_callback('slices', self._slice_callback)
+
 
     def _slice_callback(self, new_slice):
         if self._slice_index is not None and not self.has_2d_data:
@@ -222,6 +231,72 @@ class CubevizImageViewer(ImageViewer):
         else:
             cls = CubevizImageLayerArtist
         return self.get_layer_artist(cls, layer=layer, layer_state=layer_state)
+
+    def _create_stats_axes(self, subset, mu, sigma):
+        rect = 0.01, 0.88, 0.15, 0.12
+        axes = self.figure.add_axes(rect, xticks=[], yticks=[])
+        circle = Circle((0.15,0.85), 0.05, color=subset.style.color)
+        axes.add_artist(circle)
+
+        text_opts = dict(x=0.05, size='smaller')
+        axes.text(**text_opts, y=0.55, s='slice: {}'.format(self._slice_index))
+        axes.text(**text_opts, y=0.30, s=r'$\mu = {:.3}$'.format(mu))
+        axes.text(**text_opts, y=0.05, s=r'$\sigma = {:.3}$'.format(sigma))
+        return axes
+
+    def _update_stats_text(self, mu, sigma):
+        mu_text = self._stats_axes.texts[1]
+        mu_text.set_text(r'$\mu = {:.3}$'.format(mu))
+        sigma_text = self._stats_axes.texts[2]
+        sigma_text.set_text(r'$\sigma = {:.3}$'.format(sigma))
+
+    def _calculate_stats(self, component, subset):
+        mask = subset.to_mask()[self._slice_index]
+        data = self._data[0][component][self._slice_index][mask]
+        return data.mean(), data.std()
+
+    def draw_stats_axes(self, component, subset):
+
+        self._component = component
+        self._subset = subset
+
+        mu, sigma = self._calculate_stats(component, subset)
+
+        if self._stats_axes is None:
+            self._stats_axes = self._create_stats_axes(subset, mu, sigma)
+        else:
+            # TODO: we should probably stash a pointer to this in the long term
+            circle = self._stats_axes.artists[0]
+            circle.set_color(subset.style.color)
+            self._update_stats_text(mu, sigma)
+            self._stats_axes.set_visible(True and self._stats_visible)
+
+        self._stats_hidden = False
+        self.redraw()
+
+    def hide_stats_axes(self):
+        if self._stats_axes is not None:
+            self._stats_axes.set_visible(False)
+            self._stats_hidden = True
+            self.redraw()
+
+    def update_stats(self):
+        slice_text = self._stats_axes.texts[0]
+        slice_text.set_text('slice: {}'.format(self._slice_index))
+        mu, sigma = self._calculate_stats(self._component, self._subset)
+        self._update_stats_text(mu, sigma)
+        self.redraw()
+
+    def update_component(self, component):
+        self._component = component
+        if self._stats_axes is not None:
+            self.update_stats()
+
+    def set_stats_visible(self, visible):
+        self._stats_visible = visible
+        if self._stats_axes is not None:
+            self._stats_axes.set_visible(self._stats_visible and not self._stats_hidden)
+            self.redraw()
 
     @property
     def is_preview_active(self):
@@ -520,6 +595,9 @@ class CubevizImageViewer(ImageViewer):
         self.state.slices = (self._slice_index, y, x)
         if self.is_contour_active:
             self.draw_contour()
+
+        if self._stats_axes is not None:
+            self.update_stats()
 
     def fast_draw_slice_at_index(self, index):
         """
