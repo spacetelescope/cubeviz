@@ -101,45 +101,45 @@ class SmoothCube(object):
         """
         kernel_registry = {
             "box": {"name": "Box",
-                    "unit_label": "Pixels",
+                    "unit_label": "Spaxel",
                     "size_prompt": "Width of Kernel:",
                     "size_dimension": "Width",
                     "axis": ["spatial", "spectral"],
                     "spatial": convolution.Box2DKernel,
                     "spectral": convolution.Box1DKernel},
             "gaussian": {"name": "Gaussian",
-                         "unit_label": "Pixels",
+                         "unit_label": "Spaxel",
                          "size_prompt": "Standard Deviation of Kernel:",
                          "size_dimension": "Sigma",
                          "axis": ["spatial", "spectral"],
                          "spatial": convolution.Gaussian2DKernel,
                          "spectral": convolution.Gaussian1DKernel},
             "trapezoid": {"name": "Trapezoid",
-                          "unit_label": "Pixels",
+                          "unit_label": "Spaxel",
                           "size_prompt": "Width of Kernel:",
                           "size_dimension": "Width",
                           "axis": ["spectral"],
                           "spectral": convolution.Trapezoid1DKernel},
             "trapezoiddisk": {"name": "Trapezoid Disk",
-                              "unit_label": "Pixels",
+                              "unit_label": "Spaxel",
                               "size_prompt": "Radius of Kernel:",
                               "size_dimension": "Radius",
                               "axis": ["spatial"],
                               "spatial": convolution.TrapezoidDisk2DKernel},
             "airydisk": {"name": "Airy Disk",
-                         "unit_label": "Pixels",
+                         "unit_label": "Spaxel",
                          "size_prompt": "Radius of Kernel:",
                          "size_dimension": "Radius",
                          "axis": ["spatial"],
                          "spatial": convolution.AiryDisk2DKernel},
             "tophat": {"name": "Top Hat",
-                       "unit_label": "Pixels",
+                       "unit_label": "Spaxel",
                        "size_prompt": "Radius of Kernel:",
                        "size_dimension": "Radius",
                        "axis": ["spatial"],
                        "spatial": convolution.Tophat2DKernel},
             "median": {"name": "Median",
-                       "unit_label": "Pixels",
+                       "unit_label": "Spaxel",
                        "size_prompt": "Width of Kernel:",
                        "size_dimension": "Width",
                        "axis": ["spatial", "spectral"],
@@ -266,9 +266,9 @@ class SmoothCube(object):
 
     def unique_output_component_id(self):
         if self.kernel_size == 1:
-            kernel_size_text = "%s_pixel" % self.kernel_size
+            kernel_size_text = "%s_Spaxel" % self.kernel_size
         else:
-            kernel_size_text = "%s_pixels" % self.kernel_size
+            kernel_size_text = "%s_Spaxel" % self.kernel_size
 
         name_tail = "_Smoothed(" + ", ".join([
                                             self.kernel_type_to_name(self.kernel_type),
@@ -299,9 +299,9 @@ class SmoothCube(object):
 
     def output_data_name(self):
         if self.kernel_size == 1:
-            kernel_size_text = "%s_pixel" % self.kernel_size
+            kernel_size_text = "%s_Spaxel" % self.kernel_size
         else:
-            kernel_size_text = "%s_pixels" % self.kernel_size
+            kernel_size_text = "%s_Spaxel" % self.kernel_size
 
         name_tail = "_Smoothed(" + ", ".join([
                                             self.kernel_type_to_name(self.kernel_type),
@@ -430,9 +430,9 @@ class SmoothCube(object):
         title += self.kernel_type_to_name(self.kernel_type)
         size_dimension = self.get_kernel_size_dimension(self.kernel_type)
         if self.kernel_size == 1:
-            title += "({0} = {1} pixel)".format(size_dimension, self.kernel_size)
+            title += "({0} = {1} Spaxel)".format(size_dimension, self.kernel_size)
         else:
-            title += "({0} = {1} pixels)".format(size_dimension, self.kernel_size)
+            title += "({0} = {1} Spaxel)".format(size_dimension, self.kernel_size)
         return title
 
 
@@ -659,7 +659,7 @@ class SelectSmoothing(QDialog):
         hbl5.addWidget(self.preview_message)
 
         # LINE 6: preview ok cancel buttons
-        self.previewButton = QPushButton("Preview Spaxels")
+        self.previewButton = QPushButton("Preview Slice")
         self.previewButton.clicked.connect(self.call_preview)
 
         self.okButton = QPushButton("Smooth Cube")
