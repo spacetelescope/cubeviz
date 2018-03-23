@@ -74,7 +74,7 @@ class UnitController:
             self._cv_layout.set_wavelengths((1+new_z)*self._original_wavelengths, self._new_units)
         else:
             # Set the label
-            self._wavelength_textbox_label = OBS_WAVELENGHT_TEXT
+            self._wavelength_textbox_label = OBS_WAVELENGTH_TEXT
             self._cv_layout._slice_controller.wavelength_label = OBS_WAVELENGHT_TEXT
             self._cv_layout.set_wavelengths(self._original_wavelengths, self._new_units)
 
