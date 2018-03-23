@@ -187,6 +187,7 @@ class CubeVizLayout(QtWidgets.QWidget):
             ('Hide Toolbars', ['checkable', self._toggle_toolbars]),
             ('Hide Spaxel Value Tooltip', ['checkable', self._toggle_hover_value]),
             ('Hide Stats', ['checkable', self._toggle_stats_display]),
+            ('Flux Units', lambda: self._open_dialog('Flux Units', None)),
             ('Wavelength Units/Redshift', lambda: self._open_dialog('Wavelength Units/Redshift', None))
         ]))
 
@@ -305,8 +306,13 @@ class CubeVizLayout(QtWidgets.QWidget):
                 self._data, self.session.data_collection, parent=self)
             mm_gui.display()
 
+        if name == 'Flux Units':
+            self._flux_unit_controller.converter(parent=self)
+
         if name == "Wavelength Units/Redshift":
             WavelengthUI(self._units_controller, parent=self)
+
+
 
     def _toggle_all_coords_in_degrees(self):
         """
@@ -540,9 +546,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         """
         self._data = data
         self.specviz._widget.add_data(data)
-
-        for comp in data.visible_components:
-            self._flux_unit_controller.add_component_unit(comp, data.get_component(comp).units)
+        self._flux_unit_controller.set_data(data)
 
         comp = self.specviz._widget._options_widget.file_att
         specviz_unit = self._flux_unit_controller.get_component_unit(comp)
