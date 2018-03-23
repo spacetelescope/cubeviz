@@ -25,6 +25,7 @@ from .image_viewer import CubevizImageViewer
 from .controls.slice import SliceController
 from .controls.overlay import OverlayController
 from .controls.units import UnitController
+from .controls.units_ui import WavelengthUI
 from .tools import arithmetic_gui, moment_maps, smoothing
 from .tools import collapse_cube
 from .tools.spectral_operations import SpectralOperationHandler
@@ -184,7 +185,7 @@ class CubeVizLayout(QtWidgets.QWidget):
             ('Hide Toolbars', ['checkable', self._toggle_toolbars]),
             ('Hide Spaxel Value Tooltip', ['checkable', self._toggle_hover_value]),
             ('Hide Stats', ['checkable', self._toggle_stats_display]),
-            ('Wavelength Units', lambda: self._open_dialog('Wavelength Units', None))
+            ('Wavelength Units/Redshift', lambda: self._open_dialog('Wavelength Units/Redshift', None))
         ]))
 
         # Add toggle RA-DEC format:
@@ -302,11 +303,8 @@ class CubeVizLayout(QtWidgets.QWidget):
                 self._data, self.session.data_collection, parent=self)
             mm_gui.display()
 
-        if name == 'Wavelength Units':
-            current_unit = self._units_controller.units_titles.index(self._units_controller._new_units.long_names[0].title())
-            wavelength, ok_pressed = QInputDialog.getItem(self, "Pick a wavelength", "Wavelengths:", self._units_controller.units_titles, current_unit, False)
-            if ok_pressed:
-                self._units_controller.on_combobox_change(wavelength)
+        if name == "Wavelength Units/Redshift":
+            WavelengthUI(self._units_controller, parent=self)
 
     def _toggle_all_coords_in_degrees(self):
         """

@@ -1,8 +1,14 @@
 import numpy as np
 from specviz.third_party.glue.data_viewer import dispatch as specviz_dispatch
 
+from .units import REST_WAVELENGTH_TEXT, OBS_WAVELENGTH_TEXT
+
 RED_BACKGROUND = "background-color: rgba(255, 0, 0, 128);"
 
+import logging
+logging.basicConfig(format='%(levelname)-6s: %(name)-10s %(asctime)-15s  %(message)s')
+log = logging.getLogger("SliceController")
+log.setLevel(logging.DEBUG)
 
 class SliceController:
 
@@ -31,6 +37,11 @@ class SliceController:
         self._slice_slider.setEnabled(False)
         self._slice_textbox.setEnabled(False)
         self._wavelength_textbox.setEnabled(False)
+        self._wavelength_textbox_label.setWordWrap(True)
+
+        # This should be used to distinguised between observed and rest wavelengths
+        # We are not going to enforce what the name should be at this level.
+        self._wavelength_label_text = OBS_WAVELENGTH_TEXT
 
         self._wavelength_format = '{}'
         self._wavelength_units = None
@@ -40,6 +51,25 @@ class SliceController:
         # to specviz events
         specviz_dispatch.setup(self)
 
+    @property
+    def wavelength_label(self):
+        """
+        Get the wavelength label, though this probably will not be used much.
+        """
+        return self._wavelength_label_text
+
+    @wavelength_label.setter
+    def wavelength_label(self, new_label):
+        """
+        Set the wavelength label. The new label should probably be "Obs Wavelength"
+        or "Rest Wavelength" but maybe could be other things.
+
+        :return: None
+        """
+        self._wavelength_label_text = new_label
+
+        self._wavelength_textbox_label.setText('{} ({})'.format(
+            self._wavelength_label_text, self._wavelength_units))
 
     def enable(self, wcs, wavelengths):
         """
@@ -54,7 +84,8 @@ class SliceController:
         # Store the wavelength units and format
         self._wavelength_units = str(wcs.wcs.cunit[2])
         self._wavelength_format = '{:.3}'
-        self._wavelength_textbox_label.setText('Wavelength ({})'.format(self._wavelength_units))
+        self._wavelength_textbox_label.setText('{} ({})'.format(
+            self._wavelength_label_text, self._wavelength_units))
 
         # Grab the wavelengths so they can be displayed in the text box
         self._wavelengths = wavelengths
@@ -74,24 +105,28 @@ class SliceController:
         self._wavelength_textbox.setEnabled(value)
 
     def set_wavelengths(self, new_wavelengths, new_units):
-
         # Store the wavelength units and format
         new_units_name = new_units.short_names[0]
         self._wavelength_units = new_units_name
         self._wavelength_format = '{:.3}'
-        self._wavelength_textbox_label.setText('Wavelength ({})'.format(self._wavelength_units))
+        self._wavelength_textbox_label.setText('{} ({})'.format(
+            self._wavelength_label_text, self._wavelength_units))
 
         # Grab the wavelengths so they can be displayed in the text box
         self._wavelengths = new_wavelengths
         self._slice_slider.setMaximum(len(self._wavelengths) - 1)
 
         # Set the default display to the middle of the cube
-        middle_index = len(self._wavelengths) // 2
-        self._update_slice_textboxes(middle_index)
-        self._slice_slider.setValue(middle_index)
-        self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[middle_index]))
+        #middle_index = len(self._wavelengths) // 2
+        #self._update_slice_textboxes(middle_index)
+        #self._slice_slider.setValue(middle_index)
+
+        self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[self._cv_layout.synced_index]))
 
         specviz_dispatch.changed_units.emit(x=new_units)
+
+    def get_index(self):
+        return self._cv_layout.synced_index
 
     def update_index(self, index):
         self._slice_slider.setValue(index)
@@ -100,6 +135,7 @@ class SliceController:
     def change_slider_value(self, amount):
         new_index = self._slice_slider.value() + amount
         self._slice_slider.setValue(new_index)
+
         specviz_dispatch.changed_dispersion_position.emit(pos=new_index)
 
     def _on_slider_change(self, event):
@@ -197,7 +233,6 @@ class SliceController:
         # Update the wavelength for the corresponding slice number.
         self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[index]))
 
-
     def _on_text_slice_change(self, event=None):
         """
         Callback for a change in the slice index text box.  We will need to
@@ -206,7 +241,6 @@ class SliceController:
         :param event:
         :return:
         """
-
         # Get the value they typed in, but if not a number, then let's just use
         # the first slice.
         try:
@@ -214,6 +248,9 @@ class SliceController:
             self._slice_textbox.setStyleSheet("")
         except ValueError:
             self._slice_textbox.setStyleSheet(RED_BACKGROUND)
+            return
+
+        if index == self._slice_textbox.text():
             return
 
         # If a number and out of range then set to the first or last slice
@@ -271,6 +308,16 @@ class SliceController:
         else:
             deactivate_flag = True
             self._slider_flag = True
+
+        # The "pos" value coming from specviz appears to be related to the
+        # index in the observed wavelength and so if there is a redshift
+        # then we need to convert the pos to the rest wavelength position.
+        if self._cv_layout._units_controller and not self._cv_layout._units_controller.redshift_z == 0.0:
+            rest_wavelength = pos / (1 + self._cv_layout._units_controller.redshift_z)
+            pos = np.argsort(abs(self._wavelengths - rest_wavelength))[0]
+
+            # Pos is a wavelength and not an index for the call back for specviz
+            pos = self._wavelengths[pos]
 
         self._on_text_wavelength_change(event, pos)
 
