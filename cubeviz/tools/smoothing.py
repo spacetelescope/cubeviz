@@ -265,10 +265,11 @@ class SmoothCube(object):
             return new_data
 
     def unique_output_component_id(self):
+        unit_label = self.kernel_registry[self.kernel_type]["unit_label"].lower()
         if self.kernel_size == 1:
-            kernel_size_text = "%s_Spaxel" % self.kernel_size
+            kernel_size_text = "{0}_{1}".format(self.kernel_size, unit_label)
         else:
-            kernel_size_text = "%s_Spaxel" % self.kernel_size
+            kernel_size_text = "{0}_{1}s".format(self.kernel_size, unit_label)
 
         name_tail = "_Smoothed(" + ", ".join([
                                             self.kernel_type_to_name(self.kernel_type),
@@ -298,10 +299,11 @@ class SmoothCube(object):
         return output_component_id
 
     def output_data_name(self):
+        unit_label = self.kernel_registry[self.kernel_type]["unit_label"].lower()
         if self.kernel_size == 1:
-            kernel_size_text = "%s_Spaxel" % self.kernel_size
+            kernel_size_text = "{0}_{1}".format(self.kernel_size, unit_label)
         else:
-            kernel_size_text = "%s_Spaxel" % self.kernel_size
+            kernel_size_text = "{0}_{1}s".format(self.kernel_size, unit_label)
 
         name_tail = "_Smoothed(" + ", ".join([
                                             self.kernel_type_to_name(self.kernel_type),
@@ -429,10 +431,11 @@ class SmoothCube(object):
         title = "Smoothing Preview: "
         title += self.kernel_type_to_name(self.kernel_type)
         size_dimension = self.get_kernel_size_dimension(self.kernel_type)
+        unit_label = self.kernel_registry[self.kernel_type]["unit_label"].lower()
         if self.kernel_size == 1:
-            title += "({0} = {1} Spaxel)".format(size_dimension, self.kernel_size)
+            title += "({0} = {1} {2})".format(size_dimension, self.kernel_size, unit_label)
         else:
-            title += "({0} = {1} Spaxel)".format(size_dimension, self.kernel_size)
+            title += "({0} = {1} {2}s)".format(size_dimension, self.kernel_size, unit_label)
         return title
 
 
