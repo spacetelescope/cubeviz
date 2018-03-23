@@ -14,6 +14,7 @@ from astropy.coordinates import BaseRADecFrame
 
 from qtpy.QtWidgets import (QLabel, QMessageBox)
 
+from glue.core import HubListener
 from glue.core.message import SettingsChangeMessage
 
 from glue.utils.qt import pick_item, get_text
@@ -27,6 +28,7 @@ from glue.viewers.common.qt.tool import Tool
 from qtpy.QtWidgets import QToolTip
 from qtpy.QtGui import QCursor
 
+from .messages import SliceIndexUpdateMessage
 from .utils.contour import ContourSettings
 
 CONTOUR_DEFAULT_NUMBER_OF_LEVELS = 8
@@ -153,7 +155,7 @@ class CubevizImageLayerArtist(ImageLayerArtist):
     _layer_state_cls = CubevizImageLayerState
 
 
-class CubevizImageViewer(ImageViewer):
+class CubevizImageViewer(ImageViewer, HubListener):
 
     tools = ['select:rectangle', 'select:xrange', 'select:yrange',
              'select:circle', 'select:polygon', 'image:contrast_bias',
@@ -164,7 +166,8 @@ class CubevizImageViewer(ImageViewer):
     def __init__(self,  *args, cubeviz_layout=None, **kwargs):
         super(CubevizImageViewer, self).__init__(*args, **kwargs)
         self.cubeviz_layout = cubeviz_layout
-        self. _layer_style_widget_cls[CubevizImageLayerArtist] = ImageLayerStyleEditor
+        self._layer_style_widget_cls[CubevizImageLayerArtist] = ImageLayerStyleEditor
+        self._hub = cubeviz_layout.session.hub
         self._synced_checkbox = None
         self._slice_index = None
 
@@ -214,6 +217,8 @@ class CubevizImageViewer(ImageViewer):
 
         # Allow the CubeViz slider to respond to viewer-specific sliders in the glue pane
         self.state.add_callback('slices', self._slice_callback)
+
+        self._hub.subscribe(self, SliceIndexUpdateMessage, handler=self._update_viewer_index)
 
 
     def _slice_callback(self, new_slice):
@@ -574,6 +579,22 @@ class CubevizImageViewer(ImageViewer):
     def assign_synced_checkbox(self, checkbox):
         self._synced_checkbox = checkbox
         self._synced_checkbox.stateChanged.connect(self._synced_checkbox_callback)
+
+    def _update_viewer_index(self, message):
+
+        index = message.index
+        active_cube = self.cubeviz_layout._active_cube
+        active_widget = active_cube._widget
+
+        # If the active widget is synced then we need to update the image
+        # in all the other synced views.
+        if (active_widget.synced and self.synced and not \
+            self.cubeviz_layout._single_viewer_mode) or \
+                active_widget is self:
+            if message.slider_down:
+                self.fast_draw_slice_at_index(index)
+            else:
+                self.update_slice_index(index)
 
     def update_slice_index(self, index):
         """

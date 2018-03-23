@@ -162,7 +162,12 @@ class SliceController(HubListener):
         if slider_index != index:
             self._slice_slider.setValue(index)
 
-        self.apply_to_viewers(index)
+        # TODO: this should happen in a listener in the layout itself
+        active_widget = self._cv_layout._active_cube._widget
+        if active_widget.synced and not self._cv_layout._single_viewer_mode:
+            self._cv_layout.synced_index = index
+
+        specviz_dispatch.changed_dispersion_position.emit(pos=index)
 
     def _on_slider_change(self, event):
         """
@@ -199,8 +204,6 @@ class SliceController(HubListener):
                 active_widget.fast_draw_slice_at_index(index)
             else:
                 active_widget.update_slice_index(index)
-
-        specviz_dispatch.changed_dispersion_position.emit(pos=index)
 
     def _on_slider_pressed(self):
         """
