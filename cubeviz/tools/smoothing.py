@@ -659,10 +659,10 @@ class SelectSmoothing(QDialog):
         hbl5.addWidget(self.preview_message)
 
         # LINE 6: preview ok cancel buttons
-        self.previewButton = QPushButton("Preview Slice")
+        self.previewButton = QPushButton("Preview Spaxels")
         self.previewButton.clicked.connect(self.call_preview)
 
-        self.okButton = QPushButton("Smooth Spaxels")
+        self.okButton = QPushButton("Smooth Cube")
         self.okButton.clicked.connect(self.call_main)
         self.okButton.setDefault(True)
 
