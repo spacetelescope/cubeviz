@@ -1,6 +1,9 @@
 from astropy import units as u
 from specviz.third_party.glue.data_viewer import dispatch as specviz_dispatch
-from specviz.core.events import dispatch
+
+OBS_WAVELENGTH_TEXT = 'Obs Wavelength'
+REST_WAVELENGTH_TEXT = 'Rest Wavelength'
+
 
 class UnitController:
     def __init__(self, cubeviz_layout):
@@ -66,13 +69,13 @@ class UnitController:
 
         if new_z is not None and new_z > 0:
             # Set the label
-            self._wavelength_textbox_label = 'Rest Wavelength'
-            self._cv_layout._slice_controller.wavelength_label = 'Rest Wavelength'
+            self._wavelength_textbox_label = REST_WAVELENGTH_TEXT
+            self._cv_layout._slice_controller.wavelength_label = REST_WAVELENGTH_TEXT
             self._cv_layout.set_wavelengths((1+new_z)*self._original_wavelengths, self._new_units)
         else:
             # Set the label
-            self._wavelength_textbox_label = 'Obs Wavelength'
-            self._cv_layout._slice_controller.wavelength_label = 'Obs Wavelength'
+            self._wavelength_textbox_label = OBS_WAVELENGHT_TEXT
+            self._cv_layout._slice_controller.wavelength_label = OBS_WAVELENGHT_TEXT
             self._cv_layout.set_wavelengths(self._original_wavelengths, self._new_units)
 
         # Calculate and set the new wavelengths

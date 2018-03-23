@@ -1,6 +1,8 @@
 import numpy as np
 from specviz.third_party.glue.data_viewer import dispatch as specviz_dispatch
 
+from .units import REST_WAVELENGTH_TEXT, OBS_WAVELENGTH_TEXT
+
 RED_BACKGROUND = "background-color: rgba(255, 0, 0, 128);"
 
 import logging
@@ -39,7 +41,7 @@ class SliceController:
 
         # This should be used to distinguised between observed and rest wavelengths
         # We are not going to enforce what the name should be at this level.
-        self._wavelength_label_text = 'Obs Wavelength'
+        self._wavelength_label_text = OBS_WAVELENGTH_TEXT
 
         self._wavelength_format = '{}'
         self._wavelength_units = None
@@ -59,8 +61,8 @@ class SliceController:
     @wavelength_label.setter
     def wavelength_label(self, new_label):
         """
-        Set the wavelength label. The new label should probably be "Obs Wavelenght"
-        or "Rest Wavelenght" but maybe could be other things.
+        Set the wavelength label. The new label should probably be "Obs Wavelength"
+        or "Rest Wavelength" but maybe could be other things.
 
         :return: None
         """
