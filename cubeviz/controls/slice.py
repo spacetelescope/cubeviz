@@ -1,6 +1,8 @@
 import numpy as np
+
 from specviz.third_party.glue.data_viewer import dispatch as specviz_dispatch
 
+from ..messages import SliceIndexUpdateMessage
 from .units import REST_WAVELENGTH_TEXT, OBS_WAVELENGTH_TEXT
 
 RED_BACKGROUND = "background-color: rgba(255, 0, 0, 128);"
@@ -10,10 +12,11 @@ logging.basicConfig(format='%(levelname)-6s: %(name)-10s %(asctime)-15s  %(messa
 log = logging.getLogger("SliceController")
 log.setLevel(logging.DEBUG)
 
-class SliceController:
+class SliceController():
 
     def __init__(self, cubeviz_layout):
         self._cv_layout = cubeviz_layout
+        self._hub = cubeviz_layout.session.hub
         ui = cubeviz_layout.ui
 
         # These are the contents of the text boxes
@@ -149,6 +152,9 @@ class SliceController:
         cube_views = self._cv_layout.cube_views
         active_cube = self._cv_layout._active_cube
         active_widget = active_cube._widget
+
+        msg = SliceIndexUpdateMessage(self, index, self._cv_layout.session.data_collection[0])
+        self._hub.broadcast(msg)
 
         # *** WARNING: DO NOT USE MULTI-THREADING! ***
         #       fast_draw_slice_at_index will
