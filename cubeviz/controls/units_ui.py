@@ -11,6 +11,8 @@ from astropy.stats import sigma_clip
 import numpy as np
 import re
 
+from .units import REST_WAVELENGTH_TEXT, OBS_WAVELENGTH_TEXT
+
 class WavelengthUI(QDialog):
     def __init__(self, wavelength_controller, parent=None):
         super(WavelengthUI,self).__init__(parent)
@@ -193,5 +195,5 @@ class WavelengthUI(QDialog):
         newvalue = self.wavelengthdisplay_combobox.currentText()
 
         # Hide the redshift stuff if Observed wavelength is selected
-        self.redshift_label.setDisabled(newvalue.startswith('Obs'))
-        self.redshift_text.setDisabled(newvalue.startswith('Obs'))
+        self.redshift_label.setDisabled(newvalue == OBS_WAVELENGTH_TEXT)
+        self.redshift_text.setDisabled(newvalue == OBS_WAVELENGTH_TEXT)
