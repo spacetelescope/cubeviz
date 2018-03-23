@@ -208,21 +208,6 @@ class SliceController(HubListener):
         self._slider_flag = False
 
         index = self._slice_slider.value()
-        cube_views = self._cv_layout.cube_views
-        active_cube = self._cv_layout._active_cube
-        active_widget = active_cube._widget
-
-        # If the active widget is synced then we need to update the image
-        # in all the other synced views.
-        if active_widget.synced and not self._cv_layout._single_viewer_mode:
-            for view in cube_views:
-                if view._widget.synced:
-                    view._widget.update_slice_index(index)
-            self._cv_layout.synced_index = index
-        else:
-            # Update the image displayed in the slice in the active view
-            active_widget.update_slice_index(index)
-
         specviz_dispatch.changed_dispersion_position.emit(pos=index)
 
     #@glue_subscribe(SliceIndexUpdateMessage)
