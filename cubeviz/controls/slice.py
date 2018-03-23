@@ -172,6 +172,9 @@ class SliceController(HubListener):
         :return:
         """
         index = self._slice_slider.value()
+        self._send_index_message(index)
+
+    def _send_index_message(self, index):
         msg = SliceIndexUpdateMessage(self, index, self._cv_layout.session.data_collection[0])
         self._hub.broadcast(msg)
 
@@ -282,8 +285,7 @@ class SliceController(HubListener):
         if index > len(self._wavelengths) - 1:
             index = len(self._wavelengths) - 1
 
-        # Update the slider.
-        self._slice_slider.setValue(index)
+        self._send_index_message(index)
 
     def _on_text_wavelength_change(self, event=None, pos=None):
         """
@@ -308,8 +310,7 @@ class SliceController(HubListener):
             self._wavelength_textbox.setStyleSheet(RED_BACKGROUND)
             return
 
-        # Update the slider.
-        self._slice_slider.setValue(index)
+        self._send_index_message(index)
 
     @specviz_dispatch.register_listener("change_dispersion_position")
     def specviz_wavelength_slider_change(self, event=None, pos=None):
