@@ -24,7 +24,9 @@ from .image_viewer import CubevizImageViewer
 
 from .controls.slice import SliceController
 from .controls.overlay import OverlayController
+
 from .controls.units import UnitController, FluxUnitController
+from .controls.units_ui import WavelengthUI
 from .tools import arithmetic_gui, moment_maps, smoothing
 from .tools import collapse_cube
 from .tools.spectral_operations import SpectralOperationHandler
@@ -183,8 +185,9 @@ class CubeVizLayout(QtWidgets.QWidget):
         view_menu = self._dict_to_menu(OrderedDict([
             ('Hide Axes', ['checkable', self._toggle_viewer_axes]),
             ('Hide Toolbars', ['checkable', self._toggle_toolbars]),
+            ('Hide Spaxel Value Tooltip', ['checkable', self._toggle_hover_value]),
             ('Hide Stats', ['checkable', self._toggle_stats_display]),
-            ('Wavelength Units', lambda: self._open_dialog('Wavelength Units', None))
+            ('Wavelength Units/Redshift', lambda: self._open_dialog('Wavelength Units/Redshift', None))
         ]))
 
         # Add toggle RA-DEC format:
@@ -277,6 +280,10 @@ class CubeVizLayout(QtWidgets.QWidget):
         for viewer in self.cube_views:
             viewer._widget.toolbar.setVisible(self._toolbars_visible)
 
+    def _toggle_hover_value(self):
+        for viewer in self.cube_views:
+            viewer._widget._is_tooltip_on = not viewer._widget._is_tooltip_on
+
     def _toggle_stats_display(self):
         self._stats_visible = not self._stats_visible
         for viewer in self.cube_views:
@@ -298,11 +305,8 @@ class CubeVizLayout(QtWidgets.QWidget):
                 self._data, self.session.data_collection, parent=self)
             mm_gui.display()
 
-        if name == 'Wavelength Units':
-            current_unit = self._units_controller.units_titles.index(self._units_controller._new_units.long_names[0].title())
-            wavelength, ok_pressed = QInputDialog.getItem(self, "Pick a wavelength", "Wavelengths:", self._units_controller.units_titles, current_unit, False)
-            if ok_pressed:
-                self._units_controller.on_combobox_change(wavelength)
+        if name == "Wavelength Units/Redshift":
+            WavelengthUI(self._units_controller, parent=self)
 
     def _toggle_all_coords_in_degrees(self):
         """

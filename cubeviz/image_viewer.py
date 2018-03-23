@@ -24,6 +24,9 @@ from glue.viewers.image.state import ImageLayerState
 from glue.viewers.image.qt.layer_style_editor import ImageLayerStyleEditor
 from glue.viewers.common.qt.tool import Tool
 
+from qtpy.QtWidgets import QToolTip
+from qtpy.QtGui import QCursor
+
 from .utils.contour import ContourSettings
 
 CONTOUR_DEFAULT_NUMBER_OF_LEVELS = 8
@@ -173,6 +176,8 @@ class CubevizImageViewer(ImageViewer):
         self._coords_format_function = self._format_to_hex_string  # Function to format ra and dec
         self.x_mouse = None  # x position of mouse in pix
         self.y_mouse = None  # y position of mouse in pix
+        self.mouse_value = ""  # Value under mouse as string
+        self._is_tooltip_on = True  # Display mouse_value as tool tip
 
         self.is_contour_active = False  # Is contour being displayed
         self.is_contour_preview_active = False # Is contour in preview mode
@@ -744,6 +749,8 @@ class CubevizImageViewer(ImageViewer):
         """
         if self.hold_coords:
             return
+        if QToolTip.text() == self.mouse_value:
+            QToolTip.hideText()
         self.x_mouse = None
         self.y_mouse = None
         self.coord_label.setText('')
@@ -776,7 +783,7 @@ class CubevizImageViewer(ImageViewer):
         c = SkyCoord(ra=ra * u.degree, dec=dec * u.degree)
         coord_string = "("
         coord_string += "{0:0>2.0f}h:{1:0>2.0f}m:{2:0>2.0f}s".format(*c.ra.hms)
-        coord_string += "  "
+        coord_string += ", "
         coord_string += "{0:0>3.0f}d:{1:0>2.0f}m:{2:0>2.0f}s".format(*c.dec.dms)
 
         # Check if wavelength is available
@@ -800,6 +807,7 @@ class CubevizImageViewer(ImageViewer):
             self.is_mouse_over = False
             self.clear_coords()
             return
+        mouse_pos = QCursor.pos()
         self.is_mouse_over = True
 
         # If hold_coords is active, return
@@ -839,13 +847,18 @@ class CubevizImageViewer(ImageViewer):
                             string = string + " " + self._coords_format_function(ra, dec)
                 # Pixel Value:
                 v = arr[y][x]
-                string = "{0:.3e} {1} ".format(v, self.component_unit_label) + string
+                self.mouse_value = "{0:.3e} {1} ".format(v, self.component_unit_label)
+                string = "{0:.3e} ".format(v) + string
         # Add a gap to string and add to viewer.
         string += " "
         self._dont_update_status = True
         self.statusBar().clearMessage()
         self._dont_update_status = False
         self.coord_label.setText(string)
+
+        if self._is_tooltip_on:
+            QToolTip.showText(mouse_pos, "...", self)
+            QToolTip.showText(mouse_pos, self.mouse_value, self)
         return
 
     def first_visible_layer(self):
