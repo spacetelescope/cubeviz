@@ -180,30 +180,10 @@ class SliceController(HubListener):
         self._send_index_message(index)
 
     def _send_index_message(self, index):
-        msg = SliceIndexUpdateMessage(self, index, self._cv_layout.session.data_collection[0])
+        msg = SliceIndexUpdateMessage(self, index,
+                                      self._cv_layout.session.data_collection[0],
+                                      slider_down=self._slider_flag)
         self._hub.broadcast(msg)
-
-    def apply_to_viewers(self, index):
-        cube_views = self._cv_layout.cube_views
-        active_cube = self._cv_layout._active_cube
-        active_widget = active_cube._widget
-
-        # If the active widget is synced then we need to update the image
-        # in all the other synced views.
-        if active_widget.synced and not self._cv_layout._single_viewer_mode:
-            for view in cube_views:
-                if view._widget.synced:
-                    if self._slider_flag:
-                        view._widget.fast_draw_slice_at_index(index)
-                    else:
-                        view._widget.update_slice_index(index)
-            self._cv_layout.synced_index = index
-        else:
-            # Update the image displayed in the slice in the active view
-            if self._slider_flag:
-                active_widget.fast_draw_slice_at_index(index)
-            else:
-                active_widget.update_slice_index(index)
 
     def _on_slider_pressed(self):
         """
