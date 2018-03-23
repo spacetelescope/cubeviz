@@ -55,8 +55,6 @@ class SliceController(HubListener):
         # to specviz events
         specviz_dispatch.setup(self)
 
-        self._hub.subscribe(self, SliceIndexUpdateMessage, handler=self._update_slice_textboxes)
-
     @property
     def wavelength_label(self):
         """
@@ -84,6 +82,8 @@ class SliceController(HubListener):
         :return:
         """
         self.set_enabled(True)
+
+        self._hub.subscribe(self, SliceIndexUpdateMessage, handler=self.master_index_update)
 
         self._slice_slider.setMinimum(0)
 
@@ -137,6 +137,33 @@ class SliceController(HubListener):
 
         specviz_dispatch.changed_dispersion_position.emit(pos=new_index)
 
+    def master_index_update(self, message):
+        index = message.index
+
+        try:
+            tb_index = int(self._slice_textbox.text())
+        except ValueError:
+            tb_index = -1
+
+        if tb_index != index:
+            self._slice_textbox.setText(str(index))
+
+        try:
+            wavelength = float(self._wavelength_textbox.text())
+            wv_index = np.argsort(abs(self._wavelengths - wavelength))[0]
+        except ValueError:
+            wavelength = -1
+            wv_index = -1
+
+        if index != wv_index:
+            self._wavelength_textbox.setText(str(self._wavelengths[index]))
+
+        slider_index = self._slice_slider.value()
+        if slider_index != index:
+            self._slice_slider.setValue(index)
+
+        self.apply_to_viewers(index)
+
     def _on_slider_change(self, event):
         """
         Callback for change in slider value.
@@ -145,16 +172,13 @@ class SliceController(HubListener):
         :return:
         """
         index = self._slice_slider.value()
-        cube_views = self._cv_layout.cube_views
-        active_cube = self._cv_layout._active_cube
-        active_widget = active_cube._widget
-
         msg = SliceIndexUpdateMessage(self, index, self._cv_layout.session.data_collection[0])
         self._hub.broadcast(msg)
 
-        # *** WARNING: DO NOT USE MULTI-THREADING! ***
-        #       fast_draw_slice_at_index will
-        #       cause a crash
+    def apply_to_viewers(self, index):
+        cube_views = self._cv_layout.cube_views
+        active_cube = self._cv_layout._active_cube
+        active_widget = active_cube._widget
 
         # If the active widget is synced then we need to update the image
         # in all the other synced views.
