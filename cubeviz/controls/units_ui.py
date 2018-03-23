@@ -193,10 +193,5 @@ class WavelengthUI(QDialog):
         newvalue = self.wavelengthdisplay_combobox.currentText()
 
         # Hide the redshift stuff if Observed wavelength is selected
-        if 'Obs' in newvalue:
-            self.redshift_label.setDisabled(True)
-            self.redshift_text.setDisabled(True)
-
-        elif 'Rest' in newvalue:
-            self.redshift_label.setDisabled(False)
-            self.redshift_text.setDisabled(False)
+        self.redshift_label.setDisabled(newvalue.startswith('Obs'))
+        self.redshift_text.setDisabled(newvalue.startswith('Obs'))
