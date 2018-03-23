@@ -24,7 +24,7 @@ from .image_viewer import CubevizImageViewer
 
 from .controls.slice import SliceController
 from .controls.overlay import OverlayController
-from .controls.units import UnitController
+from .controls.units import UnitController, FluxUnitController
 from .tools import arithmetic_gui, moment_maps, smoothing
 from .tools import collapse_cube
 from .tools.spectral_operations import SpectralOperationHandler
@@ -139,6 +139,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._slice_controller = SliceController(self)
         self._overlay_controller = OverlayController(self)
         self._units_controller = UnitController(self)
+        self._flux_unit_controller = FluxUnitController(self)
 
         # Add menu buttons to the cubeviz toolbar.
         self.ra_dec_format_menu = None
@@ -535,8 +536,14 @@ class CubeVizLayout(QtWidgets.QWidget):
         """
         self._data = data
         self.specviz._widget.add_data(data)
-        cid = self.specviz._widget._options_widget.file_att
-        dispatch.changed_units.emit(y=data.get_component(cid).units)
+
+        for comp in data.visible_components:
+            self._flux_unit_controller.add_component_unit(comp, data.get_component(comp).units)
+
+        comp = self.specviz._widget._options_widget.file_att
+        specviz_unit = self._flux_unit_controller.get_component_unit(comp)
+        if specviz_unit is not None:
+            dispatch.changed_units.emit(y=specviz_unit)
 
         for checkbox in self._synced_checkboxes:
             checkbox.setEnabled(True)

@@ -17,10 +17,12 @@ new_units:
 #  Registered units are stored below. Each key is
 #  the unit as a sting and is broken down to its
 #  numeric, spectral_flux_density and area components.
-#  If a component is N/A place an empty sting.
+#  If a component is N/A, place an empty sting.
 registered_units:
     # Units from Manga
     "1E-17 erg/s/cm^2/Ang/spaxel":
+        astropy_unit_string:
+            "1E-17 erg/s/cm^2/angstrom/spaxel"
         numeric:
             "1E-17"
         spectral_flux_density:
@@ -29,6 +31,8 @@ registered_units:
             "spaxel"
 
     "1E-17 erg/s/cm^2/A/spaxel":
+        astropy_unit_string:
+            "1E-17 erg/s/cm^2/angstrom/spaxel"
         numeric:
             "1E-17"
         spectral_flux_density:
@@ -37,6 +41,8 @@ registered_units:
             "spaxel"
 
     "erg/s/cm^2/Ang/spaxel":
+        astropy_unit_string:
+            "1E-17 erg/s/cm^2/angstrom/spaxel"
         numeric:
             ""
         spectral_flux_density:

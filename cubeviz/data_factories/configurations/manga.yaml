@@ -29,8 +29,3 @@ data:
         IVAR
     DQ:
         MASK
-
-# Unit label replacements
-registered_flux_units:
-    erg/s/cm^2/Ang/spaxel:
-        "erg/s/cm^2/A/spaxel"
