@@ -11,6 +11,8 @@ new_units:
             "spaxel"
         base:
             "pix"
+        type:
+            "pixel"
 
 ## Unit Registry
 #
@@ -19,6 +21,27 @@ new_units:
 #  numeric, spectral_flux_density and area components.
 #  If a component is N/A, place an empty sting.
 registered_units:
+    # Units from NIRSpec
+    "Jy/arcsec^2":
+        astropy_unit_string:
+            "mJy/arcsec^2"
+        numeric:
+            "1.0"
+        spectral_flux_density:
+            "mJy"
+        area:
+            "arcsec^2"
+
+    "mJy/arcsec^2":
+        astropy_unit_string:
+            "mJy/arcsec^2"
+        numeric:
+            ""
+        spectral_flux_density:
+            "mJy"
+        area:
+            "arcsec^2"
+
     # Units from Manga
     "1E-17 erg/s/cm^2/Ang/spaxel":
         astropy_unit_string:

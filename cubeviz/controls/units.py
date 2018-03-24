@@ -6,7 +6,7 @@ from qtpy.QtCore import Qt, Signal, QThread
 from qtpy.QtWidgets import (
     QDialog, QApplication, QPushButton, QProgressBar,
     QLabel, QWidget, QDockWidget, QHBoxLayout, QVBoxLayout,
-    QComboBox, QMessageBox, QLineEdit, QRadioButton, QWidgetItem
+    QComboBox, QMessageBox, QLineEdit, QRadioButton, QWidgetItem, QSpacerItem
 )
 
 from glue.utils.qt import update_combobox
@@ -151,8 +151,129 @@ class UnitController:
         return self._new_units
 
 
+class FluxUnitRegistry:
+    def __init__(self):
+        self.runtime_defined_units = []
+
+    @staticmethod
+    def _locally_defined_units():
+        units = [u.uJy, u.mJy, u.Jy,
+                 u.erg / u.cm ** 2 / u.s / u.Hz,
+                 u.erg / u.cm ** 2 / u.s / u.um,
+                 u.erg / u.cm ** 2 / u.s]
+        return units
+
+    @staticmethod
+    def _equivalencies_defined_units():
+        equivalencies = u.spectral_density(3500 * u.AA)
+        units = []
+        for unit1, unit2, converter1, converter2 in equivalencies:
+            if 'spectral flux density' in unit1.physical_type:
+                units.append(unit1)
+            if 'spectral flux density' in unit2.physical_type:
+                units.append(unit2)
+        return units
+
+    def get_unit_list(self):
+        item_list = []
+        item_list.extend(self._equivalencies_defined_units())
+        item_list.extend(self._locally_defined_units())
+        item_list.extend(self.runtime_defined_units)
+
+        unit_list = []
+        for item in item_list:
+            if isinstance(item, str):
+                unit_list.append(item)
+            elif isinstance(item, u.UnitBase):
+                unit_list.append(item.to_string())
+        unit_list = list(set(unit_list))
+        return sorted(unit_list)
+
+    def add_unit(self, item):
+        if isinstance(item, str) \
+                or isinstance(item, u.UnitBase):
+            if item not in self.runtime_defined_units:
+                self.runtime_defined_units.append(item)
+
+
+class AreaUnitRegistry:
+    def __init__(self):
+        self.runtime_solid_angle_units = []
+        self.runtime_pixel_units = []
+
+    @staticmethod
+    def _locally_defined_solid_angle_units():
+        units = []
+        return units
+
+    @staticmethod
+    def _locally_defined_pixel_units():
+        units = []
+
+        spaxel = u.def_unit('spaxel', u.astrophys.pix)
+        u.add_enabled_units(spaxel)
+        units.append(spaxel)
+
+        return units
+
+    @staticmethod
+    def _astropy_derived_solid_angle_units():
+        angle_units = u.degree.find_equivalent_units()
+        units = []
+        for unit in angle_units:
+            unit = unit**2
+            units.append(unit)
+        return units
+
+    @staticmethod
+    def _astropy_defined_solid_angle_units():
+        return [u.steradian]
+
+    @staticmethod
+    def _pixel_units():
+        return [u.pix]
+
+    def get_unit_list(self, pixel_only=False, solid_angle_only=False):
+        item_list = []
+        if not solid_angle_only:
+            item_list.extend(self.runtime_pixel_units)
+            item_list.extend(self._locally_defined_pixel_units())
+            item_list.extend(self._pixel_units())
+        if not pixel_only:
+            item_list.extend(self.runtime_solid_angle_units)
+            item_list.extend(self._locally_defined_solid_angle_units())
+            item_list.extend(self._astropy_defined_solid_angle_units())
+            item_list.extend(self._astropy_derived_solid_angle_units())
+
+        unit_list = []
+        for item in item_list:
+            if isinstance(item, str):
+                unit_list.append(item)
+            elif isinstance(item, u.UnitBase):
+                unit_list.append(item.to_string())
+        unit_list = list(set(unit_list))
+        return sorted(unit_list)
+
+    def add_pixel_unit(self, item):
+        if isinstance(item, str) \
+                or isinstance(item, u.UnitBase):
+            if item not in self.runtime_pixel_units:
+                self.runtime_pixel_units.append(item)
+
+    def add_solid_angle_unit(self, item):
+        if isinstance(item, str) \
+                or isinstance(item, u.UnitBase):
+            if item not in self.runtime_solid_angle_units:
+                self.runtime_solid_angle_units.append(item)
+
+
+FLUX_UNIT_REGISTRY = FluxUnitRegistry()
+AREA_UNIT_REGISTRY = AreaUnitRegistry()
+
+
 class CubeVizUnit:
     def __init__(self, unit=None, unit_string=""):
+        self._original_unit = unit
         self._unit = unit
         self._unit_string = unit_string
         self._type = "CubeVizUnit"
@@ -170,58 +291,100 @@ class CubeVizUnit:
     def type(self):
         return self._type
 
+    @type.setter
+    def type(self, type):
+        if isinstance(type, str):
+            self._type = type
+
     def populate_unit_layout(self, unit_layout):
-        #default_message = "CubeViz can not convert this unit."
-        default_message = self.unit_string
+
+        if self.unit_string:
+            default_message = "CubeViz can not convert this unit: {0}."
+            default_message = default_message.format(self.unit_string)
+        else:
+            default_message = "Unit not found."
+
         default_label = QLabel(default_message)
         unit_layout.addWidget(default_label)
         return unit_layout
 
 
-class FormattedUnit(CubeVizUnit):
+class SpectralFluxDensity(CubeVizUnit):
     def __init__(self, unit, unit_string,
-                 numeric, spectral_flux_density, area):
-        super(FormattedUnit, self).__init__()
-        self._unit = unit
-        self._unit_string = unit_string
+                 numeric=None,
+                 spectral_flux_density=None,
+                 area=None,
+                 is_formatted=False):
+        super(SpectralFluxDensity, self).__init__(unit, unit_string)
+
+        self._type = "FormattedSpectralFluxDensity" if is_formatted else "SpectralFluxDensity"
+        self.is_convertable = True
+
         self.numeric = numeric
         self.spectral_flux_density = spectral_flux_density
         self.area = area
-        self._type = "FormattedUnit"
-        self.is_convertable = True
 
+        FLUX_UNIT_REGISTRY.add_unit(spectral_flux_density)
 
-class SpectralFluxDensity(CubeVizUnit):
-    def __init__(self, unit, unit_string, spectral_flux_density):
-        super(SpectralFluxDensity, self).__init__()
-        self._unit = unit
-        self._unit_string = unit_string
-        self.spectral_flux_density = spectral_flux_density
-        self._type = "SpectralFluxDensity"
-        self.is_convertable = True
+    def populate_unit_layout(self, unit_layout):
+        if self.numeric is not None:
+            numeric_string = str(self.numeric)
+        elif self.unit is not None:
+            numeric_string = self.unit.scale
+        else:
+            numeric_string = "1.0"
+        numeric_input = QLineEdit(numeric_string)
+        numeric_input.setFixedWidth(50)
+        unit_layout.addWidget(numeric_input)
+        multiplication = QLabel(" X ")
+        unit_layout.addWidget(multiplication)
+
+        flux_unit_str = self.spectral_flux_density.to_string()
+        flux_options = FLUX_UNIT_REGISTRY.get_unit_list()
+        if flux_unit_str not in flux_options:
+            flux_options.append(flux_unit_str)
+        index = flux_options.index(flux_unit_str)
+        flux_combo = QComboBox()
+        #flux_combo.setFixedWidth(200)
+        flux_combo.addItems(flux_options)
+        flux_combo.setCurrentIndex(index)
+        unit_layout.addWidget(flux_combo)
+
+        if self.area is not None:
+            division = QLabel(" / ")
+            unit_layout.addWidget(division)
+            area = AREA_UNIT_REGISTRY.get_unit_list()
+            area_combo = QComboBox()
+            #area_combo.setFixedWidth(200)
+            area_combo.width()
+            area_combo.addItems(area)
+            unit_layout.addWidget(area_combo)
+        unit_layout.addStretch(1)
+        return unit_layout
 
 
 class UnknownUnit(CubeVizUnit):
     def __init__(self, unit, unit_string):
-        super(UnknownUnit, self).__init__()
-        self._unit = unit
-        self._unit_string = unit_string
+        super(UnknownUnit, self).__init__(unit, unit_string)
         self._type = "UnknownUnit"
-        self.is_convertable = False
 
 
 class NoneUnit(CubeVizUnit):
     def __init__(self):
-        super(NoneUnit, self).__init__()
-        self._unit = None
-        self._unit_string = ""
+        super(NoneUnit, self).__init__(None, "")
         self._type = "NoneUnit"
-        self.is_convertable = False
+
+    def populate_unit_layout(self, unit_layout):
+        default_message = "No Units."
+        default_label = QLabel(default_message)
+        unit_layout.addWidget(default_label)
+        return unit_layout
 
 
 class ConvertFluxUnitGUI(QDialog):
     def __init__(self, controller, parent=None):
         super(ConvertFluxUnitGUI, self).__init__(parent=parent)
+        self.setWindowFlags(self.windowFlags() | Qt.Tool)
         self.title = "Smoothing Selection"
 
         self.controller = controller
@@ -234,7 +397,6 @@ class ConvertFluxUnitGUI(QDialog):
         # LINE 1: Data component drop down
         self.component_prompt = QLabel("Data Component:")
         self.component_prompt.setWordWrap(True)
-        self.component_prompt.setMinimumWidth(150)
         # Add the data component labels to the drop down, with the ComponentID
         # set as the userData:
         if self.parent is not None and hasattr(self.parent, 'data_components'):
@@ -244,6 +406,7 @@ class ConvertFluxUnitGUI(QDialog):
 
         default_index = 0
         self.component_combo = QComboBox()
+        self.component_combo.setFixedWidth(200)
         update_combobox(self.component_combo, self.label_data, default_index=default_index)
         self.component_combo.currentIndexChanged.connect(self.update_unit_layout)
 
@@ -251,6 +414,7 @@ class ConvertFluxUnitGUI(QDialog):
         hbl1 = QHBoxLayout()
         hbl1.addWidget(self.component_prompt)
         hbl1.addWidget(self.component_combo)
+        hbl1.addStretch(1)
 
         # LINE 2: Unit conversion layout
         self.unit_layout = QHBoxLayout()  # this is hbl2
@@ -284,10 +448,14 @@ class ConvertFluxUnitGUI(QDialog):
 
         widgets = (self.unit_layout.itemAt(i) for i in range(self.unit_layout.count()))
         for w in widgets:
-            if isinstance(w,QWidgetItem):
+            if isinstance(w, QSpacerItem):
+                self.unit_layout.removeItem(w)
+                continue
+            elif isinstance(w, QWidgetItem):
                 w = w.widget()
-            self.unit_layout.removeWidget(w)
-            w.deleteLater()
+
+            if hasattr(w, "deleteLater"):
+                w.deleteLater()
 
         if component_id in self.controller_components:
             cubeviz_unit = self.controller_components[component_id]
@@ -328,12 +496,23 @@ class FluxUnitController:
                     new_astropy_unit = u.def_unit(new_unit["name"], u.Unit(new_unit["base"]))
                 else:
                     new_astropy_unit = u.def_unit(new_unit["name"])
-                u.add_enabled_units(new_astropy_unit)
+            self.register_new_unit(new_astropy_unit)
 
         self.registered_units = cfg["registered_units"]
 
         self.data = None
         self.components = {}
+        #TODO: Make this^ private
+
+    @staticmethod
+    def register_new_unit(new_unit):
+        u.add_enabled_units(new_unit)
+        if 'spectral flux density' in new_unit.physical_type:
+            FLUX_UNIT_REGISTRY.add_unit(new_unit)
+        if new_unit.decompose() == u.pix.decompose():
+            AREA_UNIT_REGISTRY.add_pixel_unit(new_unit)
+        if 'solid angle' in new_unit.physical_type:
+            AREA_UNIT_REGISTRY.add_solid_angle_unit(new_unit)
 
     @staticmethod
     def string_to_unit(unit_string):
@@ -367,19 +546,28 @@ class FluxUnitController:
         if not unit_string:
             cubeviz_unit = NoneUnit()
         elif unit_string in self.registered_units:
+            # TODO: match registered_unit types rather than strings (Hard)
             registered_unit = self.registered_units[unit_string]
             if "astropy_unit_string" in registered_unit:
                 unit_string = registered_unit["astropy_unit_string"]
             astropy_unit = self.string_to_unit(unit_string)
-            numeric = self.string_to_unit(registered_unit["numeric"])
+            if registered_unit["numeric"]:
+                numeric = float(registered_unit["numeric"])
+            else:
+                numeric = astropy_unit.scale
             spectral_flux_density = self.string_to_unit(registered_unit["spectral_flux_density"])
             area = self.string_to_unit(registered_unit["area"])
-            cubeviz_unit = FormattedUnit(astropy_unit, unit_string,
-                                         numeric, spectral_flux_density, area)
+            cubeviz_unit = SpectralFluxDensity(astropy_unit, unit_string,
+                                               numeric, spectral_flux_density, area,
+                                               is_formatted=True)
         else:
             astropy_unit = self.string_to_unit(unit_string)
-            if 'spectral flux density' in astropy_unit.physical_type:
-                cubeviz_unit = SpectralFluxDensity(astropy_unit, unit_string, astropy_unit)
+            if astropy_unit is not None and 'spectral flux density' in astropy_unit.physical_type:
+                spectral_flux_density = self.string_to_unit(astropy_unit.to_string("unscaled"))
+                numeric = astropy_unit.scale
+                cubeviz_unit = SpectralFluxDensity(astropy_unit, unit_string,
+                                                   numeric, spectral_flux_density,
+                                                   area=None)
             else:
                 cubeviz_unit = UnknownUnit(astropy_unit, unit_string)
         self.components[component_id] = cubeviz_unit
