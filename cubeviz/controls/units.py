@@ -153,24 +153,34 @@ class UnitController:
 
 class FluxUnitRegistry:
     def __init__(self):
+        self._model_unit = u.Jy
         self.runtime_defined_units = []
 
     @staticmethod
     def _locally_defined_units():
-        units = [u.uJy, u.mJy, u.Jy,
+        units = [u.Jy, u.uJy, u.mJy,
                  u.erg / u.cm ** 2 / u.s / u.Hz,
                  u.erg / u.cm ** 2 / u.s / u.um,
-                 u.erg / u.cm ** 2 / u.s]
+                 u.erg / u.cm ** 2 / u.s,
+                 u.eV / u.m ** 2 / u.s / u.Hz,
+                 u.W / u.m ** 2 / u.Hz,
+                 ]
         return units
 
-    @staticmethod
-    def _equivalencies_defined_units():
+    def is_compatible(self, unit):
+        try:
+            self._model_unit.to(unit, equivalencies=u.spectral_density(3500 * u.AA))
+            return True
+        except u.UnitConversionError:
+            return False
+
+    def _equivalencies_defined_units(self):
         equivalencies = u.spectral_density(3500 * u.AA)
         units = []
         for unit1, unit2, converter1, converter2 in equivalencies:
-            if 'spectral flux density' in unit1.physical_type:
+            if self.is_compatible(unit1):
                 units.append(unit1)
-            if 'spectral flux density' in unit2.physical_type:
+            if self.is_compatible(unit2):
                 units.append(unit2)
         return units
 
@@ -198,8 +208,19 @@ class FluxUnitRegistry:
 
 class AreaUnitRegistry:
     def __init__(self):
+        self._model_unit = [u.pixel, u.steradian]
         self.runtime_solid_angle_units = []
         self.runtime_pixel_units = []
+
+    def is_compatible(self, unit):
+        compatible = False
+        for model_unit in self._model_unit:
+            try:
+                model_unit.to(unit)
+                compatible = True
+            except u.UnitConversionError:
+                continue
+        return compatible
 
     @staticmethod
     def _locally_defined_solid_angle_units():
@@ -265,6 +286,17 @@ class AreaUnitRegistry:
                 or isinstance(item, u.UnitBase):
             if item not in self.runtime_solid_angle_units:
                 self.runtime_solid_angle_units.append(item)
+
+    def add_unit(self, item):
+        if isinstance(item, str):
+            new_unit = u.unit(item)
+        else:
+            new_unit = item
+
+        if new_unit.decompose() == u.pix.decompose():
+            self.add_pixel_unit(new_unit)
+        if 'solid angle' in new_unit.physical_type:
+            self.add_solid_angle_unit(new_unit)
 
 
 FLUX_UNIT_REGISTRY = FluxUnitRegistry()
@@ -353,11 +385,17 @@ class SpectralFluxDensity(CubeVizUnit):
         if self.area is not None:
             division = QLabel(" / ")
             unit_layout.addWidget(division)
-            area = AREA_UNIT_REGISTRY.get_unit_list()
+
+            area_str = self.area.to_string()
+            area_options = AREA_UNIT_REGISTRY.get_unit_list()
+            if area_str not in area_options:
+                area_options.append(area_str)
+            index = area_options.index(area_str)
             area_combo = QComboBox()
             #area_combo.setFixedWidth(200)
             area_combo.width()
-            area_combo.addItems(area)
+            area_combo.addItems(area_options)
+            area_combo.setCurrentIndex(index)
             unit_layout.addWidget(area_combo)
         unit_layout.addStretch(1)
         return unit_layout
@@ -498,6 +536,8 @@ class FluxUnitController:
                     new_astropy_unit = u.def_unit(new_unit["name"])
             self.register_new_unit(new_astropy_unit)
 
+        self._define_new_physical_types()
+
         self.registered_units = cfg["registered_units"]
 
         self.data = None
@@ -507,12 +547,74 @@ class FluxUnitController:
     @staticmethod
     def register_new_unit(new_unit):
         u.add_enabled_units(new_unit)
-        if 'spectral flux density' in new_unit.physical_type:
+        if FLUX_UNIT_REGISTRY.is_compatible(new_unit):
             FLUX_UNIT_REGISTRY.add_unit(new_unit)
-        if new_unit.decompose() == u.pix.decompose():
-            AREA_UNIT_REGISTRY.add_pixel_unit(new_unit)
-        if 'solid angle' in new_unit.physical_type:
-            AREA_UNIT_REGISTRY.add_solid_angle_unit(new_unit)
+        if new_unit.decompose() == u.pix.decompose() or \
+                'solid angle' in new_unit.physical_type:
+            AREA_UNIT_REGISTRY.add_unit(new_unit)
+
+    @staticmethod
+    def _define_new_physical_types():
+        new_physical_types = [
+            [(u.Jy / u.degree ** 2), 'SFD_over_solid_angle'],
+            [(u.Jy / u.pix), 'SFD_over_pix']
+        ]
+        for model_unit, name in new_physical_types:
+            try:
+                u.def_physical_type(model_unit, name)
+            except ValueError:
+                continue
+
+    @staticmethod
+    def _sfd_over_solid_angle_to_cubeviz(unit, unit_string):
+        scale = unit.scale
+        unit_list = unit.bases
+        power_list = unit.powers
+
+        index = None
+        sfd_unit = None
+        for i, un in enumerate(unit_list):
+            if 'solid angle' == un.physical_type or \
+                    'angle' == un.physical_type:
+                index = i
+            else:
+                if sfd_unit is None:
+                    sfd_unit = un ** power_list[i]
+                else:
+                    sfd_unit *= un ** power_list[i]
+
+        if index is not None:
+            angle_unit = unit_list[index] ** abs(power_list[index])
+            cubeviz_unit = SpectralFluxDensity(unit, unit_string,
+                                               scale, sfd_unit, angle_unit)
+        else:
+            cubeviz_unit = UnknownUnit(unit, unit_string)
+        return cubeviz_unit
+
+    @staticmethod
+    def _sfd_over_pix_to_cubeviz(unit, unit_string):
+        scale = unit.scale
+        unit_list = unit.bases
+        power_list = unit.powers
+
+        index = None
+        sfd_unit = None
+        for i, un in enumerate(unit_list):
+            if un.decompose() == u.pix.decompose():
+                index = i
+            else:
+                if sfd_unit is None:
+                    sfd_unit = un ** power_list[i]
+                else:
+                    sfd_unit *= un ** power_list[i]
+
+        if index is not None:
+            pix_unit = unit_list[index] ** abs(power_list[index])
+            cubeviz_unit = SpectralFluxDensity(unit, unit_string,
+                                               scale, sfd_unit, pix_unit)
+        else:
+            cubeviz_unit = UnknownUnit(unit, unit_string)
+        return cubeviz_unit
 
     @staticmethod
     def string_to_unit(unit_string):
@@ -546,7 +648,6 @@ class FluxUnitController:
         if not unit_string:
             cubeviz_unit = NoneUnit()
         elif unit_string in self.registered_units:
-            # TODO: match registered_unit types rather than strings (Hard)
             registered_unit = self.registered_units[unit_string]
             if "astropy_unit_string" in registered_unit:
                 unit_string = registered_unit["astropy_unit_string"]
@@ -562,14 +663,21 @@ class FluxUnitController:
                                                is_formatted=True)
         else:
             astropy_unit = self.string_to_unit(unit_string)
-            if astropy_unit is not None and 'spectral flux density' in astropy_unit.physical_type:
+            if astropy_unit is None:
+                cubeviz_unit = UnknownUnit(astropy_unit, unit_string)
+            elif 'spectral flux density' in astropy_unit.physical_type:
                 spectral_flux_density = self.string_to_unit(astropy_unit.to_string("unscaled"))
                 numeric = astropy_unit.scale
                 cubeviz_unit = SpectralFluxDensity(astropy_unit, unit_string,
                                                    numeric, spectral_flux_density,
                                                    area=None)
+            elif 'SFD_over_solid_angle' in astropy_unit.physical_type:
+                cubeviz_unit = self._sfd_over_solid_angle_to_cubeviz(astropy_unit, unit_string)
+            elif 'SFD_over_pix' in astropy_unit.physical_type:
+                cubeviz_unit = self._sfd_over_pix_to_cubeviz(astropy_unit, unit_string)
             else:
                 cubeviz_unit = UnknownUnit(astropy_unit, unit_string)
+
         self.components[component_id] = cubeviz_unit
         return cubeviz_unit
 
@@ -578,10 +686,13 @@ class FluxUnitController:
         if component_id in self.components:
             del self.components[component_id]
 
-    def get_component_unit(self, component_id):
+    def get_component_unit(self, component_id, cubeviz_unit=False):
         component_id = str(component_id)
         if component_id in self.components:
-            return self.components[component_id].unit
+            if cubeviz_unit:
+                return self.components[component_id]
+            else:
+                return self.components[component_id].unit
         return None
 
     def set_data(self, data):

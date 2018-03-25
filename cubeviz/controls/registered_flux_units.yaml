@@ -14,33 +14,14 @@ new_units:
         type:
             "pixel"
 
-## Unit Registry
+## Data Unit Registry
 #
 #  Registered units are stored below. Each key is
 #  the unit as a sting and is broken down to its
 #  numeric, spectral_flux_density and area components.
 #  If a component is N/A, place an empty sting.
 registered_units:
-    # Units from NIRSpec
-    "Jy/arcsec^2":
-        astropy_unit_string:
-            "mJy/arcsec^2"
-        numeric:
-            "1.0"
-        spectral_flux_density:
-            "mJy"
-        area:
-            "arcsec^2"
 
-    "mJy/arcsec^2":
-        astropy_unit_string:
-            "mJy/arcsec^2"
-        numeric:
-            ""
-        spectral_flux_density:
-            "mJy"
-        area:
-            "arcsec^2"
 
     # Units from Manga
     "1E-17 erg/s/cm^2/Ang/spaxel":
