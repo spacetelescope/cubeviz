@@ -151,6 +151,8 @@ def update_synced_index_and_verify(qtbot, layout, sync_params, new_synced_index,
     enter_slice_text(qtbot, layout, str(new_synced_index))
     assert unsynced_viewer._widget.slice_index == unsynced_index
     assert_viewer_indices(other_viewers, new_synced_index)
+    import time
+    time.sleep(0.5)
     assert_slice_text(layout, str(new_synced_index))
 
 @pytest.fixture(scope='function')

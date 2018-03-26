@@ -146,9 +146,6 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._init_menu_buttons()
 
         self.sync = {}
-        # Track the slice index of the synced viewers. This is updated by the
-        # slice controller
-        self.synced_index = None
 
         app = get_qapp()
         app.installEventFilter(self)
@@ -238,16 +235,9 @@ class CubeVizLayout(QtWidgets.QWidget):
         if isinstance(message, SettingsChangeMessage):
             self._slice_controller.update_index(self.synced_index)
 
-    def handle_slice_index_update(self, message):
-        # TODO: the synced index really belongs in the slice controller,
-        # not here.
-        if self._active_cube._widget.synced and not self._single_viewer_mode:
-            self.synced_index = message.index
-
-        # TODO: Consider whether instead of having message handlers in the
-        # image viewers, we can just loop over all image viewers here in
-        # response to these messages
-
+    @property
+    def synced_index(self):
+        return self._slice_controller.synced_index
 
     def handle_subset_action(self, message):
         if isinstance(message, SubsetUpdateMessage):

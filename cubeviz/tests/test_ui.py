@@ -115,35 +115,35 @@ def setup_combo_and_index(qtbot, layout, index):
     if index == 0:
         toggle_viewer(qtbot, layout)
         combo = getattr(layout.ui, 'single_viewer_combo')
-        current_index = 0
+        synced_index = 0
     else:
         combo = getattr(layout.ui, 'viewer{0}_combo'.format(index))
-        current_index = index - 1
+        synced_index = index - 1
 
-    return combo, current_index
+    return combo, synced_index
 
 @pytest.mark.parametrize('viewer_index', [0, 1, 2, 3])
 def test_viewer_dropdowns(qtbot, cubeviz_layout, viewer_index):
-    combo, current_index = setup_combo_and_index(
+    combo, synced_index = setup_combo_and_index(
                                 qtbot, cubeviz_layout, viewer_index)
     if viewer_index == 0:
         toggle_viewer(qtbot, cubeviz_layout)
         combo = getattr(cubeviz_layout.ui, 'single_viewer_combo')
-        current_index = 0
+        synced_index = 0
     else:
         combo = getattr(cubeviz_layout.ui, 'viewer{0}_combo'.format(viewer_index))
-        current_index = min(viewer_index - 1, 1) # only two datasets
+        synced_index = min(viewer_index - 1, 1) # only two datasets
 
     widget = cubeviz_layout.cube_views[viewer_index]._widget
 
     # Make sure there are only two data components currently (dataset has two)
     assert combo.count() == 2
     # Make sure starting index is set appropriately
-    assert combo.currentIndex() == current_index
+    assert combo.currentIndex() == synced_index
 
     for i in range(2):
-        current_index = (current_index + 1) % 2
-        check_data_component(cubeviz_layout, combo, current_index, widget)
+        synced_index = (synced_index + 1) % 2
+        check_data_component(cubeviz_layout, combo, synced_index, widget)
 
 def test_add_data_component(qtbot, cubeviz_layout):
     new_label = 'QuirkyLabel'
@@ -151,14 +151,14 @@ def test_add_data_component(qtbot, cubeviz_layout):
     cubeviz_layout._data.add_component(new_data, new_label)
 
     for viewer_index in range(4):
-        combo, current_index = setup_combo_and_index(
+        combo, synced_index = setup_combo_and_index(
                                     qtbot, cubeviz_layout, viewer_index)
         widget = cubeviz_layout.cube_views[viewer_index]._widget
 
         # Make sure the new index is there
         assert combo.count() == 3
         # Make sure the index hasn't changed (this might behave differently in the future)
-        #assert combo.currentIndex() == current_index
+        #assert combo.currentIndex() == synced_index
 
         # Make sure none of the original components have changed
         for i in range(2):

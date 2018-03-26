@@ -51,6 +51,9 @@ class SliceController(HubListener):
         self._wavelength_units = None
         self._wavelengths = None
 
+        # Tracks the index of the synced viewers
+        self.synced_index = None
+
         # Connect this class to specviz's event dispatch so methods can listen
         # to specviz events
         specviz_dispatch.setup(self)
@@ -97,12 +100,18 @@ class SliceController(HubListener):
         self._wavelengths = wavelengths
         self._slice_slider.setMaximum(len(self._wavelengths) - 1)
 
-        # Set the default display to the middle of the cube
-        middle_index = len(self._wavelengths) // 2
-        self._slice_slider.setValue(middle_index)
-        self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[middle_index]))
+        if self.synced_index is None:
+            # Set the initial display to the middle of the cube
+            middle_index = len(self._wavelengths) // 2
+            self._slice_slider.setValue(middle_index)
+            self.synced_index = middle_index
 
-        self._cv_layout.synced_index = middle_index
+        index = self._cv_layout._active_cube._widget.slice_index
+        self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[index]))
+
+    def _handle_redshift_update(self, message):
+
+        self.active_index = middle_index
 
     def set_enabled(self, value):
         self._slice_slider.setEnabled(value)
@@ -121,12 +130,12 @@ class SliceController(HubListener):
         self._wavelengths = new_wavelengths
         self._slice_slider.setMaximum(len(self._wavelengths) - 1)
 
-        self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[self._cv_layout.synced_index]))
+        self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[self.active_index]))
 
         specviz_dispatch.changed_units.emit(x=new_units)
 
     def get_index(self):
-        return self._cv_layout.synced_index
+        return self.active_index
 
     def update_index(self, index):
         self._slice_slider.setValue(index)
@@ -161,6 +170,9 @@ class SliceController(HubListener):
         slider_index = self._slice_slider.value()
         if slider_index != index:
             self._slice_slider.setValue(index)
+
+        if self._cv_layout._active_cube._widget.synced:
+            self.synced_index = index
 
         specviz_dispatch.changed_dispersion_position.emit(pos=index)
 

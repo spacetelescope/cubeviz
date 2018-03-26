@@ -4,7 +4,6 @@ from glue.core import Hub, HubListener, Data, DataCollection
 from glue.core.message import (DataCollectionAddMessage, SettingsChangeMessage,
                                DataRemoveComponentMessage, SubsetMessage,
                                DataAddComponentMessage)
-from .messages import SliceIndexUpdateMessage
 from .layout import CubeVizLayout
 
 
@@ -35,8 +34,6 @@ class CubevizManager(HubListener):
             self, DataRemoveComponentMessage, handler=self.handle_remove_component)
         self._hub.subscribe(
             self, SubsetMessage, handler=self.handle_subset_message)
-        self._hub.subscribe(
-            self, SliceIndexUpdateMessage, handler=self.handle_slice_index_update)
 
         # Look for any cube data files that were loaded from the command line
         for data in session.data_collection:
@@ -73,10 +70,6 @@ class CubevizManager(HubListener):
     def handle_subset_message(self, message):
         if self._layout is not None:
             self._layout.handle_subset_action(message)
-
-    def handle_slice_index_update(self, message):
-        if self._layout is not None:
-            self._layout.handle_slice_index_update(message)
 
     def hide_sidebar(self):
         self._app._ui.main_splitter.setSizes([0, 300])
