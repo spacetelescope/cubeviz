@@ -224,7 +224,10 @@ class AreaUnitRegistry:
 
     @staticmethod
     def _locally_defined_solid_angle_units():
-        units = []
+        units = [u.Unit("arcmin2"),
+                 u.Unit("deg2"),
+                 u.Unit("arcsec2"),
+                 u.Unit("rad2")]
         return units
 
     @staticmethod
@@ -264,7 +267,7 @@ class AreaUnitRegistry:
             item_list.extend(self.runtime_solid_angle_units)
             item_list.extend(self._locally_defined_solid_angle_units())
             item_list.extend(self._astropy_defined_solid_angle_units())
-            item_list.extend(self._astropy_derived_solid_angle_units())
+            # item_list.extend(self._astropy_derived_solid_angle_units()) #Disabled
 
         unit_list = []
         for item in item_list:
