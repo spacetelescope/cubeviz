@@ -1,6 +1,9 @@
 from astropy import units as u
 from specviz.third_party.glue.data_viewer import dispatch as specviz_dispatch
 
+from ..messages import WavelengthUpdateMessage, WavelengthUnitUpdateMessage, RedshiftUpdateMessage
+
+
 OBS_WAVELENGTH_TEXT = 'Obs Wavelength'
 REST_WAVELENGTH_TEXT = 'Rest Wavelength'
 
@@ -8,12 +11,12 @@ REST_WAVELENGTH_TEXT = 'Rest Wavelength'
 class UnitController:
     def __init__(self, cubeviz_layout):
         self._cv_layout = cubeviz_layout
+        self._hub = cubeviz_layout.session.hub
         ui = cubeviz_layout.ui
         self._original_wavelengths = self._cv_layout._wavelengths
-        self._new_wavelengths = []
+        self._wavelengths = []
         self._original_units = u.m
         self._new_units = self._original_units
-        self._wcs = None
 
         # Add the redshift z value
         self._redshift_z = 0
@@ -81,8 +84,7 @@ class UnitController:
         # Calculate and set the new wavelengths
         self._wavelengths = self._original_wavelengths / (1 + self._redshift_z)
 
-        # Send them to the slice controller
-        self._cv_layout._slice_controller.set_wavelengths(self._wavelengths, self._new_units)
+        self._send_wavelength_message()
 
         # Send the redshift value to specviz
         specviz_dispatch.change_redshift.emit(redshift=self._redshift_z)
@@ -114,12 +116,24 @@ class UnitController:
         # new_unit_name = self._wavelength_combobox.currentText()
         self._new_units = self._units[self._units_titles.index(new_unit_name)]
 
-        self._new_wavelengths = self.convert_wavelengths(self._original_wavelengths, self._original_units, self._new_units)
-        if self._new_wavelengths is None:
+        self._wavelengths = self.convert_wavelengths(self._original_wavelengths, self._original_units, self._new_units)
+        print("wavelengths", self._wavelengths)
+        if self._wavelengths is None:
             return
 
         # Set layout._wavelength as the new wavelength
-        self._cv_layout.set_wavelengths(self._new_wavelengths, self._new_units)
+        self._cv_layout.set_wavelengths(self._wavelengths, self._new_units)
+        self._send_wavelength_message(self._wavelengths)
+        self._send_wavelength_unit_message(self._new_units)
+
+    def _send_wavelength_message(self, wavelengths):
+        msg = WavelengthUpdateMessage(self, wavelengths)
+        self._hub.broadcast(msg)
+
+    def _send_wavelength_unit_message(self, units):
+        print("_send_wavelength_unit_message")
+        msg = WavelengthUnitUpdateMessage(self, units)
+        self._hub.broadcast(msg)
 
     def convert_wavelengths(self, old_wavelengths, old_units, new_units):
         if old_wavelengths is not None:
@@ -127,9 +141,10 @@ class UnitController:
             return new_wavelengths
         return False
 
-    def enable(self, wcs, wavelength):
+    def enable(self, units, wavelength):
         self._original_wavelengths = wavelength
-        self._wcs = wcs
+        self._send_wavelength_message(wavelength)
+        self._send_wavelength_unit_message(units)
 
     def get_new_units(self):
         return self._new_units

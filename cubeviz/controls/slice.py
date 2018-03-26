@@ -3,7 +3,7 @@ import numpy as np
 from glue.core import HubListener
 from specviz.third_party.glue.data_viewer import dispatch as specviz_dispatch
 
-from ..messages import SliceIndexUpdateMessage
+from ..messages import SliceIndexUpdateMessage, WavelengthUpdateMessage, WavelengthUnitUpdateMessage
 from .units import REST_WAVELENGTH_TEXT, OBS_WAVELENGTH_TEXT
 
 RED_BACKGROUND = "background-color: rgba(255, 0, 0, 128);"
@@ -64,6 +64,7 @@ class SliceController(HubListener):
         """
         return self._wavelength_label_text
 
+    # This needs to be associated with the redshift change message
     @wavelength_label.setter
     def wavelength_label(self, new_label):
         """
@@ -77,7 +78,7 @@ class SliceController(HubListener):
         self._wavelength_textbox_label.setText('{} ({})'.format(
             self._wavelength_label_text, self._wavelength_units))
 
-    def enable(self, wcs, wavelengths):
+    def enable(self):
         """
         Setup the slice slider (min/max, units on description and initial position).
 
@@ -85,20 +86,28 @@ class SliceController(HubListener):
         """
         self.set_enabled(True)
 
-        self._hub.subscribe(self, SliceIndexUpdateMessage, handler=self.master_index_update)
+        self._hub.subscribe(self, SliceIndexUpdateMessage, handler=self._handle_index_update)
+        self._hub.subscribe(self, WavelengthUpdateMessage, handler=self._handle_wavelength_update)
+        self._hub.subscribe(self, WavelengthUnitUpdateMessage, handler=self._handle_wavelength_units_update)
 
         self._slice_slider.setMinimum(0)
 
+    def _handle_wavelength_units_update(self, message):
+
         # Store the wavelength units and format
-        self._wavelength_units = str(wcs.wcs.cunit[2])
+        print("HEY", message.units)
+        self._wavelength_units = message.units
         self._wavelength_format = '{:.3}'
         self._wavelength_textbox_label.setText('{} ({})'.format(
             self._wavelength_label_text, self._wavelength_units))
 
+    def _handle_wavelength_update(self, message):
+
         # Grab the wavelengths so they can be displayed in the text box
-        self._wavelengths = wavelengths
+        self._wavelengths = message.wavelengths
         self._slice_slider.setMaximum(len(self._wavelengths) - 1)
 
+        # TODO: this should be removed (according to crjones)
         # Set the default display to the middle of the cube
         middle_index = len(self._wavelengths) // 2
         self._slice_slider.setValue(middle_index)
@@ -139,7 +148,7 @@ class SliceController(HubListener):
 
         specviz_dispatch.changed_dispersion_position.emit(pos=new_index)
 
-    def master_index_update(self, message):
+    def _handle_index_update(self, message):
         index = message.index
 
         try:
