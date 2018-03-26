@@ -85,6 +85,12 @@
             <height>16777215</height>
            </size>
           </property>
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
           <property name="text">
            <string>Wavelength Units:</string>
           </property>
@@ -120,6 +126,12 @@
             <width>130</width>
             <height>16777215</height>
            </size>
+          </property>
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
           </property>
           <property name="text">
            <string>Wavelength Display:</string>
@@ -164,6 +176,12 @@
           <width>130</width>
           <height>16777215</height>
          </size>
+        </property>
+        <property name="font">
+         <font>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
         </property>
         <property name="text">
          <string>Red Shift Z-value:</string>
