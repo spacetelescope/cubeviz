@@ -312,7 +312,12 @@ class CubeVizLayout(QtWidgets.QWidget):
         if name == "Wavelength Units/Redshift":
             WavelengthUI(self._units_controller, parent=self)
 
-
+    def refresh_units(self, target_component_id):
+        for view in self.cube_views:
+            viewer = view.widget()
+            if str(viewer.current_component_id) == str(target_component_id):
+                viewer.update_component_unit_label(target_component_id)
+                viewer.update_axes_title(str(target_component_id))
 
     def _toggle_all_coords_in_degrees(self):
         """
@@ -385,7 +390,8 @@ class CubeVizLayout(QtWidgets.QWidget):
             if viewer.is_smoothing_preview_active:
                 viewer.end_smoothing_preview()
 
-            # Change the title and unit shown in the viwer
+            # Change the component label, title and unit shown in the viewer
+            viewer.current_component_id = component
             viewer.update_component_unit_label(component)
             viewer.update_axes_title(title=str(label))
 
@@ -450,6 +456,7 @@ class CubeVizLayout(QtWidgets.QWidget):
             data, 0, 'single_viewer_combo', 'single_viewer_attribute')
         view = self.cube_views[0].widget()
         component = getattr(self, 'single_viewer_attribute')
+        view.current_component_id = component
         view.update_component_unit_label(component)
         view.update_axes_title(component.label)
 
@@ -459,6 +466,7 @@ class CubeVizLayout(QtWidgets.QWidget):
             self._enable_viewer_combo(data, i, combo_label, selection_label)
             view = self.cube_views[i].widget()
             component = getattr(self, selection_label)
+            view.current_component_id = component
             view.update_component_unit_label(component)
             view.update_axes_title(component.label)
 

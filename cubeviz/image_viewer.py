@@ -168,6 +168,8 @@ class CubevizImageViewer(ImageViewer):
         self._synced_checkbox = None
         self._slice_index = None
 
+        self.current_component_id = None  # Current component id
+
         self.component_unit_label = ""  # String to hold units of data values
 
         self.is_mouse_over = False  # If mouse cursor is over viewer
@@ -653,12 +655,16 @@ class CubevizImageViewer(ImageViewer):
     def slice_index(self):
         return self._slice_index
 
-    def update_component_unit_label(self, component_id):
+    def update_component_unit_label(self, component_id=None):
         """
         Update component's unit label.
         :param component_id: component id
         """
-
+        if component_id is None:
+            if self.current_component_id is None:
+                self.component_unit_label = ""
+                return self.component_unit_label
+            component_id = self.current_component_id
         data = component_id.parent
         unit = str(data.get_component(component_id).units)
         if unit:
@@ -847,8 +853,8 @@ class CubevizImageViewer(ImageViewer):
                             string = string + " " + self._coords_format_function(ra, dec)
                 # Pixel Value:
                 v = arr[y][x]
-                self.mouse_value = "{0:.3e} {1} ".format(v, self.component_unit_label)
-                string = "{0:.3e} ".format(v) + string
+                self.mouse_value = "{0:.3E} [{1}] ".format(v, self.component_unit_label)
+                string = "{0:.3E} ".format(v) + string
         # Add a gap to string and add to viewer.
         string += " "
         self._dont_update_status = True
