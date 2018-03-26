@@ -109,7 +109,7 @@ def check_data_component(layout, combo, index, widget):
     assert combo.currentText() == current_label
     np.testing.assert_allclose(
         widget.layers[0].state.get_sliced_data(),
-        layout._data[current_label][layout.synced_index])
+        layout._data[current_label][layout.active_index])
 
 def setup_combo_and_index(qtbot, layout, index):
     if index == 0:
@@ -169,7 +169,7 @@ def test_add_data_component(qtbot, cubeviz_layout):
         assert combo.currentText() == new_label
         np.testing.assert_allclose(
             widget.layers[0].state.get_sliced_data(),
-            cubeviz_layout._data[new_label][cubeviz_layout.synced_index])
+            cubeviz_layout._data[new_label][cubeviz_layout.active_index])
 
         # Toggle back to split viewer mode if necessary
         if viewer_index == 0:

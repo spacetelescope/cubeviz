@@ -227,8 +227,8 @@ class CubevizImageViewer(ImageViewer, HubListener):
         # When toggling from 2D to 3D data component, update to synced index
         elif self._toggle_3d:
             self._toggle_3d = False
-            self.cubeviz_layout._slice_controller.update_index(self.cubeviz_layout.synced_index)
-            self.update_slice_index(self.cubeviz_layout.synced_index)
+            self.cubeviz_layout._slice_controller.update_index(self.cubeviz_layout.active_index)
+            self.update_slice_index(self.cubeviz_layout.active_index)
 
     def get_data_layer_artist(self, layer=None, layer_state=None):
         if layer.ndim == 1:
@@ -574,7 +574,7 @@ class CubevizImageViewer(ImageViewer, HubListener):
         if self._synced_checkbox.isChecked():
             msg = SettingsChangeMessage(self, [self])
             self.parent().tab_widget.session.hub.broadcast(msg)
-            self.update_slice_index(self.parent().tab_widget.synced_index)
+            self.update_slice_index(self.parent().tab_widget.active_index)
 
     def assign_synced_checkbox(self, checkbox):
         self._synced_checkbox = checkbox
