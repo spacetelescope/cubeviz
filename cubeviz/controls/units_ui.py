@@ -8,8 +8,11 @@ from qtpy.QtWidgets import (
 )
 
 from astropy.stats import sigma_clip
+from glue.utils.qt import load_ui
+
 import numpy as np
 import re
+import os
 
 from .units import REST_WAVELENGTH_TEXT, OBS_WAVELENGTH_TEXT
 
@@ -17,150 +20,44 @@ class WavelengthUI(QDialog):
     def __init__(self, wavelength_controller, parent=None):
         super(WavelengthUI,self).__init__(parent)
 
-        self.setWindowTitle("Wavelengths")
-
-        self.setWindowFlags(self.windowFlags() | Qt.Tool)
-        self.title = "Wavelengths"
-
-        self._general_description = "From this dialog one may choose the wavelength units and/or display the Rest Wavelength units based on a red-shift Z value."
-
         self.wavelength_controller = wavelength_controller
-        self.currentAxes = None
-        self.currentKernel = None
 
-        self.createUI()
+        # Load the widget from the UI file.
+        self.ui = load_ui('wavelength.ui', self,
+                          directory=os.path.dirname(__file__))
 
-    def createUI(self):
-        """
-        Create the popup box with the calculation input area and buttons.
+        # Add the wavelength units to the combo box
+        self.ui.wavelengthunits_combobox.addItems(
+                self.wavelength_controller.unit_titles)
 
-        :return:
-        """
-        boldFont = QtGui.QFont()
-        boldFont.setBold(True)
+        # Add the wavelength display to the combo box
+        self.ui.wavelengthdisplay_combobox.addItems(
+                [OBS_WAVELENGTH_TEXT, REST_WAVELENGTH_TEXT])
 
-        # Create data component label and input box
-        self.widget_desc = QLabel(self._general_description)
-        self.widget_desc.setWordWrap(True)
-        self.widget_desc.setFixedWidth(400)
-        self.widget_desc.setAlignment((Qt.AlignLeft | Qt.AlignTop))
+        # Setup the callbacks on the UI
+        self.ui.wavelengthdisplay_combobox.currentIndexChanged.connect(
+                self._wavelengthdisplay_selection_change)
+        self.ui.calculate_button.clicked.connect(self._calculate_callback)
+        self.ui.cancel_button.clicked.connect(self._cancel_callback)
 
-        hb_desc = QHBoxLayout()
-        hb_desc.addWidget(self.widget_desc)
+        self.ui.show()
 
-        # Create wavelength units component label and input box
-        self.wavelengthunits_label = QLabel("Wavelength Units:")
-        self.wavelengthunits_label.setFixedWidth(120)
-        self.wavelengthunits_label.setAlignment((Qt.AlignRight | Qt.AlignTop))
-        self.wavelengthunits_label.setFont(boldFont)
-
-        self.wavelengthunits_combobox = QComboBox()
-        self.wavelengthunits_combobox.addItems(self.wavelength_controller.unit_titles)
-        self.wavelengthunits_combobox.setMinimumWidth(200)
-
-        hb_wavelengthunits = QHBoxLayout()
-        hb_wavelengthunits.addWidget(self.wavelengthunits_label)
-        hb_wavelengthunits.addWidget(self.wavelengthunits_combobox)
-
-        # Create wavelength units component label and input box
-        self.wavelengthdisplay_label = QLabel("Wavelength Display:")
-        self.wavelengthdisplay_label.setFixedWidth(120)
-        self.wavelengthdisplay_label.setAlignment((Qt.AlignRight | Qt.AlignTop))
-        self.wavelengthdisplay_label.setFont(boldFont)
-
-        self.wavelengthdisplay_combobox = QComboBox()
-        self.wavelengthdisplay_combobox.addItems(['Obs Wavelengths', 'Rest Wavelengths'])
-        self.wavelengthdisplay_combobox.setMinimumWidth(200)
-        self.wavelengthdisplay_combobox.currentIndexChanged.connect(self._wavelengthdisplay_selection_change)
-
-        hb_wavelengthdisplay = QHBoxLayout()
-        hb_wavelengthdisplay.addWidget(self.wavelengthdisplay_label)
-        hb_wavelengthdisplay.addWidget(self.wavelengthdisplay_combobox)
-
-        # Create redshift label and input box
-        self.redshift_label = QLabel("RedShift:")
-        self.redshift_label.setFixedWidth(120)
-        self.redshift_label.setAlignment((Qt.AlignRight | Qt.AlignTop))
-        self.redshift_label.setFont(boldFont)
-
-        self.redshift_text = QLineEdit()
-        self.redshift_text.setMinimumWidth(200)
-
-        hb_redshift = QHBoxLayout()
-        hb_redshift.addWidget(self.redshift_label)
-        hb_redshift.addWidget(self.redshift_text)
-
-        # Going to hide these initially, when the "Rest Wavelengths is
-        # selected then we will show them.
-        self.redshift_label.setDisabled(True)
-        self.redshift_text.setDisabled(True)
-
-        # Create error label
-        self.error_label = QLabel("")
-        self.error_label.setFixedWidth(100)
-
-        self.error_label_text = QLabel("")
-        self.error_label_text.setMinimumWidth(200)
-        self.error_label_text.setAlignment((Qt.AlignLeft | Qt.AlignTop))
-
-        hbl_error = QHBoxLayout()
-        hbl_error.addWidget(self.error_label)
-        hbl_error.addWidget(self.error_label_text)
-
-        # Create Calculate and Cancel buttons
-        self.calculateButton = QPushButton("Set")
-        self.calculateButton.clicked.connect(self.calculate_callback)
-        self.calculateButton.setDefault(True)
-
-        self.cancelButton = QPushButton("Cancel")
-        self.cancelButton.clicked.connect(self.cancel_callback)
-
-        hb_buttons = QHBoxLayout()
-        hb_buttons.addStretch(1)
-        hb_buttons.addWidget(self.cancelButton)
-        hb_buttons.addWidget(self.calculateButton)
-
-        # Add calculation and buttons to popup box
-        vbl = QVBoxLayout()
-        vbl.addLayout(hb_desc)
-        vbl.addLayout(hb_wavelengthunits)
-        vbl.addLayout(hb_wavelengthdisplay)
-        vbl.addLayout(hb_redshift)
-        vbl.addLayout(hbl_error)
-        vbl.addLayout(hb_buttons)
-
-        # Enable or disable the redshift Z box depending on
-        # what they choose in the first combobox. Also need
-        # to add in the current redshift Z value if it is set.
-        if 'Rest' in self.wavelength_controller._wavelength_textbox_label:
-            self.redshift_label.setDisabled(False)
-            self.redshift_text.setDisabled(False)
-            self.wavelengthdisplay_combobox.setCurrentIndex(1)
-            self.redshift_text.setText('{}'.format(self.wavelength_controller.redshift_z))
-        else:
-            self.redshift_label.setDisabled(True)
-            self.redshift_text.setDisabled(True)
-            self.wavelengthdisplay_combobox.setCurrentIndex(0)
-
-        self.setLayout(vbl)
-        self.setMaximumWidth(700)
-        self.show()
-
-    def calculate_callback(self):
+    def _calculate_callback(self):
 
         # Reset the errors
-        self.error_label_text.setText(' ')
-        self.error_label_text.setStyleSheet("color: rgba(255, 0, 0, 128)")
+        self.ui.error_text.setText(' ')
+        self.ui.error_text.setStyleSheet("color: rgba(0, 0, 0, 128)")
+        self.ui.redshift_label.setStyleSheet("color: rgba(0, 0, 0, 128)")
 
         # Check the redshift value if we are using the Obs wavelengths
         if 'Rest' in self.wavelengthdisplay_combobox.currentText():
-            redshift = self.redshift_text.text().strip()
+            redshift = self.ui.redshift_text.text().strip()
 
             try:
                 redshift = float(redshift)
             except Exception as e:
-                self.redshift_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-                self.error_label_text.setText('Redshift value {} does not appear to be a number'.format(redshift))
+                self.ui.redshift_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+                self.ui.error_text.setText('Redshift value {} does not appear to be a number'.format(redshift))
                 return
 
             # Set it back in the wavelength controller
@@ -172,7 +69,7 @@ class WavelengthUI(QDialog):
 
         self.close()
 
-    def cancel_callback(self, caller=0):
+    def _cancel_callback(self, caller=0):
         """
         Cancel callback when the person hits the cancel button
 
@@ -192,8 +89,8 @@ class WavelengthUI(QDialog):
         :param newvalue:
         :return:
         """
-        newvalue = self.wavelengthdisplay_combobox.currentText()
+        newvalue = self.ui.wavelengthdisplay_combobox.currentText()
 
         # Hide the redshift stuff if Observed wavelength is selected
-        self.redshift_label.setDisabled(newvalue == OBS_WAVELENGTH_TEXT)
-        self.redshift_text.setDisabled(newvalue == OBS_WAVELENGTH_TEXT)
+        self.ui.redshift_label.setDisabled(newvalue == OBS_WAVELENGTH_TEXT)
+        self.ui.redshift_text.setDisabled(newvalue == OBS_WAVELENGTH_TEXT)
