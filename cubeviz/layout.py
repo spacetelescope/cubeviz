@@ -75,7 +75,6 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         self.session = session
         self._has_data = False
-        self._wavelengths = None
         self._option_buttons = []
 
         self._data = None
@@ -551,13 +550,14 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._last_active_view = self.single_view
         self._active_split_cube = self.split_views[0]
 
-        # Store pointer to wavelength information
-        self._wavelengths = self.single_view._widget._data[0].coords.world_axis(self.single_view._widget._data[0], axis=0)
-
-        # Pass WCS and wavelength information to slider controller and enable
+        # Store pointer to wcs and wavelength information
         wcs = self.session.data_collection.data[0].coords.wcs
-        self._slice_controller.enable(wcs, self._wavelengths)
-        self._units_controller.enable(wcs, self._wavelengths)
+        wavelengths = self.single_view._widget._data[0].coords.world_axis(self.single_view._widget._data[0], axis=0)
+
+        # TODO: currently this way of accessing units is not flexible
+        self._slice_controller.enable()
+        self._units_controller.enable(str(wcs.wcs.cunit[2]), wavelengths)
+
 
         self._enable_option_buttons()
         self._setup_syncing()
@@ -730,13 +730,3 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     def change_slice_index(self, amount):
         self._slice_controller.change_slider_value(amount)
-
-    def get_wavelengths(self):
-        return self._wavelengths
-
-    def get_wavelengths_units(self):
-        return self._units_controller.get_new_units()
-
-    def set_wavelengths(self, new_wavelengths, new_units):
-        self._wavelengths = new_wavelengths
-        self._slice_controller.set_wavelengths(new_wavelengths, new_units)

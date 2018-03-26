@@ -1,6 +1,9 @@
 from astropy import units as u
 from specviz.third_party.glue.data_viewer import dispatch as specviz_dispatch
 
+from ..messages import WavelengthUpdateMessage, WavelengthUnitUpdateMessage, RedshiftUpdateMessage
+
+
 OBS_WAVELENGTH_TEXT = 'Obs Wavelength'
 REST_WAVELENGTH_TEXT = 'Rest Wavelength'
 
@@ -8,12 +11,12 @@ REST_WAVELENGTH_TEXT = 'Rest Wavelength'
 class UnitController:
     def __init__(self, cubeviz_layout):
         self._cv_layout = cubeviz_layout
+        self._hub = cubeviz_layout.session.hub
         ui = cubeviz_layout.ui
-        self._original_wavelengths = self._cv_layout._wavelengths
-        self._new_wavelengths = []
+        self._wavelengths = []
+        self._original_wavelengths = []
         self._original_units = u.m
         self._new_units = self._original_units
-        self._wcs = None
 
         # Add the redshift z value
         self._redshift_z = 0
@@ -26,6 +29,11 @@ class UnitController:
         self._wavelength_textbox_label = ui.wavelength_textbox_label.text()
 
         specviz_dispatch.setup(self)
+
+    def enable(self, units, wavelength):
+        self._original_wavelengths = wavelength
+        self._send_wavelength_message(wavelength)
+        self._send_wavelength_unit_message(units)
 
     @property
     def wavelength_label(self):
@@ -81,8 +89,7 @@ class UnitController:
         # Calculate and set the new wavelengths
         self._wavelengths = self._original_wavelengths / (1 + self._redshift_z)
 
-        # Send them to the slice controller
-        self._cv_layout._slice_controller.set_wavelengths(self._wavelengths, self._new_units)
+        self._send_wavelength_message()
 
         # Send the redshift value to specviz
         specviz_dispatch.change_redshift.emit(redshift=self._redshift_z)
@@ -103,33 +110,25 @@ class UnitController:
             # This calls the setter above, so really, the magic is there.
             self.redshift_z = redshift
 
-    def on_combobox_change(self, new_unit_name):
-        """
-        Callback for change in unitcombobox value
-        :param event:
-        :return:
-        """
-        # Get the new unit name from the selected value in the comboBox and
-        # set that as the new unit that wavelengths will be converted to
-        # new_unit_name = self._wavelength_combobox.currentText()
-        self._new_units = self._units[self._units_titles.index(new_unit_name)]
+    def _send_wavelength_message(self, wavelengths):
+        msg = WavelengthUpdateMessage(self, wavelengths)
+        self._hub.broadcast(msg)
 
-        self._new_wavelengths = self.convert_wavelengths(self._original_wavelengths, self._original_units, self._new_units)
-        if self._new_wavelengths is None:
-            return
+    def _send_wavelength_unit_message(self, units):
+        print("_send_wavelength_unit_message")
+        msg = WavelengthUnitUpdateMessage(self, units)
+        self._hub.broadcast(msg)
 
-        # Set layout._wavelength as the new wavelength
-        self._cv_layout.set_wavelengths(self._new_wavelengths, self._new_units)
+    def _send_redshift_message(self, redshift):
+        print("_send_redshift_message")
+        msg = RedshiftUpdateMessage(self, redshift)
+        self._hub.broadcast(msg)
 
     def convert_wavelengths(self, old_wavelengths, old_units, new_units):
         if old_wavelengths is not None:
             new_wavelengths = ((old_wavelengths * old_units).to(new_units) / new_units)
             return new_wavelengths
         return False
-
-    def enable(self, wcs, wavelength):
-        self._original_wavelengths = wavelength
-        self._wcs = wcs
 
     def get_new_units(self):
         return self._new_units
