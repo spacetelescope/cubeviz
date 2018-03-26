@@ -34,6 +34,15 @@ class WavelengthUI(QDialog):
         self.ui.wavelengthdisplay_combobox.addItems(
                 [OBS_WAVELENGTH_TEXT, REST_WAVELENGTH_TEXT])
 
+        # Set default values based on what was previously selected
+        # This should be before the callbacks just so we don't fire anything
+        z = wavelength_controller.redshift_z
+        self.ui.wavelengthdisplay_combobox.setCurrentIndex(0 if z == 0 else 1)
+        self.ui.redshift_text.setText(str(z))
+
+        self.ui.redshift_label.setDisabled(z == 0)
+        self.ui.redshift_text.setDisabled(z == 0)
+
         # Setup the callbacks on the UI
         self.ui.wavelengthdisplay_combobox.currentIndexChanged.connect(
                 self._wavelengthdisplay_selection_change)
