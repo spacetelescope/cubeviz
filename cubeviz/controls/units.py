@@ -74,10 +74,12 @@ class UnitController:
 
     def update_units(self, units):
 
-        # TODO: update internal unit representation here?
-        self._send_wavelength_unit_message(units)
+        self._new_units = units
 
         self._wavelengths = (self._wavelengths * self._new_units).to(units) / units
+
+        self._send_wavelength_unit_message(units)
+        self._send_wavelength_message(self._wavelengths)
 
         specviz_dispatch.changed_units.emit(x=units)
 
@@ -92,11 +94,14 @@ class UnitController:
         else:
             self._wavelength_textbox_label = OBS_WAVELENGTH_TEXT
 
-        self._wavelengths = (1 + redshift) * self._original_wavelengths
+        orig_redshift = (1.0 / (1 + redshift)) * self._original_wavelengths * self._original_units
+        self._wavelengths = orig_redshift.to(self._new_units)/ self._new_units
 
         # This calls the setter above, so really, the magic is there.
         self._redshift_z = redshift
+
         self._send_redshift_message(redshift)
+        self._send_wavelength_message(self._wavelengths)
 
         specviz_dispatch.change_redshift.emit(redshift=redshift)
 
@@ -111,12 +116,3 @@ class UnitController:
     def _send_redshift_message(self, redshift):
         msg = RedshiftUpdateMessage(self, redshift, label=self.wavelength_label)
         self._hub.broadcast(msg)
-
-    def convert_wavelengths(self, old_wavelengths, old_units, new_units):
-        if old_wavelengths is not None:
-            new_wavelengths = ((old_wavelengths * old_units).to(new_units) / new_units)
-            return new_wavelengths
-        return False
-
-    def get_new_units(self):
-        return self._new_units

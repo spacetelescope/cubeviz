@@ -48,7 +48,7 @@ class SliceController(HubListener):
         # We are not going to enforce what the name should be at this level.
         self._wavelength_label_text = OBS_WAVELENGTH_TEXT
 
-        self._wavelength_format = '{}'
+        self._wavelength_format = '{:1.3e}'
         self._wavelength_units = None
         self._wavelengths = None
 
@@ -98,7 +98,6 @@ class SliceController(HubListener):
 
         # Store the wavelength units and format
         self._wavelength_units = message.units
-        self._wavelength_format = '{:.3}'
         self._wavelength_textbox_label.setText('{} ({})'.format(
             self._wavelength_label_text, self._wavelength_units))
 
@@ -108,13 +107,13 @@ class SliceController(HubListener):
         self._wavelengths = message.wavelengths
         self._slice_slider.setMaximum(len(self._wavelengths) - 1)
 
-        # TODO: this should be removed (according to crjones)
-        # Set the default display to the middle of the cube
-        middle_index = len(self._wavelengths) // 2
-        self._slice_slider.setValue(middle_index)
-        self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[middle_index]))
+        if self.active_index is None:
+            # Set the initial display to the middle of the cube
+            middle_index = len(self._wavelengths) // 2
+            self._slice_slider.setValue(middle_index)
+            self.active_index = middle_index
 
-        self.active_index = middle_index
+        self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[self.active_index]))
 
     def _handle_redshift_update(self, message):
 
@@ -132,7 +131,6 @@ class SliceController(HubListener):
         # Store the wavelength units and format
         new_units_name = new_units.short_names[0]
         self._wavelength_units = new_units_name
-        self._wavelength_format = '{:.3}'
         self._wavelength_textbox_label.setText('{} ({})'.format(
             self._wavelength_label_text, self._wavelength_units))
 
@@ -175,7 +173,7 @@ class SliceController(HubListener):
             wv_index = -1
 
         if index != wv_index:
-            self._wavelength_textbox.setText(str(self._wavelengths[index]))
+            self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[index]))
 
         slider_index = self._slice_slider.value()
         if slider_index != index:
