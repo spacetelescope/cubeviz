@@ -31,6 +31,7 @@ class UnitController:
         specviz_dispatch.setup(self)
 
     def enable(self, units, wavelength):
+        self._wavelengths = wavelength
         self._original_wavelengths = wavelength
         self._send_wavelength_message(wavelength)
         self._send_wavelength_unit_message(units)
