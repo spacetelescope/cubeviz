@@ -118,9 +118,6 @@ class SliceController(HubListener):
 
     def _handle_redshift_update(self, message):
 
-        if not message.label:
-            return
-
         self._wavelength_label_text = message.label
 
         self._wavelength_textbox_label.setText('{} ({})'.format(

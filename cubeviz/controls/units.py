@@ -16,6 +16,7 @@ class UnitController:
         self._wavelengths = []
         self._original_wavelengths = []
         self._original_units = u.m
+        # TODO: code debt: rename _new_units to something else
         self._new_units = self._original_units
 
         # Add the redshift z value
@@ -61,40 +62,6 @@ class UnitController:
         """
         return self._redshift_z
 
-    @redshift_z.setter
-    def redshift_z(self, new_z):
-        """
-        Set the new Z value for the redshift.
-
-        :return: Z redshift value
-        """
-
-        # We want to make sure there is no odd messaging looping that might
-        # happen if we receive the same value. In this case, we are done.
-        if self._redshift_z == new_z:
-            return
-
-        self._redshift_z = new_z
-
-        if new_z is not None and new_z > 0:
-            # Set the label
-            self._wavelength_textbox_label = REST_WAVELENGTH_TEXT
-            self._cv_layout._slice_controller.wavelength_label = REST_WAVELENGTH_TEXT
-            self._cv_layout.set_wavelengths((1+new_z)*self._original_wavelengths, self._new_units)
-        else:
-            # Set the label
-            self._wavelength_textbox_label = OBS_WAVELENGTH_TEXT
-            self._cv_layout._slice_controller.wavelength_label = OBS_WAVELENGTH_TEXT
-            self._cv_layout.set_wavelengths(self._original_wavelengths, self._new_units)
-
-        # Calculate and set the new wavelengths
-        self._wavelengths = self._original_wavelengths / (1 + self._redshift_z)
-
-        self._send_wavelength_message()
-
-        # Send the redshift value to specviz
-        specviz_dispatch.change_redshift.emit(redshift=self._redshift_z)
-
     @specviz_dispatch.register_listener("change_redshift")
     def specviz_change_redshift(self, redshift):
         """
@@ -106,19 +73,26 @@ class UnitController:
         self.update_redshift(redshift)
 
     def update_units(self, units):
+
         # TODO: update internal unit representation here?
         self._send_wavelength_unit_message(units)
+
+        self._wavelengths = (self._wavelengths * self._new_units).to(units) / units
 
         specviz_dispatch.changed_units.emit(x=units)
 
     def update_redshift(self, redshift, label=''):
-        # if the input redshift is the current value we have then we are not
+        # If the input redshift is the current value we have then we are not
         # going to do anything.
         if self._redshift_z == redshift:
             return
 
-        if label:
-            self.wavelength_label = label
+        if redshift is not None and redshift != 0:
+            self._wavelength_textbox_label = REST_WAVELENGTH_TEXT
+        else:
+            self._wavelength_textbox_label = OBS_WAVELENGTH_TEXT
+
+        self._wavelengths = (1 + redshift) * self._original_wavelengths
 
         # This calls the setter above, so really, the magic is there.
         self._redshift_z = redshift
