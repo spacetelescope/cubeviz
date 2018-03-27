@@ -3,7 +3,8 @@ import numpy as np
 from glue.core import HubListener
 from specviz.third_party.glue.data_viewer import dispatch as specviz_dispatch
 
-from ..messages import SliceIndexUpdateMessage, WavelengthUpdateMessage, WavelengthUnitUpdateMessage
+from ..messages import (SliceIndexUpdateMessage, WavelengthUpdateMessage,
+                        WavelengthUnitUpdateMessage, RedshiftUpdateMessage)
 from .units import REST_WAVELENGTH_TEXT, OBS_WAVELENGTH_TEXT
 
 RED_BACKGROUND = "background-color: rgba(255, 0, 0, 128);"
@@ -47,7 +48,7 @@ class SliceController(HubListener):
         # We are not going to enforce what the name should be at this level.
         self._wavelength_label_text = OBS_WAVELENGTH_TEXT
 
-        self._wavelength_format = '{}'
+        self._wavelength_format = '{:1.3e}'
         self._wavelength_units = None
         self._wavelengths = None
 
@@ -90,15 +91,14 @@ class SliceController(HubListener):
         self._hub.subscribe(self, SliceIndexUpdateMessage, handler=self._handle_index_update)
         self._hub.subscribe(self, WavelengthUpdateMessage, handler=self._handle_wavelength_update)
         self._hub.subscribe(self, WavelengthUnitUpdateMessage, handler=self._handle_wavelength_units_update)
+        self._hub.subscribe(self, RedshiftUpdateMessage, handler=self._handle_redshift_update)
 
         self._slice_slider.setMinimum(0)
 
     def _handle_wavelength_units_update(self, message):
 
         # Store the wavelength units and format
-        print("HEY", message.units)
         self._wavelength_units = message.units
-        self._wavelength_format = '{:.3}'
         self._wavelength_textbox_label.setText('{} ({})'.format(
             self._wavelength_label_text, self._wavelength_units))
 
@@ -118,13 +118,11 @@ class SliceController(HubListener):
         self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[index]))
 
     def _handle_redshift_update(self, message):
-        # TODO: this should be removed (according to crjones)
-        # Set the default display to the middle of the cube
-        middle_index = len(self._wavelengths) // 2
-        self._slice_slider.setValue(middle_index)
-        self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[middle_index]))
 
-        self.active_index = middle_index
+        self._wavelength_label_text = message.label
+
+        self._wavelength_textbox_label.setText('{} ({})'.format(
+            self._wavelength_label_text, self._wavelength_units))
 
     def set_enabled(self, value):
         self._slice_slider.setEnabled(value)
@@ -135,7 +133,6 @@ class SliceController(HubListener):
         # Store the wavelength units and format
         new_units_name = new_units.short_names[0]
         self._wavelength_units = new_units_name
-        self._wavelength_format = '{:.3}'
         self._wavelength_textbox_label.setText('{} ({})'.format(
             self._wavelength_label_text, self._wavelength_units))
 
@@ -178,7 +175,7 @@ class SliceController(HubListener):
             wv_index = -1
 
         if index != wv_index:
-            self._wavelength_textbox.setText(str(self._wavelengths[index]))
+            self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[index]))
 
         slider_index = self._slice_slider.value()
         if slider_index != index:

@@ -59,7 +59,7 @@ class WavelengthUI(QDialog):
         self.ui.redshift_label.setStyleSheet("color: rgba(0, 0, 0, 128)")
 
         # Check the redshift value if we are using the Obs wavelengths
-        if 'Rest' in self.wavelengthdisplay_combobox.currentText():
+        if REST_WAVELENGTH_TEXT == self.wavelengthdisplay_combobox.currentText():
             redshift = self.ui.redshift_text.text().strip()
 
             try:
@@ -68,20 +68,14 @@ class WavelengthUI(QDialog):
                 self.ui.redshift_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
                 self.ui.error_text.setText('Redshift value {} does not appear to be a number'.format(redshift))
                 return
-
-            # Set it back in the wavelength controller
-            self.wavelength_controller.redshift_z = redshift
         else:
-            self.wavelength_controller.redshift_z = 0.0
-
-        self.wavelength_controller.wavelength_label = self.wavelengthdisplay_combobox.currentText()
+            redshift = 0.0
 
         index = self.ui.wavelengthunits_combobox.currentIndex()
         units = self.wavelength_controller.units[index]
 
-        self.wavelength_controller._send_wavelength_unit_message(units)
-        self.wavelength_controller._send_redshift_message(
-            self.wavelength_controller.redshift_z)
+        self.wavelength_controller.update_units(units)
+        self.wavelength_controller.update_redshift(redshift)
 
         self.close()
 

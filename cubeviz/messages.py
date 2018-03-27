@@ -37,6 +37,7 @@ class WavelengthUnitUpdateMessage(Message):
 
 class RedshiftUpdateMessage(Message):
 
-    def __init__(self, sender, redshift, tag=None):
+    def __init__(self, sender, redshift, label='', tag=None):
         super(RedshiftUpdateMessage, self).__init__(sender, tag=tag)
         self.redshift = redshift
+        self.label = label
