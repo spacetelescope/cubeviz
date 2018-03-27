@@ -785,9 +785,11 @@ class CubevizImageViewer(ImageViewer, HubListener):
         """
         coord_string = "({:0>8.4f}, {:0>8.4f}".format(ra, dec)
 
+        wavelengths = self.parent().tab_widget.wavelengths
+
         # Check if wavelength is available
-        if self.slice_index is not None and self.parent().tab_widget._wavelengths is not None:
-            wave = self.parent().tab_widget._wavelengths[self.slice_index]
+        if self.slice_index is not None and wavelengths is not None:
+            wave = wavelengths[self.slice_index]
             wavelength_unit = self.parent().tab_widget.get_wavelengths_units().short_names[0]
             coord_string += ", {:1.2e}{})".format(wave, wavelength_unit)
         else:
@@ -807,9 +809,11 @@ class CubevizImageViewer(ImageViewer, HubListener):
         coord_string += ", "
         coord_string += "{0:0>3.0f}d:{1:0>2.0f}m:{2:0>2.0f}s".format(*c.dec.dms)
 
+        wavelengths = self.parent().tab_widget.wavelengths
+
         # Check if wavelength is available
-        if self.slice_index is not None and self.parent().tab_widget._wavelengths is not None:
-            wave = self.parent().tab_widget._wavelengths[self.slice_index]
+        if self.slice_index is not None and wavelengths is not None:
+            wave = wavelengths[self.slice_index]
             wavelength_unit = self.parent().tab_widget._units_controller._new_units.short_names[0]
             coord_string += ", {:1.2e}{})".format(wave, wavelength_unit)
         else:

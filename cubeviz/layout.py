@@ -329,6 +329,10 @@ class CubeVizLayout(QtWidgets.QWidget):
     def component_labels(self):
         return [str(cid) for cid in self.data_components]
 
+    @property
+    def wavelengths(self):
+        return self._units_controller._wavelengths
+
     def refresh_viewer_combo_helpers(self):
         for i, helper in enumerate(self._viewer_combo_helpers):
             helper.refresh()
