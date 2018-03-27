@@ -24,7 +24,7 @@ from .image_viewer import CubevizImageViewer
 
 from .controls.slice import SliceController
 from .controls.overlay import OverlayController
-from .controls.units import UnitController
+from .controls.wavelengths import WavelengthController
 from .tools import collapse_cube
 from .tools import arithmetic_gui, moment_maps, smoothing
 from .tools.wavelengths_ui import WavelengthUI
@@ -138,7 +138,7 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         self._slice_controller = SliceController(self)
         self._overlay_controller = OverlayController(self)
-        self._units_controller = UnitController(self)
+        self._wavelength_controller = WavelengthController(self)
 
         # Add menu buttons to the cubeviz toolbar.
         self.ra_dec_format_menu = None
@@ -304,7 +304,7 @@ class CubeVizLayout(QtWidgets.QWidget):
             mm_gui.display()
 
         if name == "Wavelength Units/Redshift":
-            WavelengthUI(self._units_controller, parent=self)
+            WavelengthUI(self._wavelength_controller, parent=self)
 
     def _toggle_all_coords_in_degrees(self):
         """
@@ -331,7 +331,7 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     @property
     def wavelengths(self):
-        return self._units_controller._wavelengths
+        return self._wavelength_controller._wavelengths
 
     def refresh_viewer_combo_helpers(self):
         for i, helper in enumerate(self._viewer_combo_helpers):
@@ -560,7 +560,7 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         # TODO: currently this way of accessing units is not flexible
         self._slice_controller.enable()
-        self._units_controller.enable(str(wcs.wcs.cunit[2]), wavelengths)
+        self._wavelength_controller.enable(str(wcs.wcs.cunit[2]), wavelengths)
 
 
         self._enable_option_buttons()

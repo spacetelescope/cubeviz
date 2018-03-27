@@ -8,7 +8,7 @@ OBS_WAVELENGTH_TEXT = 'Obs Wavelength'
 REST_WAVELENGTH_TEXT = 'Rest Wavelength'
 
 
-class UnitController:
+class WavelengthController:
     def __init__(self, cubeviz_layout):
         self._cv_layout = cubeviz_layout
         self._hub = cubeviz_layout.session.hub
