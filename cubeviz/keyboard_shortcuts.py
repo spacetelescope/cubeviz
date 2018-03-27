@@ -71,7 +71,7 @@ def show_wavelength_dialog(session):
     :param session:
     :return:
     """
-    WavelengthUI(session.application.tab(0)._units_controller, parent=session.application.tab(0))
+    WavelengthUI(session.application.tab(0)._wavelength_controller, parent=session.application.tab(0))
 
 
 def remove_mpl_shortcuts_and_check_dupes():

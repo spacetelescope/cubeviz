@@ -272,8 +272,8 @@ class SliceController(HubListener):
         # The "pos" value coming from specviz appears to be related to the
         # index in the observed wavelength and so if there is a redshift
         # then we need to convert the pos to the rest wavelength position.
-        if self._cv_layout._units_controller and not self._cv_layout._units_controller.redshift_z == 0.0:
-            rest_wavelength = pos / (1 + self._cv_layout._units_controller.redshift_z)
+        if self._cv_layout._wavelength_controller and not self._cv_layout._wavelength_controller.redshift_z == 0.0:
+            rest_wavelength = pos / (1 + self._cv_layout._wavelength_controller.redshift_z)
             pos = np.argsort(abs(self._wavelengths - rest_wavelength))[0]
 
             # Pos is a wavelength and not an index for the call back for specviz
