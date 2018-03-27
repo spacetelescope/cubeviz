@@ -116,12 +116,12 @@ class UnitController:
         self._hub.broadcast(msg)
 
     def _send_wavelength_unit_message(self, units):
-        print("_send_wavelength_unit_message")
         msg = WavelengthUnitUpdateMessage(self, units)
         self._hub.broadcast(msg)
 
+        specviz_dispatch.changed_units.emit(x=units)
+
     def _send_redshift_message(self, redshift):
-        print("_send_redshift_message")
         msg = RedshiftUpdateMessage(self, redshift)
         self._hub.broadcast(msg)
 

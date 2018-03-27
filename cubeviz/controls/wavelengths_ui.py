@@ -76,8 +76,10 @@ class WavelengthUI(QDialog):
 
         self.wavelength_controller.wavelength_label = self.wavelengthdisplay_combobox.currentText()
 
-        self.wavelength_controller._send_wavelength_unit_message(
-            self.ui.wavelengthunits_combobox.currentText())
+        index = self.ui.wavelengthunits_combobox.currentIndex()
+        units = self.wavelength_controller.units[index]
+
+        self.wavelength_controller._send_wavelength_unit_message(units)
         self.wavelength_controller._send_redshift_message(
             self.wavelength_controller.redshift_z)
 
