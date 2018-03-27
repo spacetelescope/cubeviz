@@ -14,7 +14,7 @@ import numpy as np
 import re
 import os
 
-from .units import REST_WAVELENGTH_TEXT, OBS_WAVELENGTH_TEXT
+from ..controls.wavelengths import REST_WAVELENGTH_TEXT, OBS_WAVELENGTH_TEXT
 
 class WavelengthUI(QDialog):
     def __init__(self, wavelength_controller, parent=None):
