@@ -5,7 +5,7 @@ from specviz.third_party.glue.data_viewer import dispatch as specviz_dispatch
 
 from ..messages import (SliceIndexUpdateMessage, WavelengthUpdateMessage,
                         WavelengthUnitUpdateMessage, RedshiftUpdateMessage)
-from .units import REST_WAVELENGTH_TEXT, OBS_WAVELENGTH_TEXT
+from .wavelengths import REST_WAVELENGTH_TEXT, OBS_WAVELENGTH_TEXT
 
 RED_BACKGROUND = "background-color: rgba(255, 0, 0, 128);"
 
