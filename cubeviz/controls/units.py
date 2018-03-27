@@ -13,8 +13,8 @@ class UnitController:
         self._cv_layout = cubeviz_layout
         self._hub = cubeviz_layout.session.hub
         ui = cubeviz_layout.ui
-        self._original_wavelengths = self._cv_layout._wavelengths
         self._wavelengths = []
+        self._original_wavelengths = []
         self._original_units = u.m
         self._new_units = self._original_units
 
@@ -29,6 +29,11 @@ class UnitController:
         self._wavelength_textbox_label = ui.wavelength_textbox_label.text()
 
         specviz_dispatch.setup(self)
+
+    def enable(self, units, wavelength):
+        self._original_wavelengths = wavelength
+        self._send_wavelength_message(wavelength)
+        self._send_wavelength_unit_message(units)
 
     @property
     def wavelength_label(self):
@@ -114,16 +119,16 @@ class UnitController:
         msg = WavelengthUnitUpdateMessage(self, units)
         self._hub.broadcast(msg)
 
+    def _send_redshift_message(self, redshift):
+        print("_send_redshift_message")
+        msg = RedshiftUpdateMessage(self, redshift)
+        self._hub.broadcast(msg)
+
     def convert_wavelengths(self, old_wavelengths, old_units, new_units):
         if old_wavelengths is not None:
             new_wavelengths = ((old_wavelengths * old_units).to(new_units) / new_units)
             return new_wavelengths
         return False
-
-    def enable(self, units, wavelength):
-        self._original_wavelengths = wavelength
-        self._send_wavelength_message(wavelength)
-        self._send_wavelength_unit_message(units)
 
     def get_new_units(self):
         return self._new_units
