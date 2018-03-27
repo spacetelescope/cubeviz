@@ -96,20 +96,35 @@ class UnitController:
         specviz_dispatch.change_redshift.emit(redshift=self._redshift_z)
 
     @specviz_dispatch.register_listener("change_redshift")
-    def change_redshift(self, redshift):
+    def specviz_change_redshift(self, redshift):
         """
         Change the redshift based on a message from specviz.
 
         :paramter: redshift - the Z value.
         :return: nothing
         """
+        self.update_redshift(redshift)
+
+    def update_units(self, units):
+        # TODO: update internal unit representation here?
+        self._send_wavelength_unit_message(units)
+
+        specviz_dispatch.changed_units.emit(x=units)
+
+    def update_redshift(self, redshift, label=''):
+        # if the input redshift is the current value we have then we are not
+        # going to do anything.
         if self._redshift_z == redshift:
-            # If the input redshift is the current value we have
-            # then we are not going to do anything.
             return
-        else:
-            # This calls the setter above, so really, the magic is there.
-            self.redshift_z = redshift
+
+        if label:
+            self.wavelength_label = label
+
+        # This calls the setter above, so really, the magic is there.
+        self._redshift_z = redshift
+        self._send_redshift_message(redshift)
+
+        specviz_dispatch.change_redshift.emit(redshift=redshift)
 
     def _send_wavelength_message(self, wavelengths):
         msg = WavelengthUpdateMessage(self, wavelengths)
@@ -119,10 +134,8 @@ class UnitController:
         msg = WavelengthUnitUpdateMessage(self, units)
         self._hub.broadcast(msg)
 
-        specviz_dispatch.changed_units.emit(x=units)
-
     def _send_redshift_message(self, redshift):
-        msg = RedshiftUpdateMessage(self, redshift)
+        msg = RedshiftUpdateMessage(self, redshift, label=self.wavelength_label)
         self._hub.broadcast(msg)
 
     def convert_wavelengths(self, old_wavelengths, old_units, new_units):
