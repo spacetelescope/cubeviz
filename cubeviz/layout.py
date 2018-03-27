@@ -25,9 +25,9 @@ from .image_viewer import CubevizImageViewer
 from .controls.slice import SliceController
 from .controls.overlay import OverlayController
 from .controls.units import UnitController
-from .controls.wavelengths_ui import WavelengthUI
-from .tools import arithmetic_gui, moment_maps, smoothing
 from .tools import collapse_cube
+from .tools import arithmetic_gui, moment_maps, smoothing
+from .tools.wavelengths_ui import WavelengthUI
 from .tools.spectral_operations import SpectralOperationHandler
 
 
