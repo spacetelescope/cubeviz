@@ -355,7 +355,7 @@ class CubeVizUnit:
     def get_units(self):
         return self.unit_string
 
-    def convert_from_original_unit(self, value):
+    def convert_from_original_unit(self, value, **kwargs):
         if self.unit is None:
             return value
 
@@ -405,6 +405,10 @@ class SpectralFluxDensity(CubeVizUnit):
         self.spectral_flux_density = spectral_flux_density
         self.area = area
 
+        self._original_numeric = numeric
+        self._original_spectral_flux_density = spectral_flux_density
+        self._original_area = area
+
         self.has_area = True if area is not None else False
 
         self.numeric_power_input = None
@@ -412,6 +416,24 @@ class SpectralFluxDensity(CubeVizUnit):
         self.area_combo = None
 
         FLUX_UNIT_REGISTRY.add_unit(spectral_flux_density)
+
+    def convert_from_original_unit(self, value, wave=None, **kwargs):
+        if self.unit is None and wave is None:
+            return value
+
+        new_value = value
+
+        new_value *= self.numeric / self._original_numeric
+        new_value *= self._original_spectral_flux_density.to(self.spectral_flux_density,
+                                                             equivalencies=u.spectral_density(wave))
+        if self.has_area:
+            new_value /= self._original_area.to(self.area)
+
+        if isinstance(new_value, u.Quantity):
+            new_value = new_value.value
+
+        return new_value
+
 
     def reset_widgets(self):
         self.numeric_power_input = None

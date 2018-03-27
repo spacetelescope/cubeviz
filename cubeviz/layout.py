@@ -392,6 +392,8 @@ class CubeVizLayout(QtWidgets.QWidget):
 
             # Change the component label, title and unit shown in the viewer
             viewer.current_component_id = component
+            viewer.cubeviz_unit = self._flux_unit_controller.get_component_unit(component,
+                                                                                cubeviz_unit=True)
             viewer.update_component_unit_label(component)
             viewer.update_axes_title(title=str(label))
 
@@ -457,6 +459,8 @@ class CubeVizLayout(QtWidgets.QWidget):
         view = self.cube_views[0].widget()
         component = getattr(self, 'single_viewer_attribute')
         view.current_component_id = component
+        view.cubeviz_unit = self._flux_unit_controller.get_component_unit(component,
+                                                                          cubeviz_unit=True)
         view.update_component_unit_label(component)
         view.update_axes_title(component.label)
 
@@ -467,6 +471,8 @@ class CubeVizLayout(QtWidgets.QWidget):
             view = self.cube_views[i].widget()
             component = getattr(self, selection_label)
             view.current_component_id = component
+            view.cubeviz_unit = self._flux_unit_controller.get_component_unit(component,
+                                                                              cubeviz_unit=True)
             view.update_component_unit_label(component)
             view.update_axes_title(component.label)
 

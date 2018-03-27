@@ -170,6 +170,7 @@ class CubevizImageViewer(ImageViewer):
 
         self.current_component_id = None  # Current component id
 
+        self.cubeviz_unit = None
         self.component_unit_label = ""  # String to hold units of data values
 
         self.is_mouse_over = False  # If mouse cursor is over viewer
@@ -853,6 +854,11 @@ class CubevizImageViewer(ImageViewer):
                             string = string + " " + self._coords_format_function(ra, dec)
                 # Pixel Value:
                 v = arr[y][x]
+                if self.cubeviz_unit is not None:
+                    wavelength_unit = self.cubeviz_layout._units_controller._new_units
+                    wave = self.cubeviz_layout._wavelengths[self.slice_index]
+                    wave = wave * wavelength_unit
+                    v = self.cubeviz_unit.convert_from_original_unit(v, wave=wave)
                 self.mouse_value = "{0:.3E} [{1}] ".format(v, self.component_unit_label)
                 string = "{0:.3E} ".format(v) + string
         # Add a gap to string and add to viewer.
