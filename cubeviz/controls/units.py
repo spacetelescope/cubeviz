@@ -151,6 +151,59 @@ class UnitController:
         return self._new_units
 
 
+def _add_unit_to_list(unit_list, target_unit):
+
+    if isinstance(target_unit, str):
+        current_unit = u.Unit(target_unit)
+        string_unit = target_unit
+    else:
+        current_unit = target_unit
+        string_unit = target_unit.to_string()
+
+    duplicate = False
+    for unit in unit_list:
+        if isinstance(unit, str):
+            unit = u.Unit(unit)
+        if unit == current_unit:
+            duplicate = True
+            break
+    if not duplicate:
+        unit_list.append(string_unit)
+    return unit_list
+
+
+def find_unit_index(unit_list, target_unit):
+    if isinstance(target_unit, str):
+        target_unit = u.Unit(target_unit)
+
+    for i, unit in enumerate(unit_list):
+        if isinstance(unit, str):
+            unit = u.Unit(unit)
+        if unit == target_unit:
+            return i
+    return None
+
+
+def format_float_string(n):
+    if isinstance(n, str):
+        if "e" in n.lower():
+            string = n
+        else:
+            n = float(n)
+            string = "{0:0.15E}".format(n)
+    else:
+        string = "{0:0.15E}".format(n)
+
+    def check_if_zero_power(power):
+        if float(power) == 0.0:
+            return "0"
+        else:
+            return power
+
+    return [string.split('E')[0].rstrip('0').rstrip('.'),
+            check_if_zero_power(string.split('E')[1])]
+
+
 class FluxUnitRegistry:
     def __init__(self):
         self._model_unit = u.Jy
@@ -158,13 +211,16 @@ class FluxUnitRegistry:
 
     @staticmethod
     def _locally_defined_units():
-        units = [u.Jy, u.uJy, u.mJy,
-                 u.erg / u.cm ** 2 / u.s / u.Hz,
-                 u.erg / u.cm ** 2 / u.s / u.um,
-                 u.erg / u.cm ** 2 / u.s,
-                 u.eV / u.m ** 2 / u.s / u.Hz,
-                 u.W / u.m ** 2 / u.Hz,
-                 ]
+        units = ['Jy', 'mJy', 'uJy',
+                 'W / (m2 Hz)',
+                 'eV / (s m2 Hz)',
+                 'erg / (s cm2)',
+                 'erg / (s cm2 um)',
+                 'erg / (s cm2 Angstrom)',
+                 'erg / (s cm2 Hz)',
+                 'ph / (s cm2 um)',
+                 'ph / (s cm2 Angstrom)',
+                 'ph / (s cm2 Hz)']
         return units
 
     def is_compatible(self, unit):
@@ -174,30 +230,20 @@ class FluxUnitRegistry:
         except u.UnitConversionError:
             return False
 
-    def _equivalencies_defined_units(self):
-        equivalencies = u.spectral_density(3500 * u.AA)
-        units = []
-        for unit1, unit2, converter1, converter2 in equivalencies:
-            if self.is_compatible(unit1):
-                units.append(unit1)
-            if self.is_compatible(unit2):
-                units.append(unit2)
-        return units
-
-    def get_unit_list(self):
+    def get_unit_list(self, current_unit=None):
+        unit_list = []
         item_list = []
-        item_list.extend(self._equivalencies_defined_units())
-        item_list.extend(self._locally_defined_units())
+        unit_list.extend(self._locally_defined_units())
         item_list.extend(self.runtime_defined_units)
 
-        unit_list = []
         for item in item_list:
-            if isinstance(item, str):
-                unit_list.append(item)
-            elif isinstance(item, u.UnitBase):
-                unit_list.append(item.to_string())
-        unit_list = list(set(unit_list))
-        return sorted(unit_list)
+            unit_list = _add_unit_to_list(unit_list, item)
+
+        if current_unit is not None:
+            if isinstance(current_unit, str):
+                current_unit = u.Unit(current_unit)
+            unit_list = _add_unit_to_list(unit_list, current_unit)
+        return unit_list
 
     def add_unit(self, item):
         if isinstance(item, str) \
@@ -224,59 +270,44 @@ class AreaUnitRegistry:
 
     @staticmethod
     def _locally_defined_solid_angle_units():
-        units = [u.Unit("arcmin2"),
-                 u.Unit("deg2"),
-                 u.Unit("arcsec2"),
-                 u.Unit("rad2")]
+        units = ["deg2",
+                 "arcmin2",
+                 "arcsec2",
+                 'steradian',
+                 "rad2"]
+
         return units
 
     @staticmethod
     def _locally_defined_pixel_units():
-        units = []
+        units = ["pixel"]
 
         spaxel = u.def_unit('spaxel', u.astrophys.pix)
         u.add_enabled_units(spaxel)
-        units.append(spaxel)
+        units.append('spaxel')
 
         return units
 
-    @staticmethod
-    def _astropy_derived_solid_angle_units():
-        angle_units = u.degree.find_equivalent_units()
-        units = []
-        for unit in angle_units:
-            unit = unit**2
-            units.append(unit)
-        return units
-
-    @staticmethod
-    def _astropy_defined_solid_angle_units():
-        return [u.steradian]
-
-    @staticmethod
-    def _pixel_units():
-        return [u.pix]
-
-    def get_unit_list(self, pixel_only=False, solid_angle_only=False):
+    def get_unit_list(self, pixel_only=False,
+                      solid_angle_only=False,
+                      current_unit=None):
+        unit_list = []
         item_list = []
         if not solid_angle_only:
+            unit_list.extend(self._locally_defined_pixel_units())
             item_list.extend(self.runtime_pixel_units)
-            item_list.extend(self._locally_defined_pixel_units())
-            item_list.extend(self._pixel_units())
         if not pixel_only:
+            unit_list.extend(self._locally_defined_solid_angle_units())
             item_list.extend(self.runtime_solid_angle_units)
-            item_list.extend(self._locally_defined_solid_angle_units())
-            item_list.extend(self._astropy_defined_solid_angle_units())
-            # item_list.extend(self._astropy_derived_solid_angle_units()) #Disabled
 
-        unit_list = []
         for item in item_list:
-            if isinstance(item, str):
-                unit_list.append(item)
-            elif isinstance(item, u.UnitBase):
-                unit_list.append(item.to_string())
-        unit_list = list(set(unit_list))
-        return sorted(unit_list)
+            unit_list = _add_unit_to_list(unit_list, item)
+
+        if current_unit is not None:
+            if isinstance(current_unit, str):
+                current_unit = u.Unit(current_unit)
+            unit_list = _add_unit_to_list(unit_list, current_unit)
+        return unit_list
 
     def add_pixel_unit(self, item):
         if isinstance(item, str) \
@@ -306,26 +337,6 @@ FLUX_UNIT_REGISTRY = FluxUnitRegistry()
 AREA_UNIT_REGISTRY = AreaUnitRegistry()
 
 
-def format_float_string(n):
-    if isinstance(n, str):
-        if "e" in n.lower():
-            string = n
-        else:
-            n = float(n)
-            string = "{0:0.15E}".format(n)
-    else:
-        string = "{0:0.15E}".format(n)
-
-    def check_if_zero_power(power):
-        if float(power) == 0.0:
-            return "0"
-        else:
-            return power
-
-    return [string.split('E')[0].rstrip('0').rstrip('.'),
-            check_if_zero_power(string.split('E')[1])]
-
-
 class CubeVizUnit:
     def __init__(self, unit=None, unit_string=""):
         self._original_unit = unit
@@ -333,7 +344,9 @@ class CubeVizUnit:
         self._unit = unit
         self._unit_string = unit_string
         self._type = "CubeVizUnit"
-        self.is_convertable = False
+        self.is_convertible = False
+
+        self.message_box = None
 
     @property
     def unit(self):
@@ -356,25 +369,26 @@ class CubeVizUnit:
         return self.unit_string
 
     def convert_from_original_unit(self, value, **kwargs):
+        if not isinstance(value, int) and \
+                not isinstance(value, float):
+            raise ValueError("Expected float or int, got {} instead.".format(type(value)))
+
         if self.unit is None:
             return value
 
-        if isinstance(value, u.Quantity):
-            return value.to(self.unit)
-        elif isinstance(value, str):
-            value = float(value)
-            return str((value * self._original_unit).to(self.unit).value)
-        elif isinstance(value, float):
-            return (value * self._original_unit).to(self.unit).value
-        elif isinstance(value, int):
-            return int((value * self._original_unit).to(self.unit).value)
-        else:
-            return None
+        new_value = value
+        new_value *= self._original_unit.to(self._unit)
+
+        if isinstance(new_value, u.Quantity):
+            new_value = new_value.value
+
+        return new_value
 
     def change_units(self):
         return True
 
     def reset_widgets(self):
+        self.message_box = None
         return
 
     def populate_unit_layout(self, unit_layout):
@@ -389,6 +403,10 @@ class CubeVizUnit:
         unit_layout.addWidget(default_label)
         return unit_layout
 
+    def set_message_box(self, message_box):
+        self.message_box = message_box
+        self.message_box.setText("")
+
 
 class SpectralFluxDensity(CubeVizUnit):
     def __init__(self, unit, unit_string,
@@ -399,7 +417,7 @@ class SpectralFluxDensity(CubeVizUnit):
         super(SpectralFluxDensity, self).__init__(unit, unit_string)
 
         self._type = "FormattedSpectralFluxDensity" if is_formatted else "SpectralFluxDensity"
-        self.is_convertable = True
+        self.is_convertible = True
 
         self.numeric = numeric
         self.spectral_flux_density = spectral_flux_density
@@ -423,7 +441,7 @@ class SpectralFluxDensity(CubeVizUnit):
 
         new_value = value
 
-        new_value *= self.numeric / self._original_numeric
+        new_value *= self._original_numeric / self.numeric
         new_value *= self._original_spectral_flux_density.to(self.spectral_flux_density,
                                                              equivalencies=u.spectral_density(wave))
         if self.has_area:
@@ -434,8 +452,8 @@ class SpectralFluxDensity(CubeVizUnit):
 
         return new_value
 
-
     def reset_widgets(self):
+        self.message_box = None
         self.numeric_power_input = None
         self.flux_combo = None
         self.area_combo = None
@@ -501,6 +519,49 @@ class SpectralFluxDensity(CubeVizUnit):
 
         return success
 
+    def _update_message(self):
+        if self.message_box is None:
+            return
+        success = self._validate_input()
+        if not success:
+            self.message_box.setText("Error")
+            return
+
+        new_value = 1.0
+        wave = 656.3 * u.nm
+
+        numeric = self._get_current_numeric()
+        digit_string, power_string = format_float_string(numeric)
+        numeric = float(digit_string + "E" + self.numeric_power_input.text())
+        new_value *= self._original_numeric / numeric
+
+        flux_string = self.flux_combo.currentText()
+        flux_unit = u.Unit(flux_string)
+        spectral_flux_density = flux_unit
+        new_value *= self._original_spectral_flux_density.to(spectral_flux_density,
+                                                             equivalencies=u.spectral_density(wave))
+
+        if self.has_area:
+            area_string = self.area_combo.currentText()
+            area = u.Unit(area_string)
+            new_value /= self._original_area.to(area)
+            unit_base = numeric * spectral_flux_density / area
+        else:
+            unit_base = numeric * spectral_flux_density
+
+        if isinstance(new_value, u.Quantity):
+            new_value = new_value.value
+
+        if isinstance(unit_base, u.Quantity):
+            unit_base = u.Unit(unit_base)
+
+        message_param = (wave, self.unit.to_string(), new_value, unit_base)
+        message = "Original Unit: [{1}]\n" \
+                  "New Unit: [{3}]\n" \
+                  "At lambda = {0} ...\n" \
+                  "1.0 [Original Unit] = {2:0.2E} [New Unit]".format(*message_param)
+        self.message_box.setText(message)
+
     def _on_flux_combo_change(self, index):
         current_string = self.flux_combo.currentText()
         flux_unit_str = self.spectral_flux_density.to_string()
@@ -520,19 +581,22 @@ class SpectralFluxDensity(CubeVizUnit):
         power_input = QLineEdit(power_string)
         power_input.setFixedWidth(50)
         self.numeric_power_input = power_input
+        power_input.textChanged.connect(self._update_message)
         unit_layout.addWidget(power_input)
 
         unit_layout.addWidget(QLabel("   X   "))
 
         flux_unit_str = self.spectral_flux_density.to_string()
-        flux_options = FLUX_UNIT_REGISTRY.get_unit_list()
-        if flux_unit_str not in flux_options:
+        flux_options = FLUX_UNIT_REGISTRY.get_unit_list(current_unit=flux_unit_str)
+        index = find_unit_index(flux_options, flux_unit_str)
+        if index is None:
             flux_options.append(flux_unit_str)
-        index = flux_options.index(flux_unit_str)
+            index = flux_options.index(flux_unit_str)
         flux_combo = QComboBox()
         flux_combo.addItems(flux_options)
         flux_combo.setCurrentIndex(index)
         flux_combo.currentIndexChanged.connect(self._on_flux_combo_change)
+        flux_combo.currentIndexChanged.connect(self._update_message)
         self.flux_combo = flux_combo
         unit_layout.addWidget(flux_combo)
 
@@ -542,17 +606,23 @@ class SpectralFluxDensity(CubeVizUnit):
 
             area_str = self.area.to_string()
             area_options = AREA_UNIT_REGISTRY.get_unit_list()
-            if area_str not in area_options:
+            index = find_unit_index(area_options, area_str)
+            if index is None:
                 area_options.append(area_str)
-            index = area_options.index(area_str)
+                index = area_options.index(area_str)
             area_combo = QComboBox()
             area_combo.width()
             area_combo.addItems(area_options)
             area_combo.setCurrentIndex(index)
+            area_combo.currentIndexChanged.connect(self._update_message)
             self.area_combo = area_combo
             unit_layout.addWidget(area_combo)
         unit_layout.addStretch(1)
         unit_layout.setSpacing(0)
+
+        if self.message_box is not None:
+            self._update_message()
+
         return unit_layout
 
 
@@ -561,10 +631,49 @@ class UnknownUnit(CubeVizUnit):
         super(UnknownUnit, self).__init__(unit, unit_string)
         self._type = "UnknownUnit"
 
+        if unit is not None:
+            self.is_convertible = True
+
         self.options_combo = None
 
+    def change_units(self):
+        if not self.is_convertible:
+            return
+
+        new_unit_string = self.options_combo.currentText()
+
+        self._unit_string = new_unit_string
+        self._unit = u.Unit(new_unit_string)
+
+        return True
+
     def reset_widgets(self):
+        self.message_box = None
         self.options_combo = None
+
+    def _update_message(self):
+        if self.message_box is None:
+            return
+
+        if not self.is_convertible:
+            self.message_box.setText("")
+
+        new_value = 1.0
+
+        new_unit_string = self.options_combo.currentText()
+        new_unit = u.Unit(new_unit_string)
+
+        new_value *= self._original_unit.to(new_unit)
+
+        if isinstance(new_value, u.Quantity):
+            new_value = new_value.value
+
+        message_param = (self._original_unit, new_unit_string, new_value)
+
+        message = "Original Unit: [{0}]\n" \
+                  "New Unit: [{1}]\n" \
+                  "1.0 [Original Unit] = {2:0.2E} [New Unit]".format(*message_param)
+        self.message_box.setText(message)
 
     def populate_unit_layout(self, unit_layout):
 
@@ -576,6 +685,7 @@ class UnknownUnit(CubeVizUnit):
             return unit_layout
         unit_str = self.unit.to_string()
         options = self.unit.find_equivalent_units()
+        options = [i.to_string() for i in options]
         if unit_str not in options:
             options.append(unit_str)
         index = options.index(unit_str)
@@ -583,7 +693,10 @@ class UnknownUnit(CubeVizUnit):
         # combo.setFixedWidth(200)
         combo.addItems(options)
         combo.setCurrentIndex(index)
+        combo.currentIndexChanged.connect(self._update_message)
+        self.options_combo = combo
         unit_layout.addWidget(combo)
+        self._update_message()
         return unit_layout
 
 
@@ -604,6 +717,7 @@ class ConvertFluxUnitGUI(QDialog):
         super(ConvertFluxUnitGUI, self).__init__(parent=parent)
         self.setWindowFlags(self.windowFlags() | Qt.Tool)
         self.title = "Unit Conversion"
+        self.setMinimumSize(443, 211)
 
         self.cubeviz_layout = controller.cubeviz_layout
 
@@ -641,7 +755,13 @@ class ConvertFluxUnitGUI(QDialog):
         # LINE 2: Unit conversion layout
         self.unit_layout = QHBoxLayout()  # this is hbl2
 
-        # Line 3: Buttons
+        # LINE 3: Unit conversion layout
+        self.message_box = QLabel("")
+        hbl3 = QHBoxLayout()
+        hbl3.addWidget(self.message_box)
+        hbl3.addStretch(1)
+
+        # Line 4: Buttons
         self.okButton = QPushButton("Convert Units")
         self.okButton.clicked.connect(self.call_main)
         self.okButton.setDefault(True)
@@ -649,15 +769,16 @@ class ConvertFluxUnitGUI(QDialog):
         self.cancelButton = QPushButton("Cancel")
         self.cancelButton.clicked.connect(self.cancel)
 
-        hbl3 = QHBoxLayout()
-        hbl3.addStretch(1)
-        hbl3.addWidget(self.cancelButton)
-        hbl3.addWidget(self.okButton)
+        hbl4 = QHBoxLayout()
+        hbl4.addStretch(1)
+        hbl4.addWidget(self.cancelButton)
+        hbl4.addWidget(self.okButton)
 
         vbl = QVBoxLayout()
         vbl.addLayout(hbl1)
         vbl.addLayout(self.unit_layout)
         vbl.addLayout(hbl3)
+        vbl.addLayout(hbl4)
         self.setLayout(vbl)
         self.vbl = vbl
 
@@ -679,14 +800,17 @@ class ConvertFluxUnitGUI(QDialog):
             if hasattr(w, "deleteLater"):
                 w.deleteLater()
 
+        self.message_box.setText("")
+
         if self.current_unit:
             self.current_unit.reset_widgets()
 
         if component_id in self.controller_components:
             cubeviz_unit = self.controller_components[component_id]
             self.current_unit = cubeviz_unit
+            cubeviz_unit.set_message_box(self.message_box)
             cubeviz_unit.populate_unit_layout(self.unit_layout)
-            if cubeviz_unit.is_convertable:
+            if cubeviz_unit.is_convertible:
                 self.okButton.setEnabled(True)
             else:
                 self.okButton.setEnabled(False)
