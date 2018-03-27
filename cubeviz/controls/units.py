@@ -105,27 +105,6 @@ class UnitController:
             # This calls the setter above, so really, the magic is there.
             self.redshift_z = redshift
 
-    def on_combobox_change(self, new_unit_name):
-        """
-        Callback for change in unitcombobox value
-        :param event:
-        :return:
-        """
-        # Get the new unit name from the selected value in the comboBox and
-        # set that as the new unit that wavelengths will be converted to
-        # new_unit_name = self._wavelength_combobox.currentText()
-        self._new_units = self._units[self._units_titles.index(new_unit_name)]
-
-        self._wavelengths = self.convert_wavelengths(self._original_wavelengths, self._original_units, self._new_units)
-        print("wavelengths", self._wavelengths)
-        if self._wavelengths is None:
-            return
-
-        # Set layout._wavelength as the new wavelength
-        self._cv_layout.set_wavelengths(self._wavelengths, self._new_units)
-        self._send_wavelength_message(self._wavelengths)
-        self._send_wavelength_unit_message(self._new_units)
-
     def _send_wavelength_message(self, wavelengths):
         msg = WavelengthUpdateMessage(self, wavelengths)
         self._hub.broadcast(msg)
