@@ -75,7 +75,6 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         self.session = session
         self._has_data = False
-        self._wavelengths = None
         self._option_buttons = []
 
         self._data = None
@@ -731,9 +730,3 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     def change_slice_index(self, amount):
         self._slice_controller.change_slider_value(amount)
-
-    def get_wavelengths(self):
-        return self._wavelengths
-
-    def get_wavelengths_units(self):
-        return self._units_controller.get_new_units()
