@@ -58,27 +58,6 @@ class SliceController(HubListener):
         # to specviz events
         specviz_dispatch.setup(self)
 
-    @property
-    def wavelength_label(self):
-        """
-        Get the wavelength label, though this probably will not be used much.
-        """
-        return self._wavelength_label_text
-
-    # This needs to be associated with the redshift change message
-    @wavelength_label.setter
-    def wavelength_label(self, new_label):
-        """
-        Set the wavelength label. The new label should probably be "Obs Wavelength"
-        or "Rest Wavelength" but maybe could be other things.
-
-        :return: None
-        """
-        self._wavelength_label_text = new_label
-
-        self._wavelength_textbox_label.setText('{} ({})'.format(
-            self._wavelength_label_text, self._wavelength_units))
-
     def enable(self):
         """
         Setup the slice slider (min/max, units on description and initial position).
@@ -126,24 +105,6 @@ class SliceController(HubListener):
         self._slice_slider.setEnabled(value)
         self._slice_textbox.setEnabled(value)
         self._wavelength_textbox.setEnabled(value)
-
-    def set_wavelengths(self, new_wavelengths, new_units):
-        # Store the wavelength units and format
-        new_units_name = new_units.short_names[0]
-        self._wavelength_units = new_units_name
-        self._wavelength_textbox_label.setText('{} ({})'.format(
-            self._wavelength_label_text, self._wavelength_units))
-
-        # Grab the wavelengths so they can be displayed in the text box
-        self._wavelengths = new_wavelengths
-        self._slice_slider.setMaximum(len(self._wavelengths) - 1)
-
-        self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[self.active_index]))
-
-        specviz_dispatch.changed_units.emit(x=new_units)
-
-    def get_index(self):
-        return self.active_index
 
     def update_index(self, index):
         self._slice_slider.setValue(index)
