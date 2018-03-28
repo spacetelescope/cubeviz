@@ -20,7 +20,7 @@ new_units:
 #  the unit as a sting and is broken down to its
 #  numeric, spectral_flux_density and area components.
 #  If a component is N/A, place an empty sting.
-registered_units:
+formatted_units:
     # Examples:
     "1E20 jy":
         astropy_unit_string:

@@ -154,6 +154,13 @@ class UnitController:
 
 
 def _add_unit_to_list(unit_list, target_unit):
+    """
+    Given a list of units, add target units
+    after checking for duplicates
+    :param unit_list: list of units or string
+    :param target_unit: unit or string
+    :return: updated unit
+    """
 
     if isinstance(target_unit, str):
         current_unit = u.Unit(target_unit)
@@ -175,6 +182,13 @@ def _add_unit_to_list(unit_list, target_unit):
 
 
 def find_unit_index(unit_list, target_unit):
+    """
+    Given a list of units or strings, find
+    index of unit.
+    :param unit_list: list of units or string
+    :param target_unit: unit or string
+    :return: updated unit
+    """
     if isinstance(target_unit, str):
         target_unit = u.Unit(target_unit)
 
@@ -187,6 +201,12 @@ def find_unit_index(unit_list, target_unit):
 
 
 def _get_power(numeric):
+    """
+    Given a number, get the power if
+    the power is an int. Else Return 0
+    :param numeric: float or int
+    :return: power if int, 0.0 if power is float
+    """
     if float(np.log10(numeric)).is_integer():
         power = int(np.log10(numeric))
     else:
@@ -195,12 +215,19 @@ def _get_power(numeric):
 
 
 class FluxUnitRegistry:
+    """
+    Saves a list of spectral flux density units.
+    """
     def __init__(self):
-        self._model_unit = u.Jy
-        self.runtime_defined_units = []
+        self._model_unit = u.Jy  # Will be used for compatibility checks
+        self.runtime_defined_units = []  # Stores list of runtime units
 
     @staticmethod
     def _locally_defined_units():
+        """
+        list of defined spectral flux density units.
+        :return: list of unit strings
+        """
         units = ['Jy', 'mJy', 'uJy',
                  'W / (m2 Hz)',
                  'eV / (s m2 Hz)',
@@ -214,6 +241,12 @@ class FluxUnitRegistry:
         return units
 
     def is_compatible(self, unit):
+        """
+        Check if unit can be converted to units
+        in this registry. Uses model unit to check.
+        :param unit: Unit or unit str
+        :return: bool
+        """
         try:
             self._model_unit.to(unit, equivalencies=u.spectral_density(3500 * u.AA))
             return True
@@ -221,8 +254,15 @@ class FluxUnitRegistry:
             return False
 
     def get_unit_list(self, current_unit=None):
-        unit_list = []
-        item_list = []
+        """
+        Returns a list of unit strings in the registry.
+        Adds current_unit if not duplicated. Registered
+        units are added first.
+        :param current_unit: Unit or unit str
+        :return: list of unit str
+        """
+        unit_list = []  # final list
+        item_list = []  # items to be checked if duplicated
         unit_list.extend(self._locally_defined_units())
         item_list.extend(self.runtime_defined_units)
 
@@ -236,6 +276,10 @@ class FluxUnitRegistry:
         return unit_list
 
     def add_unit(self, item):
+        """
+        Add new unit
+        :param item: unit or unit str
+        """
         if isinstance(item, str) \
                 or isinstance(item, u.UnitBase):
             if item not in self.runtime_defined_units:
@@ -243,23 +287,25 @@ class FluxUnitRegistry:
 
 
 class AreaUnitRegistry:
+    """
+    Saves a list of area units.
+    There are 2 kinds of area units:
+    1. solid angles
+    2. pixels
+    These maybe interchangeable if wcs pixel_scale
+    is available.
+    """
     def __init__(self):
-        self._model_unit = [u.pixel, u.steradian]
-        self.runtime_solid_angle_units = []
-        self.runtime_pixel_units = []
-
-    def is_compatible(self, unit):
-        compatible = False
-        for model_unit in self._model_unit:
-            try:
-                model_unit.to(unit)
-                compatible = True
-            except u.UnitConversionError:
-                continue
-        return compatible
+        self._model_unit = [u.pixel, u.steradian]  # Will be used for compatibility checks
+        self.runtime_solid_angle_units = []  # Stores list of runtime angle units
+        self.runtime_pixel_units = []  # Stores list of runtime pixel units
 
     @staticmethod
     def _locally_defined_solid_angle_units():
+        """
+        list of defined spectral solid angle units.
+        :return: list of unit strings
+        """
         units = ["deg2",
                  "arcmin2",
                  "arcsec2",
@@ -270,6 +316,10 @@ class AreaUnitRegistry:
 
     @staticmethod
     def _locally_defined_pixel_units():
+        """
+        list of defined spectral pixel units.
+        :return: list of unit strings
+        """
         units = ["pixel"]
 
         spaxel = u.def_unit('spaxel', u.astrophys.pix)
@@ -278,9 +328,34 @@ class AreaUnitRegistry:
 
         return units
 
+    def is_compatible(self, unit):
+        """
+        Check if unit can be converted to units
+        in this registry. Uses model units to check.
+        :param unit: Unit or unit str
+        :return: bool
+        """
+        compatible = False
+        for model_unit in self._model_unit:
+            try:
+                model_unit.to(unit)
+                compatible = True
+            except u.UnitConversionError:
+                continue
+        return compatible
+
     def get_unit_list(self, pixel_only=False,
                       solid_angle_only=False,
                       current_unit=None):
+        """
+        Returns a list of unit strings in the registry.
+        Adds current_unit if not duplicated. Registered
+        units are added first.
+        :param pixel_only: (bool) Return pixel units only
+        :param solid_angle_only: (bool) Return solid_angle_only units only
+        :param current_unit: Unit or unit str
+        :return: list of unit str
+        """
         unit_list = []
         item_list = []
         if not solid_angle_only:
@@ -300,18 +375,30 @@ class AreaUnitRegistry:
         return unit_list
 
     def add_pixel_unit(self, item):
+        """
+        Add new pixel unit
+        :param item: unit or unit str
+        """
         if isinstance(item, str) \
                 or isinstance(item, u.UnitBase):
             if item not in self.runtime_pixel_units:
                 self.runtime_pixel_units.append(item)
 
     def add_solid_angle_unit(self, item):
+        """
+        Add new solid angle unit
+        :param item: unit or unit str
+        """
         if isinstance(item, str) \
                 or isinstance(item, u.UnitBase):
             if item not in self.runtime_solid_angle_units:
                 self.runtime_solid_angle_units.append(item)
 
     def add_unit(self, item):
+        """
+        Check for type and add new unit
+        :param item: unit or unit str
+        """
         if isinstance(item, str):
             new_unit = u.unit(item)
         else:
@@ -328,15 +415,35 @@ AREA_UNIT_REGISTRY = AreaUnitRegistry()
 
 
 class CubeVizUnit:
-    def __init__(self, unit=None, unit_string=""):
-        self._original_unit = unit
-        self._original_unit_string = unit_string
-        self._unit = unit
-        self._unit_string = unit_string
-        self._type = "CubeVizUnit"
-        self.is_convertible = False
+    """
+    Unit container with the following functions:
+        - Stores units and names
+        - Converts units
+        - Updates units
+        - Populates conversion gui with widgets custom to
+          the stored unit type
 
-        self.message_box = None
+    Types of CubeVizUnit:
+        - CubeVizUnit (base class)
+        - SpectralFluxDensity
+            - FormattedSpectralFluxDensity
+            - SpectralFluxDensity
+        - UnknownUnit
+        - NoneUnit
+    """
+    def __init__(self, unit=None, unit_string=""):
+        """
+        :param unit: astropy unit or None
+        :param unit_string: Unit as a string
+        """
+        self._original_unit = unit  # the data's actual units
+        self._original_unit_string = unit_string  # original_unit as str
+        self._unit = unit  # Current Unit
+        self._unit_string = unit_string  # unit as str
+        self._type = "CubeVizUnit"  # Type of CubeVizUnit
+        self.is_convertible = False  # If unit is convertible
+
+        self.message_box = None  # Pointer to gui message box
 
     @property
     def unit(self):
@@ -359,6 +466,13 @@ class CubeVizUnit:
         return self.unit_string
 
     def convert_from_original_unit(self, value, **kwargs):
+        """
+        Given a value from the data, convert it to current
+        units.
+        :param value: float
+        :param kwargs:
+        :return: converted value
+        """
         if not isinstance(value, int) and \
                 not isinstance(value, float):
             raise ValueError("Expected float or int, got {} instead.".format(type(value)))
@@ -375,13 +489,29 @@ class CubeVizUnit:
         return new_value
 
     def change_units(self):
+        """
+        This function is called when accept is pressed on the
+        unit conversion gui
+        :return: (bool) True if unit update is successful
+        """
         return True
 
     def reset_widgets(self):
+        """
+        Reset all attributes pointing to widgets in the
+        conversion gui
+        """
         self.message_box = None
         return
 
     def populate_unit_layout(self, unit_layout, gui=None):
+        """
+        Populate horizontal layout (living on conversion gui)
+        with appropriate widgets.
+        :param unit_layout: (QHBoxLayout) Horizontal layout
+        :param gui: conversion gui
+        :return: updated unit_layout
+        """
 
         if self.unit_string:
             default_message = "CubeViz can not convert this unit: {0}."
@@ -394,16 +524,41 @@ class CubeVizUnit:
         return unit_layout
 
     def set_message_box(self, message_box):
+        """
+        Sets local attribute to message box on
+        the onversion gui.
+        :param message_box: QLabel
+        """
         self.message_box = message_box
         self.message_box.setText("")
 
 
 class SpectralFluxDensity(CubeVizUnit):
+    """
+    CubeVizUnit for spectral flux density.
+    See CubeVizUnit for more info.
+    SpectralFluxDensity breaks the units into:
+        - power
+        - spectral_flux_density
+        - area
+    These units are recombined as follows:
+
+        unit = (10 ** power) * spectral_flux_density / area
+
+    """
     def __init__(self, unit, unit_string,
                  power=None,
                  spectral_flux_density=None,
                  area=None,
                  is_formatted=False):
+        """
+        :param unit: astropy unit
+        :param unit_string: unit as string
+        :param power: power of scalar multiplier if multiplier is 10^X
+        :param spectral_flux_density: astropy unit of spectral flux density
+        :param area: astropy unit area
+        :param is_formatted: True if unit is in registered yaml file
+        """
         super(SpectralFluxDensity, self).__init__(unit, unit_string)
 
         self._type = "FormattedSpectralFluxDensity" if is_formatted else "SpectralFluxDensity"
@@ -423,11 +578,20 @@ class SpectralFluxDensity(CubeVizUnit):
         self.flux_combo = None
         self.area_combo = None
 
-        self.wave = 656.3 * u.nm
+        self.wave = 656.3 * u.nm  # Used for conversion preview. Updated latter.
 
+        # Add unit to FLUX_UNIT_REGISTRY. (not added if duplicate)
         FLUX_UNIT_REGISTRY.add_unit(spectral_flux_density)
 
     def convert_from_original_unit(self, value, wave=None, **kwargs):
+        """
+        Given a value from the data, convert it to current
+        units.
+        :param value: float
+        :param wave: float: wavelength
+        :param kwargs:
+        :return: converted value
+        """
         if self.unit is None and wave is None:
             return value
 
@@ -445,12 +609,20 @@ class SpectralFluxDensity(CubeVizUnit):
         return new_value
 
     def reset_widgets(self):
+        """
+        This function is called when accept is pressed on the
+        unit conversion gui
+        :return: (bool) True if unit update is successful
+        """
         self.message_box = None
         self.power_input = None
         self.flux_combo = None
         self.area_combo = None
 
     def _get_current_power(self):
+        """
+        :return: current power, 0 if none
+        """
         if self.power is not None:
             power = self.power
         else:
@@ -458,6 +630,10 @@ class SpectralFluxDensity(CubeVizUnit):
         return power
 
     def _validate_input(self):
+        """
+        Validate user input from converter gui.
+        :return: bool: True if input is valid
+        """
         red = "background-color: rgba(255, 0, 0, 128);"
         success = True
         if self.power_input is None \
@@ -483,6 +659,12 @@ class SpectralFluxDensity(CubeVizUnit):
         return success
 
     def change_units(self):
+        """
+        This function is called when accept is pressed on the
+        unit conversion gui
+        :return: (bool) True if unit update is successful
+        """
+
         success = self._validate_input()
         if not success:
             return success
@@ -507,6 +689,10 @@ class SpectralFluxDensity(CubeVizUnit):
         return success
 
     def _update_message(self):
+        """
+        Callback for when options in conversion gui change. Message
+        is set to info about the units a preview of the conversion.
+        """
         if self.message_box is None:
             return
         success = self._validate_input()
@@ -556,6 +742,11 @@ class SpectralFluxDensity(CubeVizUnit):
         self.message_box.setText(message)
 
     def _on_flux_combo_change(self, index):
+        """
+        Callback for flux combo
+        :param index:
+        :return:
+        """
         current_string = self.flux_combo.currentText()
         flux_unit_str = self.spectral_flux_density.to_string()
         if current_string != flux_unit_str:
@@ -565,6 +756,21 @@ class SpectralFluxDensity(CubeVizUnit):
             self.power_input.setText(str(power))
 
     def populate_unit_layout(self, unit_layout, gui=None):
+        """
+        Populate horizontal layout (living on conversion gui)
+        with appropriate widgets. Set wave attribute to current
+        wavelength.
+
+        Layouts:
+            10^[QLineEdit] X [QComboBox] / [QComboBox]
+                        or
+            10^[QLineEdit] X [QComboBox]
+
+        :param unit_layout: (QHBoxLayout) Horizontal layout
+        :param gui: conversion gui
+        :return: updated unit_layout
+        """
+
         power = self._get_current_power()
 
         unit_layout.addWidget(QLabel("10^"))
@@ -578,10 +784,13 @@ class SpectralFluxDensity(CubeVizUnit):
 
         flux_unit_str = self.spectral_flux_density.to_string()
         flux_options = FLUX_UNIT_REGISTRY.get_unit_list(current_unit=flux_unit_str)
-        index = find_unit_index(flux_options, flux_unit_str)
-        if index is None:
-            flux_options.append(flux_unit_str)
+        if flux_unit_str in flux_options:
             index = flux_options.index(flux_unit_str)
+        else:
+            index = find_unit_index(flux_options, flux_unit_str)
+            if index is None:
+                flux_options.append(flux_unit_str)
+                index = flux_options.index(flux_unit_str)
         flux_combo = QComboBox()
         flux_combo.addItems(flux_options)
         flux_combo.setCurrentIndex(index)
@@ -596,10 +805,13 @@ class SpectralFluxDensity(CubeVizUnit):
 
             area_str = self.area.to_string()
             area_options = AREA_UNIT_REGISTRY.get_unit_list()
-            index = find_unit_index(area_options, area_str)
-            if index is None:
-                area_options.append(area_str)
+            if area_str in area_options:
                 index = area_options.index(area_str)
+            else:
+                index = find_unit_index(area_options, area_str)
+                if index is None:
+                    area_options.append(area_str)
+                    index = area_options.index(area_str)
             area_combo = QComboBox()
             area_combo.width()
             area_combo.addItems(area_options)
@@ -621,6 +833,10 @@ class SpectralFluxDensity(CubeVizUnit):
 
 
 class UnknownUnit(CubeVizUnit):
+    """
+    CubeVizUnit for any unit with a unit_string.
+    Does not need to have an astropy unit.
+    """
     def __init__(self, unit, unit_string):
         super(UnknownUnit, self).__init__(unit, unit_string)
         self._type = "UnknownUnit"
@@ -631,6 +847,11 @@ class UnknownUnit(CubeVizUnit):
         self.options_combo = None
 
     def change_units(self):
+        """
+        This function is called when accept is pressed on the
+        unit conversion gui
+        :return: (bool) True if unit update is successful
+        """
         if not self.is_convertible:
             return
 
@@ -642,10 +863,15 @@ class UnknownUnit(CubeVizUnit):
         return True
 
     def reset_widgets(self):
+
         self.message_box = None
         self.options_combo = None
 
     def _update_message(self):
+        """
+        Callback for when options in conversion gui change. Message
+        is set to info about the units a preview of the conversion.
+        """
         if self.message_box is None:
             return
 
@@ -675,6 +901,19 @@ class UnknownUnit(CubeVizUnit):
         self.message_box.setText(message)
 
     def populate_unit_layout(self, unit_layout, gui=None):
+        """
+        Populate horizontal layout (living on conversion gui)
+        with appropriate widgets.
+
+        Layouts:
+            [QComboBox]
+               or
+            default_message
+
+        :param unit_layout: (QHBoxLayout) Horizontal layout
+        :param gui: conversion gui
+        :return: updated unit_layout
+        """
 
         if self.unit is None:
             default_message = "CubeViz can not convert this unit: {0}."
@@ -700,11 +939,26 @@ class UnknownUnit(CubeVizUnit):
 
 
 class NoneUnit(CubeVizUnit):
+    """
+    CubeVizUnit for components with no
+    units and unit strings
+    """
     def __init__(self):
         super(NoneUnit, self).__init__(None, "")
         self._type = "NoneUnit"
 
     def populate_unit_layout(self, unit_layout, gui=None):
+        """
+        Populate horizontal layout (living on conversion gui)
+        with appropriate widgets.
+
+        Layouts:
+            default_message
+
+        :param unit_layout: (QHBoxLayout) Horizontal layout
+        :param gui: conversion gui
+        :return: updated unit_layout
+        """
         default_message = "No Units."
         default_label = QLabel(default_message)
         unit_layout.addWidget(default_label)
@@ -712,6 +966,9 @@ class NoneUnit(CubeVizUnit):
 
 
 class ConvertFluxUnitGUI(QDialog):
+    """
+    GUI for unit conversions
+    """
     def __init__(self, controller, parent=None):
         super(ConvertFluxUnitGUI, self).__init__(parent=parent)
         self.setWindowFlags(self.windowFlags() | Qt.Tool)
@@ -752,9 +1009,10 @@ class ConvertFluxUnitGUI(QDialog):
         hbl1.addStretch(1)
 
         # LINE 2: Unit conversion layout
+        # This layout is filled by CubeVizUnit
         self.unit_layout = QHBoxLayout()  # this is hbl2
 
-        # LINE 3: Unit conversion layout
+        # LINE 3: Message box
         self.message_box = QLabel("")
         hbl3 = QHBoxLayout()
         hbl3.addWidget(self.message_box)
@@ -786,8 +1044,12 @@ class ConvertFluxUnitGUI(QDialog):
         self.show()
 
     def update_unit_layout(self, index):
+        """
+        Call back for component selection drop down.
+        """
         component_id = str(self.component_combo.currentData())
 
+        # STEP1: Clean up widgets from last component
         widgets = (self.unit_layout.itemAt(i) for i in range(self.unit_layout.count()))
         for w in widgets:
             if isinstance(w, QSpacerItem):
@@ -804,6 +1066,8 @@ class ConvertFluxUnitGUI(QDialog):
         if self.current_unit:
             self.current_unit.reset_widgets()
 
+        # STEP2: Add now component and connect to CubeVizUnit
+        #        so that new widgets are populated.
         if component_id in self.controller_components:
             cubeviz_unit = self.controller_components[component_id]
             self.current_unit = cubeviz_unit
@@ -824,6 +1088,11 @@ class ConvertFluxUnitGUI(QDialog):
         self.vbl.update()
 
     def call_main(self):
+        """
+        Calls CubeVizUnit.change_units to finalize
+        conversions. Updates plots with new units.
+        :return:
+        """
         success = self.current_unit.change_units()
         if not success:
             # Todo: Warning should pop up
@@ -840,12 +1109,19 @@ class ConvertFluxUnitGUI(QDialog):
 
 
 class FluxUnitController:
+    """
+    Main controller for flux units.
+    One FluxUnitController can only
+    handle one glue data.
+    """
     def __init__(self, cubeviz_layout=None):
         self.cubeviz_layout = cubeviz_layout
 
+        # Load up configurations from yaml file
         with open(DEFAULT_FLUX_UNITS_CONFIGS, 'r') as yamlfile:
             cfg = yaml.load(yamlfile)
 
+        # Define and add new units to astropy
         for new_unit_key in cfg["new_units"]:
             new_unit = cfg["new_units"][new_unit_key]
             try:
@@ -859,7 +1135,8 @@ class FluxUnitController:
 
         self._define_new_physical_types()
 
-        self.registered_units = cfg["registered_units"]
+        # Formatted units
+        self.formatted_units = cfg["formatted_units"]
 
         self.data = None
         self._components = {}
@@ -870,6 +1147,10 @@ class FluxUnitController:
 
     @staticmethod
     def register_new_unit(new_unit):
+        """
+        Add new unit to astropy.units
+        :param new_unit: astropy unit
+        """
         u.add_enabled_units(new_unit)
         if FLUX_UNIT_REGISTRY.is_compatible(new_unit):
             FLUX_UNIT_REGISTRY.add_unit(new_unit)
@@ -879,6 +1160,11 @@ class FluxUnitController:
 
     @staticmethod
     def _define_new_physical_types():
+        """
+        Two new types of units defined:
+            - SFD_over_solid_angle = spectral_flux_density / (degree^2)
+            - SFD_over_pix = spectral_flux_density / pixel
+        """
         new_physical_types = [
             [(u.Jy / u.degree ** 2), 'SFD_over_solid_angle'],
             [(u.Jy / u.pix), 'SFD_over_pix']
@@ -891,6 +1177,13 @@ class FluxUnitController:
 
     @staticmethod
     def _sfd_over_solid_angle_to_cubeviz(unit, unit_string):
+        """
+        Decompose sfd_over_solid_angle to CubeVizUnit
+        NB: SFD_over_solid_angle = spectral_flux_density / (degree^2)
+        :param unit: astropy unit
+        :param unit_string: astropy unit
+        :return: CubeVizUnit
+        """
         power = _get_power(unit.scale)
         unit_list = unit.bases
         power_list = unit.powers
@@ -920,6 +1213,13 @@ class FluxUnitController:
 
     @staticmethod
     def _sfd_over_pix_to_cubeviz(unit, unit_string):
+        """
+        Decompose sfd_over_pix to CubeVizUnit
+        NB: SFD_over_pix = spectral_flux_density / pixel
+        :param unit: astropy unit
+        :param unit_string: astropy unit
+        :return: CubeVizUnit
+        """
         power = _get_power(unit.scale)
         unit_list = unit.bases
         power_list = unit.powers
@@ -947,6 +1247,11 @@ class FluxUnitController:
 
     @staticmethod
     def string_to_unit(unit_string):
+        """
+        Unit str -> astropy unit
+        :param unit_string: str
+        :return: astropy unit. None otherwise
+        """
         try:
             if unit_string:
                 with warnings.catch_warnings():
@@ -959,6 +1264,11 @@ class FluxUnitController:
 
     @staticmethod
     def unit_to_string(unit):
+        """
+        astropy unit -> unit str
+        :param unit: astropy unit
+        :return: str
+        """
         if unit is None:
             return ""
         elif isinstance(unit, str):
@@ -971,13 +1281,21 @@ class FluxUnitController:
             raise ValueError("Invalid input unit type {0}.".format(type(unit)))
 
     def add_component_unit(self, component_id, unit=None):
+        """
+        Add or update componet unit.
+        :param component_id: component id or str
+        :param unit: string or astropy unit
+        :return: CubeVizUnit
+        """
         component_id = str(component_id)
         unit_string = self.unit_to_string(unit)
 
+        # IF: empty unit or no unit
         if not unit_string:
             cubeviz_unit = NoneUnit()
-        elif unit_string in self.registered_units:
-            registered_unit = self.registered_units[unit_string]
+        # ELSE IF: formatted unit
+        elif unit_string in self.formatted_units:
+            registered_unit = self.formatted_units[unit_string]
             if "astropy_unit_string" in registered_unit:
                 unit_string = registered_unit["astropy_unit_string"]
             astropy_unit = self.string_to_unit(unit_string)
@@ -996,12 +1314,16 @@ class FluxUnitController:
                                                is_formatted=True)
         else:
             astropy_unit = self.string_to_unit(unit_string)
+            # IF: no astropy unit component
             if astropy_unit is None:
                 cubeviz_unit = UnknownUnit(astropy_unit, unit_string)
+            # ELSE IF: astropy unit type is spectral_flux_density / solid_angle
             elif 'SFD_over_solid_angle' in astropy_unit.physical_type:
                 cubeviz_unit = self._sfd_over_solid_angle_to_cubeviz(astropy_unit, unit_string)
+            # ELSE IF: astropy unit type is spectral_flux_density / pixel
             elif 'SFD_over_pix' in astropy_unit.physical_type:
                 cubeviz_unit = self._sfd_over_pix_to_cubeviz(astropy_unit, unit_string)
+            # ELSE IF: astropy unit type is spectral_flux_density
             elif 'spectral flux density' in astropy_unit.physical_type:
                 spectral_flux_density = astropy_unit
                 numeric = spectral_flux_density.scale
@@ -1011,6 +1333,7 @@ class FluxUnitController:
                 cubeviz_unit = SpectralFluxDensity(astropy_unit, unit_string,
                                                    power, spectral_flux_density,
                                                    area=None)
+            # ELSE: astropy unit type is not special
             else:
                 cubeviz_unit = UnknownUnit(astropy_unit, unit_string)
 
@@ -1018,11 +1341,22 @@ class FluxUnitController:
         return cubeviz_unit
 
     def remove_component_unit(self, component_id):
+        """
+        Remove component from controller
+        :param component_id: component id or str
+        """
         component_id = str(component_id)
         if component_id in self._components:
             del self._components[component_id]
 
     def get_component_unit(self, component_id, cubeviz_unit=False):
+        """
+        Get component units
+        :param component_id: component id or str
+        :param cubeviz_unit: if True: return CubeVizUnit
+                             else: return astropy unit
+        :return: CubeVizUnit, astropy unit or None
+        """
         component_id = str(component_id)
         if component_id in self._components:
             if cubeviz_unit:
@@ -1032,10 +1366,25 @@ class FluxUnitController:
         return None
 
     def set_data(self, data):
+        """
+        Add glue data and its components to controller.
+        glue components' units attribute should contain a
+        string with desired units for that component. This
+        controller will use the string in that attribute
+        to construct and assign units.
+        :param data: glue data
+        :return:
+        """
         self.data = data
         self._components = {}
         for comp in data.visible_components:
             self.add_component_unit(comp, data.get_component(comp).units)
 
     def converter(self, parent=None):
+        """
+        Launch Converter GUI
+        :param parent: application
+        :return: ConvertFluxUnitGUI instance
+        """
         ex = ConvertFluxUnitGUI(self, parent)
+        return ex
