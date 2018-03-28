@@ -37,6 +37,10 @@ class WavelengthController:
         self._send_wavelength_unit_message(units)
 
     @property
+    def wavelengths(self):
+        return self._wavelengths
+
+    @property
     def wavelength_label(self):
         return self._wavelength_textbox_label
 
