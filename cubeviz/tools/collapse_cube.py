@@ -436,8 +436,9 @@ class CollapseCube(QDialog):
 
         # Get the start and end wavelengths from the newly created spectral cube and use for labeling the cube.
         # Convert to the current units.
-        start_wavelength = wavelengths[0].to(self.parent._wavelength_controller._new_units)
-        end_wavelength = wavelengths[-1].to(self.parent._wavelength_controller._new_units)
+        # TODO: BAD!!!!
+        start_wavelength = wavelengths[0].to(self.parent._wavelength_controller._current_units)
+        end_wavelength = wavelengths[-1].to(self.parent._wavelength_controller._current_units)
 
         label = '{}-collapse-{} ({:0.3}, {:0.3})'.format(data_name, operation,
                                                          start_wavelength,
