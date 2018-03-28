@@ -232,11 +232,11 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     def handle_settings_change(self, message):
         if isinstance(message, SettingsChangeMessage):
-            self._slice_controller.update_index(self.active_index)
+            self._slice_controller.update_index(self.synced_index)
 
     @property
-    def active_index(self):
-        return self._slice_controller.active_index
+    def synced_index(self):
+        return self._slice_controller.synced_index
 
     def handle_subset_action(self, message):
         if isinstance(message, SubsetUpdateMessage):

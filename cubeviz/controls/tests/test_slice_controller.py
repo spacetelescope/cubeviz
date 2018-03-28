@@ -56,7 +56,7 @@ def test_enter_oob_slice_text(qtbot, cubeviz_layout, cube_bounds):
 @pytest.mark.parametrize('bad_text', ['garbage', '1e-07', '3.14', ''])
 def test_garbage_slice_text(qtbot, cubeviz_layout, bad_text):
     # Get the current index of all viewers (since all are currently synced)
-    slice_index = cubeviz_layout.active_index
+    slice_index = cubeviz_layout.synced_index
 
     # Make sure that entering garbage text does not change the index
     enter_slice_text(qtbot, cubeviz_layout, bad_text)
@@ -109,21 +109,21 @@ def test_enter_oob_wavelength_text(qtbot, cubeviz_layout, cube_bounds):
 @pytest.mark.parametrize('bad_text', ['garbage', ''])
 def test_garbage_wavelength_text(qtbot, cubeviz_layout, bad_text):
     # Get the current index of all viewers (since all are currently synced)
-    slice_index = cubeviz_layout.active_index
+    slice_index = cubeviz_layout.synced_index
 
     # Make sure that entering garbage text does not change the index
     enter_wavelength_text(qtbot, cubeviz_layout, bad_text)
     assert_all_viewer_indices(cubeviz_layout, slice_index)
     assert_wavelength_text(cubeviz_layout, bad_text)
 
-def unsync_and_verify(qtbot, layout, sync_params, active_index, unsynced_index):
+def unsync_and_verify(qtbot, layout, sync_params, synced_index, unsynced_index):
     unsynced_viewer = sync_params['unsynced_viewer']
 
     # Unsync the selected viewer
     left_click(qtbot, sync_params['checkbox'])
     # At this point no slice indices should have changed yet
-    assert layout.active_index == active_index
-    assert_all_viewer_indices(layout, active_index)
+    assert layout.synced_index == synced_index
+    assert_all_viewer_indices(layout, synced_index)
 
     # Activate the unsynced viewer
     select_viewer(qtbot, unsynced_viewer)
@@ -132,13 +132,13 @@ def unsync_and_verify(qtbot, layout, sync_params, active_index, unsynced_index):
     # Make sure the active (unsynced) viewer's index has been updated
     assert unsynced_viewer._widget.slice_index == unsynced_index
     # Make sure no other viewer indices have been updated
-    assert_viewer_indices(sync_params['other_viewers'], active_index)
+    assert_viewer_indices(sync_params['other_viewers'], synced_index)
     # Make sure the displayed slice index reflects the active viewer
     assert_slice_text(layout, str(unsynced_index))
 
 def update_synced_index_and_verify(qtbot, layout, sync_params, new_synced_index,
                                    unsynced_index):
-    old_synced_index = layout.active_index
+    old_synced_index = layout.synced_index
     unsynced_viewer = sync_params['unsynced_viewer']
     other_viewers = sync_params['other_viewers']
 
@@ -153,6 +153,8 @@ def update_synced_index_and_verify(qtbot, layout, sync_params, new_synced_index,
     enter_slice_text(qtbot, layout, str(new_synced_index))
     assert unsynced_viewer._widget.slice_index == unsynced_index
     assert_viewer_indices(other_viewers, new_synced_index)
+    import time
+    time.sleep(0.5)
     assert_slice_text(layout, str(new_synced_index))
 
 @pytest.fixture(scope='function')
@@ -188,9 +190,9 @@ def test_unsync_viewer(qtbot, cubeviz_layout, sync_params):
         pytest.skip()
 
     # Get the current index of all viewers
-    active_index = cubeviz_layout.active_index
+    synced_index = cubeviz_layout.synced_index
     # Sanity check to make sure all viewers are actually synced
-    assert_all_viewer_indices(cubeviz_layout, active_index)
+    assert_all_viewer_indices(cubeviz_layout, synced_index)
 
     unsynced_viewer = sync_params['unsynced_viewer']
     other_viewers = sync_params['other_viewers']
@@ -198,20 +200,20 @@ def test_unsync_viewer(qtbot, cubeviz_layout, sync_params):
     # Activate the unsynced viewer
     unsynced_index = 42
     unsync_and_verify(
-        qtbot, cubeviz_layout, sync_params, active_index, unsynced_index)
+        qtbot, cubeviz_layout, sync_params, synced_index, unsynced_index)
 
     # Toggle to single image mode
     toggle_viewer(qtbot, cubeviz_layout)
-    assert_slice_text(cubeviz_layout, str(active_index))
+    assert_slice_text(cubeviz_layout, str(synced_index))
 
     # Toggle back to split image mode
     toggle_viewer(qtbot, cubeviz_layout)
     assert_slice_text(cubeviz_layout, str(unsynced_index))
 
-    active_index = 1234
+    synced_index = 1234
     # Now activate one of the synced viewers
     update_synced_index_and_verify(
-        qtbot, cubeviz_layout, sync_params, active_index, unsynced_index)
+        qtbot, cubeviz_layout, sync_params, synced_index, unsynced_index)
 
     # Activate the unsynced viewer again
     select_viewer(qtbot, unsynced_viewer)
@@ -219,8 +221,8 @@ def test_unsync_viewer(qtbot, cubeviz_layout, sync_params):
 
     # Sync the unsynced viewer
     left_click(qtbot, sync_params['checkbox'])
-    assert_all_viewer_indices(cubeviz_layout, active_index)
-    assert_slice_text(cubeviz_layout, str(active_index))
+    assert_all_viewer_indices(cubeviz_layout, synced_index)
+    assert_slice_text(cubeviz_layout, str(synced_index))
 
 @pytest.mark.parametrize('sync_params', [1, 2, 3], indirect=True)
 def test_resync_inactive_viewer(qtbot, cubeviz_layout, sync_params):
@@ -228,34 +230,34 @@ def test_resync_inactive_viewer(qtbot, cubeviz_layout, sync_params):
     viewer is successfully re-synced even when it is not the active viewer.
     """
     # Get the current index of all viewers
-    active_index = cubeviz_layout.active_index
+    synced_index = cubeviz_layout.synced_index
 
     unsynced_viewer = sync_params['unsynced_viewer']
     other_viewers = sync_params['other_viewers']
 
     unsynced_index = 42
     unsync_and_verify(
-        qtbot, cubeviz_layout, sync_params, active_index, unsynced_index)
+        qtbot, cubeviz_layout, sync_params, synced_index, unsynced_index)
 
-    active_index = 1234
+    synced_index = 1234
     # Now activate one of the synced viewers
     update_synced_index_and_verify(
-        qtbot, cubeviz_layout, sync_params, active_index, unsynced_index)
+        qtbot, cubeviz_layout, sync_params, synced_index, unsynced_index)
 
     # Sync the (inactive) unsynced viewer
     left_click(qtbot, sync_params['checkbox'])
-    assert_all_viewer_indices(cubeviz_layout, active_index)
-    assert_slice_text(cubeviz_layout, str(active_index))
+    assert_all_viewer_indices(cubeviz_layout, synced_index)
+    assert_slice_text(cubeviz_layout, str(synced_index))
 
     # Activate the unsynced viewer again
     select_viewer(qtbot, unsynced_viewer)
-    assert_slice_text(cubeviz_layout, str(active_index))
+    assert_slice_text(cubeviz_layout, str(synced_index))
 
 def test_multiple_unsynced_viewers(qtbot, cubeviz_layout):
     # Get the current index of all viewers
-    active_index = cubeviz_layout.active_index
+    synced_index = cubeviz_layout.synced_index
     # Sanity check to make sure all viewers are actually synced
-    assert_all_viewer_indices(cubeviz_layout, active_index)
+    assert_all_viewer_indices(cubeviz_layout, synced_index)
 
     unsync1 = cubeviz_layout.cube_views[1]
     checkbox1 = cubeviz_layout._synced_checkboxes[1]
@@ -276,15 +278,15 @@ def test_multiple_unsynced_viewers(qtbot, cubeviz_layout):
     select_viewer(qtbot, unsync1)
     enter_slice_text(qtbot, cubeviz_layout, unsync_index1)
     assert_slice_text(cubeviz_layout, str(unsync_index1))
-    assert_viewer_indices(remain_synced + [unsync2], active_index)
+    assert_viewer_indices(remain_synced + [unsync2], synced_index)
 
     # Unsync the second viewer: the order of activation/unsync shouldn't
     # matter, so we do it differently here than we did above
     select_viewer(qtbot, unsync2)
     left_click(qtbot, checkbox2)
     # Nothing should have changed yet
-    assert_slice_text(cubeviz_layout, str(active_index))
-    assert_viewer_indices(remain_synced + [unsync2], active_index)
+    assert_slice_text(cubeviz_layout, str(synced_index))
+    assert_viewer_indices(remain_synced + [unsync2], synced_index)
     assert_viewer_indices([unsync1], unsync_index1)
 
     # Update the second synced viewer
@@ -293,14 +295,14 @@ def test_multiple_unsynced_viewers(qtbot, cubeviz_layout):
     # Make sure the first unsynced viewer is unchanged
     assert_viewer_indices([unsync1], unsync_index1)
     # Make sure the synced viewers are unchanged
-    assert_viewer_indices(remain_synced, active_index)
+    assert_viewer_indices(remain_synced, synced_index)
 
     # Update the synced viewers
-    active_index = 1234
+    synced_index = 1234
     select_viewer(qtbot, remain_synced[1])
-    enter_slice_text(qtbot, cubeviz_layout, str(active_index))
-    assert_slice_text(cubeviz_layout, str(active_index))
-    assert_viewer_indices(remain_synced, active_index)
+    enter_slice_text(qtbot, cubeviz_layout, str(synced_index))
+    assert_slice_text(cubeviz_layout, str(synced_index))
+    assert_viewer_indices(remain_synced, synced_index)
     assert_viewer_indices([unsync1], unsync_index1)
     assert_viewer_indices([unsync2], unsync_index2)
 
@@ -308,12 +310,12 @@ def test_multiple_unsynced_viewers(qtbot, cubeviz_layout):
     select_viewer(qtbot, unsync1)
     assert_slice_text(cubeviz_layout, str(unsync_index1))
     assert_viewer_indices([unsync2], unsync_index2)
-    assert_viewer_indices(remain_synced, active_index)
+    assert_viewer_indices(remain_synced, synced_index)
 
     # Sync the first unsynced viewer
     left_click(qtbot, checkbox1)
-    assert_slice_text(cubeviz_layout, str(active_index))
-    assert_viewer_indices(remain_synced + [unsync1], active_index)
+    assert_slice_text(cubeviz_layout, str(synced_index))
+    assert_viewer_indices(remain_synced + [unsync1], synced_index)
     assert_viewer_indices([unsync2], unsync_index2)
 
     # Activate the second (and still) unsynced viewer again
@@ -322,5 +324,5 @@ def test_multiple_unsynced_viewers(qtbot, cubeviz_layout):
 
     # Sync the remaining unsynced viewer
     left_click(qtbot, checkbox2)
-    assert_slice_text(cubeviz_layout, str(active_index))
-    assert_all_viewer_indices(cubeviz_layout, active_index)
+    assert_slice_text(cubeviz_layout, str(synced_index))
+    assert_all_viewer_indices(cubeviz_layout, synced_index)
