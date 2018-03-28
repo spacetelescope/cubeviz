@@ -290,7 +290,10 @@ class CubeVizLayout(QtWidgets.QWidget):
     def _open_dialog(self, name, widget):
 
         if name == 'Collapse Cube':
-            ex = collapse_cube.CollapseCube(self._data, parent=self, allow_preview=True)
+            ex = collapse_cube.CollapseCube(
+                self._wavelength_controller.wavelengths,
+                self._wavelength_controller.current_units,
+                self._data, parent=self, allow_preview=True)
 
         if name == 'Spatial Smoothing':
             ex = smoothing.SelectSmoothing(self._data, parent=self, allow_preview=True)
@@ -328,10 +331,6 @@ class CubeVizLayout(QtWidgets.QWidget):
     @property
     def component_labels(self):
         return [str(cid) for cid in self.data_components]
-
-    @property
-    def wavelengths(self):
-        return self._wavelength_controller._wavelengths
 
     def refresh_viewer_combo_helpers(self):
         for i, helper in enumerate(self._viewer_combo_helpers):
