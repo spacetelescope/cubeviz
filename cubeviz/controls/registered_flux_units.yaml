@@ -5,6 +5,17 @@
 #   should be kept as a sting that astropy.unit.Unit
 #   understands. I there is no base for the new unit
 #   only define the name key.
+#
+# Format...
+#     new_units:
+#       new_unit_name:
+#            name:
+#                "new unit name" (astropy units legible)
+#            base:
+#                "astropy unit string"
+#            type:
+#                "physical type"
+
 new_units:
     spaxel:
         name:
@@ -18,8 +29,23 @@ new_units:
 #
 #  Registered units are stored below. Each key is
 #  the unit as a sting and is broken down to its
-#  numeric, spectral_flux_density and area components.
-#  If a component is N/A, place an empty sting.
+#  astropy_unit_string, spectral_flux_density and
+#  area components. If a component is N/A, place
+#  an empty sting.
+# Format...
+#      formatted_units:
+#          "unit as seen in header BUNIT":
+#              astropy_unit_string:
+#                  "astropy unit"
+#              spectral_flux_density:
+#                  "spectral_flux_density part"
+#              area:
+#                  "area part"
+#
+# ie: unit = spectral_flux_density / area
+# If area is not available or needed, do not include 
+
+
 formatted_units:
     # Examples:
     "1E20 jy":
