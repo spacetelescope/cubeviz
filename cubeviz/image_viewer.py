@@ -814,7 +814,7 @@ class CubevizImageViewer(ImageViewer, HubListener):
         # Check if wavelength is available
         if self.slice_index is not None and wavelengths is not None:
             wave = wavelengths[self.slice_index]
-            wavelength_unit = self.parent().tab_widget._wavelength_controller._new_units.short_names[0]
+            wavelength_unit = self.parent().tab_widget._wavelength_controller._current_units.short_names[0]
             coord_string += ", {:1.2e}{})".format(wave, wavelength_unit)
         else:
             coord_string += ")"

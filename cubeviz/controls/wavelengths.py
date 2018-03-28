@@ -16,8 +16,7 @@ class WavelengthController:
         self._wavelengths = []
         self._original_wavelengths = []
         self._original_units = u.m
-        # TODO: code debt: rename _new_units to something else
-        self._new_units = self._original_units
+        self._current_units = self._original_units
 
         # Add the redshift z value
         self._redshift_z = 0
@@ -74,9 +73,9 @@ class WavelengthController:
 
     def update_units(self, units):
 
-        self._new_units = units
+        self._wavelengths = (self._wavelengths * self._current_units).to(units) / units
 
-        self._wavelengths = (self._wavelengths * self._new_units).to(units) / units
+        self._current_units = units
 
         self._send_wavelength_unit_message(units)
         self._send_wavelength_message(self._wavelengths)
@@ -95,7 +94,7 @@ class WavelengthController:
             self._wavelength_textbox_label = OBS_WAVELENGTH_TEXT
 
         orig_redshift = (1.0 / (1 + redshift)) * self._original_wavelengths * self._original_units
-        self._wavelengths = orig_redshift.to(self._new_units)/ self._new_units
+        self._wavelengths = orig_redshift.to(self._current_units)/ self._current_units
 
         # This calls the setter above, so really, the magic is there.
         self._redshift_z = redshift
