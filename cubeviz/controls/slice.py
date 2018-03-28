@@ -48,7 +48,7 @@ class SliceController(HubListener):
         # We are not going to enforce what the name should be at this level.
         self._wavelength_label_text = OBS_WAVELENGTH_TEXT
 
-        self._wavelength_format = '{:1.3e}'
+        self._wavelength_format = '{:.3}'
         self._wavelength_units = None
         self._wavelengths = None
 
@@ -135,8 +135,7 @@ class SliceController(HubListener):
             wavelength = -1
             wv_index = -1
 
-        if index != wv_index:
-            self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[index]))
+        self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[index]))
 
         slider_index = self._slice_slider.value()
         if slider_index != index:
