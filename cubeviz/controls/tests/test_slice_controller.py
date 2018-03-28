@@ -23,11 +23,13 @@ def all_but_index(array, index):
 
 @pytest.fixture(scope='module')
 def cube_bounds(cubeviz_layout):
+    wavelengths = cubeviz_layout._wavelength_controller.wavelengths
+
     bounds = {
         'max_slice': len(cubeviz_layout._data['018.DATA']) - 1,
-        'wavelengths': cubeviz_layout._wavelengths,
-        'min_wavelength': cubeviz_layout._wavelengths[0],
-        'max_wavelength': cubeviz_layout._wavelengths[-1]
+        'wavelengths': wavelengths,
+        'min_wavelength': wavelengths[0],
+        'max_wavelength': wavelengths[-1]
     }
 
     yield bounds
