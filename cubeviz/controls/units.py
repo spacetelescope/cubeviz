@@ -15,6 +15,7 @@ from glue.utils.qt import update_combobox
 
 from astropy.utils.exceptions import AstropyWarning
 from astropy import units as u
+from astropy.wcs.utils import proj_plane_pixel_area
 from specviz.third_party.glue.data_viewer import dispatch as specviz_dispatch
 
 OBS_WAVELENGTH_TEXT = 'Obs Wavelength'
@@ -436,6 +437,7 @@ class CubeVizUnit:
         :param unit: astropy unit or None
         :param unit_string: Unit as a string
         """
+        self._controller = None  # Unit controller (property)
         self._original_unit = unit  # the data's actual units
         self._original_unit_string = unit_string  # original_unit as str
         self._unit = unit  # Current Unit
@@ -461,6 +463,14 @@ class CubeVizUnit:
     def type(self, type):
         if isinstance(type, str):
             self._type = type
+
+    @property
+    def controller(self):
+        return self._controller
+
+    @controller.setter
+    def controller(self, controller):
+        self._controller = controller
 
     def get_units(self):
         return self.unit_string
@@ -601,7 +611,18 @@ class SpectralFluxDensity(CubeVizUnit):
         new_value *= self._original_spectral_flux_density.to(self.spectral_flux_density,
                                                              equivalencies=u.spectral_density(wave))
         if self.has_area:
-            new_value /= self._original_area.to(self.area)
+            pixel_area = self.controller.pixel_area
+
+            if self.area.decompose() == u.pix.decompose() \
+                    and 'solid angle' in self._original_area.physical_type:
+                area = (self._original_area / pixel_area).decompose()
+                new_value /= area.to(self.area)
+            elif 'solid angle' in self.area.physical_type \
+                    and self._original_area.decompose() == u.pix.decompose():
+                area = (self._original_area * pixel_area).decompose()
+                new_value /= area.to(self.area)
+            else:
+                new_value /= self.area.to(self.area)
 
         if isinstance(new_value, u.Quantity):
             new_value = new_value.value
@@ -715,7 +736,17 @@ class SpectralFluxDensity(CubeVizUnit):
         if self.has_area:
             area_string = self.area_combo.currentText()
             area = u.Unit(area_string)
-            new_value /= self._original_area.to(area)
+            pixel_area = self.controller.pixel_area
+            if area.decompose() == u.pix.decompose() \
+                    and 'solid angle' in self._original_area.physical_type:
+                temp_area = (self._original_area / pixel_area).decompose()
+                new_value /= temp_area.to(area)
+            elif 'solid angle' in area.physical_type \
+                    and self._original_area.decompose() == u.pix.decompose():
+                temp_area = (self._original_area * pixel_area).decompose()
+                new_value /= temp_area.to(area)
+            else:
+                new_value /= area.to(self.area)
             unit_base = spectral_flux_density / area
         else:
             unit_base = spectral_flux_density
@@ -804,7 +835,18 @@ class SpectralFluxDensity(CubeVizUnit):
             unit_layout.addWidget(division)
 
             area_str = self.area.to_string()
-            area_options = AREA_UNIT_REGISTRY.get_unit_list()
+            if self.controller is None:
+                no_pixel_area = True
+            else:
+                no_pixel_area = self.controller.pixel_area is None
+
+            if self.area.decompose() == u.pix.decompose() and no_pixel_area:
+                area_options = AREA_UNIT_REGISTRY.get_unit_list(pixel_only=True)
+            elif 'solid angle' in self.area.physical_type and no_pixel_area:
+                area_options = AREA_UNIT_REGISTRY.get_unit_list(solid_angle_only=True)
+            else:
+                area_options = AREA_UNIT_REGISTRY.get_unit_list()
+
             if area_str in area_options:
                 index = area_options.index(area_str)
             else:
@@ -1139,11 +1181,22 @@ class FluxUnitController:
         self.formatted_units = cfg["formatted_units"]
 
         self.data = None
+        self.wcs = None
         self._components = {}
 
     @property
     def components(self):
         return self._components
+
+    @property
+    def pixel_area(self):
+        if self.wcs is None:
+            return None
+        try:
+            top_unit = u.Unit(self.wcs.wcs.cunit[0])
+            return proj_plane_pixel_area(self.wcs) * (top_unit ** 2) / u.pix
+        except (ValueError, AttributeError):
+            return None
 
     @staticmethod
     def register_new_unit(new_unit):
@@ -1337,6 +1390,7 @@ class FluxUnitController:
             else:
                 cubeviz_unit = UnknownUnit(astropy_unit, unit_string)
 
+        cubeviz_unit.controller = self
         self._components[component_id] = cubeviz_unit
         return cubeviz_unit
 
@@ -1379,6 +1433,10 @@ class FluxUnitController:
         self._components = {}
         for comp in data.visible_components:
             self.add_component_unit(comp, data.get_component(comp).units)
+
+        wcs = data.coords.wcs
+        if wcs is not None:
+            self.wcs = wcs
 
     def converter(self, parent=None):
         """
