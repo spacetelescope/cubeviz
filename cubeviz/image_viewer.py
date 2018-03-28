@@ -857,8 +857,12 @@ class CubevizImageViewer(ImageViewer):
                 if self.cubeviz_unit is not None:
                     wave = self.cubeviz_layout.get_wavelength(self.slice_index)
                     v = self.cubeviz_unit.convert_from_original_unit(v, wave=wave)
-                self.mouse_value = "{0:.3E} [{1}] ".format(v, self.component_unit_label)
-                string = "{0:.3E} ".format(v) + string
+                if 0.01 <= abs(v) <= 1000:
+                    self.mouse_value = "{0:.2f} [{1}] ".format(v, self.component_unit_label)
+                    string = "{0:.2f} ".format(v) + string
+                else:
+                    self.mouse_value = "{0:.3E} [{1}] ".format(v, self.component_unit_label)
+                    string = "{0:.3E} ".format(v) + string
         # Add a gap to string and add to viewer.
         string += " "
         self._dont_update_status = True
