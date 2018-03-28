@@ -2,6 +2,8 @@ import os
 import yaml
 import warnings
 
+import numpy as np
+
 from qtpy.QtCore import Qt, Signal, QThread
 from qtpy.QtWidgets import (
     QDialog, QApplication, QPushButton, QProgressBar,
@@ -184,24 +186,12 @@ def find_unit_index(unit_list, target_unit):
     return None
 
 
-def format_float_string(n):
-    if isinstance(n, str):
-        if "e" in n.lower():
-            string = n
-        else:
-            n = float(n)
-            string = "{0:0.15E}".format(n)
+def _get_power(numeric):
+    if float(np.log10(numeric)).is_integer():
+        power = int(np.log10(numeric))
     else:
-        string = "{0:0.15E}".format(n)
-
-    def check_if_zero_power(power):
-        if float(power) == 0.0:
-            return "0"
-        else:
-            return power
-
-    return [string.split('E')[0].rstrip('0').rstrip('.'),
-            check_if_zero_power(string.split('E')[1])]
+        power = 0
+    return power
 
 
 class FluxUnitRegistry:
@@ -391,7 +381,7 @@ class CubeVizUnit:
         self.message_box = None
         return
 
-    def populate_unit_layout(self, unit_layout):
+    def populate_unit_layout(self, unit_layout, gui=None):
 
         if self.unit_string:
             default_message = "CubeViz can not convert this unit: {0}."
@@ -410,7 +400,7 @@ class CubeVizUnit:
 
 class SpectralFluxDensity(CubeVizUnit):
     def __init__(self, unit, unit_string,
-                 numeric=None,
+                 power=None,
                  spectral_flux_density=None,
                  area=None,
                  is_formatted=False):
@@ -419,19 +409,21 @@ class SpectralFluxDensity(CubeVizUnit):
         self._type = "FormattedSpectralFluxDensity" if is_formatted else "SpectralFluxDensity"
         self.is_convertible = True
 
-        self.numeric = numeric
+        self.power = power
         self.spectral_flux_density = spectral_flux_density
         self.area = area
 
-        self._original_numeric = numeric
+        self._original_power = power
         self._original_spectral_flux_density = spectral_flux_density
         self._original_area = area
 
         self.has_area = True if area is not None else False
 
-        self.numeric_power_input = None
+        self.power_input = None
         self.flux_combo = None
         self.area_combo = None
+
+        self.wave = 656.3 * u.nm
 
         FLUX_UNIT_REGISTRY.add_unit(spectral_flux_density)
 
@@ -441,7 +433,7 @@ class SpectralFluxDensity(CubeVizUnit):
 
         new_value = value
 
-        new_value *= self._original_numeric / self.numeric
+        new_value *= 10**(self._original_power - self.power)
         new_value *= self._original_spectral_flux_density.to(self.spectral_flux_density,
                                                              equivalencies=u.spectral_density(wave))
         if self.has_area:
@@ -454,23 +446,21 @@ class SpectralFluxDensity(CubeVizUnit):
 
     def reset_widgets(self):
         self.message_box = None
-        self.numeric_power_input = None
+        self.power_input = None
         self.flux_combo = None
         self.area_combo = None
 
-    def _get_current_numeric(self):
-        if self.numeric is not None:
-            numeric = self.numeric
-        elif self.unit is not None:
-            numeric = self.unit.scale
+    def _get_current_power(self):
+        if self.power is not None:
+            power = self.power
         else:
-            numeric = 1.0
-        return numeric
+            power = 0
+        return power
 
     def _validate_input(self):
         red = "background-color: rgba(255, 0, 0, 128);"
         success = True
-        if self.numeric_power_input is None \
+        if self.power_input is None \
                 or self.flux_combo is None:
             success = False
             return success
@@ -479,16 +469,16 @@ class SpectralFluxDensity(CubeVizUnit):
             success = False
             return success
 
-        # Check 1: numeric_power_input
-        if self.numeric_power_input == "":
-            self.numeric_power_input.setStyleSheet(red)
+        # Check 1: power_input
+        if self.power_input == "":
+            self.power_input.setStyleSheet(red)
             success = False
         else:
             try:
-                power = int(self.numeric_power_input.text())
-                self.numeric_power_input.setStyleSheet("")
+                power = int(self.power_input.text())
+                self.power_input.setStyleSheet("")
             except ValueError:
-                self.numeric_power_input.setStyleSheet(red)
+                self.power_input.setStyleSheet(red)
                 success = False
         return success
 
@@ -497,10 +487,7 @@ class SpectralFluxDensity(CubeVizUnit):
         if not success:
             return success
 
-        numeric = self._get_current_numeric()
-
-        digit_string, power_string = format_float_string(numeric)
-        self.numeric = float(digit_string + "E" + self.numeric_power_input.text())
+        self.power = int(self.power_input.text())
 
         flux_string = self.flux_combo.currentText()
         flux_unit = u.Unit(flux_string)
@@ -514,7 +501,7 @@ class SpectralFluxDensity(CubeVizUnit):
         else:
             unit_base = self.spectral_flux_density
 
-        self._unit = u.Unit(self.numeric * unit_base)
+        self._unit = u.Unit((10**self.power) * unit_base)
         self._unit_string = self._unit.to_string()
 
         return success
@@ -528,12 +515,10 @@ class SpectralFluxDensity(CubeVizUnit):
             return
 
         new_value = 1.0
-        wave = 656.3 * u.nm
+        wave = self.wave
 
-        numeric = self._get_current_numeric()
-        digit_string, power_string = format_float_string(numeric)
-        numeric = float(digit_string + "E" + self.numeric_power_input.text())
-        new_value *= self._original_numeric / numeric
+        power = int(self.power_input.text())
+        new_value *= 10**(self._original_power - power)
 
         flux_string = self.flux_combo.currentText()
         flux_unit = u.Unit(flux_string)
@@ -545,9 +530,11 @@ class SpectralFluxDensity(CubeVizUnit):
             area_string = self.area_combo.currentText()
             area = u.Unit(area_string)
             new_value /= self._original_area.to(area)
-            unit_base = numeric * spectral_flux_density / area
+            unit_base = spectral_flux_density / area
         else:
-            unit_base = numeric * spectral_flux_density
+            unit_base = spectral_flux_density
+
+        unit_base = u.Unit((10**power) * unit_base)
 
         if isinstance(new_value, u.Quantity):
             new_value = new_value.value
@@ -556,31 +543,34 @@ class SpectralFluxDensity(CubeVizUnit):
             unit_base = u.Unit(unit_base)
 
         message_param = (wave, self.unit.to_string(), new_value, unit_base)
-        message = "Original Unit: [{1}]\n" \
-                  "New Unit: [{3}]\n" \
-                  "At lambda = {0} ...\n" \
-                  "1.0 [Original Unit] = {2:0.2E} [New Unit]".format(*message_param)
+        if 0.01 <= abs(new_value) <= 1000:
+            message = "Data Unit: [{1}]\n" \
+                      "New Unit: [{3}]\n" \
+                      "1.0 [Data Unit] = {2:.2f} [New Unit]\n" \
+                      "(at lambda = {0:0.4e})".format(*message_param)
+        else:
+            message = "Data Unit: [{1}]\n" \
+                      "New Unit: [{3}]\n" \
+                      "1.0 [Data Unit] = {2:0.2e} [New Unit]\n" \
+                      "(at lambda = {0:0.4e})".format(*message_param)
         self.message_box.setText(message)
 
     def _on_flux_combo_change(self, index):
         current_string = self.flux_combo.currentText()
         flux_unit_str = self.spectral_flux_density.to_string()
         if current_string != flux_unit_str:
-            self.numeric_power_input.setText("0")
+            self.power_input.setText("0")
         else:
-            numeric = self._get_current_numeric()
-            digit_string, power_string = format_float_string(numeric)
-            self.numeric_power_input.setText(power_string)
+            power = self._get_current_power()
+            self.power_input.setText(str(power))
 
-    def populate_unit_layout(self, unit_layout):
-        numeric = self._get_current_numeric()
+    def populate_unit_layout(self, unit_layout, gui=None):
+        power = self._get_current_power()
 
-        digit_string, power_string = format_float_string(numeric)
-
-        unit_layout.addWidget(QLabel("{0} X 10^".format(digit_string)))
-        power_input = QLineEdit(power_string)
-        power_input.setFixedWidth(50)
-        self.numeric_power_input = power_input
+        unit_layout.addWidget(QLabel("10^"))
+        power_input = QLineEdit(str(power))
+        power_input.setFixedWidth(30)
+        self.power_input = power_input
         power_input.textChanged.connect(self._update_message)
         unit_layout.addWidget(power_input)
 
@@ -623,6 +613,10 @@ class SpectralFluxDensity(CubeVizUnit):
         if self.message_box is not None:
             self._update_message()
 
+        if gui is not None:
+            cubeviz_layout = gui.cubeviz_layout
+            if cubeviz_layout is not None:
+                self.wave = cubeviz_layout.get_wavelength()
         return unit_layout
 
 
@@ -670,12 +664,17 @@ class UnknownUnit(CubeVizUnit):
 
         message_param = (self._original_unit, new_unit_string, new_value)
 
-        message = "Original Unit: [{0}]\n" \
-                  "New Unit: [{1}]\n" \
-                  "1.0 [Original Unit] = {2:0.2E} [New Unit]".format(*message_param)
+        if 0.01 <= abs(new_value) <= 1000:
+            message = "Data Units: [{0}]\n" \
+                      "New Units: [{1}]\n" \
+                      "1.0 [Data Unit] = {2:.2f} [New Unit]".format(*message_param)
+        else:
+            message = "Data Units: [{0}]\n" \
+                      "New Units: [{1}]\n" \
+                      "1.0 [Data Unit] = {2:0.2e} [New Unit]".format(*message_param)
         self.message_box.setText(message)
 
-    def populate_unit_layout(self, unit_layout):
+    def populate_unit_layout(self, unit_layout, gui=None):
 
         if self.unit is None:
             default_message = "CubeViz can not convert this unit: {0}."
@@ -705,7 +704,7 @@ class NoneUnit(CubeVizUnit):
         super(NoneUnit, self).__init__(None, "")
         self._type = "NoneUnit"
 
-    def populate_unit_layout(self, unit_layout):
+    def populate_unit_layout(self, unit_layout, gui=None):
         default_message = "No Units."
         default_label = QLabel(default_message)
         unit_layout.addWidget(default_label)
@@ -717,7 +716,7 @@ class ConvertFluxUnitGUI(QDialog):
         super(ConvertFluxUnitGUI, self).__init__(parent=parent)
         self.setWindowFlags(self.windowFlags() | Qt.Tool)
         self.title = "Unit Conversion"
-        self.setMinimumSize(443, 211)
+        self.setMinimumSize(400, 200)
 
         self.cubeviz_layout = controller.cubeviz_layout
 
@@ -809,7 +808,7 @@ class ConvertFluxUnitGUI(QDialog):
             cubeviz_unit = self.controller_components[component_id]
             self.current_unit = cubeviz_unit
             cubeviz_unit.set_message_box(self.message_box)
-            cubeviz_unit.populate_unit_layout(self.unit_layout)
+            cubeviz_unit.populate_unit_layout(self.unit_layout, self)
             if cubeviz_unit.is_convertible:
                 self.okButton.setEnabled(True)
             else:
@@ -892,7 +891,7 @@ class FluxUnitController:
 
     @staticmethod
     def _sfd_over_solid_angle_to_cubeviz(unit, unit_string):
-        scale = unit.scale
+        power = _get_power(unit.scale)
         unit_list = unit.bases
         power_list = unit.powers
 
@@ -910,15 +909,18 @@ class FluxUnitController:
 
         if index is not None:
             angle_unit = unit_list[index] ** abs(power_list[index])
+            if power == 0:
+                sfd_unit = u.Unit(unit.scale * sfd_unit)
+
             cubeviz_unit = SpectralFluxDensity(unit, unit_string,
-                                               scale, sfd_unit, angle_unit)
+                                               power, sfd_unit, angle_unit)
         else:
             cubeviz_unit = UnknownUnit(unit, unit_string)
         return cubeviz_unit
 
     @staticmethod
     def _sfd_over_pix_to_cubeviz(unit, unit_string):
-        scale = unit.scale
+        power = _get_power(unit.scale)
         unit_list = unit.bases
         power_list = unit.powers
 
@@ -935,8 +937,10 @@ class FluxUnitController:
 
         if index is not None:
             pix_unit = unit_list[index] ** abs(power_list[index])
+            if power == 0:
+                sfd_unit = u.Unit(unit.scale * sfd_unit)
             cubeviz_unit = SpectralFluxDensity(unit, unit_string,
-                                               scale, sfd_unit, pix_unit)
+                                               power, sfd_unit, pix_unit)
         else:
             cubeviz_unit = UnknownUnit(unit, unit_string)
         return cubeviz_unit
@@ -977,14 +981,18 @@ class FluxUnitController:
             if "astropy_unit_string" in registered_unit:
                 unit_string = registered_unit["astropy_unit_string"]
             astropy_unit = self.string_to_unit(unit_string)
-            if registered_unit["numeric"]:
-                numeric = float(registered_unit["numeric"])
-            else:
-                numeric = astropy_unit.scale
             spectral_flux_density = self.string_to_unit(registered_unit["spectral_flux_density"])
-            area = self.string_to_unit(registered_unit["area"])
+            if "area" in registered_unit:
+                area = self.string_to_unit(registered_unit["area"])
+            else:
+                area = None
+
+            numeric = spectral_flux_density.scale
+            power = _get_power(numeric)
+            if power != 0:
+                spectral_flux_density /= u.Unit(numeric)
             cubeviz_unit = SpectralFluxDensity(astropy_unit, unit_string,
-                                               numeric, spectral_flux_density, area,
+                                               power, spectral_flux_density, area,
                                                is_formatted=True)
         else:
             astropy_unit = self.string_to_unit(unit_string)
@@ -995,10 +1003,13 @@ class FluxUnitController:
             elif 'SFD_over_pix' in astropy_unit.physical_type:
                 cubeviz_unit = self._sfd_over_pix_to_cubeviz(astropy_unit, unit_string)
             elif 'spectral flux density' in astropy_unit.physical_type:
-                spectral_flux_density = self.string_to_unit(astropy_unit.to_string("unscaled"))
-                numeric = astropy_unit.scale
+                spectral_flux_density = astropy_unit
+                numeric = spectral_flux_density.scale
+                power = _get_power(numeric)
+                if power != 0:
+                    spectral_flux_density /= u.Unit(numeric)
                 cubeviz_unit = SpectralFluxDensity(astropy_unit, unit_string,
-                                                   numeric, spectral_flux_density,
+                                                   power, spectral_flux_density,
                                                    area=None)
             else:
                 cubeviz_unit = UnknownUnit(astropy_unit, unit_string)

@@ -767,6 +767,15 @@ class CubeVizLayout(QtWidgets.QWidget):
     def get_wavelengths_units(self):
         return self._units_controller.get_new_units()
 
+    def get_wavelength(self, index=None):
+        if index is None:
+            index = self.synced_index
+        elif index > len(self._wavelengths):
+            return None
+        wave = self._wavelengths[index]
+        units = self.get_wavelengths_units()
+        return wave * units
+
     def set_wavelengths(self, new_wavelengths, new_units):
         self._wavelengths = new_wavelengths
         self._slice_controller.set_wavelengths(new_wavelengths, new_units)

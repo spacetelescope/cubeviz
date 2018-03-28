@@ -855,9 +855,7 @@ class CubevizImageViewer(ImageViewer):
                 # Pixel Value:
                 v = arr[y][x]
                 if self.cubeviz_unit is not None:
-                    wavelength_unit = self.cubeviz_layout._units_controller._new_units
-                    wave = self.cubeviz_layout._wavelengths[self.slice_index]
-                    wave = wave * wavelength_unit
+                    wave = self.cubeviz_layout.get_wavelength(self.slice_index)
                     v = self.cubeviz_unit.convert_from_original_unit(v, wave=wave)
                 self.mouse_value = "{0:.3E} [{1}] ".format(v, self.component_unit_label)
                 string = "{0:.3E} ".format(v) + string

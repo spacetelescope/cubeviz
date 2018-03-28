@@ -21,12 +21,25 @@ new_units:
 #  numeric, spectral_flux_density and area components.
 #  If a component is N/A, place an empty sting.
 registered_units:
-    # Units from NIRSpec
+    # Examples:
+    "1E20 jy":
+        astropy_unit_string:
+            "1E20 Jy"
+        spectral_flux_density:
+            "1E20 Jy"
+
+    "2.7 Janskies/spaxels":
+        astropy_unit_string:
+            "2.7 Jy/spaxel"
+        spectral_flux_density:
+            "2.7 Jy"
+        area:
+            "spaxel"
+
+    # Units from NIRSpec:
     "Jy/arcsec^2":
         astropy_unit_string:
             "mJy/arcsec^2"
-        numeric:
-            "1.0"
         spectral_flux_density:
             "mJy"
         area:
@@ -35,40 +48,32 @@ registered_units:
     "mJy/arcsec^2":
         astropy_unit_string:
             "mJy/arcsec^2"
-        numeric:
-            ""
         spectral_flux_density:
             "mJy"
         area:
             "arcsec^2"
 
-    # Units from Manga
+    # Units from Manga:
     "1E-17 erg/s/cm^2/Ang/spaxel":
         astropy_unit_string:
             "1E-17 erg/s/cm^2/angstrom/spaxel"
-        numeric:
-            "1E-17"
         spectral_flux_density:
-            "erg/angstrom/cm^2/s"
+            "1E-17 erg/s/cm^2/angstrom"
         area:
             "spaxel"
 
     "1E-17 erg/s/cm^2/A/spaxel":
         astropy_unit_string:
             "1E-17 erg/s/cm^2/angstrom/spaxel"
-        numeric:
-            "1E-17"
         spectral_flux_density:
-            "erg/angstrom/cm^2/s"
+            "1E-17 erg/s/cm^2/angstrom"
         area:
             "spaxel"
 
     "erg/s/cm^2/Ang/spaxel":
         astropy_unit_string:
             "1E-17 erg/s/cm^2/angstrom/spaxel"
-        numeric:
-            ""
         spectral_flux_density:
-            "erg/angstrom/cm^2/s"
+            "1E-17 erg/s/cm^2/angstrom"
         area:
             "spaxel"
