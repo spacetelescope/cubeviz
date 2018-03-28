@@ -28,7 +28,7 @@ from glue.viewers.common.qt.tool import Tool
 from qtpy.QtWidgets import QToolTip
 from qtpy.QtGui import QCursor
 
-from .messages import SliceIndexUpdateMessage
+from .messages import SliceIndexUpdateMessage, WavelengthUpdateMessage, WavelengthUnitUpdateMessage
 from .utils.contour import ContourSettings
 
 CONTOUR_DEFAULT_NUMBER_OF_LEVELS = 8
@@ -207,6 +207,10 @@ class CubevizImageViewer(ImageViewer, HubListener):
         self.coord_label = QLabel("")  # Coord display
         self.statusBar().addPermanentWidget(self.coord_label)
 
+        # These are updated by listeners. See hub subscribers below
+        self._wavelengths = None  # Array of wavelengths to display
+        self._wavelength_units = None  # Units to use for wavelength values
+
         # Connect matplotlib events to event handlers
         self.statusBar().messageChanged.connect(self.message_changed_callback)
         self.figure.canvas.mpl_connect('motion_notify_event', self.mouse_move)
@@ -219,6 +223,8 @@ class CubevizImageViewer(ImageViewer, HubListener):
         self.state.add_callback('slices', self._slice_callback)
 
         self._hub.subscribe(self, SliceIndexUpdateMessage, handler=self._update_viewer_index)
+        self._hub.subscribe(self, WavelengthUpdateMessage, handler=self._update_wavelengths)
+        self._hub.subscribe(self, WavelengthUnitUpdateMessage, handler=self._update_wavelength_units)
 
 
     def _slice_callback(self, new_slice):
@@ -777,6 +783,12 @@ class CubevizImageViewer(ImageViewer, HubListener):
         self.coord_label.setText('')
         self.statusBar().showMessage(self.status_message)
 
+    def _update_wavelengths(self, message):
+        self._wavelengths = message.wavelengths
+
+    def _update_wavelength_units(self, message):
+        self._wavelength_units = message.units
+
     def _format_to_degree_string(self, ra, dec):
         """
         Format RA and Dec in degree format. If wavelength
@@ -785,13 +797,10 @@ class CubevizImageViewer(ImageViewer, HubListener):
         """
         coord_string = "({:0>8.4f}, {:0>8.4f}".format(ra, dec)
 
-        wavelengths = self.parent().tab_widget.wavelengths
-
         # Check if wavelength is available
-        if self.slice_index is not None and wavelengths is not None:
-            wave = wavelengths[self.slice_index]
-            wavelength_unit = self.parent().tab_widget.get_wavelengths_units().short_names[0]
-            coord_string += ", {:1.2e}{})".format(wave, wavelength_unit)
+        if self.slice_index is not None and self._wavelengths is not None:
+            wave = self._wavelengths[self.slice_index]
+            coord_string += ", {:1.2e}{})".format(wave, self._wavelength_units)
         else:
             coord_string += ")"
 
@@ -809,13 +818,10 @@ class CubevizImageViewer(ImageViewer, HubListener):
         coord_string += ", "
         coord_string += "{0:0>3.0f}d:{1:0>2.0f}m:{2:0>2.0f}s".format(*c.dec.dms)
 
-        wavelengths = self.parent().tab_widget.wavelengths
-
         # Check if wavelength is available
-        if self.slice_index is not None and wavelengths is not None:
-            wave = wavelengths[self.slice_index]
-            wavelength_unit = self.parent().tab_widget._wavelength_controller._current_units.short_names[0]
-            coord_string += ", {:1.2e}{})".format(wave, wavelength_unit)
+        if self.slice_index is not None and self._wavelengths is not None:
+            wave = self._wavelengths[self.slice_index]
+            coord_string += ", {:1.2e}{})".format(wave, self._wavelength_units)
         else:
             coord_string += ")"
 
