@@ -49,6 +49,10 @@ class WavelengthController:
         return self._units
 
     @property
+    def current_units(self):
+        return self._current_units
+
+    @property
     def unit_titles(self):
         return self._units_titles
 
