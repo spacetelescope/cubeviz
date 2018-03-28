@@ -43,7 +43,7 @@ new_units:
 #                  "area part"
 #
 # ie: unit = spectral_flux_density / area
-# If area is not available or needed, do not include 
+# If area is not available or needed, do not include
 
 
 formatted_units:

@@ -1273,7 +1273,7 @@ class FluxUnitController:
             return ""
         elif isinstance(unit, str):
             return unit
-        elif isinstance(unit, u.Unit):
+        elif isinstance(unit, u.UnitBase):
             return unit.to_string()
         elif isinstance(unit, u.quantity.Quantity):
             return unit.unit.to_string()
