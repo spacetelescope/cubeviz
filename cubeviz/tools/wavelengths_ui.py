@@ -30,6 +30,10 @@ class WavelengthUI(QDialog):
         self.ui.wavelengthunits_combobox.addItems(
                 self.wavelength_controller.unit_titles)
 
+        current_units = self.wavelength_controller.current_units
+        self.ui.wavelengthunits_combobox.setCurrentIndex(
+            self.wavelength_controller.units.index(current_units))
+
         # Add the wavelength display to the combo box
         self.ui.wavelengthdisplay_combobox.addItems(
                 [OBS_WAVELENGTH_TEXT, REST_WAVELENGTH_TEXT])
