@@ -511,8 +511,6 @@ class CubeVizLayout(QtWidgets.QWidget):
         """
         Displays data with given component ID in the active cube viewer.
         """
-        units = self._data.get_component(component_id).units
-        self._flux_unit_controller.add_component_unit(component_id, units)
         self.refresh_viewer_combo_helpers()
         if self._single_viewer_mode:
             self.change_viewer_component(0, component_id)
