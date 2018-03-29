@@ -267,6 +267,9 @@ class CubevizImageViewer(ImageViewer, HubListener):
     def _calculate_stats(self, component, subset):
         mask = subset.to_mask()[self._slice_index]
         data = self._data[0][component][self._slice_index][mask]
+        if self.cubeviz_unit is not None:
+            wave = self.cubeviz_layout.get_wavelength(self.slice_index)
+            data = self.cubeviz_unit.convert_from_original_unit(data, wave=wave)
         return data.mean(), data.std()
 
     def draw_stats_axes(self, component, subset):

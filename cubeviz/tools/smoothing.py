@@ -5,7 +5,7 @@ from scipy import ndimage
 
 from astropy import convolution
 
-from glue.core import Data, Subset
+from glue.core import Data, Subset, Component
 from glue.core.coordinates import coordinates_from_header, WCSCoordinates
 from glue.core.exceptions import IncompatibleAttribute
 from glue.utils.qt import update_combobox
@@ -68,6 +68,7 @@ class SmoothCube(object):
         self.kernel_type = kernel_type  # Type of kernel, a key in kernel_registry
         self.kernel_size = kernel_size  # Size of kernel in pix
         self.component_id = component_id  # Glue data component to smooth over
+        self.component_unit = ''  # Units of component
         self.output_label = output_label  # Output label
         self.output_as_component = output_as_component  # Add output component to self.data
         self.kernel_registry = self.load_kernel_registry()  # A list of kernels and params
@@ -236,7 +237,7 @@ class SmoothCube(object):
         mask = BooleanArrayMask(
             mask=self.get_glue_mask(),
             wcs=wcs)
-
+        self.component_unit = self.data.get_component(self.component_id).units
         return SpectralCube(data=data_array, wcs=wcs, mask=mask)
 
     def cube_to_data(self, cube,
@@ -255,13 +256,14 @@ class SmoothCube(object):
         :return:
         """
         original_data = self.data
+        new_component = Component(cube._data.copy(), self.component_unit)
         if self.output_as_component:
-            original_data.add_component(cube._data.copy(), output_component_id)
+            original_data.add_component(new_component, output_component_id)
             return None
         else:
             new_data = Data(label=output_label)
             new_data.coords = coordinates_from_header(cube.header)
-            new_data.add_component(cube._data.copy(), output_component_id)
+            new_data.add_component(new_component, output_component_id)
             return new_data
 
     def unique_output_component_id(self):
