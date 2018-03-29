@@ -326,3 +326,30 @@ def test_multiple_unsynced_viewers(qtbot, cubeviz_layout):
     left_click(qtbot, checkbox2)
     assert_slice_text(cubeviz_layout, str(synced_index))
     assert_all_viewer_indices(cubeviz_layout, synced_index)
+
+# Wavelength redshift and units testing
+def test_wavelength_ui(qtbot, cubeviz_layout, slice_index=1000):
+    from ...tools.wavelengths_ui import WavelengthUI
+
+    wui = WavelengthUI(cubeviz_layout._wavelength_controller)
+
+    # First move to the a specific slice
+    enter_slice_text(qtbot, cubeviz_layout, slice_index)
+    assert_slice_text(cubeviz_layout, slice_index)
+    assert_wavelength_text(cubeviz_layout, '2.21e-06')
+
+    # Now change the units
+    wui.do_calculation(wavelength_redshift=0, wavelength_units='um')
+    assert_wavelength_text(cubeviz_layout, '2.21')
+
+    # Units and redshift
+    wui.do_calculation(wavelength_redshift=1, wavelength_units='um')
+    assert_wavelength_text(cubeviz_layout, '1.1')
+
+    # Units and negative redshift
+    wui.do_calculation(wavelength_redshift=-3, wavelength_units='um')
+    assert_wavelength_text(cubeviz_layout, '-1.1')
+
+    # with the units and redshift, go to another slice
+    enter_slice_text(qtbot, cubeviz_layout, 2000)
+    assert_wavelength_text(cubeviz_layout, '-1.24')
