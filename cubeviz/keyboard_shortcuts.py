@@ -4,7 +4,7 @@ from qtpy.QtWidgets import QApplication
 from glue.config import viewer_tool
 import matplotlib.pyplot as plt
 
-from .controls.units_ui import WavelengthUI
+from .controls.wavelengths_ui import WavelengthUI
 
 @keyboard_shortcut(QtCore.Qt.Key_A, None)
 def move_slider_left(session):

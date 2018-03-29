@@ -24,7 +24,6 @@ from .image_viewer import CubevizImageViewer
 
 from .controls.slice import SliceController
 from .controls.overlay import OverlayController
-
 from .controls.units import UnitController, FluxUnitController
 from .controls.units_ui import WavelengthUI
 from .tools import arithmetic_gui, moment_maps, smoothing
