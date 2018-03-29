@@ -353,3 +353,5 @@ def test_wavelength_ui(qtbot, cubeviz_layout, slice_index=1000):
     # with the units and redshift, go to another slice
     enter_slice_text(qtbot, cubeviz_layout, 2000)
     assert_wavelength_text(cubeviz_layout, '-1.24')
+
+    wui.do_calculation(wavelength_redshift=0, wavelength_units='m')
