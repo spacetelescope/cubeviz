@@ -25,7 +25,7 @@ from .image_viewer import CubevizImageViewer
 from .controls.slice import SliceController
 from .controls.overlay import OverlayController
 from .controls.units import UnitController, FluxUnitController
-from .controls.units_ui import WavelengthUI
+from .controls.wavelengths_ui import WavelengthUI
 from .tools import arithmetic_gui, moment_maps, smoothing
 from .tools import collapse_cube
 from .tools.spectral_operations import SpectralOperationHandler
@@ -186,7 +186,7 @@ class CubeVizLayout(QtWidgets.QWidget):
             ('Hide Toolbars', ['checkable', self._toggle_toolbars]),
             ('Hide Spaxel Value Tooltip', ['checkable', self._toggle_hover_value]),
             ('Hide Stats', ['checkable', self._toggle_stats_display]),
-            ('Flux Units', lambda: self._open_dialog('Flux Units', None)),
+            ('Convert Flux Units', lambda: self._open_dialog('Convert Flux Units', None)),
             ('Wavelength Units/Redshift', lambda: self._open_dialog('Wavelength Units/Redshift', None))
         ]))
 
@@ -305,7 +305,7 @@ class CubeVizLayout(QtWidgets.QWidget):
                 self._data, self.session.data_collection, parent=self)
             mm_gui.display()
 
-        if name == 'Flux Units':
+        if name == 'Convert Flux Units':
             self._flux_unit_controller.converter(parent=self)
 
         if name == "Wavelength Units/Redshift":
