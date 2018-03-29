@@ -23,11 +23,13 @@ def all_but_index(array, index):
 
 @pytest.fixture(scope='module')
 def cube_bounds(cubeviz_layout):
+    wavelengths = cubeviz_layout._wavelength_controller.wavelengths
+
     bounds = {
         'max_slice': len(cubeviz_layout._data['018.DATA']) - 1,
-        'wavelengths': cubeviz_layout._wavelengths,
-        'min_wavelength': cubeviz_layout._wavelengths[0],
-        'max_wavelength': cubeviz_layout._wavelengths[-1]
+        'wavelengths': wavelengths,
+        'min_wavelength': wavelengths[0],
+        'max_wavelength': wavelengths[-1]
     }
 
     yield bounds
@@ -151,6 +153,8 @@ def update_synced_index_and_verify(qtbot, layout, sync_params, new_synced_index,
     enter_slice_text(qtbot, layout, str(new_synced_index))
     assert unsynced_viewer._widget.slice_index == unsynced_index
     assert_viewer_indices(other_viewers, new_synced_index)
+    import time
+    time.sleep(0.5)
     assert_slice_text(layout, str(new_synced_index))
 
 @pytest.fixture(scope='function')
@@ -322,3 +326,32 @@ def test_multiple_unsynced_viewers(qtbot, cubeviz_layout):
     left_click(qtbot, checkbox2)
     assert_slice_text(cubeviz_layout, str(synced_index))
     assert_all_viewer_indices(cubeviz_layout, synced_index)
+
+# Wavelength redshift and units testing
+def test_wavelength_ui(qtbot, cubeviz_layout, slice_index=1000):
+    from ...tools.wavelengths_ui import WavelengthUI
+
+    wui = WavelengthUI(cubeviz_layout._wavelength_controller)
+
+    # First move to the a specific slice
+    enter_slice_text(qtbot, cubeviz_layout, slice_index)
+    assert_slice_text(cubeviz_layout, slice_index)
+    assert_wavelength_text(cubeviz_layout, '2.21e-06')
+
+    # Now change the units
+    wui.do_calculation(wavelength_redshift=0, wavelength_units='um')
+    assert_wavelength_text(cubeviz_layout, '2.21')
+
+    # Units and redshift
+    wui.do_calculation(wavelength_redshift=1, wavelength_units='um')
+    assert_wavelength_text(cubeviz_layout, '1.1')
+
+    # Units and negative redshift
+    wui.do_calculation(wavelength_redshift=-3, wavelength_units='um')
+    assert_wavelength_text(cubeviz_layout, '-1.1')
+
+    # with the units and redshift, go to another slice
+    enter_slice_text(qtbot, cubeviz_layout, 2000)
+    assert_wavelength_text(cubeviz_layout, '-1.24')
+
+    wui.do_calculation(wavelength_redshift=0, wavelength_units='m')

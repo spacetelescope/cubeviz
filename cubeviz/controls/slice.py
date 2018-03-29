@@ -1,7 +1,11 @@
 import numpy as np
+
+from glue.core import HubListener
 from specviz.third_party.glue.data_viewer import dispatch as specviz_dispatch
 
-from .units import REST_WAVELENGTH_TEXT, OBS_WAVELENGTH_TEXT
+from ..messages import (SliceIndexUpdateMessage, WavelengthUpdateMessage,
+                        WavelengthUnitUpdateMessage, RedshiftUpdateMessage)
+from .wavelengths import REST_WAVELENGTH_TEXT, OBS_WAVELENGTH_TEXT
 
 RED_BACKGROUND = "background-color: rgba(255, 0, 0, 128);"
 
@@ -10,10 +14,11 @@ logging.basicConfig(format='%(levelname)-6s: %(name)-10s %(asctime)-15s  %(messa
 log = logging.getLogger("SliceController")
 log.setLevel(logging.DEBUG)
 
-class SliceController:
+class SliceController(HubListener):
 
     def __init__(self, cubeviz_layout):
         self._cv_layout = cubeviz_layout
+        self._hub = cubeviz_layout.session.hub
         ui = cubeviz_layout.ui
 
         # These are the contents of the text boxes
@@ -43,35 +48,18 @@ class SliceController:
         # We are not going to enforce what the name should be at this level.
         self._wavelength_label_text = OBS_WAVELENGTH_TEXT
 
-        self._wavelength_format = '{}'
+        self._wavelength_format = '{:.3}'
         self._wavelength_units = None
         self._wavelengths = None
+
+        # Tracks the index of the synced viewers
+        self.synced_index = None
 
         # Connect this class to specviz's event dispatch so methods can listen
         # to specviz events
         specviz_dispatch.setup(self)
 
-    @property
-    def wavelength_label(self):
-        """
-        Get the wavelength label, though this probably will not be used much.
-        """
-        return self._wavelength_label_text
-
-    @wavelength_label.setter
-    def wavelength_label(self, new_label):
-        """
-        Set the wavelength label. The new label should probably be "Obs Wavelength"
-        or "Rest Wavelength" but maybe could be other things.
-
-        :return: None
-        """
-        self._wavelength_label_text = new_label
-
-        self._wavelength_textbox_label.setText('{} ({})'.format(
-            self._wavelength_label_text, self._wavelength_units))
-
-    def enable(self, wcs, wavelengths):
+    def enable(self):
         """
         Setup the slice slider (min/max, units on description and initial position).
 
@@ -79,64 +67,84 @@ class SliceController:
         """
         self.set_enabled(True)
 
+        self._hub.subscribe(self, SliceIndexUpdateMessage, handler=self._handle_index_update)
+        self._hub.subscribe(self, WavelengthUpdateMessage, handler=self._handle_wavelength_update)
+        self._hub.subscribe(self, WavelengthUnitUpdateMessage, handler=self._handle_wavelength_units_update)
+        self._hub.subscribe(self, RedshiftUpdateMessage, handler=self._handle_redshift_update)
+
         self._slice_slider.setMinimum(0)
 
+    def _handle_wavelength_units_update(self, message):
+
         # Store the wavelength units and format
-        self._wavelength_units = str(wcs.wcs.cunit[2])
-        self._wavelength_format = '{:.3}'
+        self._wavelength_units = message.units
         self._wavelength_textbox_label.setText('{} ({})'.format(
             self._wavelength_label_text, self._wavelength_units))
 
+    def _handle_wavelength_update(self, message):
+
         # Grab the wavelengths so they can be displayed in the text box
-        self._wavelengths = wavelengths
+        self._wavelengths = message.wavelengths
         self._slice_slider.setMaximum(len(self._wavelengths) - 1)
 
-        # Set the default display to the middle of the cube
-        middle_index = len(self._wavelengths) // 2
-        self._update_slice_textboxes(middle_index)
-        self._slice_slider.setValue(middle_index)
-        self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[middle_index]))
+        if self.synced_index is None:
+            # Set the initial display to the middle of the cube
+            middle_index = len(self._wavelengths) // 2
+            self._slice_slider.setValue(middle_index)
+            self.synced_index = middle_index
 
-        self._cv_layout.synced_index = middle_index
+        index = self._cv_layout._active_cube._widget.slice_index
+        self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[index]))
+
+    def _handle_redshift_update(self, message):
+
+        self._wavelength_label_text = message.label
+
+        self._wavelength_textbox_label.setText('{} ({})'.format(
+            self._wavelength_label_text, self._wavelength_units))
 
     def set_enabled(self, value):
         self._slice_slider.setEnabled(value)
         self._slice_textbox.setEnabled(value)
         self._wavelength_textbox.setEnabled(value)
 
-    def set_wavelengths(self, new_wavelengths, new_units):
-        # Store the wavelength units and format
-        new_units_name = new_units.short_names[0]
-        self._wavelength_units = new_units_name
-        self._wavelength_format = '{:.3}'
-        self._wavelength_textbox_label.setText('{} ({})'.format(
-            self._wavelength_label_text, self._wavelength_units))
-
-        # Grab the wavelengths so they can be displayed in the text box
-        self._wavelengths = new_wavelengths
-        self._slice_slider.setMaximum(len(self._wavelengths) - 1)
-
-        # Set the default display to the middle of the cube
-        #middle_index = len(self._wavelengths) // 2
-        #self._update_slice_textboxes(middle_index)
-        #self._slice_slider.setValue(middle_index)
-
-        self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[self._cv_layout.synced_index]))
-
-        specviz_dispatch.changed_units.emit(x=new_units)
-
-    def get_index(self):
-        return self._cv_layout.synced_index
-
     def update_index(self, index):
         self._slice_slider.setValue(index)
-        self._update_slice_textboxes(index)
 
     def change_slider_value(self, amount):
         new_index = self._slice_slider.value() + amount
         self._slice_slider.setValue(new_index)
 
         specviz_dispatch.changed_dispersion_position.emit(pos=new_index)
+
+    def _handle_index_update(self, message):
+        index = message.index
+
+        try:
+            tb_index = int(self._slice_textbox.text())
+        except ValueError:
+            tb_index = -1
+
+        if tb_index != index:
+            self._slice_textbox.setText(str(index))
+
+        try:
+            wavelength = float(self._wavelength_textbox.text())
+            wv_index = np.argsort(abs(self._wavelengths - wavelength))[0]
+        except ValueError:
+            wavelength = -1
+            wv_index = -1
+
+        self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[index]))
+
+        slider_index = self._slice_slider.value()
+        if slider_index != index:
+            self._slice_slider.setValue(index)
+
+        if self._cv_layout._active_cube._widget.synced:
+            self.synced_index = index
+
+        specviz_dispatch.changed_dispersion_position.emit(pos=index)
 
     def _on_slider_change(self, event):
         """
@@ -146,35 +154,13 @@ class SliceController:
         :return:
         """
         index = self._slice_slider.value()
-        cube_views = self._cv_layout.cube_views
-        active_cube = self._cv_layout._active_cube
-        active_widget = active_cube._widget
+        self._send_index_message(index)
 
-        # *** WARNING: DO NOT USE MULTI-THREADING! ***
-        #       fast_draw_slice_at_index will
-        #       cause a crash
-
-        # If the active widget is synced then we need to update the image
-        # in all the other synced views.
-        if active_widget.synced and not self._cv_layout._single_viewer_mode:
-            for view in cube_views:
-                if view._widget.synced:
-                    if self._slider_flag:
-                        view._widget.fast_draw_slice_at_index(index)
-                    else:
-                        view._widget.update_slice_index(index)
-            self._cv_layout.synced_index = index
-        else:
-            # Update the image displayed in the slice in the active view
-            if self._slider_flag:
-                active_widget.fast_draw_slice_at_index(index)
-            else:
-                active_widget.update_slice_index(index)
-
-        # Now update the slice and wavelength text boxes
-        self._update_slice_textboxes(index)
-
-        specviz_dispatch.changed_dispersion_position.emit(pos=index)
+    def _send_index_message(self, index):
+        msg = SliceIndexUpdateMessage(self, index,
+                                      self._cv_layout.session.data_collection[0],
+                                      slider_down=self._slider_flag)
+        self._hub.broadcast(msg)
 
     def _on_slider_pressed(self):
         """
@@ -199,33 +185,17 @@ class SliceController:
         self._slider_flag = False
 
         index = self._slice_slider.value()
-        cube_views = self._cv_layout.cube_views
-        active_cube = self._cv_layout._active_cube
-        active_widget = active_cube._widget
-
-        # If the active widget is synced then we need to update the image
-        # in all the other synced views.
-        if active_widget.synced and not self._cv_layout._single_viewer_mode:
-            for view in cube_views:
-                if view._widget.synced:
-                    view._widget.update_slice_index(index)
-            self._cv_layout.synced_index = index
-        else:
-            # Update the image displayed in the slice in the active view
-            active_widget.update_slice_index(index)
-
-        # Now update the slice and wavelength text boxes
-        self._update_slice_textboxes(index)
-
         specviz_dispatch.changed_dispersion_position.emit(pos=index)
 
-    def _update_slice_textboxes(self, index):
+    #@glue_subscribe(SliceIndexUpdateMessage)
+    def _update_slice_textboxes(self, message):
         """
         Update the slice index number text box and the wavelength value displayed in the wavelengths text box.
 
         :param index: Slice index number displayed.
         :return:
         """
+        index = message.index
 
         # Update the input text box for slice number
         self._slice_textbox.setText(str(index))
@@ -260,11 +230,7 @@ class SliceController:
         if index > len(self._wavelengths) - 1:
             index = len(self._wavelengths) - 1
 
-        # Now update the slice and wavelength text boxes
-        self._update_slice_textboxes(index)
-
-        # Update the slider.
-        self._slice_slider.setValue(index)
+        self._send_index_message(index)
 
     def _on_text_wavelength_change(self, event=None, pos=None):
         """
@@ -289,11 +255,7 @@ class SliceController:
             self._wavelength_textbox.setStyleSheet(RED_BACKGROUND)
             return
 
-        # Now update the slice and wavelength text boxes
-        self._update_slice_textboxes(index)
-
-        # Update the slider.
-        self._slice_slider.setValue(index)
+        self._send_index_message(index)
 
     @specviz_dispatch.register_listener("change_dispersion_position")
     def specviz_wavelength_slider_change(self, event=None, pos=None):
@@ -312,8 +274,8 @@ class SliceController:
         # The "pos" value coming from specviz appears to be related to the
         # index in the observed wavelength and so if there is a redshift
         # then we need to convert the pos to the rest wavelength position.
-        if self._cv_layout._units_controller and not self._cv_layout._units_controller.redshift_z == 0.0:
-            rest_wavelength = pos / (1 + self._cv_layout._units_controller.redshift_z)
+        if self._cv_layout._wavelength_controller and not self._cv_layout._wavelength_controller.redshift_z == 0.0:
+            rest_wavelength = pos / (1 + self._cv_layout._wavelength_controller.redshift_z)
             pos = np.argsort(abs(self._wavelengths - rest_wavelength))[0]
 
             # Pos is a wavelength and not an index for the call back for specviz

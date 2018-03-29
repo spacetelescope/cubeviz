@@ -14,6 +14,7 @@ from astropy.coordinates import BaseRADecFrame
 
 from qtpy.QtWidgets import (QLabel, QMessageBox)
 
+from glue.core import HubListener
 from glue.core.message import SettingsChangeMessage
 
 from glue.utils.qt import pick_item, get_text
@@ -27,6 +28,7 @@ from glue.viewers.common.qt.tool import Tool
 from qtpy.QtWidgets import QToolTip
 from qtpy.QtGui import QCursor
 
+from .messages import SliceIndexUpdateMessage, WavelengthUpdateMessage, WavelengthUnitUpdateMessage
 from .utils.contour import ContourSettings
 
 CONTOUR_DEFAULT_NUMBER_OF_LEVELS = 8
@@ -153,7 +155,7 @@ class CubevizImageLayerArtist(ImageLayerArtist):
     _layer_state_cls = CubevizImageLayerState
 
 
-class CubevizImageViewer(ImageViewer):
+class CubevizImageViewer(ImageViewer, HubListener):
 
     tools = ['select:rectangle', 'select:xrange', 'select:yrange',
              'select:circle', 'select:polygon', 'image:contrast_bias',
@@ -164,7 +166,8 @@ class CubevizImageViewer(ImageViewer):
     def __init__(self,  *args, cubeviz_layout=None, **kwargs):
         super(CubevizImageViewer, self).__init__(*args, **kwargs)
         self.cubeviz_layout = cubeviz_layout
-        self. _layer_style_widget_cls[CubevizImageLayerArtist] = ImageLayerStyleEditor
+        self._layer_style_widget_cls[CubevizImageLayerArtist] = ImageLayerStyleEditor
+        self._hub = cubeviz_layout.session.hub
         self._synced_checkbox = None
         self._slice_index = None
 
@@ -204,6 +207,10 @@ class CubevizImageViewer(ImageViewer):
         self.coord_label = QLabel("")  # Coord display
         self.statusBar().addPermanentWidget(self.coord_label)
 
+        # These are updated by listeners. See hub subscribers below
+        self._wavelengths = None  # Array of wavelengths to display
+        self._wavelength_units = None  # Units to use for wavelength values
+
         # Connect matplotlib events to event handlers
         self.statusBar().messageChanged.connect(self.message_changed_callback)
         self.figure.canvas.mpl_connect('motion_notify_event', self.mouse_move)
@@ -214,6 +221,10 @@ class CubevizImageViewer(ImageViewer):
 
         # Allow the CubeViz slider to respond to viewer-specific sliders in the glue pane
         self.state.add_callback('slices', self._slice_callback)
+
+        self._hub.subscribe(self, SliceIndexUpdateMessage, handler=self._update_viewer_index)
+        self._hub.subscribe(self, WavelengthUpdateMessage, handler=self._update_wavelengths)
+        self._hub.subscribe(self, WavelengthUnitUpdateMessage, handler=self._update_wavelength_units)
 
 
     def _slice_callback(self, new_slice):
@@ -575,6 +586,22 @@ class CubevizImageViewer(ImageViewer):
         self._synced_checkbox = checkbox
         self._synced_checkbox.stateChanged.connect(self._synced_checkbox_callback)
 
+    def _update_viewer_index(self, message):
+
+        index = message.index
+        active_cube = self.cubeviz_layout._active_cube
+        active_widget = active_cube._widget
+
+        # If the active widget is synced then we need to update the image
+        # in all the other synced views.
+        if (active_widget.synced and self.synced and not \
+            self.cubeviz_layout._single_viewer_mode) or \
+                active_widget is self:
+            if message.slider_down:
+                self.fast_draw_slice_at_index(index)
+            else:
+                self.update_slice_index(index)
+
     def update_slice_index(self, index):
         """
         Function to update image and slice index.
@@ -756,6 +783,12 @@ class CubevizImageViewer(ImageViewer):
         self.coord_label.setText('')
         self.statusBar().showMessage(self.status_message)
 
+    def _update_wavelengths(self, message):
+        self._wavelengths = message.wavelengths
+
+    def _update_wavelength_units(self, message):
+        self._wavelength_units = message.units
+
     def _format_to_degree_string(self, ra, dec):
         """
         Format RA and Dec in degree format. If wavelength
@@ -765,10 +798,9 @@ class CubevizImageViewer(ImageViewer):
         coord_string = "({:0>8.4f}, {:0>8.4f}".format(ra, dec)
 
         # Check if wavelength is available
-        if self.slice_index is not None and self.parent().tab_widget._wavelengths is not None:
-            wave = self.parent().tab_widget._wavelengths[self.slice_index]
-            wavelength_unit = self.parent().tab_widget.get_wavelengths_units().short_names[0]
-            coord_string += ", {:1.2e}{})".format(wave, wavelength_unit)
+        if self.slice_index is not None and self._wavelengths is not None:
+            wave = self._wavelengths[self.slice_index]
+            coord_string += ", {:1.2e}{})".format(wave, self._wavelength_units)
         else:
             coord_string += ")"
 
@@ -787,10 +819,9 @@ class CubevizImageViewer(ImageViewer):
         coord_string += "{0:0>3.0f}d:{1:0>2.0f}m:{2:0>2.0f}s".format(*c.dec.dms)
 
         # Check if wavelength is available
-        if self.slice_index is not None and self.parent().tab_widget._wavelengths is not None:
-            wave = self.parent().tab_widget._wavelengths[self.slice_index]
-            wavelength_unit = self.parent().tab_widget._units_controller._new_units.short_names[0]
-            coord_string += ", {:1.2e}{})".format(wave, wavelength_unit)
+        if self.slice_index is not None and self._wavelengths is not None:
+            wave = self._wavelengths[self.slice_index]
+            coord_string += ", {:1.2e}{})".format(wave, self._wavelength_units)
         else:
             coord_string += ")"
 

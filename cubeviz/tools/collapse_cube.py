@@ -30,7 +30,9 @@ operations = {
 }
 
 class CollapseCube(QDialog):
-    def __init__(self, data, data_collection=[], allow_preview=False, parent=None):
+    def __init__(self, wavelengths, wavelength_units, data, data_collection=[],
+                 allow_preview=False, parent=None):
+
         super(CollapseCube,self).__init__(parent)
 
         self.setWindowTitle("Collapse Cube Along Spectral Axis")
@@ -41,6 +43,9 @@ class CollapseCube(QDialog):
 
         self.setWindowFlags(self.windowFlags() | Qt.Tool)
         self.title = "Cube Collapse"
+
+        self.wavelengths = wavelengths
+        self.wavelength_units = wavelength_units
         self.data = data
         self.data_collection = data_collection
         self.parent = parent
@@ -337,8 +342,6 @@ class CollapseCube(QDialog):
             self.error_label_text.setText('Must set at least one of start or end value')
             return
 
-        wavelengths = np.array(self.parent._wavelengths)
-
         # If indicies, get them and check to see if the inputs are good.
         if 'Indices' in self.region_combobox.currentText():
             if len(start_value) == 0:
@@ -355,7 +358,7 @@ class CollapseCube(QDialog):
                     start_index = 0
 
             if len(end_value) == 0:
-                end_index = len(wavelengths)-1
+                end_index = len(self.wavelengths)-1
             else:
                 try:
                     end_index = int(end_value)
@@ -364,8 +367,8 @@ class CollapseCube(QDialog):
                     self.error_label_text.setText('End value must be an integer')
                     return
 
-                if end_index > len(wavelengths) - 1:
-                    end_index = len(wavelengths) - 1
+                if end_index > len(self.wavelengths) - 1:
+                    end_index = len(self.wavelengths) - 1
         else:
             # Wavelength inputs
             if len(start_value) == 0:
@@ -380,10 +383,10 @@ class CollapseCube(QDialog):
                     return
 
                 # Look up index
-                start_index = np.argsort(np.abs(wavelengths - start_value))[0]
+                start_index = np.argsort(np.abs(self.wavelengths - start_value))[0]
 
             if len(end_value) == 0:
-                end_index = len(wavelengths)-1
+                end_index = len(self.wavelengths)-1
 
             else:
                 # convert wavelength to float value
@@ -395,10 +398,10 @@ class CollapseCube(QDialog):
                     return
 
                 # Look up index
-                end_index = np.argsort(np.abs(wavelengths - end_value))[0]
+                end_index = np.argsort(np.abs(self.wavelengths - end_value))[0]
 
         # Check to make sure at least one of start or end is within the range of the wavelengths.
-        if (start_index < 0 and end_index < 0) or (start_index > len(wavelengths) and end_index > len(wavelengths)):
+        if (start_index < 0 and end_index < 0) or (start_index > len(self.wavelengths) and end_index > len(self.wavelengths)):
             self.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
             self.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
             self.error_label_text.setText('Can not have both start and end outside of the wavelength range.')
@@ -420,10 +423,10 @@ class CollapseCube(QDialog):
 
         # Set the start and end values in the text boxes -- in case they enter one way out of range then
         # we'll fix it.
-        ts = start_index if 'Indices' in self.region_combobox.currentText() else wavelengths[start_index]
+        ts = start_index if 'Indices' in self.region_combobox.currentText() else self.wavelengths[start_index]
         self.start_text.setText('{}'.format(ts))
 
-        te = end_index if 'Indices' in self.region_combobox.currentText() else wavelengths[end_index]
+        te = end_index if 'Indices' in self.region_combobox.currentText() else self.wavelengths[end_index]
         self.end_text.setText('{}'.format(te))
 
 
@@ -431,13 +434,13 @@ class CollapseCube(QDialog):
         operation = self.operation_combobox.currentText()
 
         # Do calculation if we got this far
-        wavelengths, new_component = collapse_cube(self.data[data_name], data_name, self.data.coords.wcs,
+        new_wavelengths, new_component = collapse_cube(self.data[data_name], data_name, self.data.coords.wcs,
                                              operation, start_index, end_index)
 
         # Get the start and end wavelengths from the newly created spectral cube and use for labeling the cube.
         # Convert to the current units.
-        start_wavelength = wavelengths[0].to(self.parent._units_controller._new_units)
-        end_wavelength = wavelengths[-1].to(self.parent._units_controller._new_units)
+        start_wavelength = new_wavelengths[0].to(self.wavelength_units)
+        end_wavelength = new_wavelengths[-1].to(self.wavelength_units)
 
         label = '{}-collapse-{} ({:0.3}, {:0.3})'.format(data_name, operation,
                                                          start_wavelength,
