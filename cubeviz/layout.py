@@ -24,10 +24,12 @@ from .image_viewer import CubevizImageViewer
 
 from .controls.slice import SliceController
 from .controls.overlay import OverlayController
-from .controls.units import UnitController, FluxUnitController
-from .controls.wavelengths_ui import WavelengthUI
-from .tools import arithmetic_gui, moment_maps, smoothing
+
+from .controls.flux_units import FluxUnitController
+from .controls.wavelengths import WavelengthController
 from .tools import collapse_cube
+from .tools import arithmetic_gui, moment_maps, smoothing
+from .tools.wavelengths_ui import WavelengthUI
 from .tools.spectral_operations import SpectralOperationHandler
 
 
@@ -75,7 +77,6 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         self.session = session
         self._has_data = False
-        self._wavelengths = None
         self._option_buttons = []
 
         self._data = None
@@ -139,7 +140,8 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         self._slice_controller = SliceController(self)
         self._overlay_controller = OverlayController(self)
-        self._units_controller = UnitController(self)
+
+        self._wavelength_controller = WavelengthController(self)
         self._flux_unit_controller = FluxUnitController(self)
 
         # Add menu buttons to the cubeviz toolbar.
@@ -147,9 +149,6 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._init_menu_buttons()
 
         self.sync = {}
-        # Track the slice index of the synced viewers. This is updated by the
-        # slice controller
-        self.synced_index = None
 
         app = get_qapp()
         app.installEventFilter(self)
@@ -240,6 +239,10 @@ class CubeVizLayout(QtWidgets.QWidget):
         if isinstance(message, SettingsChangeMessage):
             self._slice_controller.update_index(self.synced_index)
 
+    @property
+    def synced_index(self):
+        return self._slice_controller.synced_index
+
     def handle_subset_action(self, message):
         if isinstance(message, SubsetUpdateMessage):
             for combo, viewer in zip(self._viewer_combo_helpers, self.cube_views):
@@ -292,7 +295,10 @@ class CubeVizLayout(QtWidgets.QWidget):
     def _open_dialog(self, name, widget):
 
         if name == 'Collapse Cube':
-            ex = collapse_cube.CollapseCube(self._data, parent=self, allow_preview=True)
+            ex = collapse_cube.CollapseCube(
+                self._wavelength_controller.wavelengths,
+                self._wavelength_controller.current_units,
+                self._data, parent=self, allow_preview=True)
 
         if name == 'Spatial Smoothing':
             ex = smoothing.SelectSmoothing(self._data, parent=self, allow_preview=True)
@@ -309,7 +315,7 @@ class CubeVizLayout(QtWidgets.QWidget):
             self._flux_unit_controller.converter(parent=self)
 
         if name == "Wavelength Units/Redshift":
-            WavelengthUI(self._units_controller, parent=self)
+            WavelengthUI(self._wavelength_controller, parent=self)
 
     def refresh_units(self, target_component_id):
         for view in self.cube_views:
@@ -580,13 +586,14 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._last_active_view = self.single_view
         self._active_split_cube = self.split_views[0]
 
-        # Store pointer to wavelength information
-        self._wavelengths = self.single_view._widget._data[0].coords.world_axis(self.single_view._widget._data[0], axis=0)
-
-        # Pass WCS and wavelength information to slider controller and enable
+        # Store pointer to wcs and wavelength information
         wcs = self.session.data_collection.data[0].coords.wcs
-        self._slice_controller.enable(wcs, self._wavelengths)
-        self._units_controller.enable(wcs, self._wavelengths)
+        wavelengths = self.single_view._widget._data[0].coords.world_axis(self.single_view._widget._data[0], axis=0)
+
+        # TODO: currently this way of accessing units is not flexible
+        self._slice_controller.enable()
+        self._wavelength_controller.enable(str(wcs.wcs.cunit[2]), wavelengths)
+
 
         self._enable_option_buttons()
         self._setup_syncing()
@@ -778,3 +785,4 @@ class CubeVizLayout(QtWidgets.QWidget):
     def set_wavelengths(self, new_wavelengths, new_units):
         self._wavelengths = new_wavelengths
         self._slice_controller.set_wavelengths(new_wavelengths, new_units)
+

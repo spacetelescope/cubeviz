@@ -4,7 +4,7 @@ from qtpy.QtWidgets import QApplication
 from glue.config import viewer_tool
 import matplotlib.pyplot as plt
 
-from .controls.wavelengths_ui import WavelengthUI
+from .tools.wavelengths_ui import WavelengthUI
 
 @keyboard_shortcut(QtCore.Qt.Key_A, None)
 def move_slider_left(session):
@@ -71,7 +71,7 @@ def show_wavelength_dialog(session):
     :param session:
     :return:
     """
-    WavelengthUI(session.application.tab(0)._units_controller, parent=session.application.tab(0))
+    WavelengthUI(session.application.tab(0)._wavelength_controller, parent=session.application.tab(0))
 
 
 def remove_mpl_shortcuts_and_check_dupes():
