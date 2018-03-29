@@ -44,6 +44,9 @@ class WavelengthUI(QDialog):
         self.ui.wavelengthdisplay_combobox.setCurrentIndex(0 if z == 0 else 1)
         self.ui.redshift_text.setText(str(z))
 
+        # We want to initially disable the redshift part if there
+        # is no redshift, then when they switch to "Rest Wavelength"
+        # these will be enabled.
         self.ui.redshift_label.setDisabled(z == 0)
         self.ui.redshift_text.setDisabled(z == 0)
 
@@ -54,6 +57,18 @@ class WavelengthUI(QDialog):
         self.ui.cancel_button.clicked.connect(self._cancel_callback)
 
         self.ui.show()
+
+    def do_calculation(self, wavelength_redshift, wavelength_units):
+        """
+        Actual calculate function so that we can use this in the
+        testing scripts as well.
+
+        :param wavelength_redshift:  z-value
+        :param wavelength_units: text representation of the units
+        :return: nuttin
+        """
+        self.wavelength_controller.update_units(wavelength_units)
+        self.wavelength_controller.update_redshift(wavelength_redshift)
 
     def _calculate_callback(self):
 
@@ -75,11 +90,12 @@ class WavelengthUI(QDialog):
         else:
             redshift = 0.0
 
+        # Get the units based on the index in the units combo box.
         index = self.ui.wavelengthunits_combobox.currentIndex()
         units = self.wavelength_controller.units[index]
 
-        self.wavelength_controller.update_units(units)
-        self.wavelength_controller.update_redshift(redshift)
+        # Do the actual calculation
+        self.do_calculation(wavelength_redshift=redshift, wavelength_units=units)
 
         self.close()
 
