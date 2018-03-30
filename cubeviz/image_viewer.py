@@ -448,6 +448,11 @@ class CubevizImageViewer(ImageViewer, HubListener):
         else:
             data = self.state.layers_data[0]
             arr = data[self.contour_component][self.slice_index]
+
+        if self.cubeviz_unit is not None:
+            wave = self.cubeviz_layout.get_wavelength(self.slice_index)
+            arr = self.cubeviz_unit.convert_from_original_unit(arr, wave=wave)
+
         return arr
 
     def draw_contour(self, draw=True):
