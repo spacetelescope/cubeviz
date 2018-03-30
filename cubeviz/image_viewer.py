@@ -450,6 +450,7 @@ class CubevizImageViewer(ImageViewer, HubListener):
             arr = data[self.contour_component][self.slice_index]
 
         if self.cubeviz_unit is not None:
+            arr = arr.copy()
             wave = self.cubeviz_layout.get_wavelength(self.slice_index)
             arr = self.cubeviz_unit.convert_from_original_unit(arr, wave=wave)
 
@@ -503,7 +504,14 @@ class CubevizImageViewer(ImageViewer, HubListener):
         self.contour = self.axes.contour(arr, levels=levels, **settings.options)
 
         if settings.add_contour_label:
-            self.axes.clabel(self.contour, fontsize=settings.font_size)
+            if abs(levels).max() > 1000 \
+                    or 0.0 < abs(levels).min() < 0.001 \
+                    or 0.0 < abs(levels).max() < 0.001:
+                self.axes.clabel(self.contour,
+                                 fmt='%.2E',
+                                 fontsize=settings.font_size)
+            else:
+                self.axes.clabel(self.contour, fontsize=settings.font_size)
 
         settings.data_max = arr.max()
         settings.data_min = arr.min()

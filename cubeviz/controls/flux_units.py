@@ -353,8 +353,9 @@ class CubeVizUnit:
         :param kwargs:
         :return: converted value
         """
-        if not isinstance(value, int) and \
-                not isinstance(value, float):
+        if not isinstance(value, int) \
+                and not isinstance(value, float) \
+                and not isinstance(value, np.ndarray):
             raise ValueError("Expected float or int, got {} instead.".format(type(value)))
 
         if self.unit is None:

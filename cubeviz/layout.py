@@ -323,7 +323,7 @@ class CubeVizLayout(QtWidgets.QWidget):
             if str(viewer.current_component_id) == str(target_component_id):
                 viewer.update_component_unit_label(target_component_id)
                 viewer.update_axes_title(str(target_component_id))
-                viewer.update_stats()
+                viewer.update_slice_index(viewer.slice_index)
         comp = self.specviz._widget._options_widget.file_att
         if target_component_id == comp:
             specviz_unit = self._flux_unit_controller.get_component_unit(comp)
