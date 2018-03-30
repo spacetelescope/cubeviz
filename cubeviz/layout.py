@@ -24,6 +24,8 @@ from .image_viewer import CubevizImageViewer
 
 from .controls.slice import SliceController
 from .controls.overlay import OverlayController
+
+from .controls.flux_units import FluxUnitController
 from .controls.wavelengths import WavelengthController
 from .tools import collapse_cube
 from .tools import arithmetic_gui, moment_maps, smoothing
@@ -138,7 +140,9 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         self._slice_controller = SliceController(self)
         self._overlay_controller = OverlayController(self)
+
         self._wavelength_controller = WavelengthController(self)
+        self._flux_unit_controller = FluxUnitController(self)
 
         # Add menu buttons to the cubeviz toolbar.
         self.ra_dec_format_menu = None
@@ -181,6 +185,7 @@ class CubeVizLayout(QtWidgets.QWidget):
             ('Hide Toolbars', ['checkable', self._toggle_toolbars]),
             ('Hide Spaxel Value Tooltip', ['checkable', self._toggle_hover_value]),
             ('Hide Stats', ['checkable', self._toggle_stats_display]),
+            ('Convert Flux Units', lambda: self._open_dialog('Convert Flux Units', None)),
             ('Wavelength Units/Redshift', lambda: self._open_dialog('Wavelength Units/Redshift', None))
         ]))
 
@@ -306,8 +311,24 @@ class CubeVizLayout(QtWidgets.QWidget):
                 self._data, self.session.data_collection, parent=self)
             mm_gui.display()
 
+        if name == 'Convert Flux Units':
+            self._flux_unit_controller.converter(parent=self)
+
         if name == "Wavelength Units/Redshift":
             WavelengthUI(self._wavelength_controller, parent=self)
+
+    def refresh_units(self, target_component_id):
+        for view in self.cube_views:
+            viewer = view.widget()
+            if str(viewer.current_component_id) == str(target_component_id):
+                viewer.update_component_unit_label(target_component_id)
+                viewer.update_axes_title(str(target_component_id))
+                viewer.update_slice_index(viewer.slice_index)
+        comp = self.specviz._widget._options_widget.file_att
+        if target_component_id == comp:
+            specviz_unit = self._flux_unit_controller.get_component_unit(comp)
+            if specviz_unit is not None:
+                dispatch.changed_units.emit(y=specviz_unit)
 
     def _toggle_all_coords_in_degrees(self):
         """
@@ -380,7 +401,10 @@ class CubeVizLayout(QtWidgets.QWidget):
             if viewer.is_smoothing_preview_active:
                 viewer.end_smoothing_preview()
 
-            # Change the title and unit shown in the viwer
+            # Change the component label, title and unit shown in the viewer
+            viewer.current_component_id = component
+            viewer.cubeviz_unit = self._flux_unit_controller.get_component_unit(component,
+                                                                                cubeviz_unit=True)
             viewer.update_component_unit_label(component)
             viewer.update_axes_title(title=str(label))
 
@@ -445,6 +469,9 @@ class CubeVizLayout(QtWidgets.QWidget):
             data, 0, 'single_viewer_combo', 'single_viewer_attribute')
         view = self.cube_views[0].widget()
         component = getattr(self, 'single_viewer_attribute')
+        view.current_component_id = component
+        view.cubeviz_unit = self._flux_unit_controller.get_component_unit(component,
+                                                                          cubeviz_unit=True)
         view.update_component_unit_label(component)
         view.update_axes_title(component.label)
 
@@ -454,6 +481,9 @@ class CubeVizLayout(QtWidgets.QWidget):
             self._enable_viewer_combo(data, i, combo_label, selection_label)
             view = self.cube_views[i].widget()
             component = getattr(self, selection_label)
+            view.current_component_id = component
+            view.cubeviz_unit = self._flux_unit_controller.get_component_unit(component,
+                                                                              cubeviz_unit=True)
             view.update_component_unit_label(component)
             view.update_axes_title(component.label)
 
@@ -541,8 +571,12 @@ class CubeVizLayout(QtWidgets.QWidget):
         """
         self._data = data
         self.specviz._widget.add_data(data)
-        cid = self.specviz._widget._options_widget.file_att
-        dispatch.changed_units.emit(y=data.get_component(cid).units)
+        self._flux_unit_controller.set_data(data)
+
+        comp = self.specviz._widget._options_widget.file_att
+        specviz_unit = self._flux_unit_controller.get_component_unit(comp)
+        if specviz_unit is not None:
+            dispatch.changed_units.emit(y=specviz_unit)
 
         for checkbox in self._synced_checkboxes:
             checkbox.setEnabled(True)
@@ -733,3 +767,18 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     def change_slice_index(self, amount):
         self._slice_controller.change_slider_value(amount)
+
+    def get_wavelengths(self):
+        return self._wavelength_controller.wavelengths
+
+    def get_wavelengths_units(self):
+        return self._wavelength_controller.current_units
+
+    def get_wavelength(self, index=None):
+        if index is None:
+            index = self.synced_index
+        elif index > len(self.get_wavelengths()):
+            return None
+        wave = self.get_wavelengths()[index]
+        units = self.get_wavelengths_units()
+        return wave * units

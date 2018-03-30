@@ -171,6 +171,9 @@ class CubevizImageViewer(ImageViewer, HubListener):
         self._synced_checkbox = None
         self._slice_index = None
 
+        self.current_component_id = None  # Current component id
+
+        self.cubeviz_unit = None
         self.component_unit_label = ""  # String to hold units of data values
 
         self.is_mouse_over = False  # If mouse cursor is over viewer
@@ -264,6 +267,9 @@ class CubevizImageViewer(ImageViewer, HubListener):
     def _calculate_stats(self, component, subset):
         mask = subset.to_mask()[self._slice_index]
         data = self._data[0][component][self._slice_index][mask]
+        if self.cubeviz_unit is not None:
+            wave = self.cubeviz_layout.get_wavelength(self.slice_index)
+            data = self.cubeviz_unit.convert_from_original_unit(data, wave=wave)
         return data.mean(), data.std()
 
     def draw_stats_axes(self, component, subset):
@@ -442,6 +448,12 @@ class CubevizImageViewer(ImageViewer, HubListener):
         else:
             data = self.state.layers_data[0]
             arr = data[self.contour_component][self.slice_index]
+
+        if self.cubeviz_unit is not None:
+            arr = arr.copy()
+            wave = self.cubeviz_layout.get_wavelength(self.slice_index)
+            arr = self.cubeviz_unit.convert_from_original_unit(arr, wave=wave)
+
         return arr
 
     def draw_contour(self, draw=True):
@@ -492,7 +504,14 @@ class CubevizImageViewer(ImageViewer, HubListener):
         self.contour = self.axes.contour(arr, levels=levels, **settings.options)
 
         if settings.add_contour_label:
-            self.axes.clabel(self.contour, fontsize=settings.font_size)
+            if abs(levels).max() > 1000 \
+                    or 0.0 < abs(levels).min() < 0.001 \
+                    or 0.0 < abs(levels).max() < 0.001:
+                self.axes.clabel(self.contour,
+                                 fmt='%.2E',
+                                 fontsize=settings.font_size)
+            else:
+                self.axes.clabel(self.contour, fontsize=settings.font_size)
 
         settings.data_max = arr.max()
         settings.data_min = arr.min()
@@ -680,12 +699,16 @@ class CubevizImageViewer(ImageViewer, HubListener):
     def slice_index(self):
         return self._slice_index
 
-    def update_component_unit_label(self, component_id):
+    def update_component_unit_label(self, component_id=None):
         """
         Update component's unit label.
         :param component_id: component id
         """
-
+        if component_id is None:
+            if self.current_component_id is None:
+                self.component_unit_label = ""
+                return self.component_unit_label
+            component_id = self.current_component_id
         data = component_id.parent
         unit = str(data.get_component(component_id).units)
         if unit:
@@ -878,8 +901,15 @@ class CubevizImageViewer(ImageViewer, HubListener):
                             string = string + " " + self._coords_format_function(ra, dec)
                 # Pixel Value:
                 v = arr[y][x]
-                self.mouse_value = "{0:.3e} {1} ".format(v, self.component_unit_label)
-                string = "{0:.3e} ".format(v) + string
+                if self.cubeviz_unit is not None:
+                    wave = self.cubeviz_layout.get_wavelength(self.slice_index)
+                    v = self.cubeviz_unit.convert_from_original_unit(v, wave=wave)
+                if 0.01 <= abs(v) <= 1000 or abs(v) == 0.0:
+                    self.mouse_value = "{0:.3f} [{1}] ".format(v, self.component_unit_label)
+                    string = "{0:.3f} ".format(v) + string
+                else:
+                    self.mouse_value = "{0:.3E} [{1}] ".format(v, self.component_unit_label)
+                    string = "{0:.3E} ".format(v) + string
         # Add a gap to string and add to viewer.
         string += " "
         self._dont_update_status = True
