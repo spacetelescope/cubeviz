@@ -634,14 +634,14 @@ class SpectralFluxDensity(CubeVizUnit):
         if pixel_area is None:
             message_param = (wave, self.unit.to_string(), new_value, unit_base)
             if 0.01 <= abs(new_value) <= 1000:
-                message = "Data Unit: [{1}]\n" \
-                          "New Unit: [{3}]\n" \
-                          "1.0 [Data Unit] = {2:.2f} [New Unit]\n" \
+                message = "Original Unit: [{1}]\n\n" \
+                          "New Unit: [{3}]\n\n" \
+                          "1.0 [Original Unit] = {2:.2f} [New Unit]\n" \
                           "(at lambda = {0:0.4e})".format(*message_param)
             else:
-                message = "Data Unit: [{1}]\n" \
-                          "New Unit: [{3}]\n" \
-                          "1.0 [Data Unit] = {2:0.2e} [New Unit]\n" \
+                message = "Original Unit: [{1}]\n\n" \
+                          "New Unit: [{3}]\n\n" \
+                          "1.0 [Original Unit] = {2:0.2e} [New Unit]\n" \
                           "(at lambda = {0:0.4e})".format(*message_param)
         else:
             try:
@@ -652,16 +652,16 @@ class SpectralFluxDensity(CubeVizUnit):
                 pass
             message_param = (wave, self.unit.to_string(), new_value, unit_base, pixel_area)
             if 0.01 <= abs(new_value) <= 1000:
-                message = "Data Unit: [{1}]\n" \
-                          "New Unit: [{3}]\n" \
-                          "Pixel Area (Scale): {4:.2E}\n" \
-                          "1.0 [Data Unit] = {2:.2f} [New Unit]\n" \
+                message = "Original Unit: [{1}]\n\n" \
+                          "New Unit: [{3}]\n\n" \
+                          "Pixel Area (Scale): {4:.2E}\n\n" \
+                          "1.0 [Original Unit] = {2:.2f} [New Unit]\n" \
                           "(at lambda = {0:0.4e})".format(*message_param)
             else:
-                message = "Data Unit: [{1}]\n" \
-                          "New Unit: [{3}]\n" \
-                          "Pixel Area (Scale): {4:.2E}\n" \
-                          "1.0 [Data Unit] = {2:0.2e} [New Unit]\n" \
+                message = "Original Unit: [{1}]\n\n" \
+                          "New Unit: [{3}]\n\n" \
+                          "Pixel Area (Scale): {4:.2E}\n\n" \
+                          "1.0 [Original Unit] = {2:0.2e} [New Unit]\n" \
                           "(at lambda = {0:0.4e})".format(*message_param)
         self.message_box.setText(message)
 
@@ -826,13 +826,13 @@ class UnknownUnit(CubeVizUnit):
         message_param = (self._original_unit, new_unit_string, new_value)
 
         if 0.01 <= abs(new_value) <= 1000:
-            message = "Data Units: [{0}]\n" \
+            message = "Original Units: [{0}]\n" \
                       "New Units: [{1}]\n" \
-                      "1.0 [Data Unit] = {2:.2f} [New Unit]".format(*message_param)
+                      "1.0 [Original Unit] = {2:.2f} [New Unit]".format(*message_param)
         else:
-            message = "Data Units: [{0}]\n" \
+            message = "Original Units: [{0}]\n" \
                       "New Units: [{1}]\n" \
-                      "1.0 [Data Unit] = {2:0.2e} [New Unit]".format(*message_param)
+                      "1.0 [Original Unit] = {2:0.2e} [New Unit]".format(*message_param)
         self.message_box.setText(message)
 
     def populate_unit_layout(self, unit_layout, gui=None):
@@ -908,7 +908,7 @@ class ConvertFluxUnitGUI(QDialog):
         super(ConvertFluxUnitGUI, self).__init__(parent=parent)
         self.setWindowFlags(self.windowFlags() | Qt.Tool)
         self.title = "Unit Conversion"
-        self.setMinimumSize(400, 225)
+        self.setMinimumSize(400, 270)
 
         self.cubeviz_layout = controller.cubeviz_layout
 
