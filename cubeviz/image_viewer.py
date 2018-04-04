@@ -247,7 +247,7 @@ class CubevizImageViewer(ImageViewer, HubListener):
         return self.get_layer_artist(cls, layer=layer, layer_state=layer_state)
 
     def _create_stats_axes(self, subset, median, mu, sigma):
-        rect = 0.01, 0.84, 0.20, 0.12
+        rect = 0.01, 0.87, 0.20, 0.12
         axes = self.figure.add_axes(rect, xticks=[], yticks=[])
         circle = Circle((0.15,0.85), 0.05, color=subset.style.color)
         axes.add_artist(circle)
@@ -303,8 +303,8 @@ class CubevizImageViewer(ImageViewer, HubListener):
     def update_stats(self):
         slice_text = self._stats_axes.texts[0]
         slice_text.set_text('slice: {}'.format(self._slice_index))
-        mu, sigma = self._calculate_stats(self._component, self._subset)
-        self._update_stats_text(mu, sigma)
+        median, mu, sigma = self._calculate_stats(self._component, self._subset)
+        self._update_stats_text(median, mu, sigma)
         self.redraw()
 
     def update_component(self, component):
