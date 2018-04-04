@@ -232,7 +232,11 @@ class DataConfiguration:
     #
 
     def _has_data(self):
-        print("in has data----------------------------------")
+        """
+        Used for miscellaneous cubes that we have not planned for by just making sure data in the cube exists. This
+        is currently only in use in the default.yaml file
+        :return:
+        """
         return hasattr(self._fits[0], 'data')
 
     def _equal(self, value):
