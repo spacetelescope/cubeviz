@@ -245,6 +245,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         return self._slice_controller.synced_index
 
     def handle_subset_action(self, message):
+        self.refresh_viewer_combo_helpers()
         if isinstance(message, SubsetUpdateMessage):
             for combo, viewer in zip(self._viewer_combo_helpers, self.cube_views):
                 viewer._widget.draw_stats_axes(combo.selection, message.subset)
