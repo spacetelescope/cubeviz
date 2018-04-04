@@ -189,6 +189,8 @@ class DataConfiguration:
             return self._startswith(conditional)
         elif 'extension_names' == key:
             return self._extension_names(conditional)
+        elif 'has_data' == key:
+            return self._has_data()
 
     #
     # Branch processing
@@ -228,6 +230,10 @@ class DataConfiguration:
     #
     # Leaf processing
     #
+
+    def _has_data(self):
+        print("in has data----------------------------------")
+        return hasattr(self._fits[0], 'data')
 
     def _equal(self, value):
         """
