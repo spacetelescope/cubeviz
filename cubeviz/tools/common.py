@@ -1,5 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
+from qtpy.QtWidgets import QMessageBox
+
 from glue.core import Data
 from glue.core.link_helpers import LinkSame
 from glue.core.coordinates import WCSCoordinates
@@ -43,5 +45,18 @@ def add_to_2d_container(cubeviz_layout, data, component_data, label):
             viewer._widget.add_data(data.container_2d)
 
     else:
+        # Make sure we don't add duplicate data components
+        if label in data.container_2d.component_ids():
+            raise ValueError("Data component with label '{}' already exists, "
+                             "and cannot be created again".format(label))
 
         data.container_2d.add_component(component_data, label)
+
+def show_error_message(message, title, parent=None):
+
+    box = QMessageBox(parent=parent)
+    box.setIcon(QMessageBox.Warning)
+    box.setText(message)
+    box.setWindowTitle(title)
+    box.setStandardButtons(QMessageBox.Ok)
+    box.exec_()

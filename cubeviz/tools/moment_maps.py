@@ -5,7 +5,7 @@ from qtpy import QtGui
 from qtpy.QtWidgets import (QDialog, QComboBox, QPushButton,
                             QLabel, QWidget, QHBoxLayout, QVBoxLayout)
 
-from .common import add_to_2d_container
+from .common import add_to_2d_container, show_error_message
 
 
 # TODO: In the future, it might be nice to be able to work across data_collection elements
@@ -92,19 +92,15 @@ class MomentMapsGUI(QDialog):
         import spectral_cube
         cube = spectral_cube.SpectralCube(self.data[data_name], wcs=self.data.coords.wcs)
 
-        try:
-            cube_moment = cube.moment(order=order, axis=0)
+        cube_moment = cube.moment(order=order, axis=0)
 
-            self.label = '{}-moment-{}'.format(data_name, order)
+        self.label = '{}-moment-{}'.format(data_name, order)
 
-            # Add new overlay/component to cubeviz. We add this both to the 2D
-            # container Data object and also as an overlay. In future we might be
-            # able to use the 2D container Data object for the overlays directly.
-            add_to_2d_container(self.parent, self.data, cube_moment.value, self.label)
-            self.parent.add_overlay(cube_moment.value, self.label, display_now=False)
-
-        except Exception as e:
-            print('Error {}'.format(e))
+        # Add new overlay/component to cubeviz. We add this both to the 2D
+        # container Data object and also as an overlay. In future we might be
+        # able to use the 2D container Data object for the overlays directly.
+        add_to_2d_container(self.parent, self.data, cube_moment.value, self.label)
+        self.parent.add_overlay(cube_moment.value, self.label, display_now=False)
 
     def calculate_callback(self):
         """
@@ -116,7 +112,11 @@ class MomentMapsGUI(QDialog):
         order = int(self.order_combobox.currentText())
         data_name = self.data_combobox.currentText()
 
-        self.do_calculation(order, data_name)
+        try:
+            self.do_calculation(order, data_name)
+        except Exception as e:
+            print('Error: {}'.format(e))
+            show_error_message(str(e), 'Moment Map Error', parent=self)
 
         self.close()
 
