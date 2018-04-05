@@ -65,200 +65,6 @@ class CollapseCube(QDialog):
 
         :return:
         """
-        # boldFont = QtGui.QFont()
-        # boldFont.setBold(True)
-        #
-        # # Create data component label and input box
-        # self.widget_desc = QLabel(self._general_description)
-        # self.widget_desc.setWordWrap(True)
-        # self.widget_desc.setFixedWidth(350)
-        # self.widget_desc.setAlignment((Qt.AlignLeft | Qt.AlignTop))
-        #
-        # hb_desc = QHBoxLayout()
-        # hb_desc.addWidget(self.widget_desc)
-        #
-        # # Create data component label and input box
-        # self.data_label = QLabel("Data:")
-        # self.data_label.setFixedWidth(100)
-        # self.data_label.setAlignment((Qt.AlignRight | Qt.AlignTop))
-        # self.data_label.setFont(boldFont)
-        #
-        # self.data_combobox = QComboBox()
-        # self.data_combobox.addItems([str(x).strip() for x in self.data.component_ids()
-        #                              if not x in self.data.coordinate_components])
-        # self.data_combobox.setMinimumWidth(200)
-        #
-        # hb_data = QHBoxLayout()
-        # hb_data.addWidget(self.data_label)
-        # hb_data.addWidget(self.data_combobox)
-        #
-        # # Create operation label and input box
-        # self.operation_label = QLabel("Operation:")
-        # self.operation_label.setFixedWidth(100)
-        # self.operation_label.setAlignment((Qt.AlignRight | Qt.AlignTop))
-        # self.operation_label.setFont(boldFont)
-        #
-        # self.operation_combobox = QComboBox()
-        # self.operation_combobox.addItems(operations.keys())
-        # self.operation_combobox.setMinimumWidth(200)
-        #
-        # hb_operation = QHBoxLayout()
-        # hb_operation.addWidget(self.operation_label)
-        # hb_operation.addWidget(self.operation_combobox)
-        #
-        # # Create region label and input box
-        # self.region_label = QLabel("region:")
-        # self.region_label.setFixedWidth(100)
-        # self.region_label.setAlignment((Qt.AlignRight | Qt.AlignTop))
-        # self.region_label.setFont(boldFont)
-        #
-        # self.region_combobox = QComboBox()
-        #
-        # # Get the Specviz regions and add them in to the Combo box
-        # for roi in self.parent.specviz._widget.roi_bounds:
-        #     self.region_combobox.addItem("Specviz ROI ({:.3}, {:.3})".format(roi[0], roi[1]))
-        #
-        # self.region_combobox.addItems(["Custom (Wavelengths)", "Custom (Indices)"])
-        # self.region_combobox.setMinimumWidth(200)
-        # self.region_combobox.currentIndexChanged.connect(self._region_selection_change)
-        #
-        # hb_region = QHBoxLayout()
-        # hb_region.addWidget(self.region_label)
-        # hb_region.addWidget(self.region_combobox)
-        #
-        # # Create error label
-        # self.error_label = QLabel("")
-        # self.error_label.setFixedWidth(100)
-        #
-        # self.error_label_text = QLabel("")
-        # self.error_label_text.setMinimumWidth(200)
-        # self.error_label_text.setAlignment((Qt.AlignLeft | Qt.AlignTop))
-        #
-        # hbl_error = QHBoxLayout()
-        # hbl_error.addWidget(self.error_label)
-        # hbl_error.addWidget(self.error_label_text)
-        #
-        # # Create start label and input box
-        # self.start_label = QLabel("Start:")
-        # self.start_label.setFixedWidth(100)
-        # self.start_label.setAlignment((Qt.AlignRight | Qt.AlignTop))
-        # self.start_label.setFont(boldFont)
-        #
-        # self.start_text = QLineEdit()
-        # self.start_text.setMinimumWidth(200)
-        # self.start_text.setAlignment((Qt.AlignLeft | Qt.AlignTop))
-        #
-        # hb_start = QHBoxLayout()
-        # hb_start.addWidget(self.start_label)
-        # hb_start.addWidget(self.start_text)
-        #
-        # # Create end label and input box
-        # self.end_label = QLabel("End:")
-        # self.end_label.setFixedWidth(100)
-        # self.end_label.setAlignment((Qt.AlignRight | Qt.AlignTop))
-        # self.end_label.setFont(boldFont)
-        #
-        # self.end_text = QLineEdit()
-        # self.end_text.setMinimumWidth(200)
-        # self.end_text.setAlignment((Qt.AlignLeft | Qt.AlignTop))
-        #
-        # hb_end = QHBoxLayout()
-        # hb_end.addWidget(self.end_label)
-        # hb_end.addWidget(self.end_text)
-        #
-        # # Create Calculate and Cancel buttons
-        # self.calculateButton = QPushButton("Calculate")
-        # self.calculateButton.clicked.connect(self.calculate_callback)
-        # self.calculateButton.setDefault(True)
-        #
-        # self.cancelButton = QPushButton("Cancel")
-        # self.cancelButton.clicked.connect(self.cancel_callback)
-        #
-        # hb_buttons = QHBoxLayout()
-        # hb_buttons.addStretch(1)
-        # hb_buttons.addWidget(self.cancelButton)
-        # hb_buttons.addWidget(self.calculateButton)
-        #
-        # #
-        # #  Sigma clipping
-        # #
-        # vbox_sigma_clipping = QVBoxLayout()
-        #
-        # self.sigma_description = QLabel("Sigma clipping is implemented using <a href='http://docs.astropy.org/en/stable/api/astropy.stats.sigma_clip.html'>astropy.stats.sigma_clip</a>. Empty values will use defaults listed on the webpage, <b>but</b> if the first sigma is empty, then no clipping will be done.")
-        # self.sigma_description.setWordWrap(True)
-        # hb_sigma = QHBoxLayout()
-        # hb_sigma.addWidget(self.sigma_description)
-        # vbox_sigma_clipping.addLayout(hb_sigma)
-        #
-        # # Create sigma
-        # self.sigma_label = QLabel("Sigma:")
-        # self.sigma_label.setFixedWidth(100)
-        # self.sigma_label.setAlignment((Qt.AlignRight | Qt.AlignTop))
-        # self.sigma_label.setFont(boldFont)
-        # self.sigma_text = QLineEdit()
-        # self.sigma_text.setMinimumWidth(200)
-        # self.sigma_text.setAlignment((Qt.AlignLeft | Qt.AlignTop))
-        # hb_sigma = QHBoxLayout()
-        # hb_sigma.addWidget(self.sigma_label)
-        # hb_sigma.addWidget(self.sigma_text)
-        # vbox_sigma_clipping.addLayout(hb_sigma)
-        #
-        # # Create sigma_lower
-        # self.sigma_lower_label = QLabel("Sigma Lower:")
-        # self.sigma_lower_label.setFixedWidth(100)
-        # self.sigma_lower_label.setAlignment((Qt.AlignRight | Qt.AlignTop))
-        # self.sigma_lower_label.setFont(boldFont)
-        # self.sigma_lower_text = QLineEdit()
-        # self.sigma_lower_text.setMinimumWidth(200)
-        # self.sigma_lower_text.setAlignment((Qt.AlignLeft | Qt.AlignTop))
-        # hb_sigma_lower = QHBoxLayout()
-        # hb_sigma_lower.addWidget(self.sigma_lower_label)
-        # hb_sigma_lower.addWidget(self.sigma_lower_text)
-        # vbox_sigma_clipping.addLayout(hb_sigma_lower)
-        #
-        # # Create sigma_upper
-        # self.sigma_upper_label = QLabel("Sigma Upper:")
-        # self.sigma_upper_label.setFixedWidth(100)
-        # self.sigma_upper_label.setAlignment((Qt.AlignRight | Qt.AlignTop))
-        # self.sigma_upper_label.setFont(boldFont)
-        # self.sigma_upper_text = QLineEdit()
-        # self.sigma_upper_text.setMinimumWidth(200)
-        # self.sigma_upper_text.setAlignment((Qt.AlignLeft | Qt.AlignTop))
-        # hb_sigma_upper = QHBoxLayout()
-        # hb_sigma_upper.addWidget(self.sigma_upper_label)
-        # hb_sigma_upper.addWidget(self.sigma_upper_text)
-        # vbox_sigma_clipping.addLayout(hb_sigma_upper)
-        #
-        # # Create sigma_iters
-        # self.sigma_iters_label = QLabel("Sigma Iterations:")
-        # self.sigma_iters_label.setFixedWidth(100)
-        # self.sigma_iters_label.setAlignment((Qt.AlignRight | Qt.AlignTop))
-        # self.sigma_iters_label.setFont(boldFont)
-        # self.sigma_iters_text = QLineEdit()
-        # self.sigma_iters_text.setMinimumWidth(200)
-        # self.sigma_iters_text.setAlignment((Qt.AlignLeft | Qt.AlignTop))
-        # hb_sigma_iters = QHBoxLayout()
-        # hb_sigma_iters.addWidget(self.sigma_iters_label)
-        # hb_sigma_iters.addWidget(self.sigma_iters_text)
-        # vbox_sigma_clipping.addLayout(hb_sigma_iters)
-        #
-        #
-        # # Add calculation and buttons to popup box
-        # vbl = QVBoxLayout()
-        # vbl.addLayout(hb_desc)
-        # vbl.addLayout(hb_data)
-        # vbl.addLayout(hb_operation)
-        # vbl.addLayout(hb_region)
-        # vbl.addLayout(hb_start)
-        # vbl.addLayout(hb_end)
-        # vbl.addLayout(vbox_sigma_clipping)
-        # vbl.addLayout(hbl_error)
-        # vbl.addLayout(hb_buttons)
-        #
-        # self.setLayout(vbl)
-        # self.setMaximumWidth(700)
-        # self.show()
-
         # Load the widget from the UI file.
         self.ui = load_ui('collapse.ui', self,
                           directory=os.path.dirname(__file__))
@@ -269,17 +75,17 @@ class CollapseCube(QDialog):
 
         # Get the Specviz regions and add them in to the Combo box
         for roi in self.parent.specviz._widget.roi_bounds:
-            self.ui.region_combobox.addItem("Specviz ROI ({:.3}, {:.3})".format(roi[0], roi[1]))
+            self.ui.region_combobox.addItem("Specviz ROI ({:.4}, {:.4})".format(roi[0], roi[1]))
 
         self.ui.region_combobox.addItems(["Custom (Wavelengths)", "Custom (Indices)"])
         self.ui.region_combobox.setMinimumWidth(200)
         self.ui.region_combobox.currentIndexChanged.connect(self._region_selection_change)
 
-        # Hide the advanced sigma part by default.
-        self.ui.advanced_sigma_widget.hide()
+        # Disable the advanced sigma part by default.
+#        self.ui.advanced_sigma_widget.setEnabled(False)
 
         # Setup call back for the Advanced Sigma Checkbox
-        self.ui.advanced_checkbox.stateChanged.connect(self._advanced_sigma_checkbox_callback)
+#        self.ui.advanced_checkbox.stateChanged.connect(self._advanced_sigma_checkbox_callback)
 
         # Setup the call back for the cancel button
         self.ui.cancelButton.clicked.connect(self.cancel_callback)
@@ -291,8 +97,8 @@ class CollapseCube(QDialog):
 
     def _advanced_sigma_checkbox_callback(self, event):
         checkbox_checked = self.ui.advanced_checkbox.isChecked()
-        self.ui.advanced_sigma_widget.setVisible(checkbox_checked)
-        self.ui.simple_sigma_widget.setVisible(not checkbox_checked)
+        self.ui.advanced_sigma_widget.setEnabled(checkbox_checked)
+        self.ui.simple_sigma_widget.setEnabled(not checkbox_checked)
 
     def _region_selection_change(self, index):
         """
@@ -338,9 +144,9 @@ class CollapseCube(QDialog):
 
         # Let's update the text on the widget
         if 'Custom' in newvalue:
-            self.widget_desc.setText(self._general_description + "\n\n" + self._custom_description)
+            self.widget_desc.setText(self._custom_description)
         else:
-            self.widget_desc.setText(self._general_description)
+            self.widget_desc.setText("")
 
     def hide_start_end(self, dohide):
         """
@@ -351,15 +157,19 @@ class CollapseCube(QDialog):
         :return:
         """
         if dohide:
-            self.start_label.hide()
-            self.start_text.hide()
-            self.end_label.hide()
-            self.end_text.hide()
+            self.start_label.setEnabled(False)
+            self.start_example_label.setEnabled(False)
+            self.start_text.setEnabled(False)
+            self.end_label.setEnabled(False)
+            self.end_example_label.setEnabled(False)
+            self.end_text.setEnabled(False)
         else:
-            self.start_label.show()
-            self.start_text.show()
-            self.end_label.show()
-            self.end_text.show()
+            self.start_label.setEnabled(True)
+            self.start_example_label.setEnabled(True)
+            self.start_text.setEnabled(True)
+            self.end_label.setEnabled(True)
+            self.end_example_label.setEnabled(True)
+            self.end_text.setEnabled(True)
 
     def calculate_callback(self):
         """
@@ -482,7 +292,7 @@ class CollapseCube(QDialog):
         start_wavelength = new_wavelengths[0].to(self.wavelength_units)
         end_wavelength = new_wavelengths[-1].to(self.wavelength_units)
 
-        label = '{}-collapse-{} ({:0.3}, {:0.3})'.format(data_name, operation,
+        label = '{}-collapse-{} ({:0.4}, {:0.4})'.format(data_name, operation,
                                                          start_wavelength,
                                                          end_wavelength)
 
