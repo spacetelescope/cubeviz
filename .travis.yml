@@ -28,8 +28,7 @@ env:
         # overridden underneath. They are defined here in order to save having
         # to repeat them for all configurations.
         - PYTHON_VERSION=3.6
-        # Use older version of numpy until glue issues are worked out
-        - NUMPY_VERSION=1.13
+        - NUMPY_VERSION=stable
         - ASTROPY_VERSION=stable
         # Pull specviz from github until it is released on PyPi and/or conda
         - SPECVIZ_GIT='git+https://github.com/spacetelescope/specviz#egg=specviz'
@@ -90,27 +89,29 @@ matrix:
           env: ASTROPY_VERSION=development
                EVENT_TYPE='pull_request push cron'
 
-        # Test against latest stable version of numpy
+        # Test against older version of numpy
         - os: linux
-          env: NUMPY_VERSION=stable
+          env: NUMPY_VERSION=1.13
+
+        # Test against numpy dev
+        - os: linux
+          env: NUMPY_VERSION=dev
 
         # Test against latest development version of Glue
         - os: linux
-          env: NUMPY_VERSION=stable
-               CONDA_CHANNELS='glueviz/label/dev glueviz'
+          env: CONDA_CHANNELS='glueviz/label/dev glueviz'
 
         # Do a PEP8 test with pycodestyle
         - os: linux
           env: MAIN_CMD='pycodestyle cubeviz --count' SETUP_CMD=''
 
     allow_failures:
-        # For now allow failures against numpy 1.14
+        # Allow failures against numpy dev
         - os: linux
-          env: NUMPY_VERSION=stable
+          env: NUMPY_VERSION=dev
         # Allow failures against development version of Glue
         - os: linux
-          env: NUMPY_VERSION=stable
-               CONDA_CHANNELS='glueviz/label/dev glueviz'
+          env: CONDA_CHANNELS='glueviz/label/dev glueviz'
 
 install:
 
