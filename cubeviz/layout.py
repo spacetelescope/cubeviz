@@ -56,6 +56,10 @@ class WidgetWrapper(QtWidgets.QWidget):
 
     def create_toolbar(self):
         self.tb = QtWidgets.QToolBar()
+
+        self.checkbox = QtWidgets.QCheckBox('Synced', enabled=False, checked=True)
+        self.tb.addWidget(self.checkbox)
+
         self.layout.addWidget(self.tb)
 
     def widget(self):
@@ -113,12 +117,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.single_view = self.cube_views[0]
         self.split_views = self.cube_views[1:]
 
-        self._synced_checkboxes = [
-            self.ui.singleviewer_synced_checkbox,
-            self.ui.viewer1_synced_checkbox,
-            self.ui.viewer2_synced_checkbox,
-            self.ui.viewer3_synced_checkbox
-        ]
+        self._synced_checkboxes = [view.checkbox for view in self.cube_views]
 
         for view, checkbox in zip(self.cube_views, self._synced_checkboxes):
             view._widget.assign_synced_checkbox(checkbox)
@@ -604,7 +603,8 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         # Store pointer to wcs and wavelength information
         wcs = self.session.data_collection.data[0].coords.wcs
-        wavelengths = self.single_view._widget._data[0].coords.world_axis(self.single_view._widget._data[0], axis=0)
+        wavelengths = self.single_view._widget._data[0].coords.world_axis(
+            self.single_view._widget._data[0], axis=0)
 
         # TODO: currently this way of accessing units is not flexible
         self._slice_controller.enable()
