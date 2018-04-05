@@ -164,8 +164,8 @@ class SpectralOperationHandler(QDialog):
 
             super(SpectralOperationHandler, self).accept()
 
-        component_name = "{} {}".format(self.component_id,
-                                        self.function.function.__name__)
+        component_name = '{} spectral {}'.format(self.component_id,
+                self.operation_combo_box.currentText())
 
         comp_count = len([x for x in self.data.component_ids()
                           if component_name in str(x)])
