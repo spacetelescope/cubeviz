@@ -81,24 +81,39 @@ class CollapseCube(QDialog):
         self.ui.region_combobox.setMinimumWidth(200)
         self.ui.region_combobox.currentIndexChanged.connect(self._region_selection_change)
 
-        # Disable the advanced sigma part by default.
-#        self.ui.advanced_sigma_widget.setEnabled(False)
+        self.ui.desc_label.setText(self._general_description)
+
+        # Hide the error box... for now.
+        self.ui.error_label.setVisible(False)
 
         # Setup call back for the Advanced Sigma Checkbox
-#        self.ui.advanced_checkbox.stateChanged.connect(self._advanced_sigma_checkbox_callback)
+        self.ui.sigma_combobox.currentIndexChanged.connect(self._sigma_combobox_callback)
 
-        # Setup the call back for the cancel button
-        self.ui.cancelButton.clicked.connect(self.cancel_callback)
+        # Setup the call back for the buttons
+        self.ui.calculate_button.clicked.connect(self.calculate_callback)
+        self.ui.cancel_button.clicked.connect(self.cancel_callback)
 
         self.ui.show()
 
         # Fire the callback to set the default values for everything
+        self._sigma_combobox_callback(0)
         self._region_selection_change(0)
 
-    def _advanced_sigma_checkbox_callback(self, event):
-        checkbox_checked = self.ui.advanced_checkbox.isChecked()
-        self.ui.advanced_sigma_widget.setEnabled(checkbox_checked)
-        self.ui.simple_sigma_widget.setEnabled(not checkbox_checked)
+    def _sigma_combobox_callback(self, event):
+        self.ui.simple_sigma_label.setVisible(event == 1)
+        self.ui.simple_sigma_description.setVisible(event == 1)
+        self.ui.simple_sigma_input.setVisible(event == 1)
+
+        self.ui.advanced_sigma_label.setVisible(event == 2)
+        self.ui.advanced_sigma_description.setVisible(event == 2)
+        self.ui.advanced_sigma_lower_label.setVisible(event == 2)
+        self.ui.advanced_sigma_upper_label.setVisible(event == 2)
+        self.ui.advanced_sigma_iters_label.setVisible(event == 2)
+
+        self.ui.advanced_sigma_input.setVisible(event == 2)
+        self.ui.advanced_sigma_lower_input.setVisible(event == 2)
+        self.ui.advanced_sigma_upper_input.setVisible(event == 2)
+        self.ui.advanced_sigma_iters_input.setVisible(event == 2)
 
     def _region_selection_change(self, index):
         """
@@ -115,20 +130,20 @@ class CollapseCube(QDialog):
         if 'Custom' in newvalue and 'Wavelength' in newvalue:
             # Custom Wavelengths
             self.hide_start_end(False)
-            self.start_label.setText("Start Wavelength:")
-            self.end_label.setText("End Wavelength:")
+            self.ui.start_label.setText("Start Wavelength:")
+            self.ui.end_label.setText("End Wavelength:")
 
-            self.start_example_label.setText('(e.g., {:1.4})'.format(self.wavelengths[indthird]))
-            self.end_example_label.setText('(e.g., {:1.4})'.format(self.wavelengths[2*indthird]))
+            self.ui.start_example_label.setText('(e.g., {:1.4})'.format(self.wavelengths[indthird]))
+            self.ui.end_example_label.setText('(e.g., {:1.4})'.format(self.wavelengths[2*indthird]))
 
         elif 'Custom' in newvalue and 'Indices' in newvalue:
             # Custom indices
             self.hide_start_end(False)
-            self.start_label.setText("Start Index:")
-            self.end_label.setText("End Index:")
+            self.ui.start_label.setText("Start Index:")
+            self.ui.end_label.setText("End Index:")
 
-            self.start_example_label.setText('(e.g., {}'.format(indthird))
-            self.end_example_label.setText('(e.g., {}'.format(2*indthird))
+            self.ui.start_example_label.setText('(e.g., {})'.format(indthird))
+            self.ui.end_example_label.setText('(e.g., {})'.format(2*indthird))
 
         else:
             # Region defined in specviz
@@ -139,14 +154,14 @@ class CollapseCube(QDialog):
             # TODO: Should probably save the ROIs so the start and end values are more accurate.
             regex = r"-?(?:0|[1-9]\d*)(?:\.\d*)?(?:[eE][+\-]?\d+)?"
             floating = re.findall(regex, newvalue)
-            self.start_text.setText(floating[0])
-            self.end_text.setText(floating[1])
+            self.ui.start_input.setText(floating[0])
+            self.ui.end_input.setText(floating[1])
 
         # Let's update the text on the widget
         if 'Custom' in newvalue:
-            self.widget_desc.setText(self._custom_description)
+            self.ui.desc_label.setText(self._general_description + '\n' + self._custom_description)
         else:
-            self.widget_desc.setText("")
+            self.ui.desc_label.setText(self._general_description)
 
     def hide_start_end(self, dohide):
         """
@@ -157,19 +172,19 @@ class CollapseCube(QDialog):
         :return:
         """
         if dohide:
-            self.start_label.setEnabled(False)
-            self.start_example_label.setEnabled(False)
-            self.start_text.setEnabled(False)
-            self.end_label.setEnabled(False)
-            self.end_example_label.setEnabled(False)
-            self.end_text.setEnabled(False)
+            self.ui.start_label.setEnabled(False)
+            self.ui.start_example_label.setEnabled(False)
+            self.ui.start_input.setEnabled(False)
+            self.ui.end_label.setEnabled(False)
+            self.ui.end_example_label.setEnabled(False)
+            self.ui.end_input.setEnabled(False)
         else:
-            self.start_label.setEnabled(True)
-            self.start_example_label.setEnabled(True)
-            self.start_text.setEnabled(True)
-            self.end_label.setEnabled(True)
-            self.end_example_label.setEnabled(True)
-            self.end_text.setEnabled(True)
+            self.ui.start_label.setEnabled(True)
+            self.ui.start_example_label.setEnabled(True)
+            self.ui.start_input.setEnabled(True)
+            self.ui.end_label.setEnabled(True)
+            self.ui.end_example_label.setEnabled(True)
+            self.ui.end_input.setEnabled(True)
 
     def calculate_callback(self):
         """
@@ -179,17 +194,19 @@ class CollapseCube(QDialog):
 
         # Grab the values of interest
         data_name = self.data_combobox.currentText()
-        start_value = self.start_text.text().strip()
-        end_value = self.end_text.text().strip()
+        start_value = self.ui.start_input.text().strip()
+        end_value = self.ui.end_input.text().strip()
 
-        self.error_label_text.setText(' ')
-        self.error_label_text.setStyleSheet("color: rgba(255, 0, 0, 128)")
+        self.ui.error_label.setText(' ')
+        self.ui.error_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+        self.ui.error_label.setVisible(False)
 
         # Sanity checks first
         if not start_value and not end_value:
-            self.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-            self.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-            self.error_label_text.setText('Must set at least one of start or end value')
+            self.ui.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.ui.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.ui.error_label.setText('Must set at least one of start or end value')
+            self.ui.error_label.setVisible(True)
             return
 
         # If indicies, get them and check to see if the inputs are good.
@@ -200,8 +217,9 @@ class CollapseCube(QDialog):
                 try:
                     start_index = int(start_value)
                 except ValueError as e:
-                    self.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-                    self.error_label_text.setText('Start value must be an integer')
+                    self.ui.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+                    self.ui.error_label.setText('Start value must be an integer')
+                    self.ui.error_label.setVisible(True)
                     return
 
                 if start_index < 0:
@@ -213,8 +231,9 @@ class CollapseCube(QDialog):
                 try:
                     end_index = int(end_value)
                 except ValueError as e:
-                    self.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-                    self.error_label_text.setText('End value must be an integer')
+                    self.ui.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+                    self.ui.error_label.setText('End value must be an integer')
+                    self.ui.error_label.setVisible(True)
                     return
 
                 if end_index > len(self.wavelengths) - 1:
@@ -228,8 +247,9 @@ class CollapseCube(QDialog):
                 try:
                     start_value = float(start_value)
                 except ValueError as e:
-                    self.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-                    self.error_label_text.setText('Start value must be a floating point number')
+                    self.ui.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+                    self.ui.error_label.setText('Start value must be a floating point number')
+                    self.ui.error_label.setVisible(True)
                     return
 
                 # Look up index
@@ -243,8 +263,9 @@ class CollapseCube(QDialog):
                 try:
                     end_value = float(end_value)
                 except ValueError as e:
-                    self.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-                    self.error_label_text.setText('End value must be a floating point number')
+                    self.ui.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+                    self.ui.error_label.setText('End value must be a floating point number')
+                    self.ui.error_label.setVisible(True)
                     return
 
                 # Look up index
@@ -252,32 +273,35 @@ class CollapseCube(QDialog):
 
         # Check to make sure at least one of start or end is within the range of the wavelengths.
         if (start_index < 0 and end_index < 0) or (start_index > len(self.wavelengths) and end_index > len(self.wavelengths)):
-            self.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-            self.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-            self.error_label_text.setText('Can not have both start and end outside of the wavelength range.')
+            self.ui.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.ui.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.ui.error_label.setText('Can not have both start and end outside of the wavelength range.')
+            self.ui.error_label.setVisible(True)
             return
 
         if start_index > end_index:
-            self.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-            self.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-            self.error_label_text.setText('Start value must be less than end value')
+            self.ui.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.ui.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.ui.error_label.setText('Start value must be less than end value')
+            self.ui.error_label.setVisible(True)
             return
 
 
         # Check to see if the wavelength (indices) are the same.
         if start_index == end_index:
-            self.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-            self.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-            self.error_label_text.setText('Can not have both start and end wavelengths be the same.')
+            self.ui.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.ui.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.ui.error_label.setText('Can not have both start and end wavelengths be the same.')
+            self.ui.error_label.setVisible(True)
             return
 
         # Set the start and end values in the text boxes -- in case they enter one way out of range then
         # we'll fix it.
         ts = start_index if 'Indices' in self.region_combobox.currentText() else self.wavelengths[start_index]
-        self.start_text.setText('{}'.format(ts))
+        self.ui.start_input.setText('{}'.format(ts))
 
         te = end_index if 'Indices' in self.region_combobox.currentText() else self.wavelengths[end_index]
-        self.end_text.setText('{}'.format(te))
+        self.ui.end_input.setText('{}'.format(te))
 
 
         data_name = self.data_combobox.currentText()
@@ -304,7 +328,8 @@ class CollapseCube(QDialog):
                 sigma = float(sigma)
             except ValueError as e:
                 self.sigma_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-                self.error_label_text.setText('If sigma set, it must be a floating point number')
+                self.ui.error_label.setText('If sigma set, it must be a floating point number')
+                self.ui.error_label.setVisible(True)
                 return
 
             sigma_lower = self.sigma_lower_text.text().strip()
@@ -313,7 +338,8 @@ class CollapseCube(QDialog):
                     sigma_lower = float(sigma_lower)
                 except ValueError as e:
                     self.sigma_lower_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-                    self.error_label_text.setText('If sigma lower set, it must be a floating point number')
+                    self.ui.error_label.setText('If sigma lower set, it must be a floating point number')
+                    self.ui.error_label.setVisible(True)
                     return
             else:
                 sigma_lower = None
@@ -324,7 +350,8 @@ class CollapseCube(QDialog):
                     sigma_upper = float(sigma_upper)
                 except ValueError as e:
                     self.sigma_upper_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-                    self.error_label_text.setText('If sigma upper set, it must be a floating point number')
+                    self.ui.error_label.setText('If sigma upper set, it must be a floating point number')
+                    self.ui.error_label.setVisible(True)
                     return
             else:
                 sigma_upper = None
@@ -335,7 +362,8 @@ class CollapseCube(QDialog):
                     sigma_iters = float(sigma_iters)
                 except ValueError as e:
                     self.sigma_iters_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-                    self.error_label_text.setText('If sigma iters set, it must be a floating point number')
+                    self.ui.error_label.setText('If sigma iters set, it must be a floating point number')
+                    self.ui.error_label.setVisible(True)
                     return
             else:
                 sigma_iters = None
