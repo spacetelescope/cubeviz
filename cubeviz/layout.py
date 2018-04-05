@@ -57,6 +57,9 @@ class WidgetWrapper(QtWidgets.QWidget):
     def create_toolbar(self):
         self.tb = QtWidgets.QToolBar()
 
+        self.combo = QtWidgets.QComboBox(enabled=False)
+        self.tb.addWidget(self.combo)
+
         self.checkbox = QtWidgets.QCheckBox('Synced', enabled=False, checked=True)
         self.tb.addWidget(self.checkbox)
 
@@ -461,13 +464,13 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         return _on_viewer_combo_change
 
-    def _enable_viewer_combo(self, data, index, combo_label, selection_label):
-        combo = getattr(self.ui, combo_label)
-        connect_combo_selection(self, selection_label, combo)
+    def _enable_viewer_combo(self, viewer, data, index, selection_label):
+        connect_combo_selection(self, selection_label, viewer.combo)
         helper = ComponentIDComboHelper(self, selection_label)
         helper.set_multiple_data([data])
-        combo.setEnabled(True)
-        combo.currentIndexChanged.connect(self._get_change_viewer_combo_func(combo, index))
+        viewer.combo.setEnabled(True)
+        viewer.combo.currentIndexChanged.connect(
+            self._get_change_viewer_combo_func(viewer.combo, index))
         self._viewer_combo_helpers.append(helper)
 
     def _enable_all_viewer_combos(self, data):
@@ -479,10 +482,10 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         :return:
         """
-        self._enable_viewer_combo(
-            data, 0, 'single_viewer_combo', 'single_viewer_attribute')
         view = self.cube_views[0].widget()
-        component = getattr(self, 'single_viewer_attribute')
+        self._enable_viewer_combo(view.parent(), data, 0, 'single_viewer_attribute')
+
+        component = self.single_viewer_attribute
         view.current_component_id = component
         view.cubeviz_unit = self._flux_unit_controller.get_component_unit(component,
                                                                           cubeviz_unit=True)
@@ -490,10 +493,10 @@ class CubeVizLayout(QtWidgets.QWidget):
         view.update_axes_title(component.label)
 
         for i in range(1,4):
-            combo_label = 'viewer{0}_combo'.format(i)
-            selection_label = 'viewer{0}_attribute'.format(i)
-            self._enable_viewer_combo(data, i, combo_label, selection_label)
             view = self.cube_views[i].widget()
+            selection_label = 'viewer{0}_attribute'.format(i)
+            self._enable_viewer_combo(view.parent(), data, i, selection_label)
+
             component = getattr(self, selection_label)
             view.current_component_id = component
             view.cubeviz_unit = self._flux_unit_controller.get_component_unit(component,
