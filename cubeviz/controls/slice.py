@@ -185,6 +185,7 @@ class SliceController(HubListener):
         self._slider_flag = False
 
         index = self._slice_slider.value()
+        self._send_index_message(index)
         specviz_dispatch.changed_dispersion_position.emit(pos=index)
 
     #@glue_subscribe(SliceIndexUpdateMessage)
