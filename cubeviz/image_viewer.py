@@ -204,7 +204,6 @@ class CubevizImageViewer(ImageViewer, HubListener):
         self._stats_axes = None
         self._stats_visible = True  # Global configuration setting
         self._stats_hidden = False  # Internal configuration: are stats hidden?
-        self._component = None # Keep track of name of currently displayed component
         self._subset = None # Keep track of currently active subset
 
         self.coord_label = QLabel("")  # Coord display
@@ -277,7 +276,9 @@ class CubevizImageViewer(ImageViewer, HubListener):
 
     def draw_stats_axes(self, component, subset):
 
-        self._component = component
+        if self._has_2d_data or subset.ndim != 3:
+            return
+
         self._subset = subset
 
         median, mu, sigma = self._calculate_stats(component, subset)
@@ -301,6 +302,10 @@ class CubevizImageViewer(ImageViewer, HubListener):
             self.redraw()
 
     def update_stats(self):
+
+        if self._stats_axes is None or self._has_2d_data or self._subset.ndim != 3:
+            return
+
         slice_text = self._stats_axes.texts[0]
         slice_text.set_text('slice: {}'.format(self._slice_index))
         median, mu, sigma = self._calculate_stats(self._component, self._subset)
@@ -308,9 +313,13 @@ class CubevizImageViewer(ImageViewer, HubListener):
         self.redraw()
 
     def update_component(self, component):
-        self._component = component
-        if self._stats_axes is not None:
-            self.update_stats()
+        if self.has_2d_data and self._stats_axes is not None:
+            self._stats_axes.set_visible(False)
+            self.redraw()
+        elif self._stats_axes is not None:
+            self._stats_axes.set_visible(True and self._stats_visible)
+
+        self.update_stats()
 
     def set_stats_visible(self, visible):
         self._stats_visible = visible
@@ -645,8 +654,7 @@ class CubevizImageViewer(ImageViewer, HubListener):
         if self.is_contour_active:
             self.draw_contour()
 
-        if self._stats_axes is not None:
-            self.update_stats()
+        self.update_stats()
 
     def fast_draw_slice_at_index(self, index):
         """
