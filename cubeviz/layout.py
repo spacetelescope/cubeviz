@@ -39,14 +39,24 @@ DEFAULT_NUM_SPLIT_VIEWERS = 3
 
 class WidgetWrapper(QtWidgets.QWidget):
 
-    def __init__(self, widget=None, tab_widget=None, parent=None):
+    def __init__(self, widget=None, tab_widget=None, toolbar=False, parent=None):
         super(WidgetWrapper, self).__init__(parent=parent)
         self.tab_widget = tab_widget
         self._widget = widget
+
         self.layout = QtWidgets.QVBoxLayout()
+        self.layout.setSpacing(0)
         self.layout.setContentsMargins(0, 0, 0, 0)
+
+        if toolbar:
+            self.create_toolbar()
+
         self.layout.addWidget(widget)
         self.setLayout(self.layout)
+
+    def create_toolbar(self):
+        self.tb = QtWidgets.QToolBar()
+        self.layout.addWidget(self.tb)
 
     def widget(self):
         return self._widget
@@ -90,12 +100,14 @@ class CubeVizLayout(QtWidgets.QWidget):
         # Create the cube viewers and register to the hub.
         for _ in range(DEFAULT_NUM_SPLIT_VIEWERS + 1):
             ww = WidgetWrapper(CubevizImageViewer(
-                    self.session, cubeviz_layout=self), tab_widget=self)
+                    self.session, cubeviz_layout=self), tab_widget=self,
+                    toolbar=True)
             self.cube_views.append(ww)
             ww._widget.register_to_hub(self.session.hub)
 
         # Create specviz viewer and register to the hub.
-        self.specviz = WidgetWrapper(SpecVizViewer(self.session), tab_widget=self)
+        self.specviz = WidgetWrapper(
+            SpecVizViewer(self.session), tab_widget=self, toolbar=False)
         self.specviz._widget.register_to_hub(self.session.hub)
 
         self.single_view = self.cube_views[0]
