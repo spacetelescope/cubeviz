@@ -9,27 +9,30 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>700</width>
-    <height>584</height>
+    <width>600</width>
+    <height>570</height>
    </rect>
   </property>
   <property name="sizePolicy">
-   <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+   <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
     <horstretch>0</horstretch>
     <verstretch>0</verstretch>
    </sizepolicy>
   </property>
   <property name="minimumSize">
    <size>
-    <width>700</width>
+    <width>0</width>
     <height>0</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
-    <width>700</width>
-    <height>584</height>
+    <width>16777215</width>
+    <height>16777215</height>
    </size>
+  </property>
+  <property name="focusPolicy">
+   <enum>Qt::StrongFocus</enum>
   </property>
   <property name="windowTitle">
    <string>Dialog</string>
@@ -47,7 +50,7 @@
    <item>
     <layout class="QVBoxLayout" name="verticalLayout">
      <property name="spacing">
-      <number>2</number>
+      <number>0</number>
      </property>
      <property name="sizeConstraint">
       <enum>QLayout::SetMinimumSize</enum>
@@ -131,6 +134,9 @@
      </item>
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_2">
+       <property name="spacing">
+        <number>0</number>
+       </property>
        <item>
         <widget class="QLabel" name="label_4">
          <property name="maximumSize">
@@ -160,6 +166,9 @@
      </item>
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_3">
+       <property name="spacing">
+        <number>0</number>
+       </property>
        <item>
         <widget class="QLabel" name="label_5">
          <property name="maximumSize">
@@ -190,12 +199,12 @@
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_4">
        <property name="spacing">
-        <number>2</number>
+        <number>0</number>
        </property>
        <item>
         <layout class="QVBoxLayout" name="verticalLayout_2">
          <property name="spacing">
-          <number>2</number>
+          <number>0</number>
          </property>
          <property name="sizeConstraint">
           <enum>QLayout::SetMinimumSize</enum>
@@ -259,12 +268,12 @@
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_6">
        <property name="spacing">
-        <number>2</number>
+        <number>0</number>
        </property>
        <item>
         <layout class="QVBoxLayout" name="verticalLayout_4">
          <property name="spacing">
-          <number>2</number>
+          <number>0</number>
          </property>
          <property name="sizeConstraint">
           <enum>QLayout::SetMinimumSize</enum>
@@ -328,12 +337,12 @@
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_7">
        <property name="spacing">
-        <number>2</number>
+        <number>0</number>
        </property>
        <item>
         <widget class="QCheckBox" name="advanced_checkbox">
          <property name="text">
-          <string>Advanced</string>
+          <string>Use Advanced Sigma Clipping</string>
          </property>
         </widget>
        </item>
@@ -343,7 +352,7 @@
       <widget class="QWidget" name="simple_sigma_widget" native="true">
        <layout class="QVBoxLayout" name="simple_sigma_vlayout">
         <property name="spacing">
-         <number>2</number>
+         <number>0</number>
         </property>
         <property name="leftMargin">
          <number>0</number>
@@ -360,14 +369,17 @@
         <item>
          <widget class="QLabel" name="label_13">
           <property name="text">
-           <string>Simple sigma clipping. Choose a sigma value and all collapsed data will be used that is above this value.</string>
+           <string>Simple sigma clipping. Choose a sigma value and all collapsed data will be used that is above this value.  Leave blank for no sigma clipping.</string>
+          </property>
+          <property name="wordWrap">
+           <bool>true</bool>
           </property>
          </widget>
         </item>
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_8">
           <property name="spacing">
-           <number>2</number>
+           <number>0</number>
           </property>
           <item>
            <widget class="QLabel" name="label_12">
@@ -415,17 +427,32 @@
        </property>
        <layout class="QVBoxLayout" name="advanced_sigma_layout">
         <property name="spacing">
-         <number>2</number>
+         <number>0</number>
+        </property>
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
         </property>
         <item>
          <layout class="QVBoxLayout" name="verticalLayout_5">
           <property name="spacing">
-           <number>2</number>
+           <number>0</number>
           </property>
           <item>
            <widget class="QLabel" name="label_14">
             <property name="text">
-             <string>Sigma clipping is implemented using astropy.stats.sigma_clip</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Advanced sigma clipping. Sigma clipping is implemented using &lt;a href=&quot;http://docs.astropy.org/en/stable/api/astropy.stats.sigma_clip.html&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#4c6b8a;&quot;&gt;astropy.stats.sigma_clip&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="openExternalLinks">
+             <bool>true</bool>
             </property>
            </widget>
           </item>
@@ -433,6 +460,9 @@
         </item>
         <item>
          <layout class="QHBoxLayout" name="advanced_sigma_hlayout_2">
+          <property name="spacing">
+           <number>1</number>
+          </property>
           <item>
            <widget class="QLabel" name="label_16">
             <property name="minimumSize">
@@ -456,12 +486,22 @@
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="lineEdit_3"/>
+           <widget class="QLineEdit" name="lineEdit_3">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>2</height>
+             </size>
+            </property>
+           </widget>
           </item>
          </layout>
         </item>
         <item>
          <layout class="QHBoxLayout" name="advanced_sigma_hlayout_3">
+          <property name="spacing">
+           <number>0</number>
+          </property>
           <item>
            <widget class="QLabel" name="label_17">
             <property name="minimumSize">
@@ -485,12 +525,22 @@
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="sigmal_lower_text"/>
+           <widget class="QLineEdit" name="sigmal_lower_text">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>1</height>
+             </size>
+            </property>
+           </widget>
           </item>
          </layout>
         </item>
         <item>
          <layout class="QHBoxLayout" name="advanced_sigma_hlayout_4">
+          <property name="spacing">
+           <number>0</number>
+          </property>
           <item>
            <widget class="QLabel" name="label_18">
             <property name="minimumSize">
@@ -514,12 +564,22 @@
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="sigma_upper_text"/>
+           <widget class="QLineEdit" name="sigma_upper_text">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>1</height>
+             </size>
+            </property>
+           </widget>
           </item>
          </layout>
         </item>
         <item>
          <layout class="QHBoxLayout" name="advanced_sigma_hlayout_5">
+          <property name="spacing">
+           <number>0</number>
+          </property>
           <item>
            <widget class="QLabel" name="label_19">
             <property name="minimumSize">
@@ -543,7 +603,14 @@
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="sigma_iters_text"/>
+           <widget class="QLineEdit" name="sigma_iters_text">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>1</height>
+             </size>
+            </property>
+           </widget>
           </item>
          </layout>
         </item>
@@ -552,10 +619,13 @@
      </item>
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_15">
+       <property name="spacing">
+        <number>0</number>
+       </property>
        <item>
         <widget class="QLabel" name="error_label_text">
          <property name="text">
-          <string>error text should go here:</string>
+          <string/>
          </property>
         </widget>
        </item>
@@ -563,6 +633,9 @@
      </item>
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_16">
+       <property name="spacing">
+        <number>0</number>
+       </property>
        <item>
         <spacer name="horizontalSpacer">
          <property name="orientation">
