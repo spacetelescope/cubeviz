@@ -11,7 +11,7 @@ from qtpy.QtWidgets import (QDialog, QApplication, QPushButton, QLabel, QWidget,
 
 from astropy.stats import sigma_clip
 
-from .common import add_to_2d_container
+from .common import add_to_2d_container, show_error_message
 
 # The operations we understand
 operations = {
@@ -509,13 +509,20 @@ class CollapseCube(QDialog):
         # Add new overlay/component to cubeviz. We add this both to the 2D
         # container Data object and also as an overlay. In future we might be
         # able to use the 2D container Data object for the overlays directly.
-        add_to_2d_container(self.parent, self.data, new_component, label)
-        self.parent.add_overlay(new_component, label, display_now=False)
 
-        self.close()
+        try:
+            add_to_2d_container(self.parent, self.data, new_component, label)
+            self.parent.add_overlay(new_component, label, display_now=False)
+        except Exception as e:
+            print('Error: {}'.format(e))
+            show_error_message(str(e), 'Collapse Cube Error', parent=self)
+            return
+        finally:
+            self.close()
 
         # Show new dialog
         self.final_dialog(label)
+
 
     def final_dialog(self, label):
         """
