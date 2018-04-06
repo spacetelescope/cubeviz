@@ -114,6 +114,7 @@ def main(argv=sys.argv):
     # Load the data files.
     if datafiles:
         datasets = load_data_files(datafiles)
+        print(datasets[0])
         ga.add_datasets(data_collection, datasets, auto_merge=False)
 
 

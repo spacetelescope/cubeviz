@@ -139,8 +139,11 @@ class DataConfiguration:
                             c = data.get_component(component_name)
                             c.units = self.get_units(hdu.header)
                     else:
-                        component_name = os.path.basename(data_filename)
+                        # Creates a unique component name
+                        component_name = str(ii)
                         data.add_component(component=hdu.data.astype(np.float), label=component_name)
+
+                    print("checking dup components", data.coords, data)
 
             # For the purposes of exporting, we keep a reference to the original HDUList object
             data._cubeviz_hdulist = hdulist
@@ -237,7 +240,14 @@ class DataConfiguration:
         is currently only in use in the default.yaml file
         :return:
         """
-        return hasattr(self._fits[0], 'data')
+        print("in has data------------------------------")
+        print(len(self._fits))
+        for hdu in self._fits:
+            print(hdu, hasattr(hdu, 'data'), len(hdu.data.shape))
+            if hasattr(hdu, 'data') and len(hdu.data.shape) == 3:
+                return True
+        print("skipped here")
+        return False
 
     def _equal(self, value):
         """

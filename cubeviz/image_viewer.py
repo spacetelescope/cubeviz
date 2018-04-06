@@ -751,6 +751,7 @@ class CubevizImageViewer(ImageViewer, HubListener):
                 formatter_1 -> 'd.dddd'
         """
         self._coords_in_degrees = False
+        #print("#####################", str(self.axes.coords[0]))
         self.axes.coords[0].set_major_formatter('hh:mm:ss')
         self.axes.coords[1].set_major_formatter('dd:mm:ss')
         self.figure.canvas.draw()
