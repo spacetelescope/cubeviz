@@ -52,8 +52,12 @@ class WidgetWrapper(QtWidgets.QWidget):
         if toolbar:
             self.create_toolbar()
 
+        # Add the image viewer itself to the layout
         self.layout.addWidget(widget)
         self.setLayout(self.layout)
+
+        if toolbar:
+            self.create_stats()
 
     def create_toolbar(self):
         self.tb = QtWidgets.QToolBar()
@@ -73,6 +77,13 @@ class WidgetWrapper(QtWidgets.QWidget):
         self.tb.addWidget(self.slice_text)
 
         self.layout.addWidget(self.tb)
+
+    def create_stats(self):
+        self.stats_widget = QtWidgets.QWidget()
+        self.stats_layout = QtWidgets.QVBoxLayout()
+        self.stats_layout.addWidget(QtWidgets.QLabel('Statistics'))
+        self.stats_widget.setLayout(self.stats_layout)
+        self.layout.addWidget(self.stats_widget)
 
     def widget(self):
         return self._widget
