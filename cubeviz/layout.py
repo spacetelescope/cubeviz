@@ -79,14 +79,22 @@ class WidgetWrapper(QtWidgets.QWidget):
         self.layout.addWidget(self.tb)
 
     def create_stats(self):
+
         self.stats_widget = QtWidgets.QWidget()
-        self.stats_layout = QtWidgets.QVBoxLayout()
-        self.stats_layout.addWidget(QtWidgets.QLabel('Statistics'))
+        self.stats_layout = QtWidgets.QHBoxLayout()
         self.stats_widget.setLayout(self.stats_layout)
         self.layout.addWidget(self.stats_widget)
 
+        self.stats_layout.addWidget(QtWidgets.QLabel('Statistics:'))
+
+        self.stats_text = QtWidgets.QLabel()
+        self.stats_layout.addWidget(self.stats_text)
+
     def set_stats_visible(self, visible):
         self.stats_widget.setVisible(visible)
+
+    def set_stats_text(self, text):
+        self.stats_text.setText(text)
 
     def widget(self):
         return self._widget
@@ -630,6 +638,8 @@ class CubeVizLayout(QtWidgets.QWidget):
         wavelengths = self.single_view._widget._data[0].coords.world_axis(
             self.single_view._widget._data[0], axis=0)
 
+        self._enable_all_viewer_combos(data)
+
         # TODO: currently this way of accessing units is not flexible
         self._slice_controller.enable()
         self._wavelength_controller.enable(str(wcs.wcs.cunit[2]), wavelengths)
@@ -637,7 +647,6 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._enable_option_buttons()
         self._setup_syncing()
 
-        self._enable_all_viewer_combos(data)
         for viewer in self.cube_views:
             viewer.slice_text.setText('slice: {:5}'.format(self.synced_index))
 

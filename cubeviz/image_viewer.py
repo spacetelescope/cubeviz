@@ -648,6 +648,13 @@ class CubevizImageViewer(ImageViewer, HubListener):
         if self.is_contour_active:
             self.draw_contour()
 
+        data = self._data[0][self.current_component_id][self._slice_index]
+        min_ = float(np.nanmin(data))
+        max_ = float(np.nanmax(data))
+
+        # TODO: have a dynamic way to determine sig figs
+        text = "slice min={:.4}, slice max={:.4}".format(min_, max_)
+        self.parent().set_stats_text(text)
         self.update_stats()
 
     def fast_draw_slice_at_index(self, index):
