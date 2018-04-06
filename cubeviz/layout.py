@@ -85,6 +85,9 @@ class WidgetWrapper(QtWidgets.QWidget):
         self.stats_widget.setLayout(self.stats_layout)
         self.layout.addWidget(self.stats_widget)
 
+    def set_stats_visible(self, visible):
+        self.stats_widget.setVisible(visible)
+
     def widget(self):
         return self._widget
 
@@ -332,7 +335,7 @@ class CubeVizLayout(QtWidgets.QWidget):
     def _toggle_stats_display(self):
         self._stats_visible = not self._stats_visible
         for viewer in self.cube_views:
-            viewer._widget.set_stats_visible(self._stats_visible)
+            viewer.set_stats_visible(self._stats_visible)
 
     def _open_dialog(self, name, widget):
 

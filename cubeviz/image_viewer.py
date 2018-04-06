@@ -320,12 +320,6 @@ class CubevizImageViewer(ImageViewer, HubListener):
 
         self.update_stats()
 
-    def set_stats_visible(self, visible):
-        self._stats_visible = visible
-        if self._stats_axes is not None:
-            self._stats_axes.set_visible(self._stats_visible and not self._stats_hidden)
-            self.redraw()
-
     @property
     def is_preview_active(self):
         return self.is_contour_preview_active or self.is_smoothing_preview_active
