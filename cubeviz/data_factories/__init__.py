@@ -143,8 +143,6 @@ class DataConfiguration:
                         component_name = str(ii)
                         data.add_component(component=hdu.data.astype(np.float), label=component_name)
 
-                    print("checking dup components", data.coords, data)
-
             # For the purposes of exporting, we keep a reference to the original HDUList object
             data._cubeviz_hdulist = hdulist
 
@@ -158,7 +156,6 @@ class DataConfiguration:
         :param filename:
         :return:
         """
-
         # Check the "first filename in the list" which might be the "only filename" in the list.
         filename = filename.split(',')[0]
         self._fits = fits.open(filename)
@@ -240,13 +237,9 @@ class DataConfiguration:
         is currently only in use in the default.yaml file
         :return:
         """
-        print("in has data------------------------------")
-        print(len(self._fits))
         for hdu in self._fits:
-            print(hdu, hasattr(hdu, 'data'), len(hdu.data.shape))
-            if hasattr(hdu, 'data') and len(hdu.data.shape) == 3:
+            if hasattr(hdu, 'data') and hdu.data is not None and hasattr(hdu.data, 'shape') and len(hdu.data.shape) == 3:
                 return True
-        print("skipped here")
         return False
 
     def _equal(self, value):
