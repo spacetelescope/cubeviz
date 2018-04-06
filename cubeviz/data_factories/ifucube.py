@@ -39,7 +39,15 @@ class IFUCube(object):
             log.warning('Could not open {} '.format(filename))
             return
 
-        self.check(fix)
+        # self.check(fix)
+        for ii, hdu in enumerate(self._fits):
+            self._fits[ii].header["CTYPE1"] = "RA---TAN"
+            self._fits[ii].header["CTYPE2"] = "DEC--TAN"
+            self._fits[ii].header["CTYPE3"] = "WAVE"
+    
+            self._fits[ii].header["CUNIT1"] = "deg"
+            self._fits[ii].header["CUNIT2"] = "deg"
+            self._fits[ii].header["CUNIT3"] = "m"
 
         return self._fits
 
