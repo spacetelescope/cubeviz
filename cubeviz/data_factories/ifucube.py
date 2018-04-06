@@ -109,7 +109,7 @@ class IFUCube(object):
         return good
 
     def check_ctype1(self, fix=False):
-        self._check_ctype(key='CTYPE1', correct='RA--TAN', fix=fix)
+        self._check_ctype(key='CTYPE1', correct='RA---TAN', fix=fix)
 
     def check_ctype2(self, fix=False):
         self._check_ctype(key='CTYPE2', correct='DEC--TAN', fix=fix)
