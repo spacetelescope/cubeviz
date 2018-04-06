@@ -39,15 +39,7 @@ class IFUCube(object):
             log.warning('Could not open {} '.format(filename))
             return
 
-        # self.check(fix)
-        for ii, hdu in enumerate(self._fits):
-            self._fits[ii].header["CTYPE1"] = "RA---TAN"
-            self._fits[ii].header["CTYPE2"] = "DEC--TAN"
-            self._fits[ii].header["CTYPE3"] = "WAVE"
-    
-            self._fits[ii].header["CUNIT1"] = "deg"
-            self._fits[ii].header["CUNIT2"] = "deg"
-            self._fits[ii].header["CUNIT3"] = "m"
+        self.check(fix)
 
         return self._fits
 
@@ -64,6 +56,12 @@ class IFUCube(object):
         self.check_ctype2(fix)
 
         self.check_ctype3(fix)
+
+        self.check_cunit1(fix)
+
+        self.check_cunit2(fix)
+
+        self.check_cunit3(fix)
 
         return self._fits
 
@@ -116,43 +114,50 @@ class IFUCube(object):
 
     def check_ctype3(self, fix=False):
         self._check_ctype(key='CTYPE3', correct='WAVE', fix=fix)
+        
+    def check_cunit1(self, fix=False):
+        self._check_ctype(key='CUNIT1', correct='deg', fix=fix)
+
+    def check_cunit2(self, fix=False):
+        self._check_ctype(key='CUNIT2', correct='deg', fix=fix)
+
+    def check_cunit3(self, fix=False):
+        self._check_ctype(key='CUNIT3', correct='Angstrom', fix=fix)
 
     def _check_ctype(self, key, correct, fix=False):
         """
-        Check CTYPE1 and make sure it is the correct value
+        Check the header key and make sure it is the correct value
 
         :param: fits_file: The open fits file
         :param: fix: boolean whether to fix it or not
         :return: boolean whether it is good or not
         """
         log.debug('In check for {}'.format(key))
-        good = False
-        ctype = None
 
-        # Check the first HDU which is where it is supposed to be
-        if key in self._fits[0].header and not self._fits[0].header[key] == correct:
-            ctype = self._fits[0].header[key]
-            log.info('Good, found {}, {}, in initial header'.format(key, ctype))
-            good = True
+        for ii, hdu in enumerate(self._fits):
+            if ii == 0 or (hasattr(hdu, 'data') and hdu.data is not None and len(hdu.data.shape) == 3):
+                if key not in hdu.header:
+                    log.info("WARNING: {} not found in header[{}], creating it with dummy value".format(key, ii))
+                    hdu.header[key] = "NONE"
+                    self.good_and_fix(hdu, key, correct, fix, ii)
+                else:
+                    self.good_and_fix(hdu, key, correct, fix, ii)
 
-        # If not in the first HDU then check the others
-        else:
-            log.warning('{} not in first HDU, checking others'.format(key))
-            for ii, hdu in enumerate(self._fits):
-                if ii == 0 and ctype is None:
-                    continue
-
-                extname = hdu.header['EXTNAME'] if 'EXTNAME' in hdu.header else 'No extension name'
-
-                if key in hdu.header:
-                    ctype = hdu.header[key]
-                    log.info('Found {} = {} in ({}, {})'.format(key, ctype, ii, extname))
-                    good = True
-
-        if not good and fix:
-            ctype = correct
-            log.info('{} not found and setting to {}'.format(key, ctype))
-
-        log.info('ctype is {}'.format(ctype))
-
-        return good
+    def good_and_fix(self, hdu, key, correct, fix, ii):
+        """
+        Does as the name implies, checks to see if the hdu.header[key] equals the correct value, if it does not
+        and fix is True, the correct value is inserted and passed back to CubeViz
+        :param hdu: One of the headers from the original FITS file
+        :param key: The header keyword to be checked
+        :param correct: The correct value of the header keyword
+        :param fix: Whether or not to fix the header to the correct value
+        :param ii: The index of the hdu within the FITS file
+        :return:
+        """
+        if not hdu.header[key] == correct and fix:
+            log.info("{} equals {} in header[{}] but should equal {}. Fix = {}".format(key, hdu.header[key], ii, correct, fix))
+            hdu.header[key] = correct
+        elif not hdu.header[key] == correct and not fix:
+            log.info("{} equals {} in header [{}] but should equal {}. Fix = {}".format(key, hdu.header[key], ii, correct, fix))
+        elif hdu.header[key] == correct:
+            log.info('Good, found {} equals {} in header[{}]'.format(key, hdu.header[key], ii))
