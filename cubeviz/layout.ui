@@ -60,22 +60,6 @@
         </property>
        </spacer>
       </item>
-      <item row="2" column="9">
-       <widget class="QToolButton" name="sync_button">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>Sync Viewers</string>
-        </property>
-        <property name="checkable">
-         <bool>false</bool>
-        </property>
-        <property name="checked">
-         <bool>false</bool>
-        </property>
-       </widget>
-      </item>
       <item row="2" column="6">
        <widget class="QToolButton" name="view_option_button">
         <property name="enabled">
@@ -404,13 +388,29 @@
           <number>6</number>
          </property>
          <item row="0" column="0">
-          <widget class="QToolButton" name="button_toggle_image_mode">
+          <widget class="QPushButton" name="button_toggle_image_mode">
            <property name="text">
             <string>Single image viewer</string>
            </property>
           </widget>
          </item>
         </layout>
+       </widget>
+      </item>
+      <item row="2" column="9">
+       <widget class="QPushButton" name="sync_button">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Sync Viewers</string>
+        </property>
+        <property name="checkable">
+         <bool>false</bool>
+        </property>
+        <property name="checked">
+         <bool>false</bool>
+        </property>
        </widget>
       </item>
      </layout>
