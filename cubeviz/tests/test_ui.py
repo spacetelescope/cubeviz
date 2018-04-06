@@ -112,12 +112,11 @@ def check_data_component(layout, combo, index, widget):
         layout._data[current_label][layout.synced_index])
 
 def setup_combo_and_index(qtbot, layout, index):
+    combo = layout.get_viewer_combo(index)
     if index == 0:
         toggle_viewer(qtbot, layout)
-        combo = getattr(layout.ui, 'single_viewer_combo')
         synced_index = 0
     else:
-        combo = getattr(layout.ui, 'viewer{0}_combo'.format(index))
         synced_index = index - 1
 
     return combo, synced_index
@@ -126,12 +125,11 @@ def setup_combo_and_index(qtbot, layout, index):
 def test_viewer_dropdowns(qtbot, cubeviz_layout, viewer_index):
     combo, synced_index = setup_combo_and_index(
                                 qtbot, cubeviz_layout, viewer_index)
+    combo = cubeviz_layout.get_viewer_combo(viewer_index)
     if viewer_index == 0:
         toggle_viewer(qtbot, cubeviz_layout)
-        combo = getattr(cubeviz_layout.ui, 'single_viewer_combo')
         synced_index = 0
     else:
-        combo = getattr(cubeviz_layout.ui, 'viewer{0}_combo'.format(viewer_index))
         synced_index = min(viewer_index - 1, 1) # only two datasets
 
     widget = cubeviz_layout.cube_views[viewer_index]._widget

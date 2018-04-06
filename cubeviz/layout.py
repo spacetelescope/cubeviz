@@ -35,18 +35,44 @@ from .tools.spectral_operations import SpectralOperationHandler
 
 
 DEFAULT_NUM_SPLIT_VIEWERS = 3
+DEFAULT_TOOLBAR_ICON_SIZE = 18
 
 
 class WidgetWrapper(QtWidgets.QWidget):
 
-    def __init__(self, widget=None, tab_widget=None, parent=None):
+    def __init__(self, widget=None, tab_widget=None, toolbar=False, parent=None):
         super(WidgetWrapper, self).__init__(parent=parent)
         self.tab_widget = tab_widget
         self._widget = widget
+
         self.layout = QtWidgets.QVBoxLayout()
+        self.layout.setSpacing(0)
         self.layout.setContentsMargins(0, 0, 0, 0)
+
+        if toolbar:
+            self.create_toolbar()
+
         self.layout.addWidget(widget)
         self.setLayout(self.layout)
+
+    def create_toolbar(self):
+        self.tb = QtWidgets.QToolBar()
+
+        self.combo = QtWidgets.QComboBox(enabled=False)
+        self.tb.addWidget(self.combo)
+
+        self.checkbox = QtWidgets.QCheckBox('Synced', enabled=False, checked=True)
+        self.tb.addWidget(self.checkbox)
+
+        # Add a spacer so that the slice text is right-aligned
+        self.spacer = QtWidgets.QWidget()
+        self.spacer.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        self.tb.addWidget(self.spacer)
+
+        self.slice_text = QtWidgets.QLabel('')
+        self.tb.addWidget(self.slice_text)
+
+        self.layout.addWidget(self.tb)
 
     def widget(self):
         return self._widget
@@ -90,23 +116,22 @@ class CubeVizLayout(QtWidgets.QWidget):
         # Create the cube viewers and register to the hub.
         for _ in range(DEFAULT_NUM_SPLIT_VIEWERS + 1):
             ww = WidgetWrapper(CubevizImageViewer(
-                    self.session, cubeviz_layout=self), tab_widget=self)
+                    self.session, cubeviz_layout=self), tab_widget=self,
+                    toolbar=True)
             self.cube_views.append(ww)
             ww._widget.register_to_hub(self.session.hub)
 
+        self.set_toolbar_icon_size(DEFAULT_TOOLBAR_ICON_SIZE)
+
         # Create specviz viewer and register to the hub.
-        self.specviz = WidgetWrapper(SpecVizViewer(self.session), tab_widget=self)
+        self.specviz = WidgetWrapper(
+            SpecVizViewer(self.session), tab_widget=self, toolbar=False)
         self.specviz._widget.register_to_hub(self.session.hub)
 
         self.single_view = self.cube_views[0]
         self.split_views = self.cube_views[1:]
 
-        self._synced_checkboxes = [
-            self.ui.singleviewer_synced_checkbox,
-            self.ui.viewer1_synced_checkbox,
-            self.ui.viewer2_synced_checkbox,
-            self.ui.viewer3_synced_checkbox
-        ]
+        self._synced_checkboxes = [view.checkbox for view in self.cube_views]
 
         for view, checkbox in zip(self.cube_views, self._synced_checkboxes):
             view._widget.assign_synced_checkbox(checkbox)
@@ -162,7 +187,6 @@ class CubeVizLayout(QtWidgets.QWidget):
         # Set the default to parallel image viewer
         self._single_viewer_mode = False
         self.ui.button_toggle_image_mode.setText('Single Image Viewer')
-        self.ui.viewer_control_frame.setCurrentIndex(0)
 
         # Add this class to the specviz dispatcher watcher
         dispatch.setup(self)
@@ -235,6 +259,10 @@ class CubeVizLayout(QtWidgets.QWidget):
                 act.triggered.connect(v)
                 menu_widget.addAction(act)
         return menu_widget
+
+    def set_toolbar_icon_size(self, size):
+        for view in self.cube_views:
+            view._widget.toolbar.setIconSize(QtCore.QSize(size, size))
 
     def handle_settings_change(self, message):
         if isinstance(message, SettingsChangeMessage):
@@ -450,13 +478,13 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         return _on_viewer_combo_change
 
-    def _enable_viewer_combo(self, data, index, combo_label, selection_label):
-        combo = getattr(self.ui, combo_label)
-        connect_combo_selection(self, selection_label, combo)
+    def _enable_viewer_combo(self, viewer, data, index, selection_label):
+        connect_combo_selection(self, selection_label, viewer.combo)
         helper = ComponentIDComboHelper(self, selection_label)
         helper.set_multiple_data([data])
-        combo.setEnabled(True)
-        combo.currentIndexChanged.connect(self._get_change_viewer_combo_func(combo, index))
+        viewer.combo.setEnabled(True)
+        viewer.combo.currentIndexChanged.connect(
+            self._get_change_viewer_combo_func(viewer.combo, index))
         self._viewer_combo_helpers.append(helper)
 
     def _enable_all_viewer_combos(self, data):
@@ -468,10 +496,10 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         :return:
         """
-        self._enable_viewer_combo(
-            data, 0, 'single_viewer_combo', 'single_viewer_attribute')
         view = self.cube_views[0].widget()
-        component = getattr(self, 'single_viewer_attribute')
+        self._enable_viewer_combo(view.parent(), data, 0, 'single_viewer_attribute')
+
+        component = self.single_viewer_attribute
         view.current_component_id = component
         view.cubeviz_unit = self._flux_unit_controller.get_component_unit(component,
                                                                           cubeviz_unit=True)
@@ -479,10 +507,10 @@ class CubeVizLayout(QtWidgets.QWidget):
         view.update_axes_title(component.label)
 
         for i in range(1,4):
-            combo_label = 'viewer{0}_combo'.format(i)
-            selection_label = 'viewer{0}_attribute'.format(i)
-            self._enable_viewer_combo(data, i, combo_label, selection_label)
             view = self.cube_views[i].widget()
+            selection_label = 'viewer{0}_attribute'.format(i)
+            self._enable_viewer_combo(view.parent(), data, i, selection_label)
+
             component = getattr(self, selection_label)
             view.current_component_id = component
             view.cubeviz_unit = self._flux_unit_controller.get_component_unit(component,
@@ -525,11 +553,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         """
         Get viewer combo for a given viewer index
         """
-        if view_index == 0:
-            combo_label = 'single_viewer_combo'
-        else:
-            combo_label = 'viewer{0}_combo'.format(view_index)
-        return getattr(self.ui, combo_label)
+        return self.cube_views[view_index].combo
 
     def add_overlay(self, data, label, display_now=True):
         self._overlay_controller.add_overlay(data, label, display=display_now)
@@ -592,17 +616,19 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         # Store pointer to wcs and wavelength information
         wcs = self.session.data_collection.data[0].coords.wcs
-        wavelengths = self.single_view._widget._data[0].coords.world_axis(self.single_view._widget._data[0], axis=0)
+        wavelengths = self.single_view._widget._data[0].coords.world_axis(
+            self.single_view._widget._data[0], axis=0)
 
         # TODO: currently this way of accessing units is not flexible
         self._slice_controller.enable()
         self._wavelength_controller.enable(str(wcs.wcs.cunit[2]), wavelengths)
 
-
         self._enable_option_buttons()
         self._setup_syncing()
 
         self._enable_all_viewer_combos(data)
+        for viewer in self.cube_views:
+            viewer.slice_text.setText('slice: {:5}'.format(self.synced_index))
 
         self.subWindowActivated.emit(self._active_view)
 
@@ -648,7 +674,6 @@ class CubeVizLayout(QtWidgets.QWidget):
             self._activate_split_image_mode(event)
             self._single_viewer_mode = False
             self.ui.button_toggle_image_mode.setText('Single Image Viewer')
-            self.ui.viewer_control_frame.setCurrentIndex(0)
 
             for view in self.split_views:
                 if self.single_view._widget.synced:
@@ -663,7 +688,6 @@ class CubeVizLayout(QtWidgets.QWidget):
             self._activate_single_image_mode(event)
             self._single_viewer_mode = True
             self.ui.button_toggle_image_mode.setText('Split Image Viewer')
-            self.ui.viewer_control_frame.setCurrentIndex(1)
             self._active_view._widget.update()
 
         self.subWindowActivated.emit(new_active_view)
