@@ -246,24 +246,23 @@ class CubevizImageViewer(ImageViewer, HubListener):
         return self.get_layer_artist(cls, layer=layer, layer_state=layer_state)
 
     def _create_stats_axes(self, subset, median, mu, sigma):
-        rect = 0.01, 0.87, 0.20, 0.12
+        rect = 0.01, 0.87, 0.15, 0.12
         axes = self.figure.add_axes(rect, xticks=[], yticks=[])
         circle = Circle((0.15,0.85), 0.05, color=subset.style.color)
         axes.add_artist(circle)
 
         text_opts = dict(x=0.05, size='smaller')
-        axes.text(size='smaller', x=0.35, y=0.75, s='slice: {}'.format(self._slice_index))
         axes.text(**text_opts, y=0.52, s=r'$\widetilde{{x}} = {:.3}$'.format(median))
         axes.text(**text_opts, y=0.28, s=r'$\mu = {:.3}$'.format(mu))
         axes.text(**text_opts, y=0.02, s=r'$\sigma = {:.3}$'.format(sigma))
         return axes
 
     def _update_stats_text(self, median, mu, sigma):
-        median_text = self._stats_axes.texts[1]
+        median_text = self._stats_axes.texts[0]
         median_text.set_text(r'$\widetilde{{x}} = {:.3}$'.format(median))
-        mu_text = self._stats_axes.texts[2]
+        mu_text = self._stats_axes.texts[1]
         mu_text.set_text(r'$\mu = {:.3}$'.format(mu))
-        sigma_text = self._stats_axes.texts[3]
+        sigma_text = self._stats_axes.texts[2]
         sigma_text.set_text(r'$\sigma = {:.3}$'.format(sigma))
 
     def _calculate_stats(self, component, subset):
@@ -306,9 +305,7 @@ class CubevizImageViewer(ImageViewer, HubListener):
         if self._stats_axes is None or self._has_2d_data or self._subset.ndim != 3:
             return
 
-        slice_text = self._stats_axes.texts[0]
-        slice_text.set_text('slice: {}'.format(self._slice_index))
-        median, mu, sigma = self._calculate_stats(self._component, self._subset)
+        median, mu, sigma = self._calculate_stats(self.current_component_id, self._subset)
         self._update_stats_text(median, mu, sigma)
         self.redraw()
 
