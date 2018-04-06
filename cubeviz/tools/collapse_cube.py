@@ -17,7 +17,7 @@ from .common import add_to_2d_container, show_error_message
 import logging
 logging.basicConfig(format='%(levelname)-6s: %(name)-10s %(asctime)-15s  %(message)s')
 log = logging.getLogger("CollapseCube")
-log.setLevel(logging.DEBUG)
+log.setLevel(logging.WARNING)
 
 # The operations we understand
 operations = {
@@ -92,6 +92,9 @@ class CollapseCube(QDialog):
         self.ui.error_label.setVisible(False)
 
         # Setup call back for the Advanced Sigma Checkbox
+        self.ui.region_combobox.currentIndexChanged.connect(self._region_combobox_callback)
+
+        # Setup call back for the Advanced Sigma Checkbox
         self.ui.sigma_combobox.currentIndexChanged.connect(self._sigma_combobox_callback)
 
         # Setup the call back for the buttons
@@ -104,21 +107,69 @@ class CollapseCube(QDialog):
         self._sigma_combobox_callback(0)
         self._region_selection_change(0)
 
-    def _sigma_combobox_callback(self, event):
-        self.ui.simple_sigma_label.setVisible(event == 1)
-        self.ui.simple_sigma_description.setVisible(event == 1)
-        self.ui.simple_sigma_input.setVisible(event == 1)
+    def _region_combobox_callback(self, index):
+        log.debug('_region_combobox_callback with index {}'.format(index))
 
-        self.ui.advanced_sigma_label.setVisible(event == 2)
-        self.ui.advanced_sigma_description.setVisible(event == 2)
-        self.ui.advanced_sigma_lower_label.setVisible(event == 2)
-        self.ui.advanced_sigma_upper_label.setVisible(event == 2)
-        self.ui.advanced_sigma_iters_label.setVisible(event == 2)
+        combo_text = self.ui.region_combobox.currentText()
 
-        self.ui.advanced_sigma_input.setVisible(event == 2)
-        self.ui.advanced_sigma_lower_input.setVisible(event == 2)
-        self.ui.advanced_sigma_upper_input.setVisible(event == 2)
-        self.ui.advanced_sigma_iters_input.setVisible(event == 2)
+        if 'Custom (Wavelengths)' == combo_text:  # convert to custom wavelengths
+            # try to convert the text boxes to wavelengths
+            start = self.ui.start_input.text().strip()
+            log.debug('    start = {}'.format(start))
+            try:
+                if float(start).is_integer():
+                    start = int(start)
+                    self.ui.start_input.setText('{:.4}'.format(self.wavelengths[int(start)]))
+            except:
+                self.ui.start_input.setText('')
+
+            # try to convert the text boxes to wavelengths
+            end = self.ui.end_input.text().strip()
+            log.debug('    end = {}'.format(end))
+            try:
+                if float(end).is_integer():
+                    end = int(ind)
+                    self.ui.end_input.setText('{:.4}'.format(self.wavelengths[int(end)]))
+            except:
+                self.ui.end_input.setText('')
+
+        elif 'Custom (Indices)' == combo_text:  # convert to custom indices
+            # try to convert the text boxes to indices
+            start = self.ui.start_input.text().strip()
+            log.debug('    start = {}'.format(start))
+            try:
+                ind = np.argsort(abs(float(start) - self.wavelengths))[0]
+                self.ui.start_input.setText('{}'.format(ind))
+            except:
+                self.ui.start_input.setText('')
+
+            # try to convert the text boxes to wavelengths
+            end = self.ui.end_input.text().strip()
+            log.debug('    end = {}'.format(end))
+            try:
+                ind = np.argsort(abs(float(end) - self.wavelengths))[0]
+                self.ui.end_input.setText('{}'.format(ind))
+            except:
+                self.ui.end_input.setText('')
+
+    def _sigma_combobox_callback(self, index):
+
+        # Show / Hide simple sigma options 
+        self.ui.simple_sigma_label.setVisible(index == 1)
+        self.ui.simple_sigma_description.setVisible(index == 1)
+        self.ui.simple_sigma_input.setVisible(index == 1)
+
+        # Show / Hide advanced sigma options 
+        self.ui.advanced_sigma_label.setVisible(index == 2)
+        self.ui.advanced_sigma_description.setVisible(index == 2)
+        self.ui.advanced_sigma_lower_label.setVisible(index == 2)
+        self.ui.advanced_sigma_upper_label.setVisible(index == 2)
+        self.ui.advanced_sigma_iters_label.setVisible(index == 2)
+
+        self.ui.advanced_sigma_input.setVisible(index == 2)
+        self.ui.advanced_sigma_lower_input.setVisible(index == 2)
+        self.ui.advanced_sigma_upper_input.setVisible(index == 2)
+        self.ui.advanced_sigma_iters_input.setVisible(index == 2)
 
     def _region_selection_change(self, index):
         """
@@ -253,6 +304,12 @@ class CollapseCube(QDialog):
 
             end_wavelength = None
 
+        if end_wavelength < start_wavelength:
+            self.ui.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.ui.error_label.setText('Start wavelength must be less than the end wavelength.')
+            self.ui.error_label.setVisible(True)
+            return None, None
+
         start_index = np.argsort(abs(self.wavelengths - start_wavelength))[0]
         end_index = np.argsort(abs(self.wavelengths - end_wavelength))[0]
 
@@ -322,6 +379,12 @@ class CollapseCube(QDialog):
             self.ui.error_label.setVisible(True)
 
             end_index = None
+
+        if end_index < start_index:
+            self.ui.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.ui.error_label.setText('Start index must be less than the end index.')
+            self.ui.error_label.setVisible(True)
+            return None, None
 
         log.debug('  returning with start_index {} and end_index {}'.format(
             start_index, end_index))
