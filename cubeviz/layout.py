@@ -176,7 +176,6 @@ class CubeVizLayout(QtWidgets.QWidget):
         # Set the default to parallel image viewer
         self._single_viewer_mode = False
         self.ui.button_toggle_image_mode.setText('Single Image Viewer')
-        self.ui.viewer_control_frame.setCurrentIndex(0)
 
         # Add this class to the specviz dispatcher watcher
         dispatch.setup(self)
@@ -663,7 +662,6 @@ class CubeVizLayout(QtWidgets.QWidget):
             self._activate_split_image_mode(event)
             self._single_viewer_mode = False
             self.ui.button_toggle_image_mode.setText('Single Image Viewer')
-            self.ui.viewer_control_frame.setCurrentIndex(0)
 
             for view in self.split_views:
                 if self.single_view._widget.synced:
@@ -678,7 +676,6 @@ class CubeVizLayout(QtWidgets.QWidget):
             self._activate_single_image_mode(event)
             self._single_viewer_mode = True
             self.ui.button_toggle_image_mode.setText('Split Image Viewer')
-            self.ui.viewer_control_frame.setCurrentIndex(1)
             self._active_view._widget.update()
 
         self.subWindowActivated.emit(new_active_view)
