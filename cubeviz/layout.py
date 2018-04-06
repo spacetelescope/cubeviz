@@ -85,16 +85,21 @@ class WidgetWrapper(QtWidgets.QWidget):
         self.stats_widget.setLayout(self.stats_layout)
         self.layout.addWidget(self.stats_widget)
 
-        self.stats_layout.addWidget(QtWidgets.QLabel('Statistics:'))
+        self.stats_layout.addWidget(QtWidgets.QLabel('Slice Statistics:'))
 
-        self.stats_text = QtWidgets.QLabel()
-        self.stats_layout.addWidget(self.stats_text)
+        self.slice_stats_text = QtWidgets.QLabel()
+        self.stats_layout.addWidget(self.slice_stats_text)
+
+        self.stats_layout.addWidget(QtWidgets.QLabel('ROI Statistics:'))
+
+        self.roi_stats_text = QtWidgets.QLabel('hey there')
+        self.stats_layout.addWidget(self.roi_stats_text)
 
     def set_stats_visible(self, visible):
         self.stats_widget.setVisible(visible)
 
     def set_stats_text(self, text):
-        self.stats_text.setText(text)
+        self.slice_stats_text.setText(text)
 
     def widget(self):
         return self._widget
