@@ -35,6 +35,7 @@ from .tools.spectral_operations import SpectralOperationHandler
 
 
 DEFAULT_NUM_SPLIT_VIEWERS = 3
+DEFAULT_TOOLBAR_ICON_SIZE = 18
 
 
 class WidgetWrapper(QtWidgets.QWidget):
@@ -111,6 +112,8 @@ class CubeVizLayout(QtWidgets.QWidget):
                     toolbar=True)
             self.cube_views.append(ww)
             ww._widget.register_to_hub(self.session.hub)
+
+        self.set_toolbar_icon_size(DEFAULT_TOOLBAR_ICON_SIZE)
 
         # Create specviz viewer and register to the hub.
         self.specviz = WidgetWrapper(
@@ -248,6 +251,10 @@ class CubeVizLayout(QtWidgets.QWidget):
                 act.triggered.connect(v)
                 menu_widget.addAction(act)
         return menu_widget
+
+    def set_toolbar_icon_size(self, size):
+        for view in self.cube_views:
+            view._widget.toolbar.setIconSize(QtCore.QSize(size, size))
 
     def handle_settings_change(self, message):
         if isinstance(message, SettingsChangeMessage):
