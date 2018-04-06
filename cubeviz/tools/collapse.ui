@@ -134,7 +134,7 @@
      </item>
      <item row="1" column="0">
       <layout class="QGridLayout" name="gridLayout_3">
-       <item row="2" column="0">
+       <item row="3" column="0">
         <widget class="QLabel" name="label_5">
          <property name="minimumSize">
           <size>
@@ -149,14 +149,14 @@
           </font>
          </property>
          <property name="text">
-          <string>Region:</string>
+          <string>Spectral Region:</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
          </property>
         </widget>
        </item>
-       <item row="1" column="0">
+       <item row="2" column="0">
         <widget class="QLabel" name="label_4">
          <property name="minimumSize">
           <size>
@@ -178,7 +178,7 @@
          </property>
         </widget>
        </item>
-       <item row="2" column="1">
+       <item row="3" column="1">
         <widget class="QComboBox" name="region_combobox"/>
        </item>
        <item row="0" column="0">
@@ -203,19 +203,13 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="1">
-        <widget class="QLineEdit" name="start_input"/>
-       </item>
-       <item row="0" column="1">
-        <widget class="QComboBox" name="data_combobox"/>
-       </item>
-       <item row="1" column="1">
-        <widget class="QComboBox" name="operation_combobox"/>
-       </item>
-       <item row="4" column="1">
+       <item row="5" column="1">
         <widget class="QLineEdit" name="end_input"/>
        </item>
-       <item row="3" column="0">
+       <item row="4" column="1">
+        <widget class="QLineEdit" name="start_input"/>
+       </item>
+       <item row="4" column="0">
         <layout class="QGridLayout" name="gridLayout_8">
          <item row="0" column="0">
           <widget class="QLabel" name="start_label">
@@ -251,7 +245,7 @@
          </item>
         </layout>
        </item>
-       <item row="4" column="0">
+       <item row="5" column="0">
         <layout class="QGridLayout" name="gridLayout_11">
          <item row="0" column="0">
           <widget class="QLabel" name="end_label">
@@ -281,6 +275,31 @@
           </widget>
          </item>
         </layout>
+       </item>
+       <item row="0" column="1">
+        <widget class="QComboBox" name="data_combobox"/>
+       </item>
+       <item row="2" column="1">
+        <widget class="QComboBox" name="operation_combobox"/>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label">
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>Spatial Region:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QComboBox" name="spatial_region_combobox"/>
        </item>
       </layout>
      </item>

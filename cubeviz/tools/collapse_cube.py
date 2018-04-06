@@ -78,6 +78,11 @@ class CollapseCube(QDialog):
                                       if not x in self.data.coordinate_components])
         self.ui.operation_combobox.addItems(operations.keys())
 
+        # Fill spatial region combobox
+        print(self.data.subsets)
+        spatial_regions = ['Image'] + [x.label for x in self.data.subsets]
+        self.ui.spatial_region_combobox.addItems(spatial_regions)
+
         # Get the Specviz regions and add them in to the Combo box
         for roi in self.parent.specviz._widget.roi_bounds:
             self.ui.region_combobox.addItem("Specviz ROI ({:.4}, {:.4})".format(roi[0], roi[1]))
