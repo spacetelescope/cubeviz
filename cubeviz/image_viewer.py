@@ -633,6 +633,8 @@ class CubevizImageViewer(ImageViewer, HubListener):
             else:
                 self.update_slice_index(index)
 
+        self.parent().slice_text.setText('slice: {:5}'.format(self._slice_index))
+
     def update_slice_index(self, index):
         """
         Function to update image and slice index.

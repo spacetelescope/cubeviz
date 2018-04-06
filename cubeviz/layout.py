@@ -64,6 +64,14 @@ class WidgetWrapper(QtWidgets.QWidget):
         self.checkbox = QtWidgets.QCheckBox('Synced', enabled=False, checked=True)
         self.tb.addWidget(self.checkbox)
 
+        # Add a spacer so that the slice text is right-aligned
+        self.spacer = QtWidgets.QWidget()
+        self.spacer.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        self.tb.addWidget(self.spacer)
+
+        self.slice_text = QtWidgets.QLabel('')
+        self.tb.addWidget(self.slice_text)
+
         self.layout.addWidget(self.tb)
 
     def widget(self):
@@ -619,11 +627,12 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._slice_controller.enable()
         self._wavelength_controller.enable(str(wcs.wcs.cunit[2]), wavelengths)
 
-
         self._enable_option_buttons()
         self._setup_syncing()
 
         self._enable_all_viewer_combos(data)
+        for viewer in self.cube_views:
+            viewer.slice_text.setText('slice: {:5}'.format(self.synced_index))
 
         self.subWindowActivated.emit(self._active_view)
 
