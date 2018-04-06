@@ -14,6 +14,11 @@ from astropy.stats import sigma_clip
 
 from .common import add_to_2d_container, show_error_message
 
+import logging
+logging.basicConfig(format='%(levelname)-6s: %(name)-10s %(asctime)-15s  %(message)s')
+log = logging.getLogger("CollapseCube")
+log.setLevel(logging.DEBUG)
+
 # The operations we understand
 operations = {
     'Sum': np.sum,
@@ -186,106 +191,244 @@ class CollapseCube(QDialog):
             self.ui.end_example_label.setEnabled(True)
             self.ui.end_input.setEnabled(True)
 
+    def _calculate_callback_wavelength_checks(self, start_wavelength, end_wavelength):
+
+        log.debug('_calculate_callback_wavelength_checks with start {} and end {}'.format(
+            start_wavelength, end_wavelength))
+
+        if len(start_wavelength) == 0:
+            self.ui.end_label.setStyleSheet("color: rgba(0, 0, 255, 128)")
+            self.ui.error_label.setText('No start wavelength, assuming last spectral wavelength.')
+            start_wavelength = self.wavelengths[0]
+
+        if len(end_wavelength) == 0:
+            self.ui.end_label.setStyleSheet("color: rgba(0, 0, 255, 128)")
+            self.ui.error_label.setText('No end wavelength, assuming last spectral wavelength.')
+            end_wavelength = self.wavelengths[-1]
+
+        try:
+            start_wavelength = float(start_wavelength)
+        except:
+            self.ui.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.ui.error_label.setText('Start wavelength is not a floating point number.')
+            self.ui.error_label.setVisible(True)
+
+            return None, None
+
+        try:
+            end_wavelength = float(end_wavelength)
+        except:
+            self.ui.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.ui.error_label.setText('End wavelength is not a floating point number.')
+            self.ui.error_label.setVisible(True)
+
+            return None, None
+
+        if start_wavelength < self.wavelengths[0]:
+            self.ui.start_label.setStyleSheet("color: rgba(0, 0, 255, 128)")
+            self.ui.error_label.setText('Start wavelength is out of range, setting to end point.')
+            self.ui.error_label.setVisible(True)
+
+            start_wavelength = self.wavelengths[0]
+            
+        if start_wavelength > self.wavelengths[-1]:
+            self.ui.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.ui.error_label.setText('Start wavelength is out of range.')
+            self.ui.error_label.setVisible(True)
+
+            start_wavelength = None
+            
+
+        if end_wavelength > self.wavelengths[-1]:
+            self.ui.end_label.setStyleSheet("color: rgba(0, 0, 255, 128)")
+            self.ui.error_label.setText('End wavelength is out of range, setting to end point.')
+            self.ui.error_label.setVisible(True)
+
+            end_wavelength = self.wavelengths[-1]
+           
+        if end_wavelength < self.wavelengths[0]:
+            self.ui.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.ui.error_label.setText('End wavelength is out of range.')
+            self.ui.error_label.setVisible(True)
+
+            end_wavelength = None
+
+        start_index = np.argsort(abs(self.wavelengths - start_wavelength))[0]
+        end_index = np.argsort(abs(self.wavelengths - end_wavelength))[0]
+
+        log.debug('  returning with start_index {} and end_index {}'.format(
+            start_index, end_index))
+
+        return start_index, end_index
+
+    def _calculate_callback_index_checks(self, start_index, end_index):
+
+        log.debug('_calculate_callback_index_checks with start {} and end {}'.format(
+            start_index, end_index))
+
+        if len(start_index) == 0:
+            self.ui.end_label.setStyleSheet("color: rgba(0, 0, 255, 128)")
+            self.ui.error_label.setText('No start index, assuming first spectral wavelength.')
+            start_index = 0
+
+        if len(end_index) == 0:
+            self.ui.end_label.setStyleSheet("color: rgba(0, 0, 255, 128)")
+            self.ui.error_label.setText('No end index, assuming last spectral wavelength.')
+            end_index = len(self.wavelengths) - 1
+
+        try:
+            start_index = int(start_index)
+        except:
+            self.ui.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.ui.error_label.setText('Start index is not an integer.')
+            self.ui.error_label.setVisible(True)
+
+            start_index = None
+
+        try:
+            end_index = int(end_index)
+        except:
+            self.ui.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.ui.error_label.setText('End index is not an integer.')
+            self.ui.error_label.setVisible(True)
+
+            end_index = None
+
+        if start_index < 0:
+            self.ui.start_label.setStyleSheet("color: rgba(0, 0, 255, 128)")
+            self.ui.error_label.setText('Start index is out of range, setting to end point.')
+            self.ui.error_label.setVisible(True)
+
+            start_index = 0
+            
+        if start_index > len(self.wavelengths):
+            self.ui.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.ui.error_label.setText('Start index is out of range.')
+            self.ui.error_label.setVisible(True)
+
+            start_index = None
+            
+
+        if end_index > len(self.wavelengths):
+            self.ui.end_label.setStyleSheet("color: rgba(0, 0, 255, 128)")
+            self.ui.error_label.setText('End index is out of range, setting to end point.')
+            self.ui.error_label.setVisible(True)
+
+            end_index = len(self.wavelengths)-1
+           
+        if end_index < 0:
+            self.ui.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.ui.error_label.setText('End index is out of range.')
+            self.ui.error_label.setVisible(True)
+
+            end_index = None
+
+        log.debug('  returning with start_index {} and end_index {}'.format(
+            start_index, end_index))
+
+        return start_index, end_index
+
+    def _calculate_callback_simple_sigma_check(self):
+        log.debug('_calculate_callback_simgple_sigma_check')
+
+        simple_sigma = self.ui.simple_sigma_input.text().strip()
+        log.debug('    simple_sigma {}'.format(simple_sigma))
+
+        try:
+            simple_sigma = float(simple_sigma)
+        except:
+            self.ui.simple_sigma_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.ui.error_label.setText('Sigma must be a floating point number.')
+            self.ui.error_label.setVisible(True)
+            return None
+
+        return simple_sigma
+
+    def _calculate_callback_advanced_sigma_check(self):
+        sigma = self.ui.advanced_sigma_input.text().strip()
+        sigma_lower = self.ui.advanced_sigma_lower_input.text().strip()
+        sigma_upper = self.ui.advanced_sigma_upper_input.text().strip()
+        sigma_iters = self.ui.advanced_sigma_iters_input.text().strip()
+
+        if len(sigma) > 0:
+            try:
+                sigma = float(sigma)
+            except:
+                self.ui.advanced_sigma_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+                self.ui.error_label.setText('Sigma must be a floating point number.')
+                self.ui.error_label.setVisible(True)
+                return None
+        else:
+            self.ui.advanced_sigma_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.ui.error_label.setText('Sigma must be a floating point number and not empty.')
+            self.ui.error_label.setVisible(True)
+            return None, None, None, None
+
+        if len(sigma_lower) > 0:
+            try:
+                sigma_lower = float(sigma_lower)
+            except:
+                self.ui.advanced_sigma_lower_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+                self.ui.error_label.setText('Lower sigma must be a floating point number.')
+                self.ui.error_label.setVisible(True)
+                return None*4
+        else:
+            sigma_lower = None
+
+        if len(sigma_upper) > 0:
+            try:
+                sigma_upper = float(sigma_upper)
+            except:
+                self.ui.advanced_sigma_upper_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+                self.ui.error_label.setText('Upper sigma must be a floating point number.')
+                self.ui.error_label.setVisible(True)
+                return None*4
+        else:
+            sigma_upper = None
+
+        if len(sigma_iters) > 0:
+            try:
+                sigma_iters = int(sigma_iters)
+            except:
+                self.ui.advanced_sigma_iters_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+                self.ui.error_label.setText('Iterations for sigma must be a floating point number.')
+                self.ui.error_label.setVisible(True)
+                return None*4
+        else:
+            sigma_iters = None
+
+        return sigma, sigma_lower, sigma_upper, sigma_iters
+
+
     def calculate_callback(self):
         """
         Callback for when they hit calculate
         :return:
         """
 
+        log.debug('In calculate_callback()')
+
         # Grab the values of interest
         data_name = self.data_combobox.currentText()
+        using_wavelengths = not 'Indices' in self.region_combobox.currentText()
         start_value = self.ui.start_input.text().strip()
         end_value = self.ui.end_input.text().strip()
+        log.debug('    data_name {}  using_wavelengths {}  start_value {}  end_value {}'.format(
+            data_name, using_wavelengths, start_value, end_value))
 
+        # Clear the style sheet errors
         self.ui.error_label.setText(' ')
         self.ui.error_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
         self.ui.error_label.setVisible(False)
 
-        # Sanity checks first
-        if not start_value and not end_value:
-            self.ui.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-            self.ui.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-            self.ui.error_label.setText('Must set at least one of start or end value')
-            self.ui.error_label.setVisible(True)
-            return
-
-        # If indicies, get them and check to see if the inputs are good.
-        if 'Indices' in self.region_combobox.currentText():
-            if len(start_value) == 0:
-                start_index = 0
-            else:
-                try:
-                    start_index = int(start_value)
-                except ValueError as e:
-                    self.ui.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-                    self.ui.error_label.setText('Start value must be an integer')
-                    self.ui.error_label.setVisible(True)
-                    return
-
-                if start_index < 0:
-                    start_index = 0
-
-            if len(end_value) == 0:
-                end_index = len(self.wavelengths)-1
-            else:
-                try:
-                    end_index = int(end_value)
-                except ValueError as e:
-                    self.ui.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-                    self.ui.error_label.setText('End value must be an integer')
-                    self.ui.error_label.setVisible(True)
-                    return
-
-                if end_index > len(self.wavelengths) - 1:
-                    end_index = len(self.wavelengths) - 1
+        # Do check on wavelength/indices first.
+        if using_wavelengths:
+            start_index, end_index = self._calculate_callback_wavelength_checks(start_value, end_value)
         else:
-            # Wavelength inputs
-            if len(start_value) == 0:
-                start_index = 0
-            else:
-                # convert wavelength to float value
-                try:
-                    start_value = float(start_value)
-                except ValueError as e:
-                    self.ui.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-                    self.ui.error_label.setText('Start value must be a floating point number')
-                    self.ui.error_label.setVisible(True)
-                    return
-
-                # Look up index
-                start_index = np.argsort(np.abs(self.wavelengths - start_value))[0]
-
-            if len(end_value) == 0:
-                end_index = len(self.wavelengths)-1
-
-            else:
-                # convert wavelength to float value
-                try:
-                    end_value = float(end_value)
-                except ValueError as e:
-                    self.ui.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-                    self.ui.error_label.setText('End value must be a floating point number')
-                    self.ui.error_label.setVisible(True)
-                    return
-
-                # Look up index
-                end_index = np.argsort(np.abs(self.wavelengths - end_value))[0]
-
-        # Check to make sure at least one of start or end is within the range of the wavelengths.
-        if (start_index < 0 and end_index < 0) or (start_index > len(self.wavelengths) and end_index > len(self.wavelengths)):
-            self.ui.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-            self.ui.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-            self.ui.error_label.setText('Can not have both start and end outside of the wavelength range.')
-            self.ui.error_label.setVisible(True)
+            start_index, end_index = self._calculate_callback_index_checks(start_value, end_value)
+            
+        if  start_index is None or end_index is None:
             return
-
-        if start_index > end_index:
-            self.ui.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-            self.ui.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-            self.ui.error_label.setText('Start value must be less than end value')
-            self.ui.error_label.setVisible(True)
-            return
-
 
         # Check to see if the wavelength (indices) are the same.
         if start_index == end_index:
@@ -297,79 +440,46 @@ class CollapseCube(QDialog):
 
         # Set the start and end values in the text boxes -- in case they enter one way out of range then
         # we'll fix it.
-        ts = start_index if 'Indices' in self.region_combobox.currentText() else self.wavelengths[start_index]
-        self.ui.start_input.setText('{}'.format(ts))
-
-        te = end_index if 'Indices' in self.region_combobox.currentText() else self.wavelengths[end_index]
-        self.ui.end_input.setText('{}'.format(te))
+#        ts = start_index if 'Indices' in self.region_combobox.currentText() else self.wavelengths[start_index]
+#        self.ui.start_input.setText('{}'.format(ts))
+#
+#        te = end_index if 'Indices' in self.region_combobox.currentText() else self.wavelengths[end_index]
+#        self.ui.end_input.setText('{}'.format(te))
 
 
         data_name = self.data_combobox.currentText()
         operation = self.operation_combobox.currentText()
 
-        # Do calculation if we got this far
-        new_wavelengths, new_component = collapse_cube(self.data[data_name], data_name, self.data.coords.wcs,
-                                             operation, start_index, end_index)
-
         # Get the start and end wavelengths from the newly created spectral cube and use for labeling the cube.
         # Convert to the current units.
-        start_wavelength = new_wavelengths[0].to(self.wavelength_units)
-        end_wavelength = new_wavelengths[-1].to(self.wavelength_units)
+        start_wavelength = self.wavelengths[start_index]
+        end_wavelength = self.wavelengths[end_index]
 
         label = '{}-collapse-{} ({:0.4}, {:0.4})'.format(data_name, operation,
                                                          start_wavelength,
                                                          end_wavelength)
 
         # Apply sigma clipping
-        sigma = self.sigma_text.text().strip()
+        sigma_selection = self.sigma_combobox.currentText()
+        if 'Simple' in sigma_selection: 
+            sigma = self._calculate_callback_simple_sigma_check()
 
-        if len(sigma) > 0:
-            try:
-                sigma = float(sigma)
-            except ValueError as e:
-                self.sigma_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-                self.ui.error_label.setText('If sigma set, it must be a floating point number')
-                self.ui.error_label.setVisible(True)
+            if sigma is None:
                 return
 
-            sigma_lower = self.sigma_lower_text.text().strip()
-            if len(sigma_lower) > 0:
-                try:
-                    sigma_lower = float(sigma_lower)
-                except ValueError as e:
-                    self.sigma_lower_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-                    self.ui.error_label.setText('If sigma lower set, it must be a floating point number')
-                    self.ui.error_label.setVisible(True)
-                    return
-            else:
-                sigma_lower = None
+            input_data = sigma_clip(self.data[data_name], sigma=sigma, axis=0)
+            label += ' sigma={}'.format(sigma)
 
-            sigma_upper = self.sigma_upper_text.text().strip()
-            if len(sigma_upper) > 0:
-                try:
-                    sigma_upper = float(sigma_upper)
-                except ValueError as e:
-                    self.sigma_upper_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-                    self.ui.error_label.setText('If sigma upper set, it must be a floating point number')
-                    self.ui.error_label.setVisible(True)
-                    return
-            else:
-                sigma_upper = None
+        elif 'Advanced' in sigma_selection:
+            sigma, sigma_lower, sigma_upper, sigma_iters = self._calculate_callback_advanced_sigma_check()
+            log.debug('    returned from calculate_callback_advanced_sigma_check with sigma {}  sigma_lower {}  sigma_upper {}  sigma_iters {}'.format(
+                sigma, sigma_lower, sigma_upper, sigma_iters))
 
-            sigma_iters = self.sigma_iters_text.text().strip()
-            if len(sigma_iters) > 0:
-                try:
-                    sigma_iters = float(sigma_iters)
-                except ValueError as e:
-                    self.sigma_iters_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-                    self.ui.error_label.setText('If sigma iters set, it must be a floating point number')
-                    self.ui.error_label.setVisible(True)
-                    return
-            else:
-                sigma_iters = None
+            if sigma is None:
+                return
 
-            new_component = sigma_clip(new_component, sigma=sigma, sigma_lower=sigma_lower,
-                                       sigma_upper=sigma_upper, iters=sigma_iters)
+            input_data = sigma_clip(self.data[data_name], sigma=sigma, sigma_lower=sigma_lower,
+                                       sigma_upper=sigma_upper, iters=sigma_iters, axis=0)
 
             # Add to label so it is clear which overlay/component is which
             if sigma:
@@ -383,6 +493,12 @@ class CollapseCube(QDialog):
 
             if sigma_iters:
                 label += ' sigma_iters={}'.format(sigma_iters)
+        else:
+            input_data = self.data[data_name]
+
+        # Do calculation if we got this far
+        new_wavelengths, new_component = collapse_cube(input_data, data_name, self.data.coords.wcs,
+                                             operation, start_index, end_index)
 
         # Add new overlay/component to cubeviz. We add this both to the 2D
         # container Data object and also as an overlay. In future we might be
