@@ -553,11 +553,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         """
         Get viewer combo for a given viewer index
         """
-        if view_index == 0:
-            combo_label = 'single_viewer_combo'
-        else:
-            combo_label = 'viewer{0}_combo'.format(view_index)
-        return getattr(self.ui, combo_label)
+        return self.cube_views[view_index].combo
 
     def add_overlay(self, data, label, display_now=True):
         self._overlay_controller.add_overlay(data, label, display=display_now)
