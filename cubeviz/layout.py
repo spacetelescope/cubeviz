@@ -97,14 +97,17 @@ class WidgetWrapper(QtWidgets.QWidget):
         self.stats_layout.addWidget(
             QtWidgets.QLabel('ROI Statistics:', font=bold_font))
 
-        self.roi_stats_text = QtWidgets.QLabel('hey there')
+        self.roi_stats_text = QtWidgets.QLabel('')
         self.stats_layout.addWidget(self.roi_stats_text)
 
     def set_stats_visible(self, visible):
         self.stats_widget.setVisible(visible)
 
-    def set_stats_text(self, text):
+    def set_slice_text(self, text):
         self.slice_stats_text.setText(text)
+
+    def set_roi_text(self, text):
+        self.roi_stats_text.setText(text)
 
     def widget(self):
         return self._widget
@@ -309,10 +312,10 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.refresh_viewer_combo_helpers()
         if isinstance(message, SubsetUpdateMessage):
             for combo, viewer in zip(self._viewer_combo_helpers, self.cube_views):
-                viewer._widget.draw_stats_axes(combo.selection, message.subset)
+                viewer._widget.show_roi_stats(combo.selection, message.subset)
         elif isinstance(message, SubsetDeleteMessage):
             for viewer in self.cube_views:
-                viewer._widget.hide_stats_axes()
+                viewer._widget.hide_roi_stats()
 
     def _set_pos_and_margin(self, axes, pos, marg):
         axes.set_position(pos)
