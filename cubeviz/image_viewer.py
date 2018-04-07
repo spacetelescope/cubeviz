@@ -653,7 +653,7 @@ class CubevizImageViewer(ImageViewer, HubListener):
         max_ = float(np.nanmax(data))
 
         # TODO: have a dynamic way to determine sig figs
-        text = "slice min={:.4}, slice max={:.4}".format(min_, max_)
+        text = "min={:.4}, max={:.4}".format(min_, max_)
         self.parent().set_stats_text(text)
         self.update_stats()
 

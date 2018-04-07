@@ -4,7 +4,7 @@ from collections import OrderedDict
 from astropy.wcs.utils import wcs_to_celestial_frame
 from astropy.coordinates import BaseRADecFrame
 
-from qtpy import QtWidgets, QtCore
+from qtpy import QtWidgets, QtCore, QtGui
 from qtpy.QtWidgets import QMenu, QAction, QInputDialog, QActionGroup
 
 from glue.utils.qt import load_ui
@@ -85,12 +85,17 @@ class WidgetWrapper(QtWidgets.QWidget):
         self.stats_widget.setLayout(self.stats_layout)
         self.layout.addWidget(self.stats_widget)
 
-        self.stats_layout.addWidget(QtWidgets.QLabel('Slice Statistics:'))
+        bold_font = QtGui.QFont()
+        bold_font.setBold(True)
+
+        self.stats_layout.addWidget(
+            QtWidgets.QLabel('Slice Statistics:', font=bold_font))
 
         self.slice_stats_text = QtWidgets.QLabel()
         self.stats_layout.addWidget(self.slice_stats_text)
 
-        self.stats_layout.addWidget(QtWidgets.QLabel('ROI Statistics:'))
+        self.stats_layout.addWidget(
+            QtWidgets.QLabel('ROI Statistics:', font=bold_font))
 
         self.roi_stats_text = QtWidgets.QLabel('hey there')
         self.stats_layout.addWidget(self.roi_stats_text)
