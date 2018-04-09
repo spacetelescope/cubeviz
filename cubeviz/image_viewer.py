@@ -24,6 +24,7 @@ from glue.viewers.image.layer_artist import ImageLayerArtist
 from glue.viewers.image.state import ImageLayerState, ImageViewerState
 from glue.viewers.image.qt.layer_style_editor import ImageLayerStyleEditor
 from glue.viewers.common.qt.tool import Tool
+from glue.viewers.matplotlib.state import DeferredDrawCallbackProperty as DDCProperty
 
 from qtpy.QtWidgets import QToolTip
 from qtpy.QtGui import QCursor
@@ -115,7 +116,11 @@ class CubevizImageLayerState(ImageLayerState):
     Sub-class of ImageLayerState that includes the ability to include smoothing
     on-the-fly.
     """
+
     preview_function = None
+
+    # Override glue default
+    global_sync = DDCProperty(False)
 
     def get_sliced_data(self, view=None):
         """
@@ -131,6 +136,15 @@ class CubevizImageLayerState(ImageLayerState):
             if view is not None:
                 image = image[view]
             return image
+
+
+class CubevizImageLayerStyleEditor(ImageLayerStyleEditor):
+
+    # Override this in order to get rid of the sync button
+
+    def __init__(self, *args, **kwargs):
+        super(CubevizImageLayerStyleEditor, self).__init__(*args, **kwargs)
+        self.ui.bool_global_sync.setVisible(False)
 
 
 class CubevizImageLayerArtist(ImageLayerArtist):
@@ -150,7 +164,7 @@ class CubevizImageViewer(ImageViewer, HubListener):
     def __init__(self,  *args, cubeviz_layout=None, **kwargs):
         super(CubevizImageViewer, self).__init__(*args, **kwargs)
         self.cubeviz_layout = cubeviz_layout
-        self._layer_style_widget_cls[CubevizImageLayerArtist] = ImageLayerStyleEditor
+        self._layer_style_widget_cls[CubevizImageLayerArtist] = CubevizImageLayerStyleEditor
         self._hub = cubeviz_layout.session.hub
         self._synced_checkbox = None
         self._slice_index = None
