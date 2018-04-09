@@ -18,7 +18,7 @@ from ..listener import CUBEVIZ_LAYOUT
 
 from qtpy.QtWidgets import (QDialog, QComboBox, QPushButton,
                             QLabel, QWidget, QHBoxLayout, QVBoxLayout)
-from glue.utils.qt import load_ui
+#from glue.utils.qt import load_ui
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -41,8 +41,7 @@ class DataConfiguration:
         :param config_file:
         """
         self._config_file = config_file
-        self.popup_ui =  load_ui('ifucube_popup.ui', self,
-                          directory=os.path.dirname(__file__))
+        #self.popup_ui = load_ui('ifucube_popup.ui', self, directory=os.path.dirname(__file__))
 
         with open(self._config_file, 'r') as ymlfile:
             cfg = yaml.load(ymlfile)
@@ -170,7 +169,7 @@ class DataConfiguration:
         for data_filename in data_filenames.split(','):
 
             hdulist = ifucube.open(data_filename, fix=True)
-            self.call_window()
+            #self.call_window()
 
             if not label:
                 label = "{}: {}".format(self._name, splitext(basename(data_filename))[0])
