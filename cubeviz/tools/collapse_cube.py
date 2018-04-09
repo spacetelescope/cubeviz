@@ -459,6 +459,64 @@ class CollapseCube(QDialog):
 
         return sigma, sigma_lower, sigma_upper, sigma_iters
 
+    def _calculate_collapse(self, data_name, operation, spatial_region, sigma_selection, sigma_parameter, start_index, end_index):
+
+        start_wavelength = self.wavelengths[start_index]
+        end_wavelength = self.wavelengths[end_index]
+
+        label = '{}-collapse-{} ({:.4e}, {:.4e})'.format(data_name, operation,
+                                                         start_wavelength,
+                                                         end_wavelength)
+
+        # Setup the input_data (and apply the spatial mask based on
+        # the selection in the spatial_region_combobox
+        input_data = self.data[data_name]
+        log.debug('    spatial region is {}'.format(spatial_region))
+        if not spatial_region == 'Image':
+            subset = [x.to_mask() for x in self.data.subsets if x.label == spatial_region][0]
+            input_data = input_data * subset
+
+        # Apply sigma clipping
+        if 'Simple' in sigma_selection:
+            sigma = sigma_parameter
+
+            if sigma is None:
+                return
+
+            input_data = sigma_clip(input_data, sigma=sigma, axis=0)
+            label += ' sigma={}'.format(sigma)
+
+        elif 'Advanced' in sigma_selection:
+            sigma, sigma_lower, sigma_upper, sigma_iters = sigma_parameter
+            log.debug('    returned from calculate_callback_advanced_sigma_check with sigma {}  sigma_lower {}  sigma_upper {}  sigma_iters {}'.format(
+                sigma, sigma_lower, sigma_upper, sigma_iters))
+
+            if sigma is None:
+                return
+
+            input_data = sigma_clip(input_data, sigma=sigma, sigma_lower=sigma_lower,
+                                       sigma_upper=sigma_upper, iters=sigma_iters, axis=0)
+
+            # Add to label so it is clear which overlay/component is which
+            if sigma:
+                label += ' sigma={}'.format(sigma)
+
+            if sigma_lower:
+                label += ' sigma_lower={}'.format(sigma_lower)
+
+            if sigma_upper:
+                label += ' sigma_upper={}'.format(sigma_upper)
+
+            if sigma_iters:
+                label += ' sigma_iters={}'.format(sigma_iters)
+        else:
+            input_data = input_data # noop
+
+        # Do calculation if we got this far
+        new_wavelengths, new_component = collapse_cube(input_data, data_name, self.data.coords.wcs,
+                                             operation, start_index, end_index)
+
+        return new_wavelengths, new_component, label
 
     def calculate_callback(self):
         """
@@ -487,7 +545,7 @@ class CollapseCube(QDialog):
         else:
             start_index, end_index = self._calculate_callback_index_checks(start_value, end_value)
             
-        if  start_index is None or end_index is None:
+        if start_index is None or end_index is None:
             return
 
         # Check to see if the wavelength (indices) are the same.
@@ -501,64 +559,26 @@ class CollapseCube(QDialog):
         data_name = self.data_combobox.currentText()
         operation = self.operation_combobox.currentText()
         spatial_region = self.spatial_region_combobox.currentText()
+        sigma_selection = self.sigma_combobox.currentText()
 
-        # Get the start and end wavelengths from the newly created spectral cube and use for labeling the cube.
+        # Get the start and end wavelengths from the newly created 
+        # spectral cube and use for labeling the cube.
         # Convert to the current units.
         start_wavelength = self.wavelengths[start_index]
         end_wavelength = self.wavelengths[end_index]
 
-        label = '{}-collapse-{} ({:.4e}, {:.4e})'.format(data_name, operation,
-                                                         start_wavelength,
-                                                         end_wavelength)
-
-        # Setup the input_data (and apply the spatial mask based on 
-        # the selection in the spatial_region_combobox
-        input_data = self.data[data_name]
-        log.debug('    spatial region is {}'.format(spatial_region))
-        if not spatial_region == 'Image':
-            subset = [x.to_mask() for x in self.data.subsets if x.label == spatial_region][0]
-            input_data = input_data * subset
-
-        # Apply sigma clipping
-        sigma_selection = self.sigma_combobox.currentText()
-        if 'Simple' in sigma_selection: 
-            sigma = self._calculate_callback_simple_sigma_check()
-
-            if sigma is None:
-                return
-
-            input_data = sigma_clip(input_data, sigma=sigma, axis=0)
-            label += ' sigma={}'.format(sigma)
-
+        if 'Simple' in sigma_selection:
+            sigma_parameter = self._calculate_callback_simple_sigma_check()
         elif 'Advanced' in sigma_selection:
-            sigma, sigma_lower, sigma_upper, sigma_iters = self._calculate_callback_advanced_sigma_check()
-            log.debug('    returned from calculate_callback_advanced_sigma_check with sigma {}  sigma_lower {}  sigma_upper {}  sigma_iters {}'.format(
-                sigma, sigma_lower, sigma_upper, sigma_iters))
-
-            if sigma is None:
-                return
-
-            input_data = sigma_clip(input_data, sigma=sigma, sigma_lower=sigma_lower,
-                                       sigma_upper=sigma_upper, iters=sigma_iters, axis=0)
-
-            # Add to label so it is clear which overlay/component is which
-            if sigma:
-                label += ' sigma={}'.format(sigma)
-
-            if sigma_lower:
-                label += ' sigma_lower={}'.format(sigma_lower)
-
-            if sigma_upper:
-                label += ' sigma_upper={}'.format(sigma_upper)
-
-            if sigma_iters:
-                label += ' sigma_iters={}'.format(sigma_iters)
+            sigma_parameter = self._calculate_callback_advanced_sigma_check()
         else:
-            input_data = input_data # noop
+            sigma_parameter = None
 
-        # Do calculation if we got this far
-        new_wavelengths, new_component = collapse_cube(input_data, data_name, self.data.coords.wcs,
-                                             operation, start_index, end_index)
+        # Do the actual call.
+        new_wavelengths, new_component, label = self._calculate_collapse(
+                data_name, operation, spatial_region,
+                sigma_selection, sigma_parameter,
+                start_index, end_index)
 
         # Add new overlay/component to cubeviz. We add this both to the 2D
         # container Data object and also as an overlay. In future we might be
