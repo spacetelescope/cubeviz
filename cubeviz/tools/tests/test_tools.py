@@ -38,7 +38,7 @@ def test_starting_state(cubeviz_layout):
     sigma_selection = 'No Sigma Clipping'
     sigma_parameter = None
 
-    new_wavelengths, new_component, label = cc._calculate_collapse(data_name, 
+    new_wavelengths, new_component, label = cc._calculate_collapse(data_name,
             operation, spatial_region, sigma_selection, sigma_parameter, start_index, end_index)
 
     assert label == '018.DATA-collapse-Sum (1.9531e-06, 2.0092e-06)'
@@ -56,7 +56,7 @@ def test_starting_state(cubeviz_layout):
     sigma_selection = 'Simple Sigma Clipping'
     sigma_parameter = 3.0
 
-    new_wavelengths, new_component, label = cc._calculate_collapse(data_name, 
+    new_wavelengths, new_component, label = cc._calculate_collapse(data_name,
             operation, spatial_region, sigma_selection, sigma_parameter, start_index, end_index)
 
     assert label == '018.DATA-collapse-Sum (2.0092e-06, 2.0373e-06) sigma=3.0'
@@ -73,7 +73,7 @@ def test_starting_state(cubeviz_layout):
     sigma_selection = 'Advanced Sigma Clipping'
     sigma_parameter = [3.0, 1.0, 4.0, 2]
 
-    new_wavelengths, new_component, label = cc._calculate_collapse(data_name, 
+    new_wavelengths, new_component, label = cc._calculate_collapse(data_name,
             operation, spatial_region, sigma_selection, sigma_parameter, start_index, end_index)
 
     assert label == '018.DATA-collapse-Sum (2.0092e-06, 2.0373e-06) sigma=3.0 sigma_lower=1.0 sigma_upper=4.0 sigma_iters=2'

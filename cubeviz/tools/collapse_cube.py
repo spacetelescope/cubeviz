@@ -159,12 +159,12 @@ class CollapseCube(QDialog):
 
     def _sigma_combobox_callback(self, index):
 
-        # Show / Hide simple sigma options 
+        # Show / Hide simple sigma options
         self.ui.simple_sigma_label.setVisible(index == 1)
         self.ui.simple_sigma_description.setVisible(index == 1)
         self.ui.simple_sigma_input.setVisible(index == 1)
 
-        # Show / Hide advanced sigma options 
+        # Show / Hide advanced sigma options
         self.ui.advanced_sigma_label.setVisible(index == 2)
         self.ui.advanced_sigma_description.setVisible(index == 2)
         self.ui.advanced_sigma_lower_label.setVisible(index == 2)
@@ -278,14 +278,14 @@ class CollapseCube(QDialog):
             self.ui.error_label.setVisible(True)
 
             start_wavelength = self.wavelengths[0]
-            
+
         if start_wavelength > self.wavelengths[-1]:
             self.ui.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
             self.ui.error_label.setText('Start wavelength is out of range.')
             self.ui.error_label.setVisible(True)
 
             start_wavelength = None
-            
+
         if end_wavelength < start_wavelength:
             self.ui.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
             self.ui.error_label.setText('Start wavelength must be less than the end wavelength.')
@@ -298,7 +298,7 @@ class CollapseCube(QDialog):
             self.ui.error_label.setVisible(True)
 
             end_wavelength = self.wavelengths[-1]
-           
+
         if end_wavelength < self.wavelengths[0]:
             self.ui.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
             self.ui.error_label.setText('End wavelength is out of range.')
@@ -353,7 +353,7 @@ class CollapseCube(QDialog):
             self.ui.error_label.setVisible(True)
 
             start_index = 0
-            
+
         if start_index > len(self.wavelengths):
             self.ui.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
             self.ui.error_label.setText('Start index is out of range.')
@@ -373,7 +373,7 @@ class CollapseCube(QDialog):
             self.ui.error_label.setVisible(True)
 
             end_index = len(self.wavelengths)-1
-           
+
         if end_index < 0:
             self.ui.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
             self.ui.error_label.setText('End index is out of range.')
@@ -574,7 +574,7 @@ class CollapseCube(QDialog):
             start_index, end_index = self._calculate_callback_wavelength_checks(start_value, end_value)
         else:
             start_index, end_index = self._calculate_callback_index_checks(start_value, end_value)
-            
+
         if start_index is None or end_index is None:
             return
 
@@ -591,7 +591,7 @@ class CollapseCube(QDialog):
         spatial_region = self.spatial_region_combobox.currentText()
         sigma_selection = self.sigma_combobox.currentText()
 
-        # Get the start and end wavelengths from the newly created 
+        # Get the start and end wavelengths from the newly created
         # spectral cube and use for labeling the cube.
         # Convert to the current units.
         start_wavelength = self.wavelengths[start_index]
