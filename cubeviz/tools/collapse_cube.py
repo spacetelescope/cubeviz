@@ -286,6 +286,11 @@ class CollapseCube(QDialog):
 
             start_wavelength = None
             
+        if end_wavelength < start_wavelength:
+            self.ui.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.ui.error_label.setText('Start wavelength must be less than the end wavelength.')
+            self.ui.error_label.setVisible(True)
+            return None, None
 
         if end_wavelength > self.wavelengths[-1]:
             self.ui.end_label.setStyleSheet("color: rgba(0, 0, 255, 128)")
@@ -300,12 +305,6 @@ class CollapseCube(QDialog):
             self.ui.error_label.setVisible(True)
 
             end_wavelength = None
-
-        if end_wavelength < start_wavelength:
-            self.ui.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-            self.ui.error_label.setText('Start wavelength must be less than the end wavelength.')
-            self.ui.error_label.setVisible(True)
-            return None, None
 
         start_index = np.argsort(abs(self.wavelengths - start_wavelength))[0]
         end_index = np.argsort(abs(self.wavelengths - end_wavelength))[0]
@@ -361,7 +360,12 @@ class CollapseCube(QDialog):
             self.ui.error_label.setVisible(True)
 
             start_index = None
-            
+
+        if end_index < start_index:
+            self.ui.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.ui.error_label.setText('Start index must be less than the end index.')
+            self.ui.error_label.setVisible(True)
+            return None, None
 
         if end_index > len(self.wavelengths):
             self.ui.end_label.setStyleSheet("color: rgba(0, 0, 255, 128)")
@@ -376,12 +380,6 @@ class CollapseCube(QDialog):
             self.ui.error_label.setVisible(True)
 
             end_index = None
-
-        if end_index < start_index:
-            self.ui.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
-            self.ui.error_label.setText('Start index must be less than the end index.')
-            self.ui.error_label.setVisible(True)
-            return None, None
 
         log.debug('  returning with start_index {} and end_index {}'.format(
             start_index, end_index))
@@ -399,6 +397,12 @@ class CollapseCube(QDialog):
         except:
             self.ui.simple_sigma_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
             self.ui.error_label.setText('Sigma must be a floating point number.')
+            self.ui.error_label.setVisible(True)
+            return None
+
+        if sigma <= 0.0:
+            self.ui.simple_sigma_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.ui.error_label.setText('Sigma must be a positive number.')
             self.ui.error_label.setVisible(True)
             return None
 
