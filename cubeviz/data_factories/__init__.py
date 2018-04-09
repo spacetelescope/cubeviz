@@ -2,6 +2,7 @@
 from os.path import basename, splitext
 import yaml
 import os
+import sys
 import glob
 import logging
 
@@ -14,6 +15,9 @@ import numpy as np
 
 from cubeviz.data_factories.ifucube import IFUCube
 from ..listener import CUBEVIZ_LAYOUT
+
+from qtpy.QtWidgets import (QDialog, QComboBox, QPushButton,
+                            QLabel, QWidget, QHBoxLayout, QVBoxLayout)
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('cubeviz_data_configuration')
@@ -96,6 +100,42 @@ class DataConfiguration:
                 units = units.replace(key, self.flux_unit_replacements[key])
         return units
 
+    def window(self):
+        w = QWidget()
+        b = QPushButton(w)
+        b.setText("Show message!")
+
+        b.move(50, 50)
+        b.clicked.connect(self.showdialog)
+        w.setWindowTitle("PyQt Dialog demo")
+        w.show()
+
+    def showdialog(self):
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Information)
+
+        msg.setText("This is a message box")
+        msg.setInformativeText("This is additional information")
+        msg.setWindowTitle("MessageBox demo")
+        msg.setDetailedText("The details are as follows:")
+        msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+        msg.buttonClicked.connect(self.msgbtn)
+
+        retval = msg.exec_()
+        print
+        "value of pressed message box button:", retval
+
+    def msgbtn(self, i):
+        print
+        "Button pressed is:", i.text()
+
+    def call_window(self):
+        window = QDialog()
+        window.setr
+
+        window.exec_()
+
+
     def load_data(self, data_filenames):
         """
         Load the data based on the extensions defined in the matching YAML file.  THen
@@ -113,6 +153,7 @@ class DataConfiguration:
         for data_filename in data_filenames.split(','):
 
             hdulist = ifucube.open(data_filename, fix=True)
+            self.call_window()
 
             if not label:
                 label = "{}: {}".format(self._name, splitext(basename(data_filename))[0])
