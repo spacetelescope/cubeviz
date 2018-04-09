@@ -18,6 +18,8 @@ from ..listener import CUBEVIZ_LAYOUT
 
 from qtpy.QtWidgets import (QDialog, QComboBox, QPushButton,
                             QLabel, QWidget, QHBoxLayout, QVBoxLayout)
+from glue.utils.qt import load_ui
+
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('cubeviz_data_configuration')
@@ -39,6 +41,8 @@ class DataConfiguration:
         :param config_file:
         """
         self._config_file = config_file
+        self.popup_ui =  load_ui('ifucube_popup.ui', self,
+                          directory=os.path.dirname(__file__))
 
         with open(self._config_file, 'r') as ymlfile:
             cfg = yaml.load(ymlfile)
@@ -131,7 +135,20 @@ class DataConfiguration:
 
     def call_window(self):
         window = QDialog()
-        window.setr
+        window.setWindowTitle("Incorrect Values Found in File")
+
+        textbox = QLabel("Overwriting all of your data")
+        button_accept = QPushButton("Accept")
+        button_cancel = QPushButton("Cancel")
+
+        layout = QHBoxLayout(window)
+        self.ui.layout = layout
+
+        self.ui.layout.addWidget(textbox)
+        self.ui.layout.addWidget(button_accept)
+        self.ui.layout.addWidget(button_cancel)
+
+
 
         window.exec_()
 
