@@ -435,7 +435,7 @@ class CollapseCube(QDialog):
                 self.ui.advanced_sigma_lower_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
                 self.ui.error_label.setText('Lower sigma must be a floating point number.')
                 self.ui.error_label.setVisible(True)
-                return None*4
+                return [None]*4
         else:
             sigma_lower = None
 
@@ -446,7 +446,7 @@ class CollapseCube(QDialog):
                 self.ui.advanced_sigma_upper_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
                 self.ui.error_label.setText('Upper sigma must be a floating point number.')
                 self.ui.error_label.setVisible(True)
-                return None*4
+                return [None]*4
         else:
             sigma_upper = None
 
@@ -457,9 +457,22 @@ class CollapseCube(QDialog):
                 self.ui.advanced_sigma_iters_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
                 self.ui.error_label.setText('Iterations for sigma must be a floating point number.')
                 self.ui.error_label.setVisible(True)
-                return None*4
+                return [None]*4
         else:
             sigma_iters = None
+
+        if sigma_lower is not None and sigma_upper is not None and sigma_lower > sigma_upper:
+            self.ui.advanced_sigma_lower_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.ui.advanced_sigma_upper_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.ui.error_label.setText('Lower sigma must be smaller than the upper sigma.')
+            self.ui.error_label.setVisible(True)
+            return [None]*4
+
+        if sigma <= 0.0:
+            self.ui.advanced_sigma_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
+            self.ui.error_label.setText('Sigma must be a positive number.')
+            self.ui.error_label.setVisible(True)
+            return [None]*4
 
         return sigma, sigma_lower, sigma_upper, sigma_iters
 
@@ -522,6 +535,17 @@ class CollapseCube(QDialog):
 
         return new_wavelengths, new_component, label
 
+    def clear_stylesheets(self):
+        self.ui.start_label.setStyleSheet("color: rgba(0, 0, 0, 255)")
+        self.ui.end_label.setStyleSheet("color: rgba(0, 0, 0, 255)")
+
+        self.ui.simple_sigma_label.setStyleSheet("color: rgba(0, 0, 0, 255)")
+
+        self.ui.advanced_sigma_label.setStyleSheet("color: rgba(0, 0, 0, 255)")
+        self.ui.advanced_sigma_lower_label.setStyleSheet("color: rgba(0, 0, 0, 255)")
+        self.ui.advanced_sigma_upper_label.setStyleSheet("color: rgba(0, 0, 0, 255)")
+        self.ui.advanced_sigma_iters_label.setStyleSheet("color: rgba(0, 0, 0, 255)")
+
     def calculate_callback(self):
         """
         Callback for when they hit calculate
@@ -529,6 +553,8 @@ class CollapseCube(QDialog):
         """
 
         log.debug('In calculate_callback()')
+
+        self.clear_stylesheets()
 
         # Grab the values of interest
         data_name = self.data_combobox.currentText()
