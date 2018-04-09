@@ -17,7 +17,7 @@ from .common import add_to_2d_container, show_error_message
 import logging
 logging.basicConfig(format='%(levelname)-6s: %(name)-10s %(asctime)-15s  %(message)s')
 log = logging.getLogger("CollapseCube")
-log.setLevel(logging.WARNING)
+log.setLevel(logging.DEBUG)
 
 # The operations we understand
 operations = {
@@ -85,7 +85,7 @@ class CollapseCube(QDialog):
 
         # Get the Specviz regions and add them in to the Combo box
         for roi in self.parent.specviz._widget.roi_bounds:
-            self.ui.region_combobox.addItem("Specviz ROI ({:.4}, {:.4})".format(roi[0], roi[1]))
+            self.ui.region_combobox.addItem("Specviz ROI ({:.4e}, {:.4e})".format(roi[0], roi[1]))
 
         self.ui.region_combobox.addItems(["Custom (Wavelengths)", "Custom (Indices)"])
         self.ui.region_combobox.setMinimumWidth(200)
@@ -124,7 +124,7 @@ class CollapseCube(QDialog):
             try:
                 if float(start).is_integer():
                     start = int(start)
-                    self.ui.start_input.setText('{:.4}'.format(self.wavelengths[int(start)]))
+                    self.ui.start_input.setText('{:.4e}'.format(self.wavelengths[int(start)]))
             except:
                 self.ui.start_input.setText('')
 
@@ -133,8 +133,8 @@ class CollapseCube(QDialog):
             log.debug('    end = {}'.format(end))
             try:
                 if float(end).is_integer():
-                    end = int(ind)
-                    self.ui.end_input.setText('{:.4}'.format(self.wavelengths[int(end)]))
+                    end = int(end)
+                    self.ui.end_input.setText('{:.4e}'.format(self.wavelengths[int(end)]))
             except:
                 self.ui.end_input.setText('')
 
@@ -194,8 +194,8 @@ class CollapseCube(QDialog):
             self.ui.start_label.setText("Start Wavelength:")
             self.ui.end_label.setText("End Wavelength:")
 
-            self.ui.start_example_label.setText('(e.g., {:1.4})'.format(self.wavelengths[indthird]))
-            self.ui.end_example_label.setText('(e.g., {:1.4})'.format(self.wavelengths[2*indthird]))
+            self.ui.start_example_label.setText('(e.g., {:.4e})'.format(self.wavelengths[indthird]))
+            self.ui.end_example_label.setText('(e.g., {:.4e})'.format(self.wavelengths[2*indthird]))
 
         elif 'Custom' in newvalue and 'Indices' in newvalue:
             # Custom indices
@@ -232,20 +232,12 @@ class CollapseCube(QDialog):
         :param dohide:
         :return:
         """
-        if dohide:
-            self.ui.start_label.setEnabled(False)
-            self.ui.start_example_label.setEnabled(False)
-            self.ui.start_input.setEnabled(False)
-            self.ui.end_label.setEnabled(False)
-            self.ui.end_example_label.setEnabled(False)
-            self.ui.end_input.setEnabled(False)
-        else:
-            self.ui.start_label.setEnabled(True)
-            self.ui.start_example_label.setEnabled(True)
-            self.ui.start_input.setEnabled(True)
-            self.ui.end_label.setEnabled(True)
-            self.ui.end_example_label.setEnabled(True)
-            self.ui.end_input.setEnabled(True)
+        self.ui.start_label.setEnabled(not dohide)
+        self.ui.start_example_label.setEnabled(not dohide)
+        self.ui.start_input.setEnabled(not dohide)
+        self.ui.end_label.setEnabled(not dohide)
+        self.ui.end_example_label.setEnabled(not dohide)
+        self.ui.end_input.setEnabled(not dohide)
 
     def _calculate_callback_wavelength_checks(self, start_wavelength, end_wavelength):
 
@@ -506,26 +498,26 @@ class CollapseCube(QDialog):
             self.ui.error_label.setVisible(True)
             return
 
-        # Set the start and end values in the text boxes -- in case they enter one way out of range then
-        # we'll fix it.
-#        ts = start_index if 'Indices' in self.region_combobox.currentText() else self.wavelengths[start_index]
-#        self.ui.start_input.setText('{}'.format(ts))
-#
-#        te = end_index if 'Indices' in self.region_combobox.currentText() else self.wavelengths[end_index]
-#        self.ui.end_input.setText('{}'.format(te))
-
-
         data_name = self.data_combobox.currentText()
         operation = self.operation_combobox.currentText()
+        spatial_region = self.spatial_region_combobox.currentText()
 
         # Get the start and end wavelengths from the newly created spectral cube and use for labeling the cube.
         # Convert to the current units.
         start_wavelength = self.wavelengths[start_index]
         end_wavelength = self.wavelengths[end_index]
 
-        label = '{}-collapse-{} ({:0.4}, {:0.4})'.format(data_name, operation,
+        label = '{}-collapse-{} ({:.4e}, {:.4e})'.format(data_name, operation,
                                                          start_wavelength,
                                                          end_wavelength)
+
+        # Setup the input_data (and apply the spatial mask based on 
+        # the selection in the spatial_region_combobox
+        input_data = self.data[data_name]
+        log.debug('    spatial region is {}'.format(spatial_region))
+        if not spatial_region == 'Image':
+            subset = [x.to_mask() for x in self.data.subsets if x.label == spatial_region][0]
+            input_data = input_data * subset
 
         # Apply sigma clipping
         sigma_selection = self.sigma_combobox.currentText()
@@ -535,7 +527,7 @@ class CollapseCube(QDialog):
             if sigma is None:
                 return
 
-            input_data = sigma_clip(self.data[data_name], sigma=sigma, axis=0)
+            input_data = sigma_clip(input_data, sigma=sigma, axis=0)
             label += ' sigma={}'.format(sigma)
 
         elif 'Advanced' in sigma_selection:
@@ -546,7 +538,7 @@ class CollapseCube(QDialog):
             if sigma is None:
                 return
 
-            input_data = sigma_clip(self.data[data_name], sigma=sigma, sigma_lower=sigma_lower,
+            input_data = sigma_clip(input_data, sigma=sigma, sigma_lower=sigma_lower,
                                        sigma_upper=sigma_upper, iters=sigma_iters, axis=0)
 
             # Add to label so it is clear which overlay/component is which
@@ -562,7 +554,7 @@ class CollapseCube(QDialog):
             if sigma_iters:
                 label += ' sigma_iters={}'.format(sigma_iters)
         else:
-            input_data = self.data[data_name]
+            input_data = input_data # noop
 
         # Do calculation if we got this far
         new_wavelengths, new_component = collapse_cube(input_data, data_name, self.data.coords.wcs,
