@@ -21,7 +21,7 @@ from glue.utils.qt import pick_item, get_text
 
 from glue.viewers.image.qt import ImageViewer
 from glue.viewers.image.layer_artist import ImageLayerArtist
-from glue.viewers.image.state import ImageLayerState
+from glue.viewers.image.state import ImageLayerState, ImageViewerState
 from glue.viewers.image.qt.layer_style_editor import ImageLayerStyleEditor
 from glue.viewers.common.qt.tool import Tool
 
@@ -94,64 +94,48 @@ def only_draw_axes_images(ax):
     ax._cachedRenderer = renderer
     ax.stale = False
 
+
+class CubevizImageViewerState(ImageViewerState):
+
+    # Override and modify ImageViewerState, so as to override the slice index
+    # if needed.
+
+    slice_index_override = None
+
+    @property
+    def numpy_slice_aggregation_transpose(self):
+        slices, agg_func, transpose = super(CubevizImageLayerState, self).numpy_slice_aggregation_transpose
+        if self.slice_index_override is not None:
+            slices[0] = self.slice_index_override
+        return slices, agg_func, transpose
+
+
 class CubevizImageLayerState(ImageLayerState):
     """
     Sub-class of ImageLayerState that includes the ability to include smoothing
     on-the-fly.
     """
     preview_function = None
-    slice_index_override = None
 
     def get_sliced_data(self, view=None):
         """
-        Override and modify ImageLayerState.get_sliced_data.
-        Modifications:
-            1)  If CubevizImageLayerState.preview_function is
-                defined, apply the function to data before return.
-            2)  If CubevizImageLayerState.slice_index_override is
-                defined, change slice index to that value
-        :param view: image view
-        :return: 2D np.ndarray
+        Override and modify ImageLayerState.get_sliced_data so that if
+        CubevizImageLayerState.preview_function is defined, it is applied to the
+        data before return.
         """
-        slices, agg_func, transpose = self.viewer_state.numpy_slice_aggregation_transpose
-        full_view = slices
-        if self.slice_index_override is not None:
-            full_view[0] = self.slice_index_override
-        if view is not None and len(view) == 2:
-            x_axis = self.viewer_state.x_att.axis
-            y_axis = self.viewer_state.y_att.axis
-            full_view[x_axis] = view[1]
-            full_view[y_axis] = view[0]
-            view_applied = True
+        if self.preview_function is None:
+            return super(CubevizImageLayerState, self).get_sliced_data(view=view)
         else:
-            view_applied = False
-        image = self._get_image(view=full_view)
+            image = super(CubevizImageLayerState, self).get_sliced_data()
+            image = self.preview_function(image)
+            if view is not None:
+                image = image[view]
+            return image
 
-        # Apply aggregation functions if needed
-        if image.ndim != len(agg_func):
-            raise ValueError("Sliced image dimensions ({0}) does not match "
-                             "aggregation function list ({1})"
-                             .format(image.ndim, len(agg_func)))
-        for axis in range(image.ndim - 1, -1, -1):
-            func = agg_func[axis]
-            if func is not None:
-                image = func(image, axis=axis)
-        if image.ndim != 2:
-            raise ValueError("Image after aggregation should have two dimensions")
-        if transpose:
-            image = image.transpose()
-        if view_applied or view is None or self.preview_function is not None:
-            data = image
-        else:
-            data = image[view]
-
-        if self.preview_function is not None:
-            return self.preview_function(data)
-        else:
-            return data
 
 class CubevizImageLayerArtist(ImageLayerArtist):
 
+    _state_cls = CubevizImageViewerState
     _layer_state_cls = CubevizImageLayerState
 
 
@@ -638,10 +622,9 @@ class CubevizImageViewer(ImageViewer, HubListener):
         Redraws figure.
         :param index: (int) slice index
         """
+
         # Reset slice index override
-        for layer in self.layers:
-            if isinstance(layer, CubevizImageLayerArtist):
-                layer.state.slice_index_override = None
+        self.state.slice_index_override = None
 
         # Do not update if displaying a 2D data component
         if len(self.state.slices) == 2:
@@ -673,9 +656,8 @@ class CubevizImageViewer(ImageViewer, HubListener):
         self._slice_index = index
 
         # Set main image's slice index to index
-        for layer in self.layers:
-            if isinstance(layer, CubevizImageLayerArtist):
-                layer.state.slice_index_override = index
+        self.state.slice_index_override = index
+
         # Invalidate cached data for image viewer
         # Or else it will not be redrawn
         self.axes._composite_image.invalidate_cache()
