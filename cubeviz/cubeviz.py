@@ -86,9 +86,10 @@ def main(argv=sys.argv):
 
     # Check to make sure each file exists and raise an Exception
     # that will show in the popup if it does not exist.
-    for x in datafiles:
-        if not os.path.isfile(x):
-            raise IOError('The file {} does not exist'.format(x))
+    for fileparam in datafiles:
+        for filename in  fileparam.split(','):
+            if not os.path.isfile(filename.strip()):
+                raise IOError('The file {} does not exist'.format(filename))
 
     # Show the splash screen for 1 second
     timer = QTimer()
