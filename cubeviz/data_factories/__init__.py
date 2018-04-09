@@ -139,7 +139,8 @@ class DataConfiguration:
                             c = data.get_component(component_name)
                             c.units = self.get_units(hdu.header)
                     else:
-                        component_name = os.path.basename(data_filename)
+                        # Creates a unique component name
+                        component_name = str(ii)
                         data.add_component(component=hdu.data.astype(np.float), label=component_name)
 
             # For the purposes of exporting, we keep a reference to the original HDUList object
@@ -155,7 +156,6 @@ class DataConfiguration:
         :param filename:
         :return:
         """
-
         # Check the "first filename in the list" which might be the "only filename" in the list.
         filename = filename.split(',')[0]
         self._fits = fits.open(filename)
@@ -189,6 +189,8 @@ class DataConfiguration:
             return self._startswith(conditional)
         elif 'extension_names' == key:
             return self._extension_names(conditional)
+        elif 'has_data' == key:
+            return self._has_data()
 
     #
     # Branch processing
@@ -228,6 +230,17 @@ class DataConfiguration:
     #
     # Leaf processing
     #
+
+    def _has_data(self):
+        """
+        Used for miscellaneous cubes that we have not planned for by just making sure data in the cube exists. This
+        is currently only in use in the default.yaml file
+        :return:
+        """
+        for hdu in self._fits:
+            if hasattr(hdu, 'data') and hdu.data is not None and hasattr(hdu.data, 'shape') and len(hdu.data.shape) == 3:
+                return True
+        return False
 
     def _equal(self, value):
         """

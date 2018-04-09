@@ -1,0 +1,11 @@
+# DEFAULT FITS cube
+name: 'default-cube'
+type: 'DEFAULT-CUBE'
+
+# Highest priority data configuration file, that matches, is selected.
+priority: 1000
+
+match:
+    all:
+        has_data:
+          True
