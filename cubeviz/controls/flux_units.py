@@ -1066,7 +1066,7 @@ class FluxUnitController:
                     new_astropy_unit = u.def_unit(new_unit["name"], u.Unit(new_unit["base"]))
                 else:
                     new_astropy_unit = u.def_unit(new_unit["name"])
-            self.register_new_unit(new_astropy_unit)
+                self.register_new_unit(new_astropy_unit)
 
         self._define_new_physical_types()
 
