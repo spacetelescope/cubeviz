@@ -9,4 +9,6 @@ This is an Astropy affiliated package.
 # ----------------------------------------------------------------------------
 from ._internal_init import *
 # ----------------------------------------------------------------------------
-from . import keyboard_shortcuts
+
+if _CUBEVIZ_SETUP_ is False:
+    from . import keyboard_shortcuts
