@@ -93,6 +93,11 @@ class CollapseCube(QDialog):
 
         self.ui.desc_label.setText(self._general_description)
 
+        # Set defaults for wavelengths
+        indthird = len(self.wavelengths) // 3
+        self.ui.start_input.setText('{:.4e}'.format(self.wavelengths[indthird]))
+        self.ui.end_input.setText('{:.4e}'.format(self.wavelengths[2*indthird]))
+
         # Hide the error box... for now.
         self.ui.error_label.setVisible(False)
 
