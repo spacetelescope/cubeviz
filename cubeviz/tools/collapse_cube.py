@@ -281,6 +281,7 @@ class CollapseCube(QDialog):
         if start_wavelength < self.wavelengths[0]:
             self.ui.error_label.setText('Start wavelength is out of range, setting to end point.')
             self.ui.error_label.setVisible(True)
+            self._extra_message += ' Start wavelength too low, using the first wavelength.'
 
             start_wavelength = self.wavelengths[0]
 
@@ -300,6 +301,7 @@ class CollapseCube(QDialog):
         if end_wavelength > self.wavelengths[-1]:
             self.ui.error_label.setText('End wavelength is out of range, setting to end point.')
             self.ui.error_label.setVisible(True)
+            self._extra_message += ' End wavelength too high, using the last wavelength.'
 
             end_wavelength = self.wavelengths[-1]
 
@@ -354,6 +356,7 @@ class CollapseCube(QDialog):
         if start_index < 0:
             self.ui.error_label.setText('Start index is out of range, setting to end point.')
             self.ui.error_label.setVisible(True)
+            self._extra_message += ' Start wavelength too low, using the first wavelength.'
 
             start_index = 0
 
@@ -373,6 +376,7 @@ class CollapseCube(QDialog):
         if end_index > len(self.wavelengths):
             self.ui.error_label.setText('End index is out of range, setting to end point.')
             self.ui.error_label.setVisible(True)
+            self._extra_message += ' End wavelength too high, using the last wavelength.'
 
             end_index = len(self.wavelengths)-1
 
