@@ -17,7 +17,7 @@ from .common import add_to_2d_container, show_error_message
 import logging
 logging.basicConfig(format='%(levelname)-6s: %(name)-10s %(asctime)-15s  %(message)s')
 log = logging.getLogger("CollapseCube")
-log.setLevel(logging.DEBUG)
+log.setLevel(logging.WARNING)
 
 # The operations we understand
 operations = {
@@ -58,6 +58,8 @@ class CollapseCube(QDialog):
 
         self._general_description = "Collapse the data cube over the spectral range based on the mathematical operation.  The nearest index or wavelength will be chosen if a specified number is out of bounds"
         self._custom_description = "To use the spectral viewer to define a region to collapse over, cancel this, create an ROI and then select this Collapse Cube again."
+
+        self._extra_message = ''
 
         self.currentAxes = None
         self.currentKernel = None
@@ -250,14 +252,14 @@ class CollapseCube(QDialog):
             start_wavelength, end_wavelength))
 
         if len(start_wavelength) == 0:
-            self.ui.end_label.setStyleSheet("color: rgba(0, 0, 255, 128)")
-            self.ui.error_label.setText('No start wavelength, assuming last spectral wavelength.')
             start_wavelength = self.wavelengths[0]
+            self.ui.start_input.setText('{:.4e}'.format(start_wavelength))
+            self._extra_message += ' Start wavelength not set so used the first.'
 
         if len(end_wavelength) == 0:
-            self.ui.end_label.setStyleSheet("color: rgba(0, 0, 255, 128)")
-            self.ui.error_label.setText('No end wavelength, assuming last spectral wavelength.')
             end_wavelength = self.wavelengths[-1]
+            self.ui.end_input.setText('{:.4e}'.format(end_wavelength))
+            self._extra_message += ' End wavelength not set so used the last.'
 
         try:
             start_wavelength = float(start_wavelength)
@@ -325,14 +327,14 @@ class CollapseCube(QDialog):
             start_index, end_index))
 
         if len(start_index) == 0:
-            self.ui.end_label.setStyleSheet("color: rgba(0, 0, 255, 128)")
-            self.ui.error_label.setText('No start index, assuming first spectral wavelength.')
             start_index = 0
+            self.ui.start_input.setText('{}'.format(start_index))
+            self._extra_message += ' Start wavelength not set so used the first.'
 
         if len(end_index) == 0:
-            self.ui.end_label.setStyleSheet("color: rgba(0, 0, 255, 128)")
-            self.ui.error_label.setText('No end index, assuming last spectral wavelength.')
             end_index = len(self.wavelengths) - 1
+            self.ui.end_input.setText('{}'.format(end_index))
+            self._extra_message += ' End wavelength not set so used the last.'
 
         try:
             start_index = int(start_index)
@@ -644,7 +646,8 @@ class CollapseCube(QDialog):
         final_dialog = QDialog()
 
         # Create data component label and input box
-        widget_desc = QLabel('The collapsed cube was added as an overlay with label "{}"'.format(label))
+        widget_desc = QLabel('The collapsed cube was added as an overlay with label "{}". {}'.format(
+            label, self._extra_message))
         widget_desc.setWordWrap(True)
         widget_desc.setFixedWidth(350)
         widget_desc.setAlignment((Qt.AlignLeft | Qt.AlignTop))
