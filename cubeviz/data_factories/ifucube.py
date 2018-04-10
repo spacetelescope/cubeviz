@@ -64,7 +64,7 @@ class IFUCube(object):
 
         self.check_cunit3(fix)
 
-        return self._fits, self._good
+        return self._fits
 
     def check_data(self, fix=False):
         """
@@ -166,10 +166,13 @@ class IFUCube(object):
             log.info("{} is {}, should equal {} in header[{}]".format(key, hdu.header[key], correct, ii))
 
     def get_log_output(self):
-        return "yo"
+        return "Here we will have specific locations of faulty values"
 
     def good_check(self, good):
         if good and self._good:
             self._good = True
         if not good:
             self._good = False
+
+    def get_good(self):
+        return self._good

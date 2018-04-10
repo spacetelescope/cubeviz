@@ -47,32 +47,6 @@
       </property>
      </widget>
     </item>
-    <item row="3" column="0">
-     <widget class="QLabel" name="ifucube_log">
-      <property name="text">
-       <string>TextLabel</string>
-      </property>
-      <property name="wordWrap">
-       <bool>true</bool>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="0">
-     <widget class="QLabel" name="label_warning_2">
-      <property name="text">
-       <string notr="true">&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;We &lt;span style=&quot; font-weight:600;&quot;&gt;will&lt;/span&gt; add dummy values to certain headers in order for your file to load, &lt;span style=&quot; font-weight:600; text-decoration: underline;&quot;&gt;this may affect your science&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-      </property>
-      <property name="textFormat">
-       <enum>Qt::RichText</enum>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-      <property name="wordWrap">
-       <bool>true</bool>
-      </property>
-     </widget>
-    </item>
     <item row="4" column="0">
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
@@ -89,20 +63,39 @@
        </spacer>
       </item>
       <item>
-       <widget class="QPushButton" name="pushButton_cancel">
+       <widget class="QPushButton" name="button_cancel">
         <property name="text">
          <string>Cancel</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="pushButton_accept">
+       <widget class="QPushButton" name="button_accept">
         <property name="text">
          <string>Accept</string>
         </property>
        </widget>
       </item>
      </layout>
+    </item>
+    <item row="2" column="0">
+     <widget class="QLabel" name="label_warning_2">
+      <property name="text">
+       <string notr="true">&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;However, we &lt;span style=&quot; font-weight:600; text-decoration: underline;&quot;&gt;will&lt;/span&gt; add dummy values to certain headers in order for your file to load, &lt;span style=&quot; font-weight:600; text-decoration: underline;&quot;&gt;this may affect your science&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
+      <property name="textFormat">
+       <enum>Qt::RichText</enum>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+      <property name="wordWrap">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="0">
+     <widget class="QTextBrowser" name="ifucube_log"/>
     </item>
    </layout>
   </widget>

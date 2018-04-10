@@ -18,6 +18,9 @@ from ..listener import CUBEVIZ_LAYOUT
 
 from glue.utils.qt import load_ui
 
+from qtpy.QtWidgets import (
+    QDialog, QApplication, QPushButton)
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('cubeviz_data_configuration')
 logger.setLevel(logging.INFO)
@@ -100,13 +103,12 @@ class DataConfiguration:
                 units = units.replace(key, self.flux_unit_replacements[key])
         return units
 
-    def _cancel(self):
-        print("Canceling")
-        return sys.exit()
+    def _reject_button_click(self):
+        self.popup_ui.close()
+        sys.exit()
 
-    def _continue(self):
-        print("Continuing")
-        return
+    def _accept_button_click(self):
+        self.popup_ui.accept()
 
     def load_data(self, data_filenames):
         """
@@ -124,12 +126,17 @@ class DataConfiguration:
 
         for data_filename in data_filenames.split(','):
 
-            hdulist, good = ifucube.open(data_filename, fix=True)
-            if not good:
+            hdulist = ifucube.open(data_filename, fix=True)
+
+            # Good in this case means the file has 3D data and can be loaded by SpectralCube.read
+            if not ifucube.get_good():
+                # Popup takes precedence and accepting continues operation and canceling closes the program
                 self.popup_ui.ifucube_log.setText(ifucube.get_log_output())
-                self.popup_ui.exec_()
-                self.popup_ui.pushButton_accept.clicked.connect(self._continue)
-                self.popup_ui.pushButton_cancel.clicked.connect(self._cancel)
+                self.popup_ui.setModal(True)
+                self.popup_ui.show()
+
+                self.popup_ui.button_accept.clicked.connect(self._accept_button_click)
+                self.popup_ui.button_cancel.clicked.connect(self._reject_button_click)
 
             if not label:
                 label = "{}: {}".format(self._name, splitext(basename(data_filename))[0])
