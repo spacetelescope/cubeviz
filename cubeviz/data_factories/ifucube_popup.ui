@@ -6,49 +6,84 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>558</width>
-    <height>302</height>
+    <width>450</width>
+    <height>380</height>
    </rect>
   </property>
   <property name="sizePolicy">
-   <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
     <horstretch>0</horstretch>
     <verstretch>0</verstretch>
    </sizepolicy>
   </property>
+  <property name="minimumSize">
+   <size>
+    <width>450</width>
+    <height>380</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>450</width>
+    <height>380</height>
+   </size>
+  </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Header Value Issues</string>
   </property>
   <widget class="QWidget" name="gridLayoutWidget">
    <property name="geometry">
     <rect>
-     <x>40</x>
-     <y>10</y>
-     <width>471</width>
-     <height>201</height>
+     <x>10</x>
+     <y>0</y>
+     <width>433</width>
+     <height>371</height>
     </rect>
    </property>
    <layout class="QGridLayout" name="gridLayout">
-    <item row="1" column="0">
-     <widget class="QLabel" name="label_warning_1">
-      <property name="font">
-       <font>
-        <family>Bell MT</family>
-        <pointsize>21</pointsize>
-        <weight>75</weight>
-        <bold>true</bold>
-       </font>
-      </property>
+    <property name="sizeConstraint">
+     <enum>QLayout::SetDefaultConstraint</enum>
+    </property>
+    <property name="horizontalSpacing">
+     <number>0</number>
+    </property>
+    <property name="verticalSpacing">
+     <number>4</number>
+    </property>
+    <item row="2" column="0">
+     <widget class="QLabel" name="label_warning_2">
       <property name="text">
-       <string>Your File Will NOT be Overwritten</string>
+       <string notr="true">&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Some values in your header did not appear to be correct.  So, we &lt;span style=&quot; font-weight:600; text-decoration: underline;&quot;&gt;will&lt;/span&gt; add or fix these values in order for your file to load, &lt;span style=&quot; font-weight:600; text-decoration: underline;&quot;&gt;this may affect your science.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
+      <property name="textFormat">
+       <enum>Qt::RichText</enum>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
       </property>
+      <property name="wordWrap">
+       <bool>true</bool>
+      </property>
      </widget>
     </item>
+    <item row="5" column="0">
+     <widget class="QTextBrowser" name="ifucube_log"/>
+    </item>
     <item row="4" column="0">
+     <widget class="QLabel" name="label">
+      <property name="text">
+       <string>Below is a list of values that needed to be changed upon being read in:</string>
+      </property>
+     </widget>
+    </item>
+    <item row="7" column="0">
      <layout class="QHBoxLayout" name="horizontalLayout">
+      <property name="spacing">
+       <number>0</number>
+      </property>
+      <property name="sizeConstraint">
+       <enum>QLayout::SetFixedSize</enum>
+      </property>
       <item>
        <spacer name="horizontalSpacer">
         <property name="orientation">
@@ -67,6 +102,9 @@
         <property name="text">
          <string>Cancel</string>
         </property>
+        <property name="default">
+         <bool>true</bool>
+        </property>
        </widget>
       </item>
       <item>
@@ -78,24 +116,36 @@
       </item>
      </layout>
     </item>
-    <item row="2" column="0">
-     <widget class="QLabel" name="label_warning_2">
-      <property name="text">
-       <string notr="true">&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;However, we &lt;span style=&quot; font-weight:600; text-decoration: underline;&quot;&gt;will&lt;/span&gt; add dummy values to certain headers in order for your file to load, &lt;span style=&quot; font-weight:600; text-decoration: underline;&quot;&gt;this may affect your science&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    <item row="3" column="0">
+     <widget class="QLabel" name="label_warning_1">
+      <property name="font">
+       <font>
+        <family>Bell MT</family>
+        <pointsize>16</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
       </property>
-      <property name="textFormat">
-       <enum>Qt::RichText</enum>
+      <property name="text">
+       <string>Your File Will NOT be Overwritten</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
       </property>
+     </widget>
+    </item>
+    <item row="6" column="0">
+     <widget class="QLabel" name="label_2">
+      <property name="text">
+       <string>Click 'Cancel' to exit out of cubeviz now or click 'Accept' to continue with the modified header values.</string>
+      </property>
       <property name="wordWrap">
        <bool>true</bool>
       </property>
+      <property name="margin">
+       <number>4</number>
+      </property>
      </widget>
-    </item>
-    <item row="3" column="0">
-     <widget class="QTextBrowser" name="ifucube_log"/>
     </item>
    </layout>
   </widget>

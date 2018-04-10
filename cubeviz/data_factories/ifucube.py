@@ -1,5 +1,6 @@
 import os
 import logging
+from collections import defaultdict
 
 from astropy.io import fits
 from astropy import units as u
@@ -18,7 +19,7 @@ class IFUCube(object):
         self._fits = None
         self._filename = None
         self._good = True
-        self._log_text = ""
+        self._log_text = defaultdict(lambda: dict())
 
         self._units = [u.m, u.cm, u.mm, u.um, u.nm, u.AA]
         self._units_titles = list(x.name for x in self._units)
@@ -54,7 +55,7 @@ class IFUCube(object):
         Check all checkers
         """
         log.debug('In check with filename {} and fix {}'.format(self._filename, fix))
-        self._log_text += ('In check with filename {} and fix {}\n'.format(self._filename, fix))
+        self._log_text['>front'] = 'Checking filename {}\n'.format(self._filename)
 
         self.check_data(fix)
 
@@ -90,11 +91,10 @@ class IFUCube(object):
             if not 'EXTNAME' in hdu.header:
                 log.warning(' HDU {} has no EXTNAME field'.format(ii))
 
-
                 if fix:
                     self._fits[ii].header['EXTNAME'] = '{}_{}'.format(self._filename, ii)
                     log.info(' Setting HDU {} EXTNAME field to {}'.format(ii, self._fits[ii].header['EXTNAME']))
-                    self._log_text += ('\tSetting HDU {} EXTNAME field to {}\n'.format(ii, self._fits[ii].header['EXTNAME']))
+                    self._log_text[hdu.name]['data'] = 'Setting HDU {} EXTNAME field to {}\n'.format(ii, self._fits[ii].header['EXTNAME'])
 
             if hasattr(hdu, 'data') and hdu.data is not None and len(hdu.data.shape) == 3:
                 good = True
@@ -165,27 +165,42 @@ class IFUCube(object):
         :param ii: The index of the hdu within the FITS file
         :return:
         """
-        if not hdu.header[key] in correct and fix:
+        if not hdu.header[key] == correct and fix:
             self.good_check(False)
             if isinstance(correct, list):
+                self._log_text[hdu.name][key] = "{} is {}, setting to {}\n".format(key, hdu.header[key], correct[0])
                 log.info("{} is {}, setting to {} in header[{}]".format(key, hdu.header[key], correct[0], ii))
                 hdu.header[key] = correct[0]
-                self._log_text += (
-                    "\t{} is {}, setting to {} in header[{}]\n".format(key, hdu.header[key], correct[0], ii))
-
             else:
+                self._log_text[hdu.name][key] = "{} is {}, setting to {}\n".format(key, hdu.header[key], correct)
                 log.info("{} is {}, setting to {} in header[{}]".format(key, hdu.header[key], correct, ii))
                 hdu.header[key] = correct
-                self._log_text += (
-                    "\t{} is {}, setting to {} in header[{}]\n".format(key, hdu.header[key], correct, ii))
 
         elif not hdu.header[key] in correct and not fix:
             self.good_check(False)
             log.info("{} is {}, should equal {} in header[{}]".format(key, hdu.header[key], correct[0], ii))
-            self._log_text += ("\t{} is {}, should equal {} in header[{}]".format(key, hdu.header[key], correct[0], ii))
+            self._log_text[hdu.name][key] = "{} is {}, should equal {}".format(key, hdu.header[key], correct[0])
 
     def get_log_output(self):
-        return self._log_text
+
+        output = self._log_text['>front'] + '\n'
+
+        for log_key, log_value in sorted(self._log_text.items()):
+            if log_key == '>front':
+                continue
+
+            output += 'HDU {}\n'.format(log_key) 
+
+            if isinstance(log_value, str):
+                output += '    {}'.format(log_value)
+                continue
+
+            for _, log_line in sorted(log_value.items()):
+                output += '    {}'.format(log_line)
+
+            output += '\n'
+
+        return output
 
     def good_check(self, good):
         if good and self._good:
