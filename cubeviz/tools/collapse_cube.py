@@ -407,7 +407,7 @@ class CollapseCube(QDialog):
             self.ui.error_label.setVisible(True)
             return None
 
-        if sigma <= 0.0:
+        if simple_sigma <= 0.0:
             self.ui.simple_sigma_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
             self.ui.error_label.setText('Sigma must be a positive number.')
             self.ui.error_label.setVisible(True)
