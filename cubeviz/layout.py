@@ -126,7 +126,7 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         # Create specviz viewer and register to the hub.
         self.specviz = WidgetWrapper(
-            SpecVizViewer(self.session), tab_widget=self, toolbar=False)
+            SpecVizViewer(self.session, layout=self), tab_widget=self, toolbar=False)
         self.specviz._widget.register_to_hub(self.session.hub)
 
         self.single_view = self.cube_views[0]
