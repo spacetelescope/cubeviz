@@ -145,7 +145,6 @@ class IFUCube(object):
         :return: boolean whether it is good or not
         """
         log.debug('In check for {}'.format(key))
-        good = True
 
         for ii, hdu in enumerate(self._fits):
             if ii == 0 or (hasattr(hdu, 'data') and hdu.data is not None and len(hdu.data.shape) == 3):
@@ -166,7 +165,14 @@ class IFUCube(object):
         :param ii: The index of the hdu within the FITS file
         :return:
         """
-        if not hdu.header[key] == correct and fix:
+        # (i.e. Angstroms instead of Angstrom will be corrected and added)
+        if hdu.header[key] not in correct and len(hdu.header[key]) > 0 and hdu.header[key][:-1] in correct:
+            self.good_check(False)
+            self._log_text[hdu.name][key] = "{} is {}, setting to {}\n".format(key, hdu.header[key], hdu.header[key][:-1])
+            log.info("{} is {}, setting to {} in header[{}]".format(key, hdu.header[key], hdu.header[key][:-1], ii))
+            hdu.header[key] = hdu.header[key][:-1]
+
+        elif not hdu.header[key] in correct and fix:
             self.good_check(False)
             if isinstance(correct, list):
                 self._log_text[hdu.name][key] = "{} is {}, setting to {}\n".format(key, hdu.header[key], correct[0])
