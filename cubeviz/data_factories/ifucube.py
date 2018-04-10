@@ -17,6 +17,7 @@ class IFUCube(object):
         self._fits = None
         self._filename = None
         self._good = True
+        self._log_text = ""
 
     def open(self, filename, fix=False):
         """
@@ -49,6 +50,7 @@ class IFUCube(object):
         Check all checkers
         """
         log.debug('In check with filename {} and fix {}'.format(self._filename, fix))
+        self._log_text += ('In check with filename {} and fix {}\n'.format(self._filename, fix))
 
         self.check_data(fix)
 
@@ -84,9 +86,11 @@ class IFUCube(object):
             if not 'EXTNAME' in hdu.header:
                 log.warning(' HDU {} has no EXTNAME field'.format(ii))
 
+
                 if fix:
-                    self._fits[ii].header['EXTNAME'] = 'Extension {}'.format(ii)
+                    self._fits[ii].header['EXTNAME'] = '{}_{}'.format(self._filename, ii)
                     log.info(' Setting HDU {} EXTNAME field to {}'.format(ii, self._fits[ii].header['EXTNAME']))
+                    self._log_text += ('\tSetting HDU {} EXTNAME field to {}\n'.format(ii, self._fits[ii].header['EXTNAME']))
 
             if hasattr(hdu, 'data') and hdu.data is not None and len(hdu.data.shape) == 3:
                 good = True
@@ -159,14 +163,16 @@ class IFUCube(object):
         """
         if not hdu.header[key] == correct and fix:
             log.info("{} is {}, setting to {} in header[{}]".format(key, hdu.header[key], correct, ii))
+            self._log_text += ("\t{} is {}, setting to {} in header[{}]\n".format(key, hdu.header[key], correct, ii))
             self.good_check(False)
             hdu.header[key] = correct
         elif not hdu.header[key] == correct and not fix:
             self.good_check(False)
             log.info("{} is {}, should equal {} in header[{}]".format(key, hdu.header[key], correct, ii))
+            self._log_text += ("\t{} is {}, should equal {} in header[{}]".format(key, hdu.header[key], correct, ii))
 
     def get_log_output(self):
-        return "Here we will have specific locations of faulty values"
+        return self._log_text
 
     def good_check(self, good):
         if good and self._good:

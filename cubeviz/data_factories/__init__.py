@@ -104,10 +104,18 @@ class DataConfiguration:
         return units
 
     def _reject_button_click(self):
+        """
+        Closes entire program if clicked
+        :return:
+        """
         self.popup_ui.close()
         sys.exit()
 
     def _accept_button_click(self):
+        """
+        Continues as usual
+        :return:
+        """
         self.popup_ui.accept()
 
     def load_data(self, data_filenames):
