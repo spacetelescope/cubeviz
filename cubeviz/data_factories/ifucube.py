@@ -106,7 +106,8 @@ class IFUCube(object):
 
                 # Check to see if the same size as the others
                 if data_shape and not data_shape == hdu.data.shape:
-                    log.warning('  Data are of different shapes (previous was {} and this is {})'.format(data_shape, hdu.data.shape))
+                    log.warning('  Data are of different shapes (previous was {} and this is {})'.format(data_shape,
+                                                                                                         hdu.data.shape))
 
                 data_shape = hdu.data.shape
 
@@ -125,7 +126,7 @@ class IFUCube(object):
 
     def check_ctype3(self, fix=False):
         self._check_ctype(key='CTYPE3', correct='WAVE', fix=fix)
-        
+
     def check_cunit1(self, fix=False):
         self._check_ctype(key='CUNIT1', correct='deg', fix=fix)
 
@@ -189,7 +190,7 @@ class IFUCube(object):
             if log_key == '>front':
                 continue
 
-            output += 'HDU {}\n'.format(log_key) 
+            output += 'HDU {}\n'.format(log_key)
 
             if isinstance(log_value, str):
                 output += '    {}'.format(log_value)
