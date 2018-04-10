@@ -81,7 +81,6 @@ class CollapseCube(QDialog):
         self.ui.operation_combobox.addItems(operations.keys())
 
         # Fill spatial region combobox
-        print(self.data.subsets)
         spatial_regions = ['Image'] + [x.label for x in self.data.subsets]
         self.ui.spatial_region_combobox.addItems(spatial_regions)
 
@@ -621,7 +620,6 @@ class CollapseCube(QDialog):
             add_to_2d_container(self.parent, self.data, new_component, label)
             self.parent.add_overlay(new_component, label, display_now=False)
         except Exception as e:
-            print('Error: {}'.format(e))
             show_error_message(str(e), 'Collapse Cube Error', parent=self)
             return
         finally:
