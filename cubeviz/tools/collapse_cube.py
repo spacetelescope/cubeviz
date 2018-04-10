@@ -289,10 +289,10 @@ class CollapseCube(QDialog):
             self.ui.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
             self.ui.error_label.setText('Start wavelength is out of range.')
             self.ui.error_label.setVisible(True)
-
-            start_wavelength = None
+            return None, None
 
         if end_wavelength < start_wavelength:
+            self.ui.start_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
             self.ui.end_label.setStyleSheet("color: rgba(255, 0, 0, 128)")
             self.ui.error_label.setText('Start wavelength must be less than the end wavelength.')
             self.ui.error_label.setVisible(True)
@@ -577,6 +577,7 @@ class CollapseCube(QDialog):
 
         # Do check on wavelength/indices first.
         if using_wavelengths:
+            print(start_value, end_value)
             start_index, end_index = self._calculate_callback_wavelength_checks(start_value, end_value)
         else:
             start_index, end_index = self._calculate_callback_index_checks(start_value, end_value)

@@ -4,6 +4,8 @@ import os
 import pytest
 import numpy as np
 
+from qtpy import QtCore
+
 from cubeviz.tools.collapse_cube import CollapseCube
 
 from ...tests.helpers import (toggle_viewer, select_viewer, left_click,
@@ -24,6 +26,24 @@ def collapse_cube(cubeviz_layout):
     cc = CollapseCube(wavelengths, wavelength_units, cl._data, parent=cl)
 
     return cc
+
+
+def assert_red_stylesheet(widget):
+    assert widget.styleSheet() == "color: rgba(255, 0, 0, 128)"
+
+
+def test_collapse_ui(qtbot, collapse_cube):
+
+    cc = collapse_cube
+    cc.ui.start_input.setText('a')
+    qtbot.mouseClick(cc.ui.calculate_button, QtCore.Qt.LeftButton)
+    assert_red_stylesheet(cc.ui.start_label)
+
+    cc.ui.start_input.setText('100')
+    cc.ui.end_input.setText('50')
+    qtbot.mouseClick(cc.ui.calculate_button, QtCore.Qt.LeftButton)
+    assert_red_stylesheet(cc.ui.start_label)
+
 
 def test_starting_state(cubeviz_layout):
 
