@@ -29,7 +29,8 @@ from glue.viewers.matplotlib.state import DeferredDrawCallbackProperty as DDCPro
 from qtpy.QtWidgets import QToolTip
 from qtpy.QtGui import QCursor
 
-from .messages import SliceIndexUpdateMessage, WavelengthUpdateMessage, WavelengthUnitUpdateMessage
+from .messages import (SliceIndexUpdateMessage, WavelengthUpdateMessage,
+                       WavelengthUnitUpdateMessage, FluxUnitsUpdateMessage)
 from .utils.contour import ContourSettings
 
 CONTOUR_DEFAULT_NUMBER_OF_LEVELS = 8
@@ -225,6 +226,7 @@ class CubevizImageViewer(ImageViewer, HubListener):
         self._hub.subscribe(self, SliceIndexUpdateMessage, handler=self._update_viewer_index)
         self._hub.subscribe(self, WavelengthUpdateMessage, handler=self._update_wavelengths)
         self._hub.subscribe(self, WavelengthUnitUpdateMessage, handler=self._update_wavelength_units)
+        self._hub.subscribe(self, FluxUnitsUpdateMessage, handler=self._update_flux_units)
 
 
     def _slice_callback(self, new_slice):
@@ -704,6 +706,13 @@ class CubevizImageViewer(ImageViewer, HubListener):
     @property
     def slice_index(self):
         return self._slice_index
+
+    def _update_flux_units(self, message):
+        target_component_id = message.component_id
+        if str(self.current_component_id) == str(target_component_id):
+            self.update_component_unit_label(target_component_id)
+            self.update_axes_title(str(target_component_id))
+            self.update_slice_index(self.slice_index)
 
     def update_component_unit_label(self, component_id=None):
         """

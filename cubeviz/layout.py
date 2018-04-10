@@ -349,16 +349,12 @@ class CubeVizLayout(QtWidgets.QWidget):
         if name == "Wavelength Units/Redshift":
             WavelengthUI(self._wavelength_controller, parent=self)
 
-    def refresh_units(self, target_component_id):
-        for view in self.cube_views:
-            viewer = view.widget()
-            if str(viewer.current_component_id) == str(target_component_id):
-                viewer.update_component_unit_label(target_component_id)
-                viewer.update_axes_title(str(target_component_id))
-                viewer.update_slice_index(viewer.slice_index)
+    def refresh_flux_units(self, message):
+        # TODO: eventually specviz should be able to respond to a
+        # FluxUnitsUpdateMessage on its own.
         comp = self.specviz._widget._options_widget.file_att
-        if target_component_id == comp:
-            specviz_unit = self._flux_unit_controller.get_component_unit(comp)
+        if message.component_id == comp:
+            specviz_unit = message.flux_units
             if specviz_unit is not None:
                 dispatch.changed_units.emit(y=specviz_unit)
 
