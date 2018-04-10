@@ -16,6 +16,7 @@ class IFUCube(object):
     def __init__(self):
         self._fits = None
         self._filename = None
+        self._good = True
 
     def open(self, filename, fix=False):
         """
@@ -63,7 +64,7 @@ class IFUCube(object):
 
         self.check_cunit3(fix)
 
-        return self._fits
+        return self._fits, self._good
 
     def check_data(self, fix=False):
         """
@@ -89,6 +90,7 @@ class IFUCube(object):
 
             if hasattr(hdu, 'data') and hdu.data is not None and len(hdu.data.shape) == 3:
                 good = True
+                self.good_check(good)
                 extname = self._fits[ii].header['EXTNAME']
 
                 log.info('  data exists in HDU ({}, {}) and is of shape {}'.format(
@@ -101,6 +103,7 @@ class IFUCube(object):
                 data_shape = hdu.data.shape
 
         if not good:
+            self.good_check(False)
             log.error('  Can\'t fix lack of data')
             return False
 
@@ -133,11 +136,11 @@ class IFUCube(object):
         :return: boolean whether it is good or not
         """
         log.debug('In check for {}'.format(key))
+        good = True
 
         for ii, hdu in enumerate(self._fits):
             if ii == 0 or (hasattr(hdu, 'data') and hdu.data is not None and len(hdu.data.shape) == 3):
                 if key not in hdu.header:
-                    log.info("WARNING: {} not found in header[{}], creating it with dummy value".format(key, ii))
                     hdu.header[key] = "NONE"
                     self.good_and_fix(hdu, key, correct, fix, ii)
                 else:
@@ -155,9 +158,18 @@ class IFUCube(object):
         :return:
         """
         if not hdu.header[key] == correct and fix:
-            log.info("{} equals {} in header[{}] but should equal {}. Fix = {}".format(key, hdu.header[key], ii, correct, fix))
+            log.info("{} is {}, setting to {} in header[{}]".format(key, hdu.header[key], correct, ii))
+            self.good_check(False)
             hdu.header[key] = correct
         elif not hdu.header[key] == correct and not fix:
-            log.info("{} equals {} in header [{}] but should equal {}. Fix = {}".format(key, hdu.header[key], ii, correct, fix))
-        elif hdu.header[key] == correct:
-            log.info('Good, found {} equals {} in header[{}]'.format(key, hdu.header[key], ii))
+            self.good_check(False)
+            log.info("{} is {}, should equal {} in header[{}]".format(key, hdu.header[key], correct, ii))
+
+    def get_log_output(self):
+        return "yo"
+
+    def good_check(self, good):
+        if good and self._good:
+            self._good = True
+        if not good:
+            self._good = False

@@ -16,10 +16,7 @@ import numpy as np
 from cubeviz.data_factories.ifucube import IFUCube
 from ..listener import CUBEVIZ_LAYOUT
 
-from qtpy.QtWidgets import (QDialog, QComboBox, QPushButton,
-                            QLabel, QWidget, QHBoxLayout, QVBoxLayout)
-#from glue.utils.qt import load_ui
-
+from glue.utils.qt import load_ui
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('cubeviz_data_configuration')
@@ -41,7 +38,7 @@ class DataConfiguration:
         :param config_file:
         """
         self._config_file = config_file
-        #self.popup_ui = load_ui('ifucube_popup.ui', self, directory=os.path.dirname(__file__))
+        self.popup_ui = load_ui('ifucube_popup.ui', None, directory=os.path.dirname(__file__))
 
         with open(self._config_file, 'r') as ymlfile:
             cfg = yaml.load(ymlfile)
@@ -103,54 +100,13 @@ class DataConfiguration:
                 units = units.replace(key, self.flux_unit_replacements[key])
         return units
 
-    def window(self):
-        w = QWidget()
-        b = QPushButton(w)
-        b.setText("Show message!")
+    def _cancel(self):
+        print("Canceling")
+        return sys.exit()
 
-        b.move(50, 50)
-        b.clicked.connect(self.showdialog)
-        w.setWindowTitle("PyQt Dialog demo")
-        w.show()
-
-    def showdialog(self):
-        msg = QMessageBox()
-        msg.setIcon(QMessageBox.Information)
-
-        msg.setText("This is a message box")
-        msg.setInformativeText("This is additional information")
-        msg.setWindowTitle("MessageBox demo")
-        msg.setDetailedText("The details are as follows:")
-        msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-        msg.buttonClicked.connect(self.msgbtn)
-
-        retval = msg.exec_()
-        print
-        "value of pressed message box button:", retval
-
-    def msgbtn(self, i):
-        print
-        "Button pressed is:", i.text()
-
-    def call_window(self):
-        window = QDialog()
-        window.setWindowTitle("Incorrect Values Found in File")
-
-        textbox = QLabel("Overwriting all of your data")
-        button_accept = QPushButton("Accept")
-        button_cancel = QPushButton("Cancel")
-
-        layout = QHBoxLayout(window)
-        self.ui.layout = layout
-
-        self.ui.layout.addWidget(textbox)
-        self.ui.layout.addWidget(button_accept)
-        self.ui.layout.addWidget(button_cancel)
-
-
-
-        window.exec_()
-
+    def _continue(self):
+        print("Continuing")
+        return
 
     def load_data(self, data_filenames):
         """
@@ -168,8 +124,12 @@ class DataConfiguration:
 
         for data_filename in data_filenames.split(','):
 
-            hdulist = ifucube.open(data_filename, fix=True)
-            #self.call_window()
+            hdulist, good = ifucube.open(data_filename, fix=True)
+            if not good:
+                self.popup_ui.ifucube_log.setText(ifucube.get_log_output())
+                self.popup_ui.exec_()
+                self.popup_ui.pushButton_accept.clicked.connect(self._continue)
+                self.popup_ui.pushButton_cancel.clicked.connect(self._cancel)
 
             if not label:
                 label = "{}: {}".format(self._name, splitext(basename(data_filename))[0])
