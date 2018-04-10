@@ -2,6 +2,7 @@ import os
 import logging
 
 from astropy.io import fits
+from astropy import units as u
 
 logging.basicConfig(level=logging.DEBUG, format="%(filename)s: %(levelname)8s %(message)s")
 log = logging.getLogger('ifcube')
@@ -18,6 +19,9 @@ class IFUCube(object):
         self._filename = None
         self._good = True
         self._log_text = ""
+
+        self._units = [u.m, u.cm, u.mm, u.um, u.nm, u.AA]
+        self._units_titles = list(x.name for x in self._units)
 
     def open(self, filename, fix=False):
         """
@@ -129,7 +133,7 @@ class IFUCube(object):
         self._check_ctype(key='CUNIT2', correct='deg', fix=fix)
 
     def check_cunit3(self, fix=False):
-        self._check_ctype(key='CUNIT3', correct='Angstrom', fix=fix)
+        self._check_ctype(key='CUNIT3', correct=self._units_titles, fix=fix)
 
     def _check_ctype(self, key, correct, fix=False):
         """
@@ -161,15 +165,24 @@ class IFUCube(object):
         :param ii: The index of the hdu within the FITS file
         :return:
         """
-        if not hdu.header[key] == correct and fix:
-            log.info("{} is {}, setting to {} in header[{}]".format(key, hdu.header[key], correct, ii))
-            self._log_text += ("\t{} is {}, setting to {} in header[{}]\n".format(key, hdu.header[key], correct, ii))
+        if not hdu.header[key] in correct and fix:
             self.good_check(False)
-            hdu.header[key] = correct
-        elif not hdu.header[key] == correct and not fix:
+            if isinstance(correct, list):
+                log.info("{} is {}, setting to {} in header[{}]".format(key, hdu.header[key], correct[0], ii))
+                hdu.header[key] = correct[0]
+                self._log_text += (
+                    "\t{} is {}, setting to {} in header[{}]\n".format(key, hdu.header[key], correct[0], ii))
+
+            else:
+                log.info("{} is {}, setting to {} in header[{}]".format(key, hdu.header[key], correct, ii))
+                hdu.header[key] = correct
+                self._log_text += (
+                    "\t{} is {}, setting to {} in header[{}]\n".format(key, hdu.header[key], correct, ii))
+
+        elif not hdu.header[key] in correct and not fix:
             self.good_check(False)
-            log.info("{} is {}, should equal {} in header[{}]".format(key, hdu.header[key], correct, ii))
-            self._log_text += ("\t{} is {}, should equal {} in header[{}]".format(key, hdu.header[key], correct, ii))
+            log.info("{} is {}, should equal {} in header[{}]".format(key, hdu.header[key], correct[0], ii))
+            self._log_text += ("\t{} is {}, should equal {} in header[{}]".format(key, hdu.header[key], correct[0], ii))
 
     def get_log_output(self):
         return self._log_text
