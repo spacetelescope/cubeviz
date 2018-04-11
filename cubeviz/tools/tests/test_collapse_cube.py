@@ -163,7 +163,5 @@ def test_regions(qtbot, cubeviz_layout):
     print('combo box selected {}'.format(cc.ui.operation_combobox.currentText()))
     print('np_data_sum {}'.format(np_data_sum))
     print('np_result {}'.format(np_result))
-
-    assert False
     assert np.allclose(np_data_sum, np_result, atol=1.0)
 
