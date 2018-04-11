@@ -245,17 +245,15 @@ class CubevizImageViewer(ImageViewer, HubListener):
             cls = CubevizImageLayerArtist
         return self.get_layer_artist(cls, layer=layer, layer_state=layer_state)
 
-    def _update_stats_text(self, median, mu, sigma):
-        text = r"x̃={:.4}, μ={:.4}, σ={:.4}".format(median, mu, sigma)
-        self.parent().set_roi_text(self._subset.label, text)
+    def _update_stats_text(self, label, min_, max_, median, mu, sigma):
+        text = r"min={:.4}, max={:.4}, x̃={:.4}, μ={:.4}, σ={:.4}".format(min_, max_, median, mu, sigma)
+        self.parent().set_stats_text(label, text)
 
-    def _calculate_stats(self, component, subset):
-        mask = subset.to_mask()[self._slice_index]
-        data = self._data[0][component][self._slice_index][mask]
+    def _calculate_stats(self, data):
         if self.cubeviz_unit is not None:
             wave = self.cubeviz_layout.get_wavelength(self.slice_index)
             data = self.cubeviz_unit.convert_from_original_unit(data, wave=wave)
-        return np.median(data), data.mean(), data.std()
+        return np.nanmin(data), np.nanmax(data), np.median(data), data.mean(), data.std()
 
     def show_roi_stats(self, component, subset):
 
@@ -264,34 +262,30 @@ class CubevizImageViewer(ImageViewer, HubListener):
 
         self._subset = subset
 
-        median, mu, sigma = self._calculate_stats(component, subset)
-        self._update_stats_text(median, mu, sigma)
+        mask = subset.to_mask()[self._slice_index]
+        data = self._data[0][component][self._slice_index][mask]
 
-    def hide_roi_stats(self):
-        self.parent().hide_roi_text()
+        results = self._calculate_stats(data)
+        label = '{} Statistics:'.format(subset.label)
+        self._update_stats_text(label, *results)
 
-    def update_slice_stats(self):
+    def show_slice_stats(self):
+
+        self._subset = None
+
         data = self._data[0][self.current_component_id][self._slice_index]
-        if self.cubeviz_unit is not None:
-            wave = self.cubeviz_layout.get_wavelength(self.slice_index)
-            data = self.cubeviz_unit.convert_from_original_unit(data.copy(), wave=wave)
+        results = self._calculate_stats(data.copy())
+        self._update_stats_text('Slice Statistics:', *results)
 
-        min_ = float(np.nanmin(data))
-        max_ = float(np.nanmax(data))
+    def update_stats(self):
 
-        # TODO: have a dynamic way to determine sig figs
-        text = "min={:.4}, max={:.4}".format(min_, max_)
-        self.parent().set_slice_text(text)
-
-    def update_roi_stats(self):
-        if self._subset is None or self._has_2d_data or self._subset.ndim != 3:
-            return
-
-        median, mu, sigma = self._calculate_stats(self.current_component_id, self._subset)
-        self._update_stats_text(median, mu, sigma)
+        if self._subset is not None:
+            self.show_roi_stats(self.current_component_id, self._subset)
+        else:
+            self.show_slice_stats()
 
     def update_component(self, component):
-        self.update_roi_stats()
+        self.update_stats()
 
     @property
     def is_preview_active(self):
@@ -621,8 +615,7 @@ class CubevizImageViewer(ImageViewer, HubListener):
         if self.is_contour_active:
             self.draw_contour()
 
-        self.update_slice_stats()
-        self.update_roi_stats()
+        self.update_stats()
 
     def fast_draw_slice_at_index(self, index):
         """

@@ -82,38 +82,27 @@ class WidgetWrapper(QtWidgets.QWidget):
     def create_stats(self):
 
         self.stats_widget = QtWidgets.QWidget()
-        self.stats_layout = QtWidgets.QHBoxLayout()
+        self.stats_layout = QtWidgets.QVBoxLayout()
+        self.stats_layout.setSpacing(0)
+        self.stats_layout.setContentsMargins(0, 0, 0, 0)
         self.stats_widget.setLayout(self.stats_layout)
         self.layout.addWidget(self.stats_widget)
 
         bold_font = QtGui.QFont()
         bold_font.setBold(True)
 
-        self.stats_layout.addWidget(
-            QtWidgets.QLabel('Slice Statistics:', font=bold_font))
+        self.stats_label = QtWidgets.QLabel('', font=bold_font)
+        self.stats_layout.addWidget(self.stats_label)
 
-        self.slice_stats_text = QtWidgets.QLabel()
-        self.stats_layout.addWidget(self.slice_stats_text)
-
-        self.roi_stats_label = QtWidgets.QLabel(font=bold_font)
-        self.stats_layout.addWidget(self.roi_stats_label)
-
-        self.roi_stats_text = QtWidgets.QLabel('')
-        self.stats_layout.addWidget(self.roi_stats_text)
+        self.stats_text = QtWidgets.QLabel()
+        self.stats_layout.addWidget(self.stats_text)
 
     def set_stats_visible(self, visible):
         self.stats_widget.setVisible(visible)
 
-    def set_slice_text(self, text):
-        self.slice_stats_text.setText(text)
-
-    def set_roi_text(self, subset_label, text):
-        self.roi_stats_label.setText('{} Statistics:'.format(subset_label))
-        self.roi_stats_text.setText(text)
-
-    def hide_roi_text(self):
-        self.roi_stats_label.setText('')
-        self.roi_stats_text.setText('')
+    def set_stats_text(self, label, text):
+        self.stats_label.setText(label)
+        self.stats_text.setText(text)
 
     def widget(self):
         return self._widget
@@ -321,10 +310,10 @@ class CubeVizLayout(QtWidgets.QWidget):
                 viewer._widget.show_roi_stats(combo.selection, message.subset)
         elif isinstance(message, SubsetDeleteMessage):
             for viewer in self.cube_views:
-                viewer._widget.hide_roi_stats()
+                viewer._widget.show_slice_stats()
         elif isinstance(message, EditSubsetMessage) and not message.subset:
             for viewer in self.cube_views:
-                viewer._widget.hide_roi_stats()
+                viewer._widget.show_slice_stats()
 
     def _set_pos_and_margin(self, axes, pos, marg):
         axes.set_position(pos)
