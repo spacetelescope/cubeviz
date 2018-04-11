@@ -35,13 +35,17 @@ class DataConfiguration:
 
     """
 
-    def __init__(self, config_file):
+    def __init__(self, config_file, check_ifu_valid=True):
         """
         Given the configuration file, save it and grab the name and priority
         :param config_file:
         """
         self._config_file = config_file
-        self.popup_ui = load_ui('ifucube_popup.ui', None, directory=os.path.dirname(__file__))
+        self._check_ifu_valid = check_ifu_valid
+
+        # If we are testing, then don't display the popup
+        if self._check_ifu_valid:
+            self.popup_ui = load_ui('ifucube_popup.ui', None, directory=os.path.dirname(__file__))
 
         with open(self._config_file, 'r') as ymlfile:
             cfg = yaml.load(ymlfile)
@@ -137,7 +141,7 @@ class DataConfiguration:
             hdulist = ifucube.open(data_filename, fix=True)
 
             # Good in this case means the file has 3D data and can be loaded by SpectralCube.read
-            if not ifucube.get_good():
+            if self._check_ifu_valid and not ifucube.get_good():
                 # Popup takes precedence and accepting continues operation and canceling closes the program
                 self.popup_ui.ifucube_log.setText(ifucube.get_log_output())
                 self.popup_ui.setModal(True)
@@ -369,43 +373,7 @@ class DataFactoryConfiguration:
        2. from the command line "--data-configs <file-or-directory>"
        3. from the environment variable CUBEVIZ_DATA_CONFIGS=<files-or-directories>
     """
-
-    def _find_yaml_files(self, files_or_directories):
-        """
-        Given the files_or_directories, create a list of all relevant YAML files.
-
-        :param files_or_directories:
-        :return:
-        """
-        config_files = []
-
-        # If the thing passed in was a string then we'll split on colon. If there is only one
-        # directory then it will create a list anyway.
-        if isinstance(files_or_directories, str):
-            files_or_directories = files_or_directories.split(':')
-
-        for x in files_or_directories:
-            if os.path.exists(x):
-                # file, just append
-                if os.path.isfile(x):
-                    config_files.append(x)
-                # directory, find all yaml under it.
-                else:
-                    files  = glob.glob(os.path.join(x, '*.yaml'))
-                    config_files.extend(files)
-
-        return config_files
-
-
-    def summarize(self):
-        """
-        Function to print out a Markup representation of each configuration file.
-        """
-        for config_file in self._find_yaml_files(DEFAULT_DATA_CONFIGS):
-            dc = DataConfiguration(config_file)
-            print(dc.summarize())
-
-    def __init__(self, in_configs=[], show_only=False, remove_defaults=False):
+    def __init__(self, in_configs=[], show_only=False, remove_defaults=False, check_ifu_valid=True):
         """
         The IFC takes either a directory (that contains YAML files), a list of directories (each of which contain
         YAML files) or a list of YAML files.  Each YAML file defines requirements
@@ -457,9 +425,46 @@ class DataFactoryConfiguration:
             # therefore dependent on the type of data file.  The data configuration object defines two functions
             # 'matches' and 'load_data' that are used.  We needed a way to call Glue's data_factory and be able
             # to pass in functions that have state information.
-            dc = DataConfiguration(config_file)
+            dc = DataConfiguration(config_file, check_ifu_valid=check_ifu_valid)
             wrapper = data_factory(name, dc.matches, priority=priority)
             wrapper(dc.load_data)
+
+
+
+    def _find_yaml_files(self, files_or_directories):
+        """
+        Given the files_or_directories, create a list of all relevant YAML files.
+
+        :param files_or_directories:
+        :return:
+        """
+        config_files = []
+
+        # If the thing passed in was a string then we'll split on colon. If there is only one
+        # directory then it will create a list anyway.
+        if isinstance(files_or_directories, str):
+            files_or_directories = files_or_directories.split(':')
+
+        for x in files_or_directories:
+            if os.path.exists(x):
+                # file, just append
+                if os.path.isfile(x):
+                    config_files.append(x)
+                # directory, find all yaml under it.
+                else:
+                    files  = glob.glob(os.path.join(x, '*.yaml'))
+                    config_files.extend(files)
+
+        return config_files
+
+
+    def summarize(self):
+        """
+        Function to print out a Markup representation of each configuration file.
+        """
+        for config_file in self._find_yaml_files(DEFAULT_DATA_CONFIGS):
+            dc = DataConfiguration(config_file)
+            print(dc.summarize())
 
 
 @data_exporter('CubeViz FITS exporter', extension=['fits', 'fit'])

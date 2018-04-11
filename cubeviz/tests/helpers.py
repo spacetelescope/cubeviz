@@ -65,7 +65,10 @@ def create_glue_app():
     # before creating the glue application below. Otherwise the test data file
     # will not be recognized and the application will hang waiting for user input.
     from ..data_factories import DataFactoryConfiguration
-    dfc = DataFactoryConfiguration()
+
+    # We don't want the IFU checker dialog to popup during testing
+    # so set check_ifu_valid to False
+    dfc = DataFactoryConfiguration(check_ifu_valid=False)
 
     app = GlueApplication()
     app.run_startup_action('cubeviz')
