@@ -609,7 +609,7 @@ class CollapseCube(QDialog):
                 return
         elif 'Advanced' in sigma_selection:
             sigma_parameter = self._calculate_callback_advanced_sigma_check()
-            if sigma_paramter[0] is None:
+            if sigma_parameter[0] is None:
                 return
         else:
             sigma_parameter = None

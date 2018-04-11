@@ -54,6 +54,12 @@ def test_collapse_ui(qtbot, collapse_cube):
     qtbot.mouseClick(cc.ui.calculate_button, QtCore.Qt.LeftButton)
     assert_red_stylesheet(cc.ui.simple_sigma_label)
 
+    # Negative advanced sigma value
+    cc.ui.sigma_combobox.setCurrentIndex(2)
+    cc.ui.advanced_sigma_input.setText('-10')
+    qtbot.mouseClick(cc.ui.calculate_button, QtCore.Qt.LeftButton)
+    assert_red_stylesheet(cc.ui.advanced_sigma_label)
+
 def test_starting_state(cubeviz_layout):
 
     cc = collapse_cube(cubeviz_layout)
