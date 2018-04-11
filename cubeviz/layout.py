@@ -39,7 +39,7 @@ DEFAULT_NUM_SPLIT_VIEWERS = 3
 DEFAULT_TOOLBAR_ICON_SIZE = 18
 
 
-class WidgetWrapper(QtWidgets.QWidget):
+class WidgetWrapper(QtWidgets.QFrame):
 
     def __init__(self, widget=None, tab_widget=None, toolbar=False, parent=None):
         super(WidgetWrapper, self).__init__(parent=parent)
@@ -51,6 +51,9 @@ class WidgetWrapper(QtWidgets.QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
 
         if toolbar:
+            self.setObjectName('widgetWrapper')
+            self.setStyleSheet(
+                '#widgetWrapper { border: 2px solid #aaa; border-radius: 2px }')
             self.create_toolbar()
 
         # Add the image viewer itself to the layout

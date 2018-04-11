@@ -246,7 +246,7 @@ class CubevizImageViewer(ImageViewer, HubListener):
         return self.get_layer_artist(cls, layer=layer, layer_state=layer_state)
 
     def _update_stats_text(self, label, min_, max_, median, mu, sigma):
-        text = r"min={:.4}, max={:.4}, x̃={:.4}, μ={:.4}, σ={:.4}".format(min_, max_, median, mu, sigma)
+        text = r"min={:.4}, max={:.4}, median={:.4}, μ={:.4}, σ={:.4}".format(min_, max_, median, mu, sigma)
         self.parent().set_stats_text(label, text)
 
     def _calculate_stats(self, data):
