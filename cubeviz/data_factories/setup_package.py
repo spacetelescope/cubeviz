@@ -1,4 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 
 def get_package_data():
-    return {'cubeviz': ['ifucube_popup.ui']}
+    return {
+        _ASTROPY_PACKAGE_NAME_ + '.data_factories': ['ifucube_popup.ui']}
