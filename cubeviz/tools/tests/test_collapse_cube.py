@@ -159,5 +159,5 @@ def test_regions(qtbot, cubeviz_layout):
     dc = cubeviz_layout.session.application.data_collection
     dc.remove_subset_group(dc.subset_groups[0])
 
-    assert np.allclose(np_data_sum, np_result, atol=0.1)
+    assert np.allclose(np_data_sum, np_result, atol=1.0)
 
