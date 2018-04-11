@@ -138,7 +138,7 @@ class DataConfiguration:
 
         for data_filename in data_filenames.split(','):
 
-            hdulist = ifucube.open(data_filename, fix=True)
+            hdulist = ifucube.open(data_filename, fix=self._check_ifu_valid)
 
             # Good in this case means the file has 3D data and can be loaded by SpectralCube.read
             if self._check_ifu_valid and not ifucube.get_good():
