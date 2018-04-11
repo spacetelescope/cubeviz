@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import re
 import os
+from collections import OrderedDict
 import numpy as np
 
 from qtpy.QtCore import Qt
@@ -20,20 +21,20 @@ log = logging.getLogger("CollapseCube")
 log.setLevel(logging.WARNING)
 
 # The operations we understand
-operations = {
-    'Sum': np.sum,
-    'Mean': np.mean,
-    'Median': np.median,
-    'Standard Deviation': np.std,
-    'Maximum': np.max,
-    'Minimum': np.min,
-    'Sum (ignore NaNs)': np.nansum,
-    'Mean (ignore NaNs)': np.nanmean,
-    'Median (ignore NaNs)': np.nanmedian,
-    'Standard Deviation (ignore NaNs)': np.nanstd,
-    'Maximum (ignore NaNs)': np.nanmax,
-    'Minimum (ignore NaNs)': np.nanmin
-}
+operations = OrderedDict([
+    ('Sum', np.sum),
+    ('Mean', np.mean),
+    ('Median', np.median),
+    ('Standard Deviation', np.std),
+    ('Maximum', np.max),
+    ('Minimum', np.min),
+    ('Sum (ignore NaNs)', np.nansum),
+    ('Mean (ignore NaNs)', np.nanmean),
+    ('Median (ignore NaNs)', np.nanmedian),
+    ('Standard Deviation (ignore NaNs)', np.nanstd),
+    ('Maximum (ignore NaNs)', np.nanmax),
+    ('Minimum (ignore NaNs)', np.nanmin)
+])
 
 class CollapseCube(QDialog):
     def __init__(self, wavelengths, wavelength_units, data, data_collection=[],
