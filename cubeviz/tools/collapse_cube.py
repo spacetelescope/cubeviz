@@ -577,7 +577,6 @@ class CollapseCube(QDialog):
 
         # Do check on wavelength/indices first.
         if using_wavelengths:
-            print(start_value, end_value)
             start_index, end_index = self._calculate_callback_wavelength_checks(start_value, end_value)
         else:
             start_index, end_index = self._calculate_callback_index_checks(start_value, end_value)
@@ -606,8 +605,12 @@ class CollapseCube(QDialog):
 
         if 'Simple' in sigma_selection:
             sigma_parameter = self._calculate_callback_simple_sigma_check()
+            if sigma_parameter is None:
+                return
         elif 'Advanced' in sigma_selection:
             sigma_parameter = self._calculate_callback_advanced_sigma_check()
+            if sigma_paramter[0] is None:
+                return
         else:
             sigma_parameter = None
 
