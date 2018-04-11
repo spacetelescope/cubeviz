@@ -12,6 +12,7 @@ from glue.core.data_exporters.gridded_fits import fits_writer
 from astropy.io import fits
 import numpy as np
 
+from cubeviz.data_factories.ifucube import IFUCube
 from ..listener import CUBEVIZ_LAYOUT
 
 logging.basicConfig(level=logging.DEBUG)
@@ -107,9 +108,11 @@ class DataConfiguration:
         label = None
         data = None
 
+        ifucube = IFUCube()
+
         for data_filename in data_filenames.split(','):
 
-            hdulist = fits.open(data_filename)
+            hdulist = ifucube.open(data_filename, fix=True)
 
             if not label:
                 label = "{}: {}".format(self._name, splitext(basename(data_filename))[0])
