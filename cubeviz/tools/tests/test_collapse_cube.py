@@ -158,6 +158,9 @@ def test_regions(qtbot, cubeviz_layout):
     # Delete the ROI first, in case the assert fails
     dc = cubeviz_layout.session.application.data_collection
     dc.remove_subset_group(dc.subset_groups[0])
+    
+    print('np_data_sum {}'.format(np_data_sum))
+    print('np_result {}'.format(np_result))
 
     assert np.allclose(np_data_sum, np_result, atol=1.0)
 
