@@ -147,7 +147,7 @@ def test_regions(qtbot, cubeviz_layout):
     qtbot.mouseClick(cc.ui.calculate_button, QtCore.Qt.LeftButton)
 
     # Calculate what we expect
-    np_data = cubeviz_layout._data[DATA_LABELS[0]] 
+    np_data = cubeviz_layout._data[DATA_LABELS[0]]
     mask = cubeviz_layout._data.subsets[0].to_mask()
     np_data_sum = np.sum(np_data[start_index:end_index]*mask[start_index:end_index], axis=0)
 
@@ -158,10 +158,9 @@ def test_regions(qtbot, cubeviz_layout):
     # Delete the ROI first, in case the assert fails
     dc = cubeviz_layout.session.application.data_collection
     dc.remove_subset_group(dc.subset_groups[0])
-    
+
     print('combo box items {}'.format([cc.ui.operation_combobox.itemText(i) for i in range(cc.ui.operation_combobox.count())]))
     print('combo box selected {}'.format(cc.ui.operation_combobox.currentText()))
     print('np_data_sum {}'.format(np_data_sum))
     print('np_result {}'.format(np_result))
     assert np.allclose(np_data_sum, np_result, atol=1.0)
-
