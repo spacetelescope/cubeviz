@@ -121,7 +121,6 @@
       <property name="font">
        <font>
         <family>Bell MT</family>
-        <pointsize>16</pointsize>
         <weight>75</weight>
         <bold>true</bold>
        </font>
