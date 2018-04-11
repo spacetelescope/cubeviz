@@ -270,6 +270,19 @@ class CubevizImageViewer(ImageViewer, HubListener):
     def hide_roi_stats(self):
         self.parent().set_roi_text('')
 
+    def update_slice_stats(self):
+        data = self._data[0][self.current_component_id][self._slice_index]
+        if self.cubeviz_unit is not None:
+            wave = self.cubeviz_layout.get_wavelength(self.slice_index)
+            data = self.cubeviz_unit.convert_from_original_unit(data.copy(), wave=wave)
+
+        min_ = float(np.nanmin(data))
+        max_ = float(np.nanmax(data))
+
+        # TODO: have a dynamic way to determine sig figs
+        text = "min={:.4}, max={:.4}".format(min_, max_)
+        self.parent().set_slice_text(text)
+
     def update_roi_stats(self):
         if self._subset is None or self._has_2d_data or self._subset.ndim != 3:
             return
@@ -608,13 +621,7 @@ class CubevizImageViewer(ImageViewer, HubListener):
         if self.is_contour_active:
             self.draw_contour()
 
-        data = self._data[0][self.current_component_id][self._slice_index]
-        min_ = float(np.nanmin(data))
-        max_ = float(np.nanmax(data))
-
-        # TODO: have a dynamic way to determine sig figs
-        text = "min={:.4}, max={:.4}".format(min_, max_)
-        self.parent().set_slice_text(text)
+        self.update_slice_stats()
         self.update_roi_stats()
 
     def fast_draw_slice_at_index(self, index):
