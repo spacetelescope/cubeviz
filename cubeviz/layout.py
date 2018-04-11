@@ -13,7 +13,8 @@ from glue.config import qt_fixed_layout_tab
 from glue.external.echo import keep_in_sync, SelectionCallbackProperty
 from glue.external.echo.qt import connect_combo_selection
 from glue.core.data_combo_helper import ComponentIDComboHelper
-from glue.core.message import SettingsChangeMessage, SubsetUpdateMessage, SubsetDeleteMessage
+from glue.core.message import (SettingsChangeMessage, SubsetUpdateMessage,
+                               SubsetDeleteMessage, EditSubsetMessage)
 from glue.utils.matplotlib import freeze_margins
 from glue.dialogs.component_arithmetic.qt import ArithmeticEditorWidget
 
@@ -319,6 +320,9 @@ class CubeVizLayout(QtWidgets.QWidget):
             for combo, viewer in zip(self._viewer_combo_helpers, self.cube_views):
                 viewer._widget.show_roi_stats(combo.selection, message.subset)
         elif isinstance(message, SubsetDeleteMessage):
+            for viewer in self.cube_views:
+                viewer._widget.hide_roi_stats()
+        elif isinstance(message, EditSubsetMessage) and not message.subset:
             for viewer in self.cube_views:
                 viewer._widget.hide_roi_stats()
 

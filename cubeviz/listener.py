@@ -3,7 +3,7 @@
 from glue.core import Hub, HubListener, Data, DataCollection
 from glue.core.message import (DataCollectionAddMessage, SettingsChangeMessage,
                                DataRemoveComponentMessage, SubsetMessage,
-                               DataAddComponentMessage)
+                               EditSubsetMessage, DataAddComponentMessage)
 from .layout import CubeVizLayout
 from .messages import FluxUnitsUpdateMessage
 
@@ -35,6 +35,8 @@ class CubevizManager(HubListener):
             self, DataRemoveComponentMessage, handler=self.handle_remove_component)
         self._hub.subscribe(
             self, SubsetMessage, handler=self.handle_subset_message)
+        self._hub.subscribe(
+            self, EditSubsetMessage, handler=self.handle_subset_message)
         self._hub.subscribe(
             self, FluxUnitsUpdateMessage, handler=self.handle_flux_units_update)
 
