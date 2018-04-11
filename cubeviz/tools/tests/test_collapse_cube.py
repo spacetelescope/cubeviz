@@ -152,7 +152,8 @@ def test_regions(qtbot, cubeviz_layout):
     np_data_sum = np.sum(np_data[start_index:end_index]*mask[start_index:end_index], axis=0)
 
     # Get the result
-    np_result = cubeviz_layout._data.container_2d['018.DATA-collapse-Sum (2.1165e-06, 2.3080e-06)']
+    collapse_component_id = [str(x) for x in cubeviz_layout._data.container_2d.component_ids() if str(x).startswith('018.DATA-collap')][0]
+    np_result = cubeviz_layout._data.container_2d[collapse_component_id]
 
     # Delete the ROI first, in case the assert fails
     dc = cubeviz_layout.session.application.data_collection
