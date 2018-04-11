@@ -94,8 +94,8 @@ class WidgetWrapper(QtWidgets.QWidget):
         self.slice_stats_text = QtWidgets.QLabel()
         self.stats_layout.addWidget(self.slice_stats_text)
 
-        self.stats_layout.addWidget(
-            QtWidgets.QLabel('ROI Statistics:', font=bold_font))
+        self.roi_stats_label = QtWidgets.QLabel(font=bold_font)
+        self.stats_layout.addWidget(self.roi_stats_label)
 
         self.roi_stats_text = QtWidgets.QLabel('')
         self.stats_layout.addWidget(self.roi_stats_text)
@@ -106,8 +106,13 @@ class WidgetWrapper(QtWidgets.QWidget):
     def set_slice_text(self, text):
         self.slice_stats_text.setText(text)
 
-    def set_roi_text(self, text):
+    def set_roi_text(self, subset_label, text):
+        self.roi_stats_label.setText('{} Statistics:'.format(subset_label))
         self.roi_stats_text.setText(text)
+
+    def hide_roi_text(self):
+        self.roi_stats_label.setText('')
+        self.roi_stats_text.setText('')
 
     def widget(self):
         return self._widget

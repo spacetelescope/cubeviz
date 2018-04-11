@@ -247,7 +247,7 @@ class CubevizImageViewer(ImageViewer, HubListener):
 
     def _update_stats_text(self, median, mu, sigma):
         text = r"x̃={:.4}, μ={:.4}, σ={:.4}".format(median, mu, sigma)
-        self.parent().set_roi_text(text)
+        self.parent().set_roi_text(self._subset.label, text)
 
     def _calculate_stats(self, component, subset):
         mask = subset.to_mask()[self._slice_index]
@@ -268,7 +268,7 @@ class CubevizImageViewer(ImageViewer, HubListener):
         self._update_stats_text(median, mu, sigma)
 
     def hide_roi_stats(self):
-        self.parent().set_roi_text('')
+        self.parent().hide_roi_text()
 
     def update_slice_stats(self):
         data = self._data[0][self.current_component_id][self._slice_index]
