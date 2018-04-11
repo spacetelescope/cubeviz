@@ -5,7 +5,7 @@ import pytest
 import numpy as np
 
 from qtpy import QtCore
-
+from glue.core import roi
 from cubeviz.tools.collapse_cube import CollapseCube
 
 from ...tests.helpers import (toggle_viewer, select_viewer, left_click,
@@ -59,6 +59,15 @@ def test_collapse_ui(qtbot, collapse_cube):
     cc.ui.advanced_sigma_input.setText('-10')
     qtbot.mouseClick(cc.ui.calculate_button, QtCore.Qt.LeftButton)
     assert_red_stylesheet(cc.ui.advanced_sigma_label)
+
+    # Negative advanced sigma value
+    cc.ui.sigma_combobox.setCurrentIndex(2)
+    cc.ui.advanced_sigma_input.setText('3')
+    cc.ui.advanced_sigma_lower_input.setText('2')
+    cc.ui.advanced_sigma_upper_input.setText('1')
+    qtbot.mouseClick(cc.ui.calculate_button, QtCore.Qt.LeftButton)
+    assert_red_stylesheet(cc.ui.advanced_sigma_lower_label)
+    assert_red_stylesheet(cc.ui.advanced_sigma_upper_label)
 
 def test_starting_state(cubeviz_layout):
 
@@ -115,3 +124,39 @@ def test_starting_state(cubeviz_layout):
 
     output = np.array([[0, 0, 0, 0], [867.687, 956.132, 775.984, 1008]])
     assert np.allclose(new_component[:2,:4], output, atol=1)
+
+def test_regions(qtbot, cubeviz_layout):
+
+    viewer = cubeviz_layout.split_views[0]._widget
+    # Create a pretty arbitrary circular ROI
+    viewer.apply_roi(roi.CircularROI(xc=6, yc=10, radius=3))
+
+    cc = collapse_cube(cubeviz_layout)
+
+    start_index = 682
+    end_index = 1364
+
+    # Set the values and do the calculation through the GUI
+    cc.ui.data_combobox.setCurrentIndex(0)
+    cc.ui.operation_combobox.setCurrentIndex(0)
+    cc.ui.spatial_region_combobox.setCurrentIndex(1)
+    cc.ui.region_combobox.setCurrentIndex(1) # indices
+    cc.ui.start_input.setText('{}'.format(start_index))
+    cc.ui.end_input.setText('{}'.format(end_index))
+    cc.ui.sigma_combobox.setCurrentIndex(0)
+    qtbot.mouseClick(cc.ui.calculate_button, QtCore.Qt.LeftButton)
+
+    # Calculate what we expect
+    np_data = cubeviz_layout._data[DATA_LABELS[0]] 
+    mask = cubeviz_layout._data.subsets[0].to_mask()
+    np_data_sum = np.sum(np_data[start_index:end_index]*mask[start_index:end_index], axis=0)
+
+    # Get the result
+    np_result = cubeviz_layout._data.container_2d['018.DATA-collapse-Sum (2.1165e-06, 2.3080e-06)']
+
+    # Delete the ROI first, in case the assert fails
+    dc = cubeviz_layout.session.application.data_collection
+    dc.remove_subset_group(dc.subset_groups[0])
+
+    assert np.allclose(np_data_sum, np_result, atol=0.1)
+
