@@ -18,6 +18,8 @@ from astropy import units as u
 from astropy.wcs.utils import proj_plane_pixel_area
 from specviz.third_party.glue.data_viewer import dispatch as specviz_dispatch
 
+from ..messages import FluxUnitsUpdateMessage
+
 OBS_WAVELENGTH_TEXT = 'Obs Wavelength'
 REST_WAVELENGTH_TEXT = 'Rest Wavelength'
 
@@ -911,6 +913,7 @@ class ConvertFluxUnitGUI(QDialog):
         self.setMinimumSize(400, 270)
 
         self.cubeviz_layout = controller.cubeviz_layout
+        self._hub = self.cubeviz_layout.session.hub
 
         self.controller = controller
         self.data = controller.data
@@ -1035,8 +1038,8 @@ class ConvertFluxUnitGUI(QDialog):
 
         component_id = self.component_combo.currentData()
         self.data.get_component(component_id).units = self.current_unit.unit_string
-        if self.cubeviz_layout is not None:
-            self.cubeviz_layout.refresh_units(component_id)
+        msg = FluxUnitsUpdateMessage(self, self.current_unit.unit, component_id)
+        self._hub.broadcast(msg)
         self.close()
 
     def cancel(self):
