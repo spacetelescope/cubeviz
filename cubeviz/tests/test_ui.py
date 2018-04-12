@@ -232,3 +232,32 @@ def test_2d_data_components(qtbot, cubeviz_layout, moment_map, while_active):
 
     assert_slider_enabled(cubeviz_layout, True)
     assert_slice_text(cubeviz_layout, 1234)
+
+
+def test_fast_slider_indexing(cubeviz_layout):
+    lay = cubeviz_layout
+
+    # Check if layer state is pointing to
+    # correct viewer state
+    view = lay.cube_views[1]._widget
+    layer = view.layers[0]
+    assert layer.state.viewer_state is view.state
+
+    # Check if images are different when slice
+    # index override is used.
+
+    # Set viewer index to 0 and get slice data
+    view.update_slice_index(0)
+    arr1 = layer.state.get_sliced_data()
+
+    # Change slice using slice index override
+    # and get data.
+    view.state.slice_index_override = 700
+    arr2 = layer.state.get_sliced_data()
+
+    # Check if the two images are the same
+    assert np.any(arr1 != arr2)
+
+
+
+
