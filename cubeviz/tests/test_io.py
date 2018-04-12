@@ -12,7 +12,7 @@ def test_export_roundtrip(tmpdir):
     # TODO: generalize this to all example data files once we
     # have more than one format in the data directory.
 
-    DataFactoryConfiguration()
+    DataFactoryConfiguration(check_ifu_valid=False)
 
     # Make sure the right factory was identified
     factory = find_factory(TEST_DATA_PATH)
