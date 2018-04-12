@@ -255,5 +255,5 @@ def test_fast_slider_indexing(cubeviz_layout):
     view.state.slice_index_override = 700
     arr2 = layer.state.get_sliced_data()
 
-    # Check if the two images are the same
+    # Check if the two images are the same: we expect that they are not
     assert np.any(arr1 != arr2)
