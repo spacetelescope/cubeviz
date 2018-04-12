@@ -106,7 +106,7 @@ class CubevizImageViewerState(ImageViewerState):
 
     @property
     def numpy_slice_aggregation_transpose(self):
-        slices, agg_func, transpose = super(CubevizImageLayerState, self).numpy_slice_aggregation_transpose
+        slices, agg_func, transpose = super(CubevizImageViewerState, self).numpy_slice_aggregation_transpose
         if self.slice_index_override is not None:
             slices[0] = self.slice_index_override
         return slices, agg_func, transpose
@@ -129,6 +129,7 @@ class CubevizImageLayerState(ImageLayerState):
         CubevizImageLayerState.preview_function is defined, it is applied to the
         data before return.
         """
+        self._cache = None
         if self.preview_function is None:
             return super(CubevizImageLayerState, self).get_sliced_data(view=view)
         else:
@@ -160,6 +161,7 @@ class CubevizImageViewer(ImageViewer, HubListener):
              'select:circle', 'select:polygon', 'image:contrast_bias',
              'cubeviz:contour']
 
+    _state_cls = CubevizImageViewerState
     _close_on_last_layer_removed = False
 
     def __init__(self,  *args, cubeviz_layout=None, **kwargs):
