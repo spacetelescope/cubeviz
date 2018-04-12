@@ -257,7 +257,3 @@ def test_fast_slider_indexing(cubeviz_layout):
 
     # Check if the two images are the same
     assert np.any(arr1 != arr2)
-
-
-
-
