@@ -48,12 +48,6 @@ def test_moment_maps_1(cubeviz_layout):
     order = int(mm.order_combobox.currentText())
     cube_moment = np.asarray(cube.moment(order=order, axis=0))
 
-    # Visually check differences
-    print('np_data_sum {}, {}'.format(cube_moment, type(cube_moment)))
-    print('np_result {}, {}'.format(np_result, type(np_result)))
-    # print('sum', np.sum(np.abs(cube_moment - np_result)))
-    # print('how many nans in cube_moment', np.sum(not np.isfinite(cube_moment.all())))
-
     assert np.allclose(cube_moment, np_result, atol=1.0, equal_nan=True)
 
 
@@ -75,11 +69,5 @@ def test_moment_maps_2(cubeviz_layout):
     cube = spectral_cube.SpectralCube(np_data, wcs=cubeviz_layout._data.coords.wcs)
     order = int(mm.order_combobox.currentText())
     cube_moment = np.asarray(cube.moment(order=order, axis=0))
-
-    # Visually check differences
-    print('np_data_sum {}'.format(cube_moment, type(cube_moment)))
-    print('np_result {}, {}'.format(np_result, type(np_result)))
-    # print('sum', np.sum(np.abs(cube_moment - np_result)))
-    # print('how many nans in cube_moment', np.sum(not np.isfinite(cube_moment.all())))
 
     assert np.allclose(cube_moment, np_result, atol=1.0, equal_nan=True)
