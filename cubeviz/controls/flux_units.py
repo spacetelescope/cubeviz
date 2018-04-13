@@ -656,13 +656,13 @@ class SpectralFluxDensity(CubeVizUnit):
             if 0.01 <= abs(new_value) <= 1000:
                 message = "Original Units: [{1}]\n\n" \
                           "New Units: [{3}]\n\n" \
-                          "Pixel Area (Scale): {4:.2E}\n\n" \
+                          "Pixel Area (Scale): {4:.2e}\n\n" \
                           "1.0 [Original Units] = {2:.2f} [New Units]\n" \
                           "(at lambda = {0:0.4e})".format(*message_param)
             else:
                 message = "Original Units: [{1}]\n\n" \
                           "New Units: [{3}]\n\n" \
-                          "Pixel Area (Scale): {4:.2E}\n\n" \
+                          "Pixel Area (Scale): {4:.2e}\n\n" \
                           "1.0 [Original Units] = {2:0.2e} [New Units]\n" \
                           "(at lambda = {0:0.4e})".format(*message_param)
         self.message_box.setText(message)
