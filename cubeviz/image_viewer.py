@@ -942,12 +942,13 @@ class CubevizImageViewer(ImageViewer, HubListener):
         self._dont_update_status = False
         self.coord_label.setText(string)
 
-        if self._is_tooltip_on and self.mouse_value:
-            QToolTip.showText(mouse_pos, "...", self)
-            QToolTip.showText(mouse_pos, self.mouse_value, self)
-        else:
-            QToolTip.showText(mouse_pos, "...", self)
-            QToolTip.showText(mouse_pos, " ", self)
+        if self._is_tooltip_on
+            if self.mouse_value:
+                QToolTip.showText(mouse_pos, "...", self)
+                QToolTip.showText(mouse_pos, self.mouse_value, self)
+            else:
+                QToolTip.showText(mouse_pos, "...", self)
+                QToolTip.showText(mouse_pos, " ", self)
 
         return
 
