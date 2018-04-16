@@ -187,6 +187,27 @@ def assert_slider_enabled(cubeviz_layout, enabled):
     assert cubeviz_layout._slice_controller._slice_textbox.isEnabled() == enabled
     assert cubeviz_layout._slice_controller._wavelength_textbox.isEnabled() == enabled
 
+
+def test_2d_mouseover(cubeviz_layout, moment_map):
+
+    combo = cubeviz_layout.get_viewer_combo(1)
+    assert combo.currentText() == moment_map
+
+    viewer = cubeviz_layout.split_views[0]._widget
+
+    class FakeMPLEvent:
+        xdata = 10
+        ydata = 10
+        inaxes = True
+
+    viewer.mouse_move(FakeMPLEvent())
+
+    value = "{:.3e}".format(cubeviz_layout._data.container_2d[moment_map][10][10])
+    string = value + ' ' + str((10, 10, viewer.slice_index))
+
+    assert viewer.mouse_value.startswith(value)
+    assert viewer.coord_label.text().startswith(string)
+
 @pytest.mark.parametrize('while_active', [True, False])
 def test_2d_data_components(qtbot, cubeviz_layout, moment_map, while_active):
     """This test ensures that the slider behaves as expected when 2D data
