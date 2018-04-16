@@ -4,7 +4,7 @@ from collections import OrderedDict
 from astropy.wcs.utils import wcs_to_celestial_frame
 from astropy.coordinates import BaseRADecFrame
 
-from qtpy import QtWidgets, QtCore
+from qtpy import QtWidgets, QtCore, QtGui
 from qtpy.QtWidgets import QMenu, QAction, QInputDialog, QActionGroup
 
 from glue.utils.qt import load_ui
@@ -13,7 +13,8 @@ from glue.config import qt_fixed_layout_tab
 from glue.external.echo import keep_in_sync, SelectionCallbackProperty
 from glue.external.echo.qt import connect_combo_selection
 from glue.core.data_combo_helper import ComponentIDComboHelper
-from glue.core.message import SettingsChangeMessage, SubsetUpdateMessage, SubsetDeleteMessage
+from glue.core.message import (SettingsChangeMessage, SubsetUpdateMessage,
+                               SubsetDeleteMessage, EditSubsetMessage)
 from glue.utils.matplotlib import freeze_margins
 from glue.dialogs.component_arithmetic.qt import ArithmeticEditorWidget
 
@@ -38,7 +39,7 @@ DEFAULT_NUM_SPLIT_VIEWERS = 3
 DEFAULT_TOOLBAR_ICON_SIZE = 18
 
 
-class WidgetWrapper(QtWidgets.QWidget):
+class WidgetWrapper(QtWidgets.QFrame):
 
     def __init__(self, widget=None, tab_widget=None, toolbar=False, parent=None):
         super(WidgetWrapper, self).__init__(parent=parent)
@@ -50,10 +51,17 @@ class WidgetWrapper(QtWidgets.QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
 
         if toolbar:
+            self.setObjectName('widgetWrapper')
+            self.setStyleSheet(
+                '#widgetWrapper { border: 2px solid #aaa; border-radius: 2px }')
             self.create_toolbar()
 
+        # Add the image viewer itself to the layout
         self.layout.addWidget(widget)
         self.setLayout(self.layout)
+
+        if toolbar:
+            self.create_stats()
 
     def create_toolbar(self):
         self.tb = QtWidgets.QToolBar()
@@ -73,6 +81,31 @@ class WidgetWrapper(QtWidgets.QWidget):
         self.tb.addWidget(self.slice_text)
 
         self.layout.addWidget(self.tb)
+
+    def create_stats(self):
+
+        self.stats_widget = QtWidgets.QWidget()
+        self.stats_layout = QtWidgets.QVBoxLayout()
+        self.stats_layout.setSpacing(0)
+        self.stats_layout.setContentsMargins(0, 0, 0, 0)
+        self.stats_widget.setLayout(self.stats_layout)
+        self.layout.addWidget(self.stats_widget)
+
+        bold_font = QtGui.QFont()
+        bold_font.setBold(True)
+
+        self.stats_label = QtWidgets.QLabel('', font=bold_font)
+        self.stats_layout.addWidget(self.stats_label)
+
+        self.stats_text = QtWidgets.QLabel()
+        self.stats_layout.addWidget(self.stats_text)
+
+    def set_stats_visible(self, visible):
+        self.stats_widget.setVisible(visible)
+
+    def set_stats_text(self, label, text):
+        self.stats_label.setText(label)
+        self.stats_text.setText(text)
 
     def widget(self):
         return self._widget
@@ -277,10 +310,13 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.refresh_viewer_combo_helpers()
         if isinstance(message, SubsetUpdateMessage):
             for combo, viewer in zip(self._viewer_combo_helpers, self.cube_views):
-                viewer._widget.draw_stats_axes(combo.selection, message.subset)
+                viewer._widget.show_roi_stats(combo.selection, message.subset)
         elif isinstance(message, SubsetDeleteMessage):
             for viewer in self.cube_views:
-                viewer._widget.hide_stats_axes()
+                viewer._widget.show_slice_stats()
+        elif isinstance(message, EditSubsetMessage) and not message.subset:
+            for viewer in self.cube_views:
+                viewer._widget.show_slice_stats()
 
     def _set_pos_and_margin(self, axes, pos, marg):
         axes.set_position(pos)
@@ -321,7 +357,7 @@ class CubeVizLayout(QtWidgets.QWidget):
     def _toggle_stats_display(self):
         self._stats_visible = not self._stats_visible
         for viewer in self.cube_views:
-            viewer._widget.set_stats_visible(self._stats_visible)
+            viewer.set_stats_visible(self._stats_visible)
 
     def _open_dialog(self, name, widget):
 
@@ -616,6 +652,8 @@ class CubeVizLayout(QtWidgets.QWidget):
         wavelengths = self.single_view._widget._data[0].coords.world_axis(
             self.single_view._widget._data[0], axis=0)
 
+        self._enable_all_viewer_combos(data)
+
         # TODO: currently this way of accessing units is not flexible
         self._slice_controller.enable()
         self._wavelength_controller.enable(str(wcs.wcs.cunit[2]), wavelengths)
@@ -623,7 +661,6 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._enable_option_buttons()
         self._setup_syncing()
 
-        self._enable_all_viewer_combos(data)
         for viewer in self.cube_views:
             viewer.slice_text.setText('slice: {:5}'.format(self.synced_index))
 

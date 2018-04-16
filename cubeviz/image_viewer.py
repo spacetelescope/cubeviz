@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # This file contains a sub-class of the glue image viewer with further
 # customizations.
 
@@ -202,9 +203,6 @@ class CubevizImageViewer(ImageViewer, HubListener):
         self._has_2d_data = False  # True if currently displayed data is 2D
         self._toggle_3d = False  # True if we just toggled from 2D to 3D
 
-        self._stats_axes = None
-        self._stats_visible = True  # Global configuration setting
-        self._stats_hidden = False  # Internal configuration: are stats hidden?
         self._subset = None # Keep track of currently active subset
 
         self.coord_label = QLabel("")  # Coord display
@@ -247,84 +245,52 @@ class CubevizImageViewer(ImageViewer, HubListener):
             cls = CubevizImageLayerArtist
         return self.get_layer_artist(cls, layer=layer, layer_state=layer_state)
 
-    def _create_stats_axes(self, subset, median, mu, sigma):
-        rect = 0.01, 0.87, 0.15, 0.12
-        axes = self.figure.add_axes(rect, xticks=[], yticks=[])
-        circle = Circle((0.15,0.85), 0.05, color=subset.style.color)
-        axes.add_artist(circle)
+    def _update_stats_text(self, label, min_, max_, median, mu, sigma):
+        text = r"min={:.4}, max={:.4}, median={:.4}, μ={:.4}, σ={:.4}".format(min_, max_, median, mu, sigma)
+        self.parent().set_stats_text(label, text)
 
-        text_opts = dict(x=0.05, size='smaller')
-        axes.text(**text_opts, y=0.52, s=r'$\widetilde{{x}} = {:.3}$'.format(median))
-        axes.text(**text_opts, y=0.28, s=r'$\mu = {:.3}$'.format(mu))
-        axes.text(**text_opts, y=0.02, s=r'$\sigma = {:.3}$'.format(sigma))
-        return axes
-
-    def _update_stats_text(self, median, mu, sigma):
-        median_text = self._stats_axes.texts[0]
-        median_text.set_text(r'$\widetilde{{x}} = {:.3}$'.format(median))
-        mu_text = self._stats_axes.texts[1]
-        mu_text.set_text(r'$\mu = {:.3}$'.format(mu))
-        sigma_text = self._stats_axes.texts[2]
-        sigma_text.set_text(r'$\sigma = {:.3}$'.format(sigma))
-
-    def _calculate_stats(self, component, subset):
-        mask = subset.to_mask()[self._slice_index]
-        data = self._data[0][component][self._slice_index][mask]
+    def _calculate_stats(self, data):
         if self.cubeviz_unit is not None:
             wave = self.cubeviz_layout.get_wavelength(self.slice_index)
             data = self.cubeviz_unit.convert_from_original_unit(data, wave=wave)
-        return np.median(data), data.mean(), data.std()
+        return np.nanmin(data), np.nanmax(data), np.median(data), data.mean(), data.std()
 
-    def draw_stats_axes(self, component, subset):
+    def show_roi_stats(self, component, subset):
 
         if self._has_2d_data or subset.ndim != 3:
+            self.parent().set_stats_text('', '')
             return
 
         self._subset = subset
 
-        median, mu, sigma = self._calculate_stats(component, subset)
+        mask = subset.to_mask()[self._slice_index]
+        data = self._data[0][component][self._slice_index][mask]
 
-        if self._stats_axes is None:
-            self._stats_axes = self._create_stats_axes(subset, median, mu, sigma)
-        else:
-            # TODO: we should probably stash a pointer to this in the long term
-            circle = self._stats_axes.artists[0]
-            circle.set_color(subset.style.color)
-            self._update_stats_text(median, mu, sigma)
-            self._stats_axes.set_visible(True and self._stats_visible)
+        results = self._calculate_stats(data)
+        label = '{} Statistics:'.format(subset.label)
+        self._update_stats_text(label, *results)
 
-        self._stats_hidden = False
-        self.redraw()
+    def show_slice_stats(self):
 
-    def hide_stats_axes(self):
-        if self._stats_axes is not None:
-            self._stats_axes.set_visible(False)
-            self._stats_hidden = True
-            self.redraw()
+        if self._has_2d_data:
+            self.parent().set_stats_text('', '')
+            return
+
+        self._subset = None
+
+        data = self._data[0][self.current_component_id][self._slice_index]
+        results = self._calculate_stats(data.copy())
+        self._update_stats_text('Slice Statistics:', *results)
 
     def update_stats(self):
 
-        if self._stats_axes is None or self._has_2d_data or self._subset.ndim != 3:
-            return
-
-        median, mu, sigma = self._calculate_stats(self.current_component_id, self._subset)
-        self._update_stats_text(median, mu, sigma)
-        self.redraw()
+        if self._subset is not None:
+            self.show_roi_stats(self.current_component_id, self._subset)
+        else:
+            self.show_slice_stats()
 
     def update_component(self, component):
-        if self.has_2d_data and self._stats_axes is not None:
-            self._stats_axes.set_visible(False)
-            self.redraw()
-        elif self._stats_axes is not None:
-            self._stats_axes.set_visible(True and self._stats_visible)
-
         self.update_stats()
-
-    def set_stats_visible(self, visible):
-        self._stats_visible = visible
-        if self._stats_axes is not None:
-            self._stats_axes.set_visible(self._stats_visible and not self._stats_hidden)
-            self.redraw()
 
     @property
     def is_preview_active(self):
