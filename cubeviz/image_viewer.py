@@ -768,7 +768,7 @@ class CubevizImageViewer(ImageViewer, HubListener):
                 formatter_1 -> 'd.dddd'
         """
         self._coords_in_degrees = False
-        self.axes.coords[0].set_major_formatter('hh:mm:ss')
+        self.axes.coords[0].set_major_formatter('hh:mm:ss.s')
         self.axes.coords[1].set_major_formatter('dd:mm:ss')
         self.figure.canvas.draw()
 
@@ -783,7 +783,7 @@ class CubevizImageViewer(ImageViewer, HubListener):
             self._coords_in_degrees = False
             self._coords_format_function = self._format_to_hex_string
             if is_ra_dec:
-                self.axes.coords[0].set_major_formatter('hh:mm:ss')
+                self.axes.coords[0].set_major_formatter('hh:mm:ss.s')
                 self.axes.coords[1].set_major_formatter('dd:mm:ss')
                 self.figure.canvas.draw()
         else:
@@ -895,6 +895,8 @@ class CubevizImageViewer(ImageViewer, HubListener):
         else:
             string = "({:1.0f}, {:1.0f})".format(x, y)
 
+        self.mouse_value = ""
+
         # If viewer has a layer.
         if len(self.visible_layers()) > 0:
 
@@ -921,12 +923,18 @@ class CubevizImageViewer(ImageViewer, HubListener):
                 if self.cubeviz_unit is not None:
                     wave = self.cubeviz_layout.get_wavelength(self.slice_index)
                     v = self.cubeviz_unit.convert_from_original_unit(v, wave=wave)
+
+                unit_string = ""
+                if self.component_unit_label:
+                    unit_string = "[{0}] ".format(self.component_unit_label)
+
                 if 0.01 <= abs(v) <= 1000 or abs(v) == 0.0:
-                    self.mouse_value = "{0:.3f} [{1}] ".format(v, self.component_unit_label)
-                    string = "{0:.3f} ".format(v) + string
+                    value_string = "{0:.3f} ".format(v)
                 else:
-                    self.mouse_value = "{0:.3E} [{1}] ".format(v, self.component_unit_label)
-                    string = "{0:.3E} ".format(v) + string
+                    value_string = "{0:.3e} ".format(v)
+
+                self.mouse_value = value_string + unit_string
+                string = value_string + string
         # Add a gap to string and add to viewer.
         string += " "
         self._dont_update_status = True
@@ -935,8 +943,13 @@ class CubevizImageViewer(ImageViewer, HubListener):
         self.coord_label.setText(string)
 
         if self._is_tooltip_on:
-            QToolTip.showText(mouse_pos, "...", self)
-            QToolTip.showText(mouse_pos, self.mouse_value, self)
+            if self.mouse_value:
+                QToolTip.showText(mouse_pos, "...", self)
+                QToolTip.showText(mouse_pos, self.mouse_value, self)
+            else:
+                QToolTip.showText(mouse_pos, "...", self)
+                QToolTip.showText(mouse_pos, " ", self)
+
         return
 
     def first_visible_layer(self):
