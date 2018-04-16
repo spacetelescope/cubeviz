@@ -495,7 +495,7 @@ class SpectralFluxDensity(CubeVizUnit):
                 area = (self._original_area * pixel_area).decompose()
                 new_value /= area.to(self.area)
             else:
-                new_value /= self.area.to(self.area)
+                new_value /= self._original_area.to(self.area)
 
         if isinstance(new_value, u.Quantity):
             new_value = new_value.value
@@ -620,7 +620,7 @@ class SpectralFluxDensity(CubeVizUnit):
                 temp_area = (self._original_area * pixel_area).decompose()
                 new_value /= temp_area.to(area)
             else:
-                new_value /= area.to(self.area)
+                new_value /= self._original_area.to(area)
             unit_base = spectral_flux_density / area
         else:
             unit_base = spectral_flux_density
@@ -634,7 +634,7 @@ class SpectralFluxDensity(CubeVizUnit):
             unit_base = u.Unit(unit_base)
 
         if pixel_area is None:
-            message_param = (wave, self.unit.to_string(), new_value, unit_base)
+            message_param = (wave, self._original_unit.to_string(), new_value, unit_base)
             if 0.01 <= abs(new_value) <= 1000:
                 message = "Original Units: [{1}]\n\n" \
                           "New Units: [{3}]\n\n" \
@@ -652,17 +652,17 @@ class SpectralFluxDensity(CubeVizUnit):
                     pixel_area = pixel_area * u.arcsec ** 2 / u.pixel
             except (ValueError, u.UnitConversionError):
                 pass
-            message_param = (wave, self.unit.to_string(), new_value, unit_base, pixel_area)
+            message_param = (wave, self._original_unit.to_string(), new_value, unit_base, pixel_area)
             if 0.01 <= abs(new_value) <= 1000:
                 message = "Original Units: [{1}]\n\n" \
                           "New Units: [{3}]\n\n" \
-                          "Pixel Area (Scale): {4:.2E}\n\n" \
+                          "Pixel Area (Scale): {4:.2e}\n\n" \
                           "1.0 [Original Units] = {2:.2f} [New Units]\n" \
                           "(at lambda = {0:0.4e})".format(*message_param)
             else:
                 message = "Original Units: [{1}]\n\n" \
                           "New Units: [{3}]\n\n" \
-                          "Pixel Area (Scale): {4:.2E}\n\n" \
+                          "Pixel Area (Scale): {4:.2e}\n\n" \
                           "1.0 [Original Units] = {2:0.2e} [New Units]\n" \
                           "(at lambda = {0:0.4e})".format(*message_param)
         self.message_box.setText(message)
