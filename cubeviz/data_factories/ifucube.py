@@ -7,7 +7,7 @@ from astropy import units as u
 
 logging.basicConfig(level=logging.DEBUG, format="%(filename)s: %(levelname)8s %(message)s")
 log = logging.getLogger('ifcube')
-log.setLevel(logging.DEBUG)
+log.setLevel(logging.WARNING)
 
 
 class IFUCube(object):
