@@ -38,7 +38,7 @@ def test_moment_maps_1(cubeviz_layout):
 
     # Call calculate function and get result
     mm.calculate_callback()
-    moment_component_id = [str(x) for x in cubeviz_layout._data.container_2d.component_ids() if str(x).startswith('018.DATA-mom')][0]
+    moment_component_id = [str(x) for x in cubeviz_layout._data.container_2d.component_ids() if str(x).startswith('018.DATA-moment-1')][0]
     np_result = cubeviz_layout._data.container_2d[moment_component_id]
 
     # Expected result
@@ -60,7 +60,7 @@ def test_moment_maps_2(cubeviz_layout):
 
     # Call calculate function and get result
     mm.calculate_callback()
-    moment_component_id = [str(x) for x in cubeviz_layout._data.container_2d.component_ids() if str(x).startswith('018.DATA-mom')][0]
+    moment_component_id = [str(x) for x in cubeviz_layout._data.container_2d.component_ids() if str(x).startswith('018.DATA-moment-2')][0]
     np_result = cubeviz_layout._data.container_2d[moment_component_id]
 
     # Expected result
