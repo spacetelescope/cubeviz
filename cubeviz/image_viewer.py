@@ -258,6 +258,7 @@ class CubevizImageViewer(ImageViewer, HubListener):
     def show_roi_stats(self, component, subset):
 
         if self._has_2d_data or subset.ndim != 3:
+            self.parent().set_stats_text('', '')
             return
 
         self._subset = subset
@@ -270,6 +271,10 @@ class CubevizImageViewer(ImageViewer, HubListener):
         self._update_stats_text(label, *results)
 
     def show_slice_stats(self):
+
+        if self._has_2d_data:
+            self.parent().set_stats_text('', '')
+            return
 
         self._subset = None
 
