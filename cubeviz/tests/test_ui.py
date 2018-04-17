@@ -18,7 +18,7 @@ DATA_LABELS = ['018.DATA', '018.NOISE']
 def moment_map(cubeviz_layout):
     cl = cubeviz_layout
     mm_gui = MomentMapsGUI(cl._data, cl.session.data_collection, parent=cl)
-    mm_gui.do_calculation(4, DATA_LABELS[0])
+    mm_gui.do_calculation(1, DATA_LABELS[0])
 
     return mm_gui.label
 
@@ -194,7 +194,7 @@ def test_2d_data_components(qtbot, cubeviz_layout, moment_map, while_active):
     both while it is the active viewer and while it is not the active
     viewer."""
 
-    assert moment_map == DATA_LABELS[0] + '-moment-4'
+    assert moment_map == DATA_LABELS[0] + '-moment-1'
 
     combo, _ = setup_combo_and_index(qtbot, cubeviz_layout, 1)
 
