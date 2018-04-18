@@ -799,22 +799,29 @@ class SelectSmoothing(QDialog):
 
         self.smooth_cube.abort_window = self.abort_window
         if self.smooth_cube.parent is None and self.parent is not self.smooth_cube:
+            print("1")
             self.smooth_cube.parent = self.parent
         if self.parent is not self.smooth_cube:
+            print("2")
             self.smooth_cube.data = self.data
         self.smooth_cube.smoothing_axis = self.current_axis
         self.smooth_cube.kernel_type = self.current_kernel_type
         if self.current_kernel_type == "median":
+            print("3")
             self.smooth_cube.kernel_size = int(self.k_size.text())
         else:
+            print("4")
             self.smooth_cube.kernel_size = float(self.k_size.text())
         self.smooth_cube.component_id = str(self.component_combo.currentText())
         self.smooth_cube.output_as_component = True
 
         if self.is_preview_active:
+            print("5")
             self.parent.end_smoothing_preview()
             self.is_preview_active = False
+        print("6")
         self.smooth_cube.multi_threading_smooth()
+        print("7")
         return
 
     def update_preview_button(self):
