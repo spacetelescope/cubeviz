@@ -70,4 +70,5 @@ def test_moment_maps_2(cubeviz_layout):
     order = int(mm.order_combobox.currentText())
     cube_moment = np.asarray(cube.moment(order=order, axis=0))
 
-    assert np.allclose(cube_moment, np_result, atol=1.0, equal_nan=True)
+    # cube_moment - np_result <= atol + rtol * absolute(np_result)
+    assert np.allclose(cube_moment, np_result, rtol=0.01, equal_nan=True)
