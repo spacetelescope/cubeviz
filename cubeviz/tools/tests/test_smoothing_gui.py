@@ -29,16 +29,18 @@ def assert_red_stylesheet(widget):
     assert widget.styleSheet() == "color: rgba(255, 0, 0, 128)"
 
 
-def test_moment_maps_1(cubeviz_layout):
+def test_smoothing(qtbot, cubeviz_layout):
     # Create GUI
     sm = smoothing(cubeviz_layout)
     sm.k_size.setText("1")
     sm.combo.setCurrentIndex(0)
     sm.component_combo.setCurrentIndex(0)
 
+    qtbot.mouseClick(sm.okButton, QtCore.Qt.LeftButton)
+
     # Call calculate function and get result
-    np.warnings.filterwarnings('ignore')
-    sm.call_main()
+    # np.warnings.filterwarnings('ignore')
+    # sm.call_main()
     print(cubeviz_layout._data, hasattr(cubeviz_layout._data, "container_2d"), cubeviz_layout._data.container_2d.component_ids())
     # if hasattr(cubeviz_layout._data, "container_2d"):
     #     for i in cubeviz_layout._data.container_2d.component_ids():
