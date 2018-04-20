@@ -631,6 +631,10 @@ class CubevizImageViewer(ImageViewer, HubListener):
         to update the canvas.
         :param index: (int) slice index
         """
+
+        if self._slice_index == index:
+            return
+
         # draw_artist can only be used after an
         # initial draw which caches the render
         if self.axes._cachedRenderer is None:
