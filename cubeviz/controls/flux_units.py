@@ -913,7 +913,6 @@ class ConvertFluxUnitGUI(QDialog):
         self.setMinimumSize(400, 270)
 
         self.cubeviz_layout = controller.cubeviz_layout
-        self._hub = self.cubeviz_layout.session.hub
 
         self.controller = controller
         self.data = controller.data
@@ -1037,9 +1036,7 @@ class ConvertFluxUnitGUI(QDialog):
             return
 
         component_id = self.component_combo.currentData()
-        self.data.get_component(component_id).units = self.current_unit.unit_string
-        msg = FluxUnitsUpdateMessage(self, self.current_unit.unit, component_id)
-        self._hub.broadcast(msg)
+        self.controller.update_component_unit(component_id, self.current_unit)
         self.close()
 
     def cancel(self):
@@ -1053,7 +1050,9 @@ class FluxUnitController:
     handle one glue data.
     """
     def __init__(self, cubeviz_layout=None):
+
         self.cubeviz_layout = cubeviz_layout
+        self._hub = self.cubeviz_layout.session.hub
 
         # Load up configurations from yaml file
         with open(DEFAULT_FLUX_UNITS_CONFIGS, 'r') as yamlfile:
@@ -1314,6 +1313,12 @@ class FluxUnitController:
             else:
                 return self._components[component_id].unit
         return None
+
+    def update_component_unit(self, component_id, cubeviz_unit):
+
+        self.data.get_component(component_id).units = cubeviz_unit.unit_string
+        msg = FluxUnitsUpdateMessage(self, cubeviz_unit.unit, component_id)
+        self._hub.broadcast(msg)
 
     def set_data(self, data):
         """
