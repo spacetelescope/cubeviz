@@ -27,8 +27,10 @@ def test_create_roi(cubeviz_layout):
 
     layer = specviz._specviz_data_cache[subset]
     assert layer in specviz._layer_list.all_layers
-    # TODO: once this is fixed, there should be a test here to make sure the
-    # ROI is the only spectrum that is currently displayed
+
+    # Make sure the ROI layer is the only visible spectrum
+    assert specviz_layer_visible(specviz, cubeviz_layout._data) == False
+    assert specviz_layer_visible(specviz, subset) == True
 
 def test_delete_roi(cubeviz_layout):
     # This test assumes that an ROI was created by the previous test
