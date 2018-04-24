@@ -15,7 +15,6 @@ from astropy.coordinates import BaseRADecFrame
 
 from qtpy.QtWidgets import (QLabel, QMessageBox)
 
-from glue.core import HubListener
 from glue.core.message import SettingsChangeMessage
 
 from glue.utils.qt import pick_item, get_text
@@ -156,7 +155,7 @@ class CubevizImageLayerArtist(ImageLayerArtist):
     _layer_state_cls = CubevizImageLayerState
 
 
-class CubevizImageViewer(ImageViewer, HubListener):
+class CubevizImageViewer(ImageViewer):
 
     tools = ['select:rectangle', 'select:xrange', 'select:yrange',
              'select:circle', 'select:polygon', 'image:contrast_bias',
@@ -227,7 +226,6 @@ class CubevizImageViewer(ImageViewer, HubListener):
         self._hub.subscribe(self, WavelengthUpdateMessage, handler=self._update_wavelengths)
         self._hub.subscribe(self, WavelengthUnitUpdateMessage, handler=self._update_wavelength_units)
         self._hub.subscribe(self, FluxUnitsUpdateMessage, handler=self._update_flux_units)
-
 
     def _slice_callback(self, new_slice):
         if self._slice_index is not None and not self.has_2d_data:
