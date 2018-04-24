@@ -456,7 +456,7 @@ class CubeVizLayout(QtWidgets.QWidget):
 
             # Get the label of the component and the component ID itself
             label = combo.currentText()
-            component = combo.currentData()
+            component = combo.currentData().data
 
             viewer.has_2d_data = component.parent[label].ndim == 2
 
