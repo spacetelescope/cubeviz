@@ -1335,7 +1335,7 @@ class FluxUnitController:
         wcs = data.coords.wcs
         if wcs is not None:
             self.wcs = wcs
-        self.pixel_area()
+        self.pixel_area
 
     def converter(self, parent=None):
         """
