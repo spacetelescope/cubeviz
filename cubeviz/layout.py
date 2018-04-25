@@ -564,10 +564,13 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         combo = self.get_viewer_combo(view_index)
 
-        if isinstance(component_id, str):
-            component_index = _find_combo_text(combo, component_id)
-        else:
-            component_index = _find_combo_data(combo, component_id)
+        try:
+            if isinstance(component_id, str):
+                component_index = _find_combo_text(combo, component_id)
+            else:
+                component_index = _find_combo_data(combo, component_id)
+        except ValueError:
+            component_index = -1
 
         if combo.currentIndex() == component_index and force:
             combo.currentIndexChanged.emit(component_index)
