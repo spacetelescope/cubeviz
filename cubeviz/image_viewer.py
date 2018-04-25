@@ -102,7 +102,22 @@ class CubevizImageViewerState(ImageViewerState):
     # Override and modify ImageViewerState, so as to override the slice index
     # if needed.
 
-    slice_index_override = None
+    _slice_index_override = None
+
+    @property
+    def slice_index_override(self):
+        return self._slice_index_override
+
+    @slice_index_override.setter
+    def slice_index_override(self, value):
+        # The image viewer state uses smart caching to only update the data
+        # when needed - some of which relies on checking for changes in the
+        # slices - we therefore need to tell it about the change in the override
+        slices_before = self.numpy_slice_aggregation_transpose[0]
+        self._slice_index_override = value
+        slices_after = self.numpy_slice_aggregation_transpose[0]
+        for layer in self.layers:
+            layer.reset_cache_from_slices(slices_before, slices_after)
 
     @property
     def numpy_slice_aggregation_transpose(self):
