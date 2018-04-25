@@ -1091,7 +1091,7 @@ class FluxUnitController:
         try:
             top_unit = u.Unit(self.wcs.wcs.cunit[0])
             pixel_area = proj_plane_pixel_area(self.wcs) * (top_unit ** 2) / u.pix
-            u.spectral_density.pixel_scale = pixel_area
+            u.spectral_density.pixel_area = pixel_area
             return pixel_area
         except (ValueError, AttributeError):
             return None
@@ -1335,6 +1335,7 @@ class FluxUnitController:
         wcs = data.coords.wcs
         if wcs is not None:
             self.wcs = wcs
+        self.pixel_area()
 
     def converter(self, parent=None):
         """

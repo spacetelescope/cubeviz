@@ -6,6 +6,9 @@ This is an Astropy affiliated package.
 
 import astropy.units as units
 from .flux_equivalences import CustomFluxEquivalences
+# We override the units.equivalencies.spectral_density function with
+# CustomFluxEquivalences before the program starts. We expect all libraries
+# to access CustomFluxEquivalences when calling for units.equivalencies.spectral_density
 units.equivalencies.spectral_density = CustomFluxEquivalences(units.equivalencies.spectral_density)
 units.spectral_density = units.equivalencies.spectral_density
 

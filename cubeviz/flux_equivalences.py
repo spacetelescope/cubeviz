@@ -3,12 +3,20 @@ from astropy.units.quantity import Quantity
 
 
 class CustomFluxEquivalences:
+    """
+    This class is intended to behave as a function.
+    It will replace astropy.units.equivalencies.spectral_density.
+    It saves the original spectral_destiny function and adds
+    flux units that are over pixels or arcsec**2. The class also
+    stores pixel_area information that is used to convert b/w the
+    pixels and arcsec**2.
+    """
     def __init__(self, spectral_density):
-        self.pixel_scale = None
+        self.pixel_area = None
         self.default_spectral_density = spectral_density
 
     def __call__(self, wave, factor=None):
-        pixel_area = self.pixel_scale
+        pixel_area = self.pixel_area
         if pixel_area is not None:
             if type(pixel_area) == Quantity:
                 pixel_area = pixel_area.to("arcsec2 / pix").value  # Convert to Quantity
