@@ -157,6 +157,8 @@ class SmoothCube(object):
         Gets an kernel using the saved parameters
         :return: astropy.convolution.kernel
         """
+        print("in get_kernel")
+        print(self.kernel_registry)
         return self.kernel_registry[self.kernel_type][self.smoothing_axis](self.kernel_size)
 
     def get_kernel_size_prompt(self, kernel_type=None):
@@ -423,9 +425,12 @@ class SmoothCube(object):
         ex = SelectSmoothing(self.data, self.parent)
 
     def preview_smoothing(self, data):
+        print("in preview_smoothing")
         if "median" == self.kernel_type:
+            print("20")
             return ndimage.filters.median_filter(data, self.kernel_size)
         else:
+            print("21")
             kernel = self.get_kernel()
             return convolution.convolve(data, kernel, normalize_kernel=True)
 
@@ -833,6 +838,7 @@ class SelectSmoothing(QDialog):
             raise
 
     def preview(self):
+        print("in Preview")
         """Preview current options"""
         success = self.input_validation()
 
@@ -840,12 +846,15 @@ class SelectSmoothing(QDialog):
             return
 
         if self.smooth_cube.parent is None and self.parent is not self.smooth_cube:
+            print("10")
             self.smooth_cube.parent = self.parent
         self.smooth_cube.smoothing_axis = self.current_axis
         self.smooth_cube.kernel_type = self.current_kernel_type
         if self.current_kernel_type == "median":
+            print("11")
             self.smooth_cube.kernel_size = int(self.k_size.text())
         else:
+            print("12")
             self.smooth_cube.kernel_size = float(self.k_size.text())
 
         preview_function = self.smooth_cube.preview_smoothing

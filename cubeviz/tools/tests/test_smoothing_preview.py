@@ -41,7 +41,7 @@ def test_smoothing_preview(qtbot, cubeviz_layout):
     # # Call calculate function and get result
     # np.warnings.filterwarnings('ignore')
     # sm.call_main()
-    # print(cubeviz_layout._data, hasattr(cubeviz_layout._data, "container_2d"), cubeviz_layout._data.container_2d.component_ids())
+    print(cubeviz_layout._data, hasattr(cubeviz_layout._data, "container_2d"))
     # # if hasattr(cubeviz_layout._data, "container_2d"):
     # #     for i in cubeviz_layout._data.container_2d.component_ids():
     # #         print(str(i))
