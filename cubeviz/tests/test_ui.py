@@ -18,7 +18,7 @@ DATA_LABELS = ['018.DATA', '018.NOISE']
 def moment_map(cubeviz_layout):
     cl = cubeviz_layout
     mm_gui = MomentMapsGUI(cl._data, cl.session.data_collection, parent=cl)
-    mm_gui.do_calculation(1, DATA_LABELS[0])
+    mm_gui.do_calculation(4, DATA_LABELS[0])
 
     return mm_gui.label
 
@@ -187,6 +187,27 @@ def assert_slider_enabled(cubeviz_layout, enabled):
     assert cubeviz_layout._slice_controller._slice_textbox.isEnabled() == enabled
     assert cubeviz_layout._slice_controller._wavelength_textbox.isEnabled() == enabled
 
+
+def test_2d_mouseover(cubeviz_layout, moment_map):
+
+    combo = cubeviz_layout.get_viewer_combo(1)
+    assert combo.currentText() == moment_map
+
+    viewer = cubeviz_layout.split_views[0]._widget
+
+    class FakeMPLEvent:
+        xdata = 10
+        ydata = 10
+        inaxes = True
+
+    viewer.mouse_move(FakeMPLEvent())
+
+    value = "{:.3e}".format(cubeviz_layout._data.container_2d[moment_map][10][10])
+    string = value + ' ' + str((10, 10, viewer.slice_index))
+
+    assert viewer.mouse_value.startswith(value)
+    assert viewer.coord_label.text().startswith(string)
+
 @pytest.mark.parametrize('while_active', [True, False])
 def test_2d_data_components(qtbot, cubeviz_layout, moment_map, while_active):
     """This test ensures that the slider behaves as expected when 2D data
@@ -194,7 +215,7 @@ def test_2d_data_components(qtbot, cubeviz_layout, moment_map, while_active):
     both while it is the active viewer and while it is not the active
     viewer."""
 
-    assert moment_map == DATA_LABELS[0] + '-moment-1'
+    assert moment_map == DATA_LABELS[0] + '-moment-4'
 
     combo, _ = setup_combo_and_index(qtbot, cubeviz_layout, 1)
 
