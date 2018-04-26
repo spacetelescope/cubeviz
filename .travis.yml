@@ -38,7 +38,10 @@ env:
 
         # List other runtime dependencies for the package that are available as
         # conda packages here.
-        - CONDA_DEPENDENCIES='pyqt matplotlib scipy glue-core>=0.12 asdf'
+        - GLUE_CONDA="glue-core=0.13.0.dev20180405143152.6055dfd8"
+        - OTHER_CONDA='pyqt matplotlib scipy asdf'
+        # By default, pin glue-core version to latest version known to work
+        - CONDA_DEPENDENCIES="$OTHER_CONDA $GLUE_CONDA"
         - CONDA_VERSION=4.3.31
 
         # List other runtime dependencies for the package that are available as
@@ -50,7 +53,7 @@ env:
         # are in astropy-ci-extras. If your package uses either of these,
         # add the channels to CONDA_CHANNELS along with any other channels
         # you want to use.
-        - CONDA_CHANNELS='glueviz/label/dev glueviz astropy-ci-extras astropy'
+        - CONDA_CHANNELS="glueviz/label/dev glueviz astropy-ci-extras astropy"
 
         # If there are matplotlib or other GUI tests, uncomment the following
         # line to use the X virtual framebuffer.
@@ -98,7 +101,7 @@ matrix:
 
         # Test against latest development version of Glue
         - os: linux
-          env: CONDA_CHANNELS='glueviz/label/dev glueviz'
+          env: CONDA_DEPENDENCIES="$OTHER_CONDA glue-core"
 
         # Do a PEP8 test with pycodestyle
         - os: linux
@@ -108,9 +111,9 @@ matrix:
         # Allow failures against numpy dev
         - os: linux
           env: NUMPY_VERSION=dev
-        # Allow failures against development version of Glue
+        # Allow failures against latest development version of Glue
         - os: linux
-          env: CONDA_CHANNELS='glueviz/label/dev glueviz'
+          env: CONDA_DEPENDENCIES="$OTHER_CONDA glue-core"
 
 install:
 
@@ -138,6 +141,8 @@ install:
     # other dependencies.
 
 script:
+   - echo $CONDA_DEPENDENCIES
+   - echo $CONDA_CHANNELS
    - conda info
    - conda list
    - $MAIN_CMD $SETUP_CMD
