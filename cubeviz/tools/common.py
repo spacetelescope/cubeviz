@@ -28,15 +28,17 @@ def add_to_2d_container(cubeviz_layout, data, component_data, label):
 
         cubeviz_layout.session.data_collection.append(data.container_2d)
 
+        # NOTE: the following is disabled for now but can be uncommented once
+        # we are ready to use the glue overlay infrastructure.
         # Set up pixel links so that selections in the image plane propagate
         # between 1D and 2D views. Again this assumes as above that the
         # moments are computed along the spectral axis
-        link1 = LinkSame(data.pixel_component_ids[2],
-                         data.container_2d.pixel_component_ids[1])
-        link2 = LinkSame(data.pixel_component_ids[1],
-                         data.container_2d.pixel_component_ids[0])
-        cubeviz_layout.session.data_collection.add_link(link1)
-        cubeviz_layout.session.data_collection.add_link(link2)
+        # link1 = LinkSame(data.pixel_component_ids[2],
+        #                  data.container_2d.pixel_component_ids[1])
+        # link2 = LinkSame(data.pixel_component_ids[1],
+        #                  data.container_2d.pixel_component_ids[0])
+        # cubeviz_layout.session.data_collection.add_link(link1)
+        # cubeviz_layout.session.data_collection.add_link(link2)
 
         for helper in cubeviz_layout._viewer_combo_helpers:
             helper.append_data(data.container_2d)

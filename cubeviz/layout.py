@@ -11,7 +11,7 @@ from glue.utils.qt import load_ui
 from glue.utils.qt import get_qapp
 from glue.config import qt_fixed_layout_tab
 from glue.external.echo import keep_in_sync, SelectionCallbackProperty
-from glue.external.echo.qt import connect_combo_selection
+from glue.external.echo.qt.connect import connect_combo_selection, UserDataWrapper, _find_combo_data, _find_combo_text
 from glue.core.data_combo_helper import ComponentIDComboHelper
 from glue.core.message import (SettingsChangeMessage, SubsetUpdateMessage,
                                SubsetDeleteMessage, EditSubsetMessage)
@@ -457,6 +457,8 @@ class CubeVizLayout(QtWidgets.QWidget):
             # Get the label of the component and the component ID itself
             label = combo.currentText()
             component = combo.currentData()
+            if isinstance(component, UserDataWrapper):
+                component = component.data
 
             viewer.has_2d_data = component.parent[label].ndim == 2
 
@@ -562,10 +564,13 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         combo = self.get_viewer_combo(view_index)
 
-        if isinstance(component_id, str):
-            component_index = combo.findText(component_id)
-        else:
-            component_index = combo.findData(component_id)
+        try:
+            if isinstance(component_id, str):
+                component_index = _find_combo_text(combo, component_id)
+            else:
+                component_index = _find_combo_data(combo, component_id)
+        except ValueError:
+            component_index = -1
 
         if combo.currentIndex() == component_index and force:
             combo.currentIndexChanged.emit(component_index)
