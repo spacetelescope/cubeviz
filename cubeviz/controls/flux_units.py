@@ -488,11 +488,11 @@ class SpectralFluxDensity(CubeVizUnit):
 
             if self.area.decompose() == u.pix.decompose() \
                     and 'solid angle' in self._original_area.physical_type:
-                area = (self._original_area / pixel_area).decompose()
+                area = u.Unit((self._original_area / pixel_area).decompose())
                 new_value /= area.to(self.area)
             elif 'solid angle' in self.area.physical_type \
                     and self._original_area.decompose() == u.pix.decompose():
-                area = (self._original_area * pixel_area).decompose()
+                area = u.Unit((self._original_area * pixel_area).decompose())
                 new_value /= area.to(self.area)
             else:
                 new_value /= self._original_area.to(self.area)
@@ -1090,7 +1090,9 @@ class FluxUnitController:
             return None
         try:
             top_unit = u.Unit(self.wcs.wcs.cunit[0])
-            return proj_plane_pixel_area(self.wcs) * (top_unit ** 2) / u.pix
+            pixel_area = proj_plane_pixel_area(self.wcs) * (top_unit ** 2) / u.pix
+            u.spectral_density.pixel_area = pixel_area
+            return pixel_area
         except (ValueError, AttributeError):
             return None
 
@@ -1333,6 +1335,7 @@ class FluxUnitController:
         wcs = data.coords.wcs
         if wcs is not None:
             self.wcs = wcs
+        self.pixel_area
 
     def converter(self, parent=None):
         """
