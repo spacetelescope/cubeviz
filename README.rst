@@ -21,6 +21,7 @@ If you run into any issues or have suggestions for new features, we encourage yo
 
 This release requires Python 3.5 or 3.6.
 
+.. image:: /docs/images/CubeViz_splitviewer.png
 
 
 License
