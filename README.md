@@ -15,7 +15,7 @@ To install:
 To run:
   * Activate the environment: `$ source activate cubeviz020`
   * Run cubeviz: `$ cubeviz`
-  * Once done, deactivate the environment: :bash:`source deactivate`
+  * Once done, deactivate the environment: `source deactivate`
 
 More installation instructions will be on the RTD page (currently incorrectly displaying the wrong docs and appears to be an RTD bug).
 
