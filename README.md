@@ -1,24 +1,21 @@
-CubeViz
---------------------------------
+# CubeViz
 
-.. image:: http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat
-    :target: http://www.astropy.org
-    :alt: Powered by Astropy Badge
-
+![](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)
 
 For documentation see http://cubeviz.readthedocs.io/en/latest/
 
-Release 0.2.0
--------------
+## Release 0.2.0
 
 We are pleased to announce the release of CubeViz, a visualization and analysis tool for data cubes from integral field units (IFUs). This is an early release (v0.2.0) and we would appreciate your feedback.  It is built on top of the “glue” visualization tool.
 
-.. role:: bash(code)
-   :language: bash
-   
 To install:
-  * Install minconda3 if it is not on your system
-  * Then type: :bash:`conda create -n cubeviz020 -c glueviz cubeviz`
+  * Install [Minconda3](https://conda.io/miniconda.html) if it is not on your system
+  * To install, type: `$ conda create -n cubeviz020 -c glueviz cubeviz`
+  
+To run:
+  * Activate the environment: `$ source activate cubeviz020`
+  * Run cubeviz: `$ cubeviz`
+  * Once done, deactivate the environment: `source deactivate`
 
 More installation instructions will be on the RTD page (currently incorrectly displaying the wrong docs and appears to be an RTD bug).
 
@@ -30,10 +27,9 @@ If you run into any issues or have suggestions for new features, we encourage yo
 
 This release requires Python 3.5 or 3.6.
 
-.. image:: /docs/images/CubeViz_splitviewer.png
+![](/docs/images/CubeViz_splitviewer.png)
 
 
-License
--------
+# License
 
 This project is Copyright (c) JDADF Developers and licensed under the terms of the BSD 3-Clause license. See the licenses folder for more information.
