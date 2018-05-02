@@ -4,7 +4,7 @@ CubeViz is packaged in the Conda environment system and therefore requires Minic
 
 ## Installing Miniconda 
 
-Follow the Miniconda `installation instructions <https://conda.io/miniconda.html>`_ found on the Miniconda website. When asked whether miniconda should be appended to your system PATH, make sure to select yes.
+Follow the Miniconda [installation instructions](https://conda.io/miniconda.html) found on the Miniconda website. When asked whether miniconda should be appended to your system PATH, make sure to select yes.
 
 Note that we have encountered issues with older versions of Miniconda, so if you already have it installed, it might be a good idea to update it.
 
