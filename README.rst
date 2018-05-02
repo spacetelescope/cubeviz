@@ -18,7 +18,12 @@ We are pleased to announce the release of CubeViz, a visualization and analysis 
    
 To install:
   * Install minconda3 if it is not on your system
-  * Then type: :bash:`conda create -n cubeviz020 -c glueviz cubeviz`
+  * To install, type: :bash:`$ conda create -n cubeviz020 -c glueviz cubeviz`
+  
+To run:
+  * Activate the environment: :bash:`$ source activate cubeviz020`
+  * Run cubeviz: :bash:`$ cubeviz`
+  * Once done, deactivate the environment: :bash:`source deactivate`
 
 More installation instructions will be on the RTD page (currently incorrectly displaying the wrong docs and appears to be an RTD bug).
 
