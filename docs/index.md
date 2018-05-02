@@ -25,12 +25,8 @@ Future functionality will include the ability to:
   * mock slit observations
   * accurate spectro-photometry
 
-Reference/API
-=============
+# Reference/API
 
-.. toctree::
-   :maxdepth: 2
-
-   installation
-   functionality
-   readingindata
+  * [Installation](installation.md)
+  * [Functionality](functionality.md)
+  * [Reading in Data](readingindata.md)
