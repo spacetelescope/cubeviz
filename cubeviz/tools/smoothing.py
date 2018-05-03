@@ -229,6 +229,7 @@ class SmoothCube(object):
         return mask
 
     def data_to_cube(self):
+        print("60")
         """Glue Data -> SpectralCube"""
         if self.component_id is None:
             raise Exception("component_id was not provided.")
@@ -318,6 +319,7 @@ class SmoothCube(object):
             return self.output_label
 
     def smooth_cube(self, preview=False):
+        print("40")
         """
         Main (serial) smoothing function that follows the following steps:
         1) Convert data to SpectralCube
@@ -355,6 +357,7 @@ class SmoothCube(object):
         return output
 
     def multi_threading_smooth(self):
+        print("20.0")
         """
         Prepares data and starts worker thread.
         Overall steps accomplished:
@@ -364,8 +367,10 @@ class SmoothCube(object):
 
         # Handshake b/w SpectralCube and AbortWindow
         if "spectral" == self.smoothing_axis:
+            print("20")
             self.abort_window.init_pb(0, cube.shape[1]*cube.shape[2])
         else:
+            print("21")
             self.abort_window.init_pb(0, cube.shape[0])
 
         self.thread_cube = cube
@@ -373,6 +378,7 @@ class SmoothCube(object):
         self.thread.start()
 
     def thread_function(self):
+        print("30")
         """
         On-thread function that executes smoothing
         Overall steps accomplished:
@@ -386,21 +392,29 @@ class SmoothCube(object):
         cube = self.thread_cube
         update_function = self.abort_window.update_pb
         if "median" == self.kernel_type:
+            print("31")
             if "spatial" == self.smoothing_axis:
+                print("32")
                 new_cube = cube.spatial_smooth_median(self.kernel_size, update_function=update_function)
             else:
+                print("33")
                 new_cube = cube.spectral_smooth_median(self.kernel_size, update_function=update_function)
         else:
+            print("34")
             kernel = self.get_kernel()
             if "spatial" == self.smoothing_axis:
+                print("35")
                 new_cube = cube.spatial_smooth(kernel, update_function=update_function)
             else:
+                print("36")
                 new_cube = cube.spectral_smooth(kernel, update_function=update_function)
 
         if isinstance(new_cube, SpectralCube):
+            print("37")
             self.thread_result = new_cube
             return success
         else:
+            print("38")
             raise Exception("Unexpected return type from SpectralCube.")
 
     def thread_callback(self):
@@ -413,6 +427,7 @@ class SmoothCube(object):
         output_component_id = self.unique_output_component_id()
         output = self.cube_to_data(self.thread_result, output_component_id=output_component_id)
         self.abort_window.smoothing_done(output_component_id)
+        print("Success! Component saved")
 
     def thread_error_handler(self, exception):
         self.abort_window.print_error(exception)
@@ -470,6 +485,8 @@ class AbortWindow(QDialog):
 
         self.abort_flag = False
 
+        self.info_box = None
+
         # vbl is short for Vertical Box Layout
         vbl = QVBoxLayout()
         vbl.addWidget(self.label_a_1)
@@ -514,6 +531,14 @@ class AbortWindow(QDialog):
         self.abort_flag = True
         self.parent.clean_up()
 
+    def show_error_message(self, message, title, parent=None):
+        self.info_box = QMessageBox(parent=parent)
+        self.info_box.setIcon(QMessageBox.Information)
+        self.info_box.setText(message)
+        self.info_box.setWindowTitle(title)
+        self.info_box.setStandardButtons(QMessageBox.Ok)
+        self.info_box.show()
+
     def smoothing_done(self, component_id=None):
         """Notify user success"""
         self.hide()
@@ -527,8 +552,11 @@ class AbortWindow(QDialog):
                       " \"{0}\" and can be selected" \
                       " in the viewer drop-down menu.".format(component_id)
 
-        info = QMessageBox.information(self, "Success", message)
-        self.clean_up()
+        print("Set info", self.parent.abort_window, self.parent.abort_window == self, self.info_box)
+        #self.info = QMessageBox.information(self, "Success", message)
+        self.show_error_message(message, "Success", self)
+        print("Set info", self.parent.abort_window, self.parent.abort_window == self, self.info_box)
+        #self.clean_up()
 
     def print_error(self, exception):
         """Print error message"""
@@ -869,6 +897,9 @@ class SelectSmoothing(QDialog):
     def clean_up(self):
         self.close()
         if self.abort_window is not None:
+            if self.abort_window.info is not None:
+                print("abort window options", dir(self.abort_window.info.parent))
+                self.abort_window.info.parent.Cancel
             self.abort_window.close()
         if self.is_preview_active:
             self.parent.end_smoothing_preview()
