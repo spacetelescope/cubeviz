@@ -229,7 +229,6 @@ class SmoothCube(object):
         return mask
 
     def data_to_cube(self):
-        print("60")
         """Glue Data -> SpectralCube"""
         if self.component_id is None:
             raise Exception("component_id was not provided.")
@@ -319,7 +318,6 @@ class SmoothCube(object):
             return self.output_label
 
     def smooth_cube(self, preview=False):
-        print("40")
         """
         Main (serial) smoothing function that follows the following steps:
         1) Convert data to SpectralCube
@@ -357,7 +355,6 @@ class SmoothCube(object):
         return output
 
     def multi_threading_smooth(self):
-        print("20.0")
         """
         Prepares data and starts worker thread.
         Overall steps accomplished:
@@ -367,10 +364,8 @@ class SmoothCube(object):
 
         # Handshake b/w SpectralCube and AbortWindow
         if "spectral" == self.smoothing_axis:
-            print("20")
             self.abort_window.init_pb(0, cube.shape[1]*cube.shape[2])
         else:
-            print("21")
             self.abort_window.init_pb(0, cube.shape[0])
 
         self.thread_cube = cube
@@ -378,7 +373,6 @@ class SmoothCube(object):
         self.thread.start()
 
     def thread_function(self):
-        print("30")
         """
         On-thread function that executes smoothing
         Overall steps accomplished:
@@ -392,29 +386,21 @@ class SmoothCube(object):
         cube = self.thread_cube
         update_function = self.abort_window.update_pb
         if "median" == self.kernel_type:
-            print("31")
             if "spatial" == self.smoothing_axis:
-                print("32")
                 new_cube = cube.spatial_smooth_median(self.kernel_size, update_function=update_function)
             else:
-                print("33")
                 new_cube = cube.spectral_smooth_median(self.kernel_size, update_function=update_function)
         else:
-            print("34")
             kernel = self.get_kernel()
             if "spatial" == self.smoothing_axis:
-                print("35")
                 new_cube = cube.spatial_smooth(kernel, update_function=update_function)
             else:
-                print("36")
                 new_cube = cube.spectral_smooth(kernel, update_function=update_function)
 
         if isinstance(new_cube, SpectralCube):
-            print("37")
             self.thread_result = new_cube
             return success
         else:
-            print("38")
             raise Exception("Unexpected return type from SpectralCube.")
 
     def thread_callback(self):
@@ -427,7 +413,6 @@ class SmoothCube(object):
         output_component_id = self.unique_output_component_id()
         output = self.cube_to_data(self.thread_result, output_component_id=output_component_id)
         self.abort_window.smoothing_done(output_component_id)
-        print("Success! Component saved")
 
     def thread_error_handler(self, exception):
         self.abort_window.print_error(exception)
@@ -552,11 +537,8 @@ class AbortWindow(QDialog):
                       " \"{0}\" and can be selected" \
                       " in the viewer drop-down menu.".format(component_id)
 
-        print("Set info", self.parent.abort_window, self.parent.abort_window == self, self.info_box)
-        #self.info = QMessageBox.information(self, "Success", message)
         self.show_error_message(message, "Success", self)
-        print("Set info", self.parent.abort_window, self.parent.abort_window == self, self.info_box)
-        #self.clean_up()
+        self.clean_up()
 
     def print_error(self, exception):
         """Print error message"""
@@ -566,7 +548,7 @@ class AbortWindow(QDialog):
         else:
             message = "Smoothing Failed!\n\n" + str(exception)
 
-        info = QMessageBox.critical(self, "Error", message)
+        self.show_error_message(message, "Error", self)
         self.clean_up()
 
     def clean_up(self):
@@ -827,29 +809,22 @@ class SelectSmoothing(QDialog):
 
         self.smooth_cube.abort_window = self.abort_window
         if self.smooth_cube.parent is None and self.parent is not self.smooth_cube:
-            print("1")
             self.smooth_cube.parent = self.parent
         if self.parent is not self.smooth_cube:
-            print("2")
             self.smooth_cube.data = self.data
         self.smooth_cube.smoothing_axis = self.current_axis
         self.smooth_cube.kernel_type = self.current_kernel_type
         if self.current_kernel_type == "median":
-            print("3")
             self.smooth_cube.kernel_size = int(self.k_size.text())
         else:
-            print("4")
             self.smooth_cube.kernel_size = float(self.k_size.text())
         self.smooth_cube.component_id = str(self.component_combo.currentText())
         self.smooth_cube.output_as_component = True
 
         if self.is_preview_active:
-            print("5")
             self.parent.end_smoothing_preview()
             self.is_preview_active = False
-        print("6")
         self.smooth_cube.multi_threading_smooth()
-        print("7")
         return
 
     def update_preview_button(self):
@@ -897,9 +872,6 @@ class SelectSmoothing(QDialog):
     def clean_up(self):
         self.close()
         if self.abort_window is not None:
-            if self.abort_window.info is not None:
-                print("abort window options", dir(self.abort_window.info.parent))
-                self.abort_window.info.parent.Cancel
             self.abort_window.close()
         if self.is_preview_active:
             self.parent.end_smoothing_preview()
