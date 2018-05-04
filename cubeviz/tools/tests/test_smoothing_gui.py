@@ -29,13 +29,17 @@ def smoothing(cubeviz_layout):
 def assert_red_stylesheet(widget):
     assert widget.styleSheet() == "color: rgba(255, 0, 0, 128)"
 
-
-def test_smoothing(qtbot, cubeviz_layout):
+@pytest.mark.parametrize("x", [0,1,2,3,4,5])
+def test_smoothing(qtbot, cubeviz_layout, x):
+    print("+++++++++++++++++++++++++++++++", x)
     # Create GUI
     sm = smoothing(cubeviz_layout)
     sm.k_size.setText("1")
-    sm.combo.setCurrentIndex(0)
-    sm.component_combo.setCurrentIndex(0)
+    sm.combo.setCurrentIndex(x)         # Kernel Type
+    sm.component_combo.setCurrentIndex(0)       # Data componenet
+
+    print(sm.combo.currentText())
+    print(sm.component_combo.currentText())
 
     # Call smoothing
     sm.call_main()
@@ -43,7 +47,13 @@ def test_smoothing(qtbot, cubeviz_layout):
     qtbot.keyPress(sm.abort_window.info_box, QtCore.Qt.Key_Enter)
 
     # Get Smoothed data
-    smoothing_component_id = [str(x) for x in cubeviz_layout._data.main_components if str(x).startswith('018.DATA_Smoothed')][0]
+    smoothed_name = "018.DATA_Smoothed(" + sm.combo.currentText() + ", " + sm.component_combo.currentText()
+    print("Smoothed name", smoothed_name)
+    smoothing_component_id = [str(x) for x in cubeviz_layout._data.main_components if str(x).startswith(smoothed_name)]
+    if isinstance(smoothing_component_id, list) and len(smoothing_component_id) > 0:
+        smoothing_component_id = smoothing_component_id[0]
+    else:
+        return
     print("smoothing component id ", smoothing_component_id)
     np_result = np.asarray(cubeviz_layout._data[smoothing_component_id])
 
