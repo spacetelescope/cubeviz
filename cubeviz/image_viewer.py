@@ -265,7 +265,7 @@ class CubevizImageViewer(ImageViewer):
     def _calculate_stats(self, data):
         if self.cubeviz_unit is not None:
             wave = self.cubeviz_layout.get_wavelength(self.slice_index)
-            data = self.cubeviz_unit.convert_from_original_unit(data, wave=wave)
+            data = self.cubeviz_unit.convert_value(data, wave=wave)
         return np.nanmin(data), np.nanmax(data), np.median(data), data.mean(), data.std()
 
     def show_roi_stats(self, component, subset):
@@ -442,7 +442,7 @@ class CubevizImageViewer(ImageViewer):
         if self.cubeviz_unit is not None:
             arr = arr.copy()
             wave = self.cubeviz_layout.get_wavelength(self.slice_index)
-            arr = self.cubeviz_unit.convert_from_original_unit(arr, wave=wave)
+            arr = self.cubeviz_unit.convert_value(arr, wave=wave)
 
         return arr
 
@@ -905,11 +905,11 @@ class CubevizImageViewer(ImageViewer):
                 v = arr[y][x]
                 if self.cubeviz_unit is not None:
                     wave = self.cubeviz_layout.get_wavelength(self.slice_index)
-                    v = self.cubeviz_unit.convert_from_original_unit(v, wave=wave)
+                    v = self.cubeviz_unit.convert_value(v, wave=wave)
 
                 unit_string = ""
                 if self.component_unit_label:
-                    unit_string = "[{0}] ".format(self.component_unit_label)
+                    unit_string = "[{0}]".format(self.component_unit_label)
 
                 if 0.01 <= abs(v) <= 1000 or abs(v) == 0.0:
                     value_string = "{0:.3f} ".format(v)
