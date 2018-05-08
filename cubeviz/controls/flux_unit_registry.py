@@ -287,5 +287,3 @@ FORMATTED_UNITS = {}
 
 # Call setup_registered_units on start up:
 setup_registered_units()
-
-
