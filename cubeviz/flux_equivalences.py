@@ -14,9 +14,13 @@ class CustomFluxEquivalences:
     def __init__(self, spectral_density):
         self.pixel_area = None
         self.default_spectral_density = spectral_density
+        self.suppress_pixel_area = False
 
     def __call__(self, wave, factor=None):
-        pixel_area = self.pixel_area
+        if self.suppress_pixel_area:
+            pixel_area = None
+        else:
+            pixel_area = self.pixel_area
         if pixel_area is not None:
             if type(pixel_area) == Quantity:
                 pixel_area = pixel_area.to("arcsec2 / pix").value  # Convert to Quantity
@@ -33,7 +37,7 @@ class CustomFluxEquivalences:
             equivalencies.append((u1_pix, u2_pix, f1, f2))
             equivalencies.append((u1_area, u2_area, f1, f2))
 
-            if pixel_area is not None:
+            if pixel_area:
                 equivalencies.append((u1_pix,
                                       u2_area,
                                       lambda x: f1(x) / pixel_area,
