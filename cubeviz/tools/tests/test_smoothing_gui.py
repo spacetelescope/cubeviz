@@ -31,6 +31,8 @@ def assert_red_stylesheet(widget):
 
 @pytest.mark.parametrize("x", [0,1,2,3,4,5])
 def test_smoothing_spatial(qtbot, cubeviz_layout, x):
+    # TODO: test spectral as well
+
     # Create GUI
     sm = smoothing(cubeviz_layout)
     sm.k_size.setText("1")          # Kernel size
