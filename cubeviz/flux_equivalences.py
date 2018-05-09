@@ -37,7 +37,7 @@ class CustomFluxEquivalences:
             equivalencies.append((u1_pix, u2_pix, f1, f2))
             equivalencies.append((u1_area, u2_area, f1, f2))
 
-            if pixel_area:
+            if pixel_area is not None:
                 equivalencies.append((u1_pix,
                                       u2_area,
                                       lambda x: f1(x) / pixel_area,

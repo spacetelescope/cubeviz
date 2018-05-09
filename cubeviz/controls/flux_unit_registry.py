@@ -226,7 +226,7 @@ class AreaUnitRegistry:
 
         if new_unit.decompose() == u.pix.decompose():
             self.add_pixel_unit(new_unit)
-        if 'solid angle' in new_unit.physical_type:
+        if 'solid angle' in new_unit.physical_type.lower():
             self.add_solid_angle_unit(new_unit)
 
 
@@ -240,7 +240,7 @@ def register_new_unit(new_unit):
     if FLUX_UNIT_REGISTRY.is_compatible(new_unit):
         FLUX_UNIT_REGISTRY.add_unit(new_unit)
     if new_unit.decompose() == u.pix.decompose() or \
-            'solid angle' in new_unit.physical_type:
+            'solid angle' in new_unit.physical_type.lower():
         AREA_UNIT_REGISTRY.add_unit(new_unit)
 
 
