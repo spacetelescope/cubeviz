@@ -11,7 +11,7 @@ from glue.config import viewer_tool
 from glue.config import colormaps as glue_colormaps
 from glue.utils.qt import QColormapCombo
 
-from glue.viewers.common.qt.tool import Tool, SimpleToolMenu
+from glue.viewers.common.qt.tool import Tool
 
 DEFAULT_GLUE_COLORMAP_INDEX = 3
 DEFAULT_CONTOUR_FONT_SIZE = 10
@@ -27,13 +27,13 @@ ICON_PATH = os.path.abspath(
 )
 
 @viewer_tool
-class ContourButton(SimpleToolMenu):
+class ContourButton(Tool):
     """
     Contour map tool bar menu and button
     """
     icon = ICON_PATH
     tool_id = 'cubeviz:contour'
-    action_text = ''
+    action_text = 'Toggles contour map'
     tool_tip = 'Toggles contour map'
     status_tip = ''
     shortcut = None
