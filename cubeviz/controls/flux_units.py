@@ -14,10 +14,33 @@ CUBEVIZ_UNIT_TYPES = ["NONE", "UNKNOWN", "ASTROPY"]
 
 
 class CubeVizUnit:
+    """
+    This is unit container for CubeViz. It stores the original
+    data unit and a unit representing the current units setting.
+    convert_unit function is used to convert astropy units if
+    the current unit does not match the original data unit. All
+    displays should call the convert_unit function before using the
+    data values.
+    There are 3 types of CubeVizUnits:
+        - "NONE": No unit nor unit_string provided (Not Convertible)
+        - "UNKNOWN": unit_string is provided but no unit (Not Convertible)
+        - "ASTROPY": Astropy unit provided along with unit_string (Convertible)
+
+    """
     def __init__(self, unit=None,
                  unit_string="",
                  component_id=None,
-                 unit_type="NONE"):
+                 unit_type=None):
+
+        # Classify the CubeVizUnit type:
+        if unit_type is None:
+            if isinstance(unit, u.Unit):
+                unit_type = "ASTROPY"
+            elif unit_string:
+                unit_type = "UNKNOWN"
+            else:
+                unit_type = "NONE"
+
         self._controller = None  # Unit controller (property)
         self._original_unit = unit  # the data's actual units
         self._original_unit_string = unit_string  # original_unit as str
@@ -72,7 +95,7 @@ class CubeVizUnit:
                 and not isinstance(value, np.ndarray):
             raise ValueError("Expected float or int, got {} instead.".format(type(value)))
 
-        if "NONE" == self.type:
+        if self.type in ["NONE", "UNKNOWN"]:
             return value
 
         new_value = value
@@ -98,11 +121,45 @@ class CubeVizUnit:
 
 
 class FluxUnitController:
+    """
+    NOTE: One FluxUnitController per data-set!
+
+    Flux unit controller. Sets up unit containers
+    (CubeVizUnit) and stores them. The actual conversion
+    happens in the CubeVizUnit and can be done by calling
+    the CubeVizUnit.convert_value(...) function.
+    Examples
+    --------
+    To set/add component units:
+        FluxUnitController[component_id] = unit
+        FluxUnitController.add_component_unit(component_id, unit)
+    To set data-set:
+        FluxUnitController.set_data(Data)
+    To get cubeviz units:
+        FluxUnitController[component_id]
+        FluxUnitController.get_component_unit(key, cubeviz_unit=True)
+    """
     def __init__(self, cubeviz_layout=None):
-        self.cubeviz_layout = cubeviz_layout
-        self.data = None
-        self.wcs = None
-        self._components = {}
+        self.cubeviz_layout = cubeviz_layout  # CubeViz layout
+
+        self.data = None  # Glue data. Use set_data to add
+        self.wcs = None  # WCS info
+        self._components = {}  # Dict containing CubeVizUnits
+
+    def __len__(self):
+        return len(self.components)
+
+    def __getitem__(self, key):
+        return self.get_component_unit(key, cubeviz_unit=True)
+
+    def __setitem__(self, key, value):
+        return self.add_component_unit(key, value)
+
+    def __delitem__(self, key):
+        return self.remove_component_unit(key)
+
+    def __iter__(self):
+        return self.components.__iter__()
 
     @property
     def components(self):
@@ -168,6 +225,12 @@ class FluxUnitController:
         :return: CubeVizUnit
         """
         component_id = str(component_id)
+
+        if isinstance(unit, CubeVizUnit):
+            unit.controller = self
+            self._components[component_id] = unit
+            return unit
+
         unit_string = self.unit_to_string(unit)
 
         # IF: empty unit or no unit

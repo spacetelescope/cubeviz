@@ -189,7 +189,7 @@ class CubevizImageViewer(ImageViewer):
 
         self.current_component_id = None  # Current component id
 
-        self.cubeviz_unit = None
+        self._cubeviz_unit = None
         self.component_unit_label = ""  # String to hold units of data values
 
         self.is_mouse_over = False  # If mouse cursor is over viewer
@@ -241,6 +241,15 @@ class CubevizImageViewer(ImageViewer):
         self._hub.subscribe(self, WavelengthUpdateMessage, handler=self._update_wavelengths)
         self._hub.subscribe(self, WavelengthUnitUpdateMessage, handler=self._update_wavelength_units)
         self._hub.subscribe(self, FluxUnitsUpdateMessage, handler=self._update_flux_units)
+
+    @property
+    def cubeviz_unit(self):
+        return  self._cubeviz_unit
+
+    @cubeviz_unit.setter
+    def cubeviz_unit(self, cubeviz_unit):
+        self.component_unit_label = cubeviz_unit.unit_string
+        self._cubeviz_unit = cubeviz_unit
 
     def _slice_callback(self, new_slice):
         if self._slice_index is not None and not self.has_2d_data:
@@ -695,27 +704,9 @@ class CubevizImageViewer(ImageViewer):
     def _update_flux_units(self, message):
         target_component_id = message.component_id
         if str(self.current_component_id) == str(target_component_id):
-            self.update_component_unit_label(target_component_id)
+            self.cubeviz_unit = message.cubeviz_unit
             self.update_axes_title(str(target_component_id))
             self.update_slice_index(self.slice_index)
-
-    def update_component_unit_label(self, component_id=None):
-        """
-        Update component's unit label.
-        :param component_id: component id
-        """
-        if component_id is None:
-            if self.current_component_id is None:
-                self.component_unit_label = ""
-                return self.component_unit_label
-            component_id = self.current_component_id
-        data = component_id.parent
-        unit = str(data.get_component(component_id).units)
-        if unit:
-            self.component_unit_label = "{0}".format(unit)
-        else:
-            self.component_unit_label = ""
-        return self.component_unit_label
 
     def get_coords(self):
         """
@@ -911,7 +902,7 @@ class CubevizImageViewer(ImageViewer):
                 if self.component_unit_label:
                     unit_string = "[{0}]".format(self.component_unit_label)
 
-                if 0.01 <= abs(v) <= 1000 or abs(v) == 0.0:
+                if 0.001 <= abs(v) <= 1000 or abs(v) == 0.0:
                     value_string = "{0:.3f} ".format(v)
                 else:
                     value_string = "{0:.3e} ".format(v)

@@ -6,7 +6,7 @@ from astropy import units as u
 DEFAULT_FLUX_UNITS_CONFIGS = os.path.join(os.path.dirname(__file__), 'registered_flux_units.yaml')
 
 
-def _add_unit_to_list(unit_list, target_unit):
+def _is_duplicate(unit_list, current_unit):
     """
     Given a list of units, add target units
     after checking for duplicates
@@ -15,23 +15,15 @@ def _add_unit_to_list(unit_list, target_unit):
     :return: updated unit
     """
 
-    if isinstance(target_unit, str):
-        current_unit = u.Unit(target_unit)
-        string_unit = target_unit
-    else:
-        current_unit = target_unit
-        string_unit = target_unit.to_string()
+    # Make both a string and astropy version
+    if isinstance(current_unit, str):
+        current_unit = u.Unit(current_unit)
 
-    duplicate = False
-    for unit in unit_list:
-        if isinstance(unit, str):
-            unit = u.Unit(unit)
-        if unit == current_unit:
-            duplicate = True
-            break
-    if not duplicate:
-        unit_list.append(string_unit)
-    return unit_list
+    # Create list of all astropy Unit things
+    temp_list = [unit if not isinstance(unit, str) else u.Unit(unit) for unit in unit_list]
+
+    # check to see if current_unit is in there
+    return any([unit.to_string() == current_unit.to_string() for unit in temp_list])
 
 
 class FluxUnitRegistry:
@@ -73,7 +65,7 @@ class FluxUnitRegistry:
         except u.UnitConversionError:
             return False
 
-    def get_unit_list(self, current_unit=None):
+    def compose_unit_list(self, current_unit=None):
         """
         Returns a list of unit strings in the registry.
         Adds current_unit if not duplicated. Registered
@@ -81,18 +73,15 @@ class FluxUnitRegistry:
         :param current_unit: Unit or unit str
         :return: list of unit str
         """
-        unit_list = []  # final list
-        item_list = []  # items to be checked if duplicated
-        unit_list.extend(self._locally_defined_units())
-        item_list.extend(self.runtime_defined_units)
+        unit_list = self._locally_defined_units()  # final list
 
-        for item in item_list:
-            unit_list = _add_unit_to_list(unit_list, item)
+        for unit in self.runtime_defined_units:
+            if not _is_duplicate(unit_list, unit):
+                unit_list.append(unit)
 
         if current_unit is not None:
-            if isinstance(current_unit, str):
-                current_unit = u.Unit(current_unit)
-            unit_list = _add_unit_to_list(unit_list, current_unit)
+            if not _is_duplicate(unit_list, current_unit):
+                unit_list.append(current_unit)
         return unit_list
 
     def add_unit(self, item):
@@ -104,6 +93,8 @@ class FluxUnitRegistry:
                 or isinstance(item, u.UnitBase):
             if item not in self.runtime_defined_units:
                 self.runtime_defined_units.append(item)
+        else:
+            raise TypeError("Expected unit or string, got {} instead".format(type(item)))
 
 
 class AreaUnitRegistry:
@@ -164,7 +155,7 @@ class AreaUnitRegistry:
                 continue
         return compatible
 
-    def get_unit_list(self, pixel_only=False,
+    def compose_unit_list(self, pixel_only=False,
                       solid_angle_only=False,
                       current_unit=None):
         """
@@ -176,8 +167,8 @@ class AreaUnitRegistry:
         :param current_unit: Unit or unit str
         :return: list of unit str
         """
-        unit_list = []
-        item_list = []
+        unit_list = []  # final list
+        item_list = []  # runtime def units
         if not solid_angle_only:
             unit_list.extend(self._locally_defined_pixel_units())
             item_list.extend(self.runtime_pixel_units)
@@ -185,13 +176,13 @@ class AreaUnitRegistry:
             unit_list.extend(self._locally_defined_solid_angle_units())
             item_list.extend(self.runtime_solid_angle_units)
 
-        for item in item_list:
-            unit_list = _add_unit_to_list(unit_list, item)
+        for unit in item_list:
+            if not _is_duplicate(unit_list, unit):
+                unit_list.append(unit)
 
         if current_unit is not None:
-            if isinstance(current_unit, str):
-                current_unit = u.Unit(current_unit)
-            unit_list = _add_unit_to_list(unit_list, current_unit)
+            if not _is_duplicate(unit_list, current_unit):
+                unit_list.append(current_unit)
         return unit_list
 
     def add_pixel_unit(self, item):
@@ -203,6 +194,8 @@ class AreaUnitRegistry:
                 or isinstance(item, u.UnitBase):
             if item not in self.runtime_pixel_units:
                 self.runtime_pixel_units.append(item)
+        else:
+            raise TypeError("Expected unit or string, got {} instead".format(type(item)))
 
     def add_solid_angle_unit(self, item):
         """
@@ -213,6 +206,8 @@ class AreaUnitRegistry:
                 or isinstance(item, u.UnitBase):
             if item not in self.runtime_solid_angle_units:
                 self.runtime_solid_angle_units.append(item)
+        else:
+            raise TypeError("Expected unit or string, got {} instead".format(type(item)))
 
     def add_unit(self, item):
         """
@@ -226,8 +221,10 @@ class AreaUnitRegistry:
 
         if new_unit.decompose() == u.pix.decompose():
             self.add_pixel_unit(new_unit)
-        if 'solid angle' in new_unit.physical_type.lower():
+        elif 'solid angle' in new_unit.physical_type.lower():
             self.add_solid_angle_unit(new_unit)
+        else:
+            raise ValueError("Expected pixel or solid angle unit but got {}".format(new_unit.physical_type))
 
 
 def register_new_unit(new_unit):
@@ -273,10 +270,10 @@ def setup_registered_units():
     ]
 
     for model_unit, name in new_physical_types:
-        #try:
-        u.def_physical_type(model_unit, name)
-        #except ValueError:
-        #   #continue
+        try:
+            u.def_physical_type(model_unit, name)
+        except ValueError:
+            continue
 
     FORMATTED_UNITS = cfg["formatted_units"]
 

@@ -469,9 +469,7 @@ class CubeVizLayout(QtWidgets.QWidget):
 
             # Change the component label, title and unit shown in the viewer
             viewer.current_component_id = component
-            viewer.cubeviz_unit = self._flux_unit_controller.get_component_unit(component,
-                                                                                cubeviz_unit=True)
-            viewer.update_component_unit_label(component)
+            viewer.cubeviz_unit = self._flux_unit_controller[component]
             viewer.update_axes_title(title=str(label))
 
             # Change the viewer's reference data to be the data containing the
@@ -536,9 +534,7 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         component = self.single_viewer_attribute
         view.current_component_id = component
-        view.cubeviz_unit = self._flux_unit_controller.get_component_unit(component,
-                                                                          cubeviz_unit=True)
-        view.update_component_unit_label(component)
+        view.cubeviz_unit = self._flux_unit_controller[component]
         view.update_axes_title(component.label)
 
         for i in range(1,4):
@@ -548,9 +544,7 @@ class CubeVizLayout(QtWidgets.QWidget):
 
             component = getattr(self, selection_label)
             view.current_component_id = component
-            view.cubeviz_unit = self._flux_unit_controller.get_component_unit(component,
-                                                                              cubeviz_unit=True)
-            view.update_component_unit_label(component)
+            view.cubeviz_unit = self._flux_unit_controller[component]
             view.update_axes_title(component.label)
 
     def change_viewer_component(self, view_index, component_id, force=False):
@@ -639,7 +633,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._flux_unit_controller.set_data(data)
 
         comp = self.specviz._widget._options_widget.file_att
-        specviz_unit = self._flux_unit_controller.get_component_unit(comp)
+        specviz_unit = self._flux_unit_controller[comp].unit
         if specviz_unit is not None:
             dispatch.changed_units.emit(y=specviz_unit)
 

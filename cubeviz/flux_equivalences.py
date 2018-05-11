@@ -25,9 +25,23 @@ class CustomFluxEquivalences:
             if type(pixel_area) == Quantity:
                 pixel_area = pixel_area.to("arcsec2 / pix").value  # Convert to Quantity
         default_spectral_density = self.default_spectral_density(wave, factor=None)
+
+        # equivalencies = [[unit1, unit2, function_1_to_2, function_2_to_1]...]
         equivalencies = default_spectral_density[:]
+
         added_area_units = []
         for u1, u2, f1, f2 in default_spectral_density:
+            """
+            In this for loop, go through all the 
+            equivalency relationships and divide them with 
+            pixel and arcsec**2. Then construct functions 
+            that convert b/w all the pixel units only and 
+            the area units only. Then, if pixel_area is provided 
+            make functions that convert b/w the pixel units 
+            and area units. Note there should not be a function 
+            to convert b/w the original units and the (pixel 
+            and area) units.  
+            """
             u1_pix = u1 / u.pix
             u2_pix = u2 / u.pix
 
@@ -60,4 +74,16 @@ class CustomFluxEquivalences:
                                           lambda x: x / pixel_area))
                     added_area_units.append(u2_area)
 
+        return equivalencies
+
+    def get_basic_relations(self, wave, factor=None):
+        """
+        Returns an equivalency list that does not include
+        relationships b/w pixels and solid angles. This
+        is useful when using equivalencies to compare if
+        a unit is of flux vs flux/pixel vs flux/sold_angle
+        """
+        self.suppress_pixel_area = True
+        equivalencies = self.__call__(wave, factor)
+        self.suppress_pixel_area = False
         return equivalencies

@@ -22,16 +22,19 @@ def find_unit_index(unit_list, target_unit):
     index of unit.
     :param unit_list: list of units or string
     :param target_unit: unit or string
-    :return: updated unit
+    :return: unit index
     """
-    if isinstance(target_unit, str):
-        target_unit = u.Unit(target_unit)
 
-    for i, unit in enumerate(unit_list):
-        if isinstance(unit, str):
-            unit = u.Unit(unit)
-        if unit == target_unit:
-            return i
+    # Make both a string and astropy version
+    if not isinstance(target_unit, str):
+        target_unit = u.Unit(target_unit).to_string()
+
+    # Create list of all astropy Unit things
+    temp_list = [unit.to_string() if not isinstance(unit, str)
+                 else u.Unit(unit).to_string() for unit in unit_list]
+
+    if target_unit in temp_list:
+        return temp_list.index(target_unit)
     return None
 
 
@@ -42,14 +45,21 @@ def _get_power(numeric):
     :param numeric: float or int
     :return: power if int, 0.0 if power is float
     """
-    if float(np.log10(numeric)).is_integer():
-        power = int(np.log10(numeric))
-    else:
-        power = 0
-    return power
+    exponent = float(np.log10(numeric))
+    return int(exponent) if exponent.is_integer() else 0
 
 
 class CubeVizUnitLayout:
+    """
+    This implements a specialized horizontal layout
+    in the converter gui. This layout contains
+    inputs specific to the unit type. This class
+    is responsible for the following tasks:
+        - Populate the UI horizontal layout
+        - Contain user input widgets (QLineEdit etc..)
+        - Set displayed messages on the UI
+        - Get units from the user input
+    """
     def __init__(self, cubeviz_unit):
         self.cubeviz_unit = cubeviz_unit
 
@@ -108,6 +118,12 @@ class CubeVizUnitLayout:
 
 
 class AstropyUnitLayout(CubeVizUnitLayout):
+    """
+    This implements a specialized horizontal layout
+    in the converter gui. This layout contains
+    inputs specific to the unit type. This class
+    sets up the layout for regular astropy units.
+    """
     def __init__(self, cubeviz_unit):
         super(AstropyUnitLayout, self).__init__(cubeviz_unit)
 
@@ -187,6 +203,13 @@ class AstropyUnitLayout(CubeVizUnitLayout):
 
 
 class SpectralFluxDensityLayout(CubeVizUnitLayout):
+    """
+    This implements a specialized horizontal layout
+    in the converter gui. This layout contains
+    inputs specific to the unit type. This class
+    sets up the layout for regular astropy
+    spectral flux density units.
+    """
     def __init__(self,
                  cubeviz_unit,
                  power=None,
@@ -196,8 +219,6 @@ class SpectralFluxDensityLayout(CubeVizUnitLayout):
                  pixel_area=None):
 
         super(SpectralFluxDensityLayout, self).__init__(cubeviz_unit)
-
-
 
         self.power = power
         self.spectral_flux_density = spectral_flux_density
@@ -340,11 +361,11 @@ class SpectralFluxDensityLayout(CubeVizUnitLayout):
                          pixel_area,
                          new_value,
                          self.wave)
-        if 0.01 <= abs(new_value) <= 1000:
+        if 0.001 <= abs(new_value) <= 1000:
             message = "Original Units: [{0}]\n\n" \
                       "New Units: [{1}]\n\n" \
                       "Pixel Area (Scale): {2}\n\n" \
-                      "1.0 [Original Units] = {3:.2f} [New Units]\n" \
+                      "1.000 [Original Units] = {3:.3f} [New Units]\n" \
                       "(at lambda = {4:0.4e})".format(*message_param)
         else:
             message = "Original Units: [{0}]\n\n" \
@@ -397,7 +418,7 @@ class SpectralFluxDensityLayout(CubeVizUnitLayout):
         unit_layout.addWidget(QLabel("   X   "))
 
         flux_unit_str = self.spectral_flux_density.to_string()
-        flux_options = FLUX_UNIT_REGISTRY.get_unit_list(current_unit=flux_unit_str)
+        flux_options = FLUX_UNIT_REGISTRY.compose_unit_list(current_unit=flux_unit_str)
         if flux_unit_str in flux_options:
             index = flux_options.index(flux_unit_str)
         else:
@@ -422,11 +443,11 @@ class SpectralFluxDensityLayout(CubeVizUnitLayout):
             no_pixel_area = self.pixel_area is None
 
             if self.area.decompose() == u.pix.decompose() and no_pixel_area:
-                area_options = AREA_UNIT_REGISTRY.get_unit_list(pixel_only=True)
+                area_options = AREA_UNIT_REGISTRY.compose_unit_list(pixel_only=True)
             elif 'solid angle' in self.area.physical_type and no_pixel_area:
-                area_options = AREA_UNIT_REGISTRY.get_unit_list(solid_angle_only=True)
+                area_options = AREA_UNIT_REGISTRY.compose_unit_list(solid_angle_only=True)
             else:
-                area_options = AREA_UNIT_REGISTRY.get_unit_list()
+                area_options = AREA_UNIT_REGISTRY.compose_unit_list()
 
             if area_str in area_options:
                 index = area_options.index(area_str)
@@ -518,20 +539,34 @@ def decompose_sfd_over_pix(unit):
 
 
 def assign_cubeviz_unit_layout(cubeviz_unit, pixel_area=None, wave=None):
-    if hasattr(u.spectral_density, "suppress_pixel_area"):
-        u.spectral_density.suppress_pixel_area = True
+    """
+    This is used to break down the unit and assign the
+    appropriate conversion layout.
+    Potential unit types are:
+        - no units or not-astropy units -> CubeVizUnitLayout
+        - regular astropy unit -> AstropyUnitLayout
+        - spectral_flux_density -> SpectralFluxDensityLayout
+        - spectral_flux_density / solid_angle -> SpectralFluxDensityLayout
+        - spectral_flux_density / pixel -> SpectralFluxDensityLayout
+    :param cubeviz_unit: CubeVizUnit
+    :param pixel_area: Pixel area to use for conversion previews
+    :param wave: Wavelength used for conversion previews
+    :return:
+    """
+
     if cubeviz_unit.type in ["NONE", "UNKNOWN"]:
         layout = CubeVizUnitLayout(cubeviz_unit)
     else:
         astropy_unit = cubeviz_unit.unit
-
         # IF: astropy unit type is spectral_flux_density / solid_angle
-        if astropy_unit.is_equivalent((u.Jy / u.degree ** 2), equivalencies=u.spectral_density(656.3*u.nm)):
+        if astropy_unit.is_equivalent((u.Jy / u.degree ** 2),
+                                      equivalencies=u.spectral_density.get_basic_relations(656.3*u.nm)):
             power, sfd_unit, area = decompose_sfd_over_solid_angle(astropy_unit)
             layout = SpectralFluxDensityLayout(cubeviz_unit, power, sfd_unit, area,
                                                wave, pixel_area)
         # ELSE IF: astropy unit type is spectral_flux_density / pixel
-        elif astropy_unit.is_equivalent((u.Jy / u.pix), equivalencies=u.spectral_density(656.3*u.nm)):
+        elif astropy_unit.is_equivalent((u.Jy / u.pix),
+                                        equivalencies=u.spectral_density.get_basic_relations(656.3*u.nm)):
             power, sfd_unit, area = decompose_sfd_over_pix(astropy_unit)
             layout = SpectralFluxDensityLayout(cubeviz_unit, power, sfd_unit, area,
                                                wave, pixel_area)
@@ -545,8 +580,7 @@ def assign_cubeviz_unit_layout(cubeviz_unit, pixel_area=None, wave=None):
         # ELSE: astropy unit type is not special
         else:
             layout = AstropyUnitLayout(cubeviz_unit)
-    if hasattr(u.spectral_density, "suppress_pixel_area"):
-        u.spectral_density.suppress_pixel_area = False
+
     return layout
 
 
@@ -698,7 +732,7 @@ class ConvertFluxUnitGUI(QDialog):
 
         component_id = self.component_combo.currentData()
         self.data.get_component(component_id).units = self.current_unit.unit_string
-        msg = FluxUnitsUpdateMessage(self, self.current_unit.unit, component_id)
+        msg = FluxUnitsUpdateMessage(self, self.current_unit, component_id)
         self._hub.broadcast(msg)
         self.close()
 
