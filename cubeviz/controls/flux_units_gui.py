@@ -14,6 +14,7 @@ from astropy.units.quantity import Quantity
 from ..messages import FluxUnitsUpdateMessage
 
 from .flux_unit_registry import FLUX_UNIT_REGISTRY, AREA_UNIT_REGISTRY
+from .flux_units import NONE_CubeVizUnit, UNKNOWN_CubeVizUnit, ASTROPY_CubeVizUnit
 
 
 def find_unit_index(unit_list, target_unit):
@@ -554,7 +555,7 @@ def assign_cubeviz_unit_layout(cubeviz_unit, pixel_area=None, wave=None):
     :return:
     """
 
-    if cubeviz_unit.type in ["NONE", "UNKNOWN"]:
+    if cubeviz_unit.type in [NONE_CubeVizUnit, UNKNOWN_CubeVizUnit]:
         layout = CubeVizUnitLayout(cubeviz_unit)
     else:
         astropy_unit = cubeviz_unit.unit
@@ -701,7 +702,7 @@ class ConvertFluxUnitGUI(QDialog):
             layout.set_message_box(self.message_box)
             layout.populate_unit_layout(self.unit_layout, self)
             self.current_layout = layout
-            if "ASTROPY" == cubeviz_unit.type:
+            if ASTROPY_CubeVizUnit == cubeviz_unit.type:
                 self.okButton.setEnabled(True)
             else:
                 self.okButton.setEnabled(False)

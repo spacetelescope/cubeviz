@@ -10,7 +10,10 @@ from astropy.wcs.utils import proj_plane_pixel_area
 from .flux_unit_registry import FLUX_UNIT_REGISTRY, AREA_UNIT_REGISTRY, FORMATTED_UNITS
 from .flux_units_gui import ConvertFluxUnitGUI
 
-CUBEVIZ_UNIT_TYPES = ["NONE", "UNKNOWN", "ASTROPY"]
+NONE_CubeVizUnit = "NONE"
+UNKNOWN_CubeVizUnit = "UNKNOWN"
+ASTROPY_CubeVizUnit = "ASTROPY"
+CUBEVIZ_UNIT_TYPES = [NONE_CubeVizUnit, UNKNOWN_CubeVizUnit, ASTROPY_CubeVizUnit]
 
 
 class CubeVizUnit:
@@ -22,9 +25,9 @@ class CubeVizUnit:
     displays should call the convert_unit function before using the
     data values.
     There are 3 types of CubeVizUnits:
-        - "NONE": No unit nor unit_string provided (Not Convertible)
-        - "UNKNOWN": unit_string is provided but no unit (Not Convertible)
-        - "ASTROPY": Astropy unit provided along with unit_string (Convertible)
+        - NONE_CubeVizUnit: No unit nor unit_string provided (Not Convertible)
+        - UNKNOWN_CubeVizUnit: unit_string is provided but no unit (Not Convertible)
+        - ASTROPY_CubeVizUnit: Astropy unit provided along with unit_string (Convertible)
 
     """
     def __init__(self, unit=None,
@@ -35,11 +38,11 @@ class CubeVizUnit:
         # Classify the CubeVizUnit type:
         if unit_type is None:
             if isinstance(unit, u.Unit):
-                unit_type = "ASTROPY"
+                unit_type = ASTROPY_CubeVizUnit
             elif unit_string:
-                unit_type = "UNKNOWN"
+                unit_type = UNKNOWN_CubeVizUnit
             else:
-                unit_type = "NONE"
+                unit_type = NONE_CubeVizUnit
 
         self._controller = None  # Unit controller (property)
         self._original_unit = unit  # the data's actual units
@@ -95,7 +98,7 @@ class CubeVizUnit:
                 and not isinstance(value, np.ndarray):
             raise ValueError("Expected float or int, got {} instead.".format(type(value)))
 
-        if self.type in ["NONE", "UNKNOWN"]:
+        if self.type in [NONE_CubeVizUnit, UNKNOWN_CubeVizUnit]:
             return value
 
         new_value = value
@@ -237,21 +240,21 @@ class FluxUnitController:
         if not unit_string:
             astropy_unit = None
             unit_string = ""
-            unit_type = "NONE"
+            unit_type = NONE_CubeVizUnit
         # ELSE IF: formatted unit
         elif unit_string in FORMATTED_UNITS:
             registered_unit = FORMATTED_UNITS[unit_string]
             if "astropy_unit_string" in registered_unit:
                 unit_string = registered_unit["astropy_unit_string"]
             astropy_unit = self.string_to_unit(unit_string)
-            unit_type = "ASTROPY"
+            unit_type = ASTROPY_CubeVizUnit
         else:
             astropy_unit = self.string_to_unit(unit_string)
             # IF: no astropy unit component
             if astropy_unit is None:
-                unit_type = "UNKNOWN"
+                unit_type = UNKNOWN_CubeVizUnit
             else:
-                unit_type = "ASTROPY"
+                unit_type = ASTROPY_CubeVizUnit
 
         cubeviz_unit = CubeVizUnit(unit=astropy_unit,
                                    unit_string=unit_string,
