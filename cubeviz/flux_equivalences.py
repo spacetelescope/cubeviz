@@ -32,15 +32,15 @@ class CustomFluxEquivalences:
         added_area_units = []
         for u1, u2, f1, f2 in default_spectral_density:
             """
-            In this for loop, go through all the 
-            equivalency relationships and divide them with 
-            pixel and arcsec**2. Then construct functions 
+            In this for loop, go through all the
+            equivalency relationships and divide them with
+            pixel and arcsec**2. Then construct functions
             that convert b/w all the pixel units only and 
-            the area units only. Then, if pixel_area is provided 
-            make functions that convert b/w the pixel units 
-            and area units. Note there should not be a function 
-            to convert b/w the original units and the (pixel 
-            and area) units.  
+            the area units only. Then, if pixel_area is provided
+            make functions that convert b/w the pixel units
+            and area units. Note there should not be a function
+            to convert b/w the original units and the (pixel
+            and area) units.
             """
             u1_pix = u1 / u.pix
             u2_pix = u2 / u.pix
