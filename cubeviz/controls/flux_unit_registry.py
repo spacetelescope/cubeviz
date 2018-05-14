@@ -284,3 +284,9 @@ FORMATTED_UNITS = {}
 
 # Call setup_registered_units on start up:
 setup_registered_units()
+
+# CubeViz Unit types:
+NONE_CubeVizUnit = "NONE"
+UNKNOWN_CubeVizUnit = "UNKNOWN"
+ASTROPY_CubeVizUnit = "ASTROPY"
+CUBEVIZ_UNIT_TYPES = [NONE_CubeVizUnit, UNKNOWN_CubeVizUnit, ASTROPY_CubeVizUnit]

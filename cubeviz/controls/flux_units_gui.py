@@ -13,8 +13,9 @@ from astropy.units.quantity import Quantity
 
 from ..messages import FluxUnitsUpdateMessage
 
-from .flux_unit_registry import FLUX_UNIT_REGISTRY, AREA_UNIT_REGISTRY
-from .flux_units import NONE_CubeVizUnit, UNKNOWN_CubeVizUnit, ASTROPY_CubeVizUnit
+from .flux_unit_registry import (FLUX_UNIT_REGISTRY, AREA_UNIT_REGISTRY, FORMATTED_UNITS,
+                                 NONE_CubeVizUnit, UNKNOWN_CubeVizUnit, ASTROPY_CubeVizUnit,
+                                 CUBEVIZ_UNIT_TYPES)
 
 
 def find_unit_index(unit_list, target_unit):

@@ -7,13 +7,10 @@ from astropy import units as u
 from astropy.units.quantity import Quantity
 from astropy.wcs.utils import proj_plane_pixel_area
 
-from .flux_unit_registry import FLUX_UNIT_REGISTRY, AREA_UNIT_REGISTRY, FORMATTED_UNITS
+from .flux_unit_registry import (FLUX_UNIT_REGISTRY, AREA_UNIT_REGISTRY, FORMATTED_UNITS,
+                                 NONE_CubeVizUnit, UNKNOWN_CubeVizUnit, ASTROPY_CubeVizUnit,
+                                 CUBEVIZ_UNIT_TYPES)
 from .flux_units_gui import ConvertFluxUnitGUI
-
-NONE_CubeVizUnit = "NONE"
-UNKNOWN_CubeVizUnit = "UNKNOWN"
-ASTROPY_CubeVizUnit = "ASTROPY"
-CUBEVIZ_UNIT_TYPES = [NONE_CubeVizUnit, UNKNOWN_CubeVizUnit, ASTROPY_CubeVizUnit]
 
 
 class CubeVizUnit:
@@ -29,6 +26,10 @@ class CubeVizUnit:
         - UNKNOWN_CubeVizUnit: unit_string is provided but no unit (Not Convertible)
         - ASTROPY_CubeVizUnit: Astropy unit provided along with unit_string (Convertible)
 
+    As defined in flux_unit_registry:
+        - NONE_CubeVizUnit = "NONE"
+        - UNKNOWN_CubeVizUnit = "UNKNOWN"
+        - ASTROPY_CubeVizUnit = "ASTROPY"
     """
     def __init__(self, unit=None,
                  unit_string="",
