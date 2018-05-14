@@ -244,12 +244,16 @@ class CubevizImageViewer(ImageViewer):
 
     @property
     def cubeviz_unit(self):
-        return  self._cubeviz_unit
+        return self._cubeviz_unit
 
     @cubeviz_unit.setter
     def cubeviz_unit(self, cubeviz_unit):
-        self.component_unit_label = cubeviz_unit.unit_string
-        self._cubeviz_unit = cubeviz_unit
+        if cubeviz_unit is None:
+            self.component_unit_label = ""
+            self._cubeviz_unit = None
+        else:
+            self.component_unit_label = cubeviz_unit.unit_string
+            self._cubeviz_unit = cubeviz_unit
 
     def _slice_callback(self, new_slice):
         if self._slice_index is not None and not self.has_2d_data:

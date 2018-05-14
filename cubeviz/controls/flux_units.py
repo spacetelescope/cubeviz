@@ -289,7 +289,7 @@ class FluxUnitController:
                 return self._components[component_id]
             else:
                 return self._components[component_id].unit
-        return None
+        raise ValueError("{} component does not have a registered flux unit.".format(component_id))
 
     def set_data(self, data):
         """
