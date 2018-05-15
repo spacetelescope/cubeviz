@@ -10,7 +10,7 @@ from qtpy.QtCore import Qt
 from glue.config import viewer_tool
 from glue.config import colormaps as glue_colormaps
 from glue.utils.qt import QColormapCombo
-
+from glue.external.echo.qt.connect import UserDataWrapper
 from glue.viewers.common.qt.tool import Tool, SimpleToolMenu
 
 DEFAULT_GLUE_COLORMAP_INDEX = 3
@@ -137,7 +137,7 @@ class ContourOptionsDialog(QDialog):
         self.colormap_label = QLabel("Color Scheme: ")
 
         self.colormap_combo = QColormapCombo()
-        self.colormap_combo.addItem("", userData=cm.viridis)
+        self.colormap_combo.addItem("", userData=UserDataWrapper(cm.viridis))
         self.colormap_combo._update_icons()
         self.colormap_combo.setCurrentIndex(self._colormap_index)
         self.colormap_combo.setMaximumWidth(150)
