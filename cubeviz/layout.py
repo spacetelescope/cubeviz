@@ -244,7 +244,11 @@ class CubeVizLayout(QtWidgets.QWidget):
             ('Hide Toolbars', ['checkable', self._toggle_toolbars]),
             ('Hide Spaxel Value Tooltip', ['checkable', self._toggle_hover_value]),
             ('Hide Stats', ['checkable', self._toggle_stats_display]),
-            ('Convert Flux Units', lambda: self._open_dialog('Convert Flux Units', None)),
+            ('Flux Units', OrderedDict([
+                ('Convert Displayed Units', lambda: self._open_dialog('Convert Displayed Units', None)),
+                ('Convert Data Values', lambda: self._open_dialog('Convert Data Values', None)),
+                ])
+             ),
             ('Wavelength Units/Redshift', lambda: self._open_dialog('Wavelength Units/Redshift', None))
         ]))
 
@@ -274,9 +278,10 @@ class CubeVizLayout(QtWidgets.QWidget):
         ]))
         self.ui.cube_option_button.setMenu(cube_menu)
 
-    def _dict_to_menu(self, menu_dict):
+    def _dict_to_menu(self, menu_dict,  menu_widget=None):
         '''Stolen shamelessly from specviz. Thanks!'''
-        menu_widget = QMenu()
+        if not menu_widget:
+            menu_widget = QMenu()
         for k, v in menu_dict.items():
             if isinstance(v, dict):
                 new_menu = menu_widget.addMenu(k)
@@ -379,8 +384,11 @@ class CubeVizLayout(QtWidgets.QWidget):
                 self._data, self.session.data_collection, parent=self)
             mm_gui.display()
 
-        if name == 'Convert Flux Units':
+        if name == 'Convert Displayed Units':
             self._flux_unit_controller.converter(parent=self)
+
+        if name == 'Convert Data Values':
+            self._flux_unit_controller.converter(parent=self, convert_data=True)
 
         if name == "Wavelength Units/Redshift":
             WavelengthUI(self._wavelength_controller, parent=self)
@@ -390,9 +398,9 @@ class CubeVizLayout(QtWidgets.QWidget):
         # FluxUnitsUpdateMessage on its own.
         comp = self.specviz._widget._options_widget.file_att
         if message.component_id == comp:
-            specviz_unit = message.flux_units
-            if specviz_unit is not None:
-                dispatch.changed_units.emit(y=specviz_unit)
+            unit = message.flux_units
+            if unit is not None:
+                dispatch.changed_units.emit(y=unit)
 
     def _toggle_all_coords_in_degrees(self):
         """

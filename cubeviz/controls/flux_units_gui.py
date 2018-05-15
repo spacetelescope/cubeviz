@@ -3,7 +3,7 @@ import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QDialog,  QPushButton, QLabel, QHBoxLayout, QVBoxLayout,
-    QComboBox, QLineEdit, QWidgetItem, QSpacerItem
+    QComboBox, QLineEdit, QWidgetItem, QSpacerItem, QMessageBox
 )
 
 from glue.utils.qt import update_combobox
@@ -353,7 +353,7 @@ class SpectralFluxDensityLayout(CubeVizUnitLayout):
                                                     wave=self.wave,
                                                     new_unit=unit_base)
 
-        if self.pixel_area:
+        if self.pixel_area is not None:
             pixel_area = "{0:.2e}".format(self.pixel_area)
         else:
             pixel_area = "N/A"
@@ -590,11 +590,13 @@ class ConvertFluxUnitGUI(QDialog):
     """
     GUI for unit conversions
     """
-    def __init__(self, controller, parent=None):
+    def __init__(self, controller, parent=None, convert_data=False):
         super(ConvertFluxUnitGUI, self).__init__(parent=parent)
         self.setWindowFlags(self.windowFlags() | Qt.Tool)
         self.title = "Unit Conversion"
         self.setMinimumSize(400, 270)
+
+        self.convert_data = convert_data
 
         self.cubeviz_layout = controller.cubeviz_layout
         self._hub = self.cubeviz_layout.session.hub
@@ -642,8 +644,10 @@ class ConvertFluxUnitGUI(QDialog):
         hbl3.addStretch(1)
 
         # Line 4: Buttons
-        self.okButton = QPushButton("Convert Units")
-        self.okButton.clicked.connect(self.call_main)
+        ok_text = "Convert Data" if self.convert_data else "Convert Displayed Units"
+        ok_function = self.convert_data_units if self.convert_data else self.convert_displayed_units
+        self.okButton = QPushButton(ok_text)
+        self.okButton.clicked.connect(ok_function)
         self.okButton.setDefault(True)
 
         self.cancelButton = QPushButton("Cancel")
@@ -670,7 +674,7 @@ class ConvertFluxUnitGUI(QDialog):
         """
         Call back for component selection drop down.
         """
-        component_id = str(self.component_combo.currentData())
+        component_id = self.component_combo.currentData()
 
         # STEP1: Clean up widgets from last component
         widgets = (self.unit_layout.itemAt(i) for i in range(self.unit_layout.count()))
@@ -717,7 +721,7 @@ class ConvertFluxUnitGUI(QDialog):
         self.unit_layout.update()
         self.vbl.update()
 
-    def call_main(self):
+    def convert_displayed_units(self):
         """
         Calls CubeVizUnit.change_units to finalize
         conversions. Updates plots with new units.
@@ -725,7 +729,7 @@ class ConvertFluxUnitGUI(QDialog):
         """
         success = self.current_layout.change_units()
         if not success:
-            # Todo: Warning should pop up
+            info = QMessageBox.critical(self, "Error", "Conversion failed.")
             return
 
         new_unit = self.current_layout.new_unit
@@ -738,5 +742,39 @@ class ConvertFluxUnitGUI(QDialog):
         self._hub.broadcast(msg)
         self.close()
 
+    def convert_data_units(self):
+        """
+        Calls CubeVizUnit.change_units to finalize
+        conversions. Updates plots with new units.
+        :return:
+        """
+        success = self.current_layout.change_units()
+        if not success:
+            info = QMessageBox.critical(self, "Error", "Conversion failed.")
+            return
+
+        new_unit = self.current_layout.new_unit
+        self.current_unit.unit = new_unit
+        self.current_unit.unit_string = str(new_unit)
+
+        component_id = self.component_combo.currentData()
+        component = component_id.parent.get_component(component_id)
+
+        old_array = component._data.copy()
+        old_array.flags.writeable = True
+
+        wavelengths = self.controller.construct_3d_wavelengths(old_array)
+
+        new_array = self.current_unit.convert_value(old_array, wave=wavelengths)
+
+        component._data = new_array
+
+        self.current_unit = self.controller.add_component_unit(component_id, new_unit)
+        component.units = self.current_unit.unit_string
+        msg = FluxUnitsUpdateMessage(self, self.current_unit, component_id)
+        self._hub.broadcast(msg)
+        self.close()
+
     def cancel(self):
         self.close()
+

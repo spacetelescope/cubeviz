@@ -24,7 +24,7 @@ class CustomFluxEquivalences:
         if pixel_area is not None:
             if type(pixel_area) == Quantity:
                 pixel_area = pixel_area.to("arcsec2 / pix").value  # Convert to Quantity
-        default_spectral_density = self.default_spectral_density(wave, factor=None)
+        default_spectral_density = self.default_spectral_density(wave, factor)
 
         # equivalencies = [[unit1, unit2, function_1_to_2, function_2_to_1]...]
         equivalencies = default_spectral_density[:]

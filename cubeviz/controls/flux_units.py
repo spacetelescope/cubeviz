@@ -7,9 +7,12 @@ from astropy import units as u
 from astropy.units.quantity import Quantity
 from astropy.wcs.utils import proj_plane_pixel_area
 
+from qtpy.QtWidgets import QMessageBox
+
 from .flux_unit_registry import (FLUX_UNIT_REGISTRY, AREA_UNIT_REGISTRY, FORMATTED_UNITS,
                                  NONE_CubeVizUnit, UNKNOWN_CubeVizUnit, ASTROPY_CubeVizUnit,
                                  CUBEVIZ_UNIT_TYPES)
+
 from .flux_units_gui import ConvertFluxUnitGUI
 
 
@@ -104,16 +107,16 @@ class CubeVizUnit:
 
         new_value = value
 
-        if not new_unit:
+        if new_unit is None:
             new_unit = self._unit
 
         if hasattr(u.spectral_density, "pixel_area"):
             u.spectral_density.pixel_area = self.controller.pixel_area
 
         if wave is not None:
-            new_value *= self._original_unit.to(new_unit, equivalencies=u.spectral_density(wave))
+            new_value = (value * self._original_unit).to(new_unit, equivalencies=u.spectral_density(wave)).value
         else:
-            new_value *= self._original_unit.to(new_unit)
+            new_value = (value * self._original_unit).to(new_unit).value
 
         if isinstance(new_value, Quantity):
             new_value = new_value.value
@@ -186,6 +189,24 @@ class FluxUnitController:
             return self.cubeviz_layout.get_wavelength()
         return None
 
+    @property
+    def wavelengths(self):
+        if self.cubeviz_layout:
+            waves = self.cubeviz_layout.get_wavelengths()
+            units = self.cubeviz_layout.get_wavelengths_units()
+            return waves * units
+        return None
+
+    def construct_3d_wavelengths(self, component):
+        if self.cubeviz_layout:
+            waves = self.cubeviz_layout.get_wavelengths()
+            units = self.cubeviz_layout.get_wavelengths_units()
+            waves3d = np.zeros_like(component)
+            for i in range(len(waves3d)):
+                waves3d[i] = waves[i]
+            return waves3d * units
+        return None
+
     @staticmethod
     def string_to_unit(unit_string):
         """
@@ -228,8 +249,6 @@ class FluxUnitController:
         :param unit: string or astropy unit
         :return: CubeVizUnit
         """
-        component_id = str(component_id)
-
         if isinstance(unit, CubeVizUnit):
             unit.controller = self
             self._components[component_id] = unit
@@ -269,21 +288,19 @@ class FluxUnitController:
     def remove_component_unit(self, component_id):
         """
         Remove component from controller
-        :param component_id: component id or str
+        :param component_id: component id
         """
-        component_id = str(component_id)
         if component_id in self._components:
             del self._components[component_id]
 
     def get_component_unit(self, component_id, cubeviz_unit=False):
         """
         Get component units
-        :param component_id: component id or str
+        :param component_id: component id
         :param cubeviz_unit: if True: return CubeVizUnit
                              else: return astropy unit
         :return: CubeVizUnit, astropy unit or None
         """
-        component_id = str(component_id)
         if component_id in self._components:
             if cubeviz_unit:
                 return self._components[component_id]
@@ -310,15 +327,32 @@ class FluxUnitController:
         if wcs is not None:
             self.wcs = wcs
 
-    def converter(self, parent=None):
+    def converter(self, parent=None, convert_data=False):
         """
         Launch Converter GUI
         :param parent: application
+        :param values:
+            convert data values if True.
+            Only displayed units if False.
         :return: ConvertFluxUnitGUI instance
+        :raise: Exception: If wavelength info is missing
         """
+        if self.wavelengths is None:
+            message = "Could not launch conversion ui because" \
+                      "wavelength information is missing."
+            info = QMessageBox.critical(parent, "Error", message)
+            raise Exception(message)
+
+        if convert_data:
+            message = "You are about to launch the data flux units converter. " \
+                      "This will modify the actual values stored in components " \
+                      "according to the unit conversions selected. If you would rather" \
+                      " change the displayed units, please select the Convert" \
+                      " Displayed Units option."
+            info = QMessageBox.warning(parent, "Info", message)
 
         if hasattr(u.spectral_density, "pixel_area"):
             u.spectral_density.pixel_area = self.pixel_area
 
-        ex = ConvertFluxUnitGUI(self, parent)
+        ex = ConvertFluxUnitGUI(self, parent, convert_data)
         return ex
