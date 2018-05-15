@@ -777,4 +777,3 @@ class ConvertFluxUnitGUI(QDialog):
 
     def cancel(self):
         self.close()
-
