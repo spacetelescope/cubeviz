@@ -69,9 +69,3 @@ def test_flux_unit_controller(qtbot, cubeviz_layout):
 
     # 2) To the controller in the layout
     add_get_remove_units(cubeviz_layout, cubeviz_layout._flux_unit_controller)
-
-
-
-
-
-
