@@ -10,8 +10,8 @@ from qtpy.QtCore import Qt
 from glue.config import viewer_tool
 from glue.config import colormaps as glue_colormaps
 from glue.utils.qt import QColormapCombo
-
-from glue.viewers.common.qt.tool import Tool
+from glue.external.echo.qt.connect import UserDataWrapper
+from glue.viewers.common.qt.tool import Tool, SimpleToolMenu
 
 DEFAULT_GLUE_COLORMAP_INDEX = 3
 DEFAULT_CONTOUR_FONT_SIZE = 10
@@ -27,13 +27,13 @@ ICON_PATH = os.path.abspath(
 )
 
 @viewer_tool
-class ContourButton(Tool):
+class ContourButton(SimpleToolMenu):
     """
     Contour map tool bar menu and button
     """
     icon = ICON_PATH
     tool_id = 'cubeviz:contour'
-    action_text = 'Toggles contour map'
+    action_text = ''
     tool_tip = 'Toggles contour map'
     status_tip = ''
     shortcut = None
@@ -137,7 +137,7 @@ class ContourOptionsDialog(QDialog):
         self.colormap_label = QLabel("Color Scheme: ")
 
         self.colormap_combo = QColormapCombo()
-        self.colormap_combo.addItem("", userData=cm.viridis)
+        self.colormap_combo.addItem("", userData=UserDataWrapper(cm.viridis))
         self.colormap_combo._update_icons()
         self.colormap_combo.setCurrentIndex(self._colormap_index)
         self.colormap_combo.setMaximumWidth(150)
