@@ -455,7 +455,7 @@ class AbortWindow(QDialog):
         """
         super(AbortWindow, self).__init__(parent)
         self.setModal(False)
-        self.setWindowFlags(self.windowFlags() | Qt.Tool | Qt.WindowStaysOnTopHint)
+        self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
 
         self.parent = parent
 
