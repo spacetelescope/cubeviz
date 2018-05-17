@@ -10,6 +10,15 @@ log = logging.getLogger('ifcube')
 log.setLevel(logging.WARNING)
 
 
+SPECTRAL_COORD_TYPE_CODES = ["WAVE", "FREQ", "ENER", "WAVN", "VRAD", "VOPT", "ZOPT", "AWAV", "VELO", "BETA"]
+NON_LINEAR_ALGORITHM_CODES = ["F2W", "F2V", "F2A", "W2F", "W2V", "W2A", "V2F", "V2W", "V2A", "A2F", "A2W", "A2V", \
+                              "LOG", "GRI", "GRA", "TAB"]
+
+COORD_TYPES = ["RA", "DEC", "GLON", "GLAT", "ELON", "ELAT", "SELN"]
+PROJECTIONS = ["AZP", "SZP", "TAN", "STG", "SIN", "ARC", "ZPN", "ZEA", "AIR", "CYP", "CEA", "CAR", "MER", "SFL", \
+               "PAR", "MOL", "AIT", "COP", "COE", "COD", "COO", "BON", "PCO", "CSC", "TSC", "QCS"]
+
+
 class IFUCube(object):
     """
     Check and correct the IFUCube
@@ -22,6 +31,26 @@ class IFUCube(object):
 
         self._units = [u.m, u.cm, u.mm, u.um, u.nm, u.AA]
         self._units_titles = list(x.name for x in self._units)
+
+    def combine_arrays_by_size(self, array1, array2, size):
+        if not isinstance(array1, list) or not isinstance(array2, list):
+            log.warning("One of your array's is not a list: {} {}".format(type(array1), type(array2)))
+            return
+        elif not isinstance(size, int):
+            log.warning("Size must be of type int: size type = {}".format(type(size)))
+            return
+
+        combined_array = []
+        for elem_a in array1:
+            for elem_b in array2:
+                if not isinstance(elem_a, str) or not isinstance(elem_b, str):
+                    log.warning("One of the two following elements is not a string: {} {}".format(elem_a, elem_b))
+                    return
+                num_dashes = size - len(elem_a) - len(elem_b)
+                dashes = "-" * num_dashes
+                combined_array.append(elem_a+dashes+elem_b)
+
+        return combined_array
 
     def open(self, filename, fix=False):
         """
@@ -118,13 +147,17 @@ class IFUCube(object):
         return good
 
     def check_ctype1(self, fix=False):
-        self._check_ctype(key='CTYPE1', correct='RA---TAN', fix=fix)
+        # The first index of each 'correct' array should contain the default value
+        all_valid_ctype1s = ["RA---TAN"] + self.combine_arrays_by_size(COORD_TYPES, PROJECTIONS, 8)
+        self._check_ctype(key='CTYPE1', correct=all_valid_ctype1s, fix=fix)
 
     def check_ctype2(self, fix=False):
-        self._check_ctype(key='CTYPE2', correct='DEC--TAN', fix=fix)
+        all_valid_ctype2s = ["DEC--TAN"] + self.combine_arrays_by_size(COORD_TYPES, PROJECTIONS, 8)
+        self._check_ctype(key='CTYPE2', correct=all_valid_ctype2s, fix=fix)
 
     def check_ctype3(self, fix=False):
-        self._check_ctype(key='CTYPE3', correct='WAVE', fix=fix)
+        all_valid_ctype3s = self.combine_arrays_by_size(SPECTRAL_COORD_TYPE_CODES, NON_LINEAR_ALGORITHM_CODES, 8)
+        self._check_ctype(key='CTYPE3', correct=SPECTRAL_COORD_TYPE_CODES + all_valid_ctype3s, fix=fix)
 
     def check_cunit1(self, fix=False):
         self._check_ctype(key='CUNIT1', correct='deg', fix=fix)
