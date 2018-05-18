@@ -32,26 +32,6 @@ class IFUCube(object):
         self._units = [u.m, u.cm, u.mm, u.um, u.nm, u.AA]
         self._units_titles = list(x.name for x in self._units)
 
-    def combine_arrays_by_size(self, array1, array2, size):
-        if not isinstance(array1, list) or not isinstance(array2, list):
-            log.warning("One of your array's is not a list: {} {}".format(type(array1), type(array2)))
-            return
-        elif not isinstance(size, int):
-            log.warning("Size must be of type int: size type = {}".format(type(size)))
-            return
-
-        combined_array = []
-        for elem_a in array1:
-            for elem_b in array2:
-                if not isinstance(elem_a, str) or not isinstance(elem_b, str):
-                    log.warning("One of the two following elements is not a string: {} {}".format(elem_a, elem_b))
-                    return
-                num_dashes = size - len(elem_a) - len(elem_b)
-                dashes = "-" * num_dashes
-                combined_array.append(elem_a+dashes+elem_b)
-
-        return combined_array
-
     def open(self, filename, fix=False):
         """
         Check all checkers
@@ -147,15 +127,17 @@ class IFUCube(object):
         return good
 
     def check_ctype1(self, fix=False):
-        # The first index of each 'correct' array should contain the default value
-        all_valid_ctype1s = ["RA---TAN"] + self.combine_arrays_by_size(COORD_TYPES, PROJECTIONS, 8)
+        # The zeroth index of each 'correct' array should contain the default value
+        all_valid_ctype1s = ['RA---TAN'] + ['{}{}{}'.format(a, (8-len(a)-len(c))*'-', c) for c in COORD_TYPES for a in PROJECTIONS]
         self._check_ctype(key='CTYPE1', correct=all_valid_ctype1s, fix=fix)
 
     def check_ctype2(self, fix=False):
-        all_valid_ctype2s = ["DEC--TAN"] + self.combine_arrays_by_size(COORD_TYPES, PROJECTIONS, 8)
+        # The zeroth index of each 'correct' array should contain the default value
+        all_valid_ctype2s = ['DEC--TAN'] + ['{}{}{}'.format(a, (8-len(a)-len(c))*'-', c) for c in COORD_TYPES for a in PROJECTIONS]
         self._check_ctype(key='CTYPE2', correct=all_valid_ctype2s, fix=fix)
 
     def check_ctype3(self, fix=False):
+        # The zeroth index of each 'correct' array should contain the default value (S_C_T_C[0] == '[WAVE]')
         all_valid_ctype3s = self.combine_arrays_by_size(SPECTRAL_COORD_TYPE_CODES, NON_LINEAR_ALGORITHM_CODES, 8)
         self._check_ctype(key='CTYPE3', correct=SPECTRAL_COORD_TYPE_CODES + all_valid_ctype3s, fix=fix)
 
@@ -177,6 +159,23 @@ class IFUCube(object):
         :return: boolean whether it is good or not
         """
         log.debug('In check for {}'.format(key))
+
+        # Creates a list of tuples (originals only), which have the shape: (hdu.header[key], if hdu has 3D data)
+        all_hdu_values = list(set([(hdu.header[key], (hasattr(hdu, 'data') and hdu.data is not None and\
+                                              len(hdu.data.shape) == 3)) for hdu in self._fits if hasattr(hdu, "header") and key in hdu.header]))
+
+        # Sort by has_data and now you have the hdu.header[key] values which have corresponding data in the first (or
+        # first few) indices
+        all_hdu_values.sort(key=lambda tup: tup[1], reverse=True)
+        log.debug("All hdu values for {}: {}".format(key, all_hdu_values))
+
+        # Check if any of of the hdu.header[key] values are in correct
+        all_correct_values = [value for value, has_data in all_hdu_values if value in correct]
+        log.debug("All correct values: {}".format(all_correct_values))
+
+        # If there are more than one correct hdu.header[key] values that have corresponding 3D data, use the first one
+        correct = all_correct_values[0] if len(all_correct_values) > 0 else correct
+        log.debug("Correct value(s) to be used: {}".format(correct))
 
         for ii, hdu in enumerate(self._fits):
             if ii == 0 or (hasattr(hdu, 'data') and hdu.data is not None and len(hdu.data.shape) == 3):
