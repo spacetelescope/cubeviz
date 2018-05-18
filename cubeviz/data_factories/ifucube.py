@@ -7,7 +7,7 @@ from astropy import units as u
 
 logging.basicConfig(level=logging.DEBUG, format="%(filename)s: %(levelname)8s %(message)s")
 log = logging.getLogger('ifcube')
-log.setLevel(logging.DEBUG)
+log.setLevel(logging.WARNING)
 
 
 SPECTRAL_COORD_TYPE_CODES = ["WAVE", "FREQ", "ENER", "WAVN", "VRAD", "VOPT", "ZOPT", "AWAV", "VELO", "BETA"]
@@ -140,7 +140,7 @@ class IFUCube(object):
     def check_ctype3(self, fix=False):
         # The zeroth index of each 'correct' array should contain the default value (S_C_T_C[0] == '[WAVE]')
         all_valid_ctype3s = SPECTRAL_COORD_TYPE_CODES + ['{}{}{}'.format(c, (8-len(a)-len(c))*'-', a) for c in SPECTRAL_COORD_TYPE_CODES for a in NON_LINEAR_ALGORITHM_CODES]
-        self._check_ctype(key='CTYPE3', correct=SPECTRAL_COORD_TYPE_CODES + all_valid_ctype3s, fix=fix)
+        self._check_ctype(key='CTYPE3', correct=all_valid_ctype3s, fix=fix)
 
     def check_cunit1(self, fix=False):
         self._check_ctype(key='CUNIT1', correct='deg', fix=fix)
