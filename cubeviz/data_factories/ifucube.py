@@ -7,7 +7,7 @@ from astropy import units as u
 
 logging.basicConfig(level=logging.DEBUG, format="%(filename)s: %(levelname)8s %(message)s")
 log = logging.getLogger('ifcube')
-log.setLevel(logging.WARNING)
+log.setLevel(logging.DEBUG)
 
 
 SPECTRAL_COORD_TYPE_CODES = ["WAVE", "FREQ", "ENER", "WAVN", "VRAD", "VOPT", "ZOPT", "AWAV", "VELO", "BETA"]
@@ -129,17 +129,17 @@ class IFUCube(object):
 
     def check_ctype1(self, fix=False):
         # The zeroth index of each 'correct' array should contain the default value
-        all_valid_ctype1s = ['RA---TAN'] + ['{}{}{}'.format(a, (8-len(a)-len(c))*'-', c) for c in COORD_TYPES for a in PROJECTIONS]
+        all_valid_ctype1s = ['RA---TAN'] + ['{}{}{}'.format(c, (8-len(a)-len(c))*'-', a) for c in COORD_TYPES for a in PROJECTIONS]
         self._check_ctype(key='CTYPE1', correct=all_valid_ctype1s, fix=fix)
 
     def check_ctype2(self, fix=False):
         # The zeroth index of each 'correct' array should contain the default value
-        all_valid_ctype2s = ['DEC--TAN'] + ['{}{}{}'.format(a, (8-len(a)-len(c))*'-', c) for c in COORD_TYPES for a in PROJECTIONS]
+        all_valid_ctype2s = ['DEC--TAN'] + ['{}{}{}'.format(c, (8-len(a)-len(c))*'-', a) for c in COORD_TYPES for a in PROJECTIONS]
         self._check_ctype(key='CTYPE2', correct=all_valid_ctype2s, fix=fix)
 
     def check_ctype3(self, fix=False):
         # The zeroth index of each 'correct' array should contain the default value (S_C_T_C[0] == '[WAVE]')
-        all_valid_ctype3s = self.combine_arrays_by_size(SPECTRAL_COORD_TYPE_CODES, NON_LINEAR_ALGORITHM_CODES, 8)
+        all_valid_ctype3s = SPECTRAL_COORD_TYPE_CODES + ['{}{}{}'.format(c, (8-len(a)-len(c))*'-', a) for c in SPECTRAL_COORD_TYPE_CODES for a in NON_LINEAR_ALGORITHM_CODES]
         self._check_ctype(key='CTYPE3', correct=SPECTRAL_COORD_TYPE_CODES + all_valid_ctype3s, fix=fix)
 
     def check_cunit1(self, fix=False):
