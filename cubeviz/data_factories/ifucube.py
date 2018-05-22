@@ -16,7 +16,8 @@ NON_LINEAR_ALGORITHM_CODES = ["F2W", "F2V", "F2A", "W2F", "W2V", "W2A", "V2F", "
 
 COORD_TYPES = ["RA", "DEC", "GLON", "GLAT", "ELON", "ELAT", "SELN"]
 PROJECTIONS = ["AZP", "SZP", "TAN", "STG", "SIN", "ARC", "ZPN", "ZEA", "AIR", "CYP", "CEA", "CAR", "MER", "SFL", \
-               "PAR", "MOL", "AIT", "COP", "COE", "COD", "COO", "BON", "PCO", "CSC", "TSC", "QCS", "HPX", "XPH"]
+               "PAR", "MOL", "AIT", "COP", "COE", "COD", "COO", "BON", "PCO", "CSC", "TSC", "QCS", "HPX", "XPH", "TPV",\
+               "TUV"]
 
 
 class IFUCube(object):
