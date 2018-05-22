@@ -10,6 +10,15 @@ log = logging.getLogger('ifcube')
 log.setLevel(logging.WARNING)
 
 
+SPECTRAL_COORD_TYPE_CODES = ["WAVE", "FREQ", "ENER", "WAVN", "VRAD", "VOPT", "ZOPT", "AWAV", "VELO", "BETA"]
+NON_LINEAR_ALGORITHM_CODES = ["F2W", "F2V", "F2A", "W2F", "W2V", "W2A", "V2F", "V2W", "V2A", "A2F", "A2W", "A2V", \
+                              "LOG", "GRI", "GRA", "TAB"]
+
+COORD_TYPES = ["RA", "DEC", "GLON", "GLAT", "ELON", "ELAT", "SELN"]
+PROJECTIONS = ["AZP", "SZP", "TAN", "STG", "SIN", "ARC", "ZPN", "ZEA", "AIR", "CYP", "CEA", "CAR", "MER", "SFL", \
+               "PAR", "MOL", "AIT", "COP", "COE", "COD", "COO", "BON", "PCO", "CSC", "TSC", "QCS"]
+
+
 class IFUCube(object):
     """
     Check and correct the IFUCube
@@ -119,13 +128,19 @@ class IFUCube(object):
         return good
 
     def check_ctype1(self, fix=False):
-        self._check_ctype(key='CTYPE1', correct='RA---TAN', fix=fix)
+        # The zeroth index of each 'correct' array should contain the default value
+        all_valid_ctype1s = ['RA---TAN'] + ['{}{}{}'.format(c, (8-len(a)-len(c))*'-', a) for c in COORD_TYPES for a in PROJECTIONS]
+        self._check_ctype(key='CTYPE1', correct=all_valid_ctype1s, fix=fix)
 
     def check_ctype2(self, fix=False):
-        self._check_ctype(key='CTYPE2', correct='DEC--TAN', fix=fix)
+        # The zeroth index of each 'correct' array should contain the default value
+        all_valid_ctype2s = ['DEC--TAN'] + ['{}{}{}'.format(c, (8-len(a)-len(c))*'-', a) for c in COORD_TYPES for a in PROJECTIONS]
+        self._check_ctype(key='CTYPE2', correct=all_valid_ctype2s, fix=fix)
 
     def check_ctype3(self, fix=False):
-        self._check_ctype(key='CTYPE3', correct='WAVE', fix=fix)
+        # The zeroth index of each 'correct' array should contain the default value (S_C_T_C[0] == '[WAVE]')
+        all_valid_ctype3s = SPECTRAL_COORD_TYPE_CODES + ['{}{}{}'.format(c, (8-len(a)-len(c))*'-', a) for c in SPECTRAL_COORD_TYPE_CODES for a in NON_LINEAR_ALGORITHM_CODES]
+        self._check_ctype(key='CTYPE3', correct=all_valid_ctype3s, fix=fix)
 
     def check_cunit1(self, fix=False):
         self._check_ctype(key='CUNIT1', correct='deg', fix=fix)
@@ -145,6 +160,23 @@ class IFUCube(object):
         :return: boolean whether it is good or not
         """
         log.debug('In check for {}'.format(key))
+
+        # Creates a list of tuples (originals only), which have the shape: (hdu.header[key], if hdu has 3D data)
+        all_hdu_values = list(set([(hdu.header[key], (hasattr(hdu, 'data') and hdu.data is not None and\
+                                              len(hdu.data.shape) == 3)) for hdu in self._fits if hasattr(hdu, "header") and key in hdu.header]))
+
+        # Sort by has_data and now you have the hdu.header[key] values which have corresponding data in the first (or
+        # first few) indices
+        all_hdu_values.sort(key=lambda tup: tup[1], reverse=True)
+        log.debug("All hdu values for {}: {}".format(key, all_hdu_values))
+
+        # Check if any of of the hdu.header[key] values are in correct
+        all_correct_values = [value for value, has_data in all_hdu_values if value in correct]
+        log.debug("All correct values: {}".format(all_correct_values))
+
+        # If there are more than one correct hdu.header[key] values that have corresponding 3D data, use the first one
+        correct = all_correct_values[0] if len(all_correct_values) > 0 else correct
+        log.debug("Correct value(s) to be used: {}".format(correct))
 
         for ii, hdu in enumerate(self._fits):
             if ii == 0 or (hasattr(hdu, 'data') and hdu.data is not None and len(hdu.data.shape) == 3):
