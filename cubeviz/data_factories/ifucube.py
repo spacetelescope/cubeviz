@@ -14,7 +14,6 @@ class IFUCube(object):
     """
     Check and correct the IFUCube
     """
-
     def __init__(self):
         self._fits = None
         self._filename = None
