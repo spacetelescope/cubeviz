@@ -64,6 +64,7 @@ class IFUCube(object):
         """
         Check all checkers
         """
+        
         log.debug('In check with filename {} and fix {}'.format(self._filename, fix))
         self._log_text['>front'] = 'Checking filename {}\n'.format(self._filename)
 
