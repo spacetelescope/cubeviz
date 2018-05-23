@@ -511,10 +511,18 @@
        <enum>Qt::Vertical</enum>
       </property>
       <widget class="QWidget" name="image_row">
-       <layout class="QHBoxLayout" name="image_row_layout"/>
+       <layout class="QHBoxLayout" name="image_row_layout">
+        <property name="spacing">
+         <number>2</number>
+        </property>
+       </layout>
       </widget>
       <widget class="QWidget" name="specviz">
-       <layout class="QHBoxLayout" name="specviz_layout"/>
+       <layout class="QHBoxLayout" name="specviz_layout">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+       </layout>
       </widget>
      </widget>
     </widget>
