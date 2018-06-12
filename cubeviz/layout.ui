@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1158</width>
-    <height>647</height>
+    <width>1383</width>
+    <height>864</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -82,16 +82,7 @@
          <property name="spacing">
           <number>1</number>
          </property>
-         <property name="leftMargin">
-          <number>2</number>
-         </property>
-         <property name="topMargin">
-          <number>2</number>
-         </property>
-         <property name="rightMargin">
-          <number>2</number>
-         </property>
-         <property name="bottomMargin">
+         <property name="margin">
           <number>2</number>
          </property>
          <item>
@@ -128,6 +119,12 @@
       </item>
       <item row="2" column="2">
        <widget class="QFrame" name="frame_2">
+        <property name="maximumSize">
+         <size>
+          <width>379</width>
+          <height>16777215</height>
+         </size>
+        </property>
         <property name="font">
          <font>
           <weight>50</weight>
@@ -139,13 +136,13 @@
         </property>
         <layout class="QGridLayout" name="gridLayout_2">
          <property name="leftMargin">
-          <number>2</number>
+          <number>6</number>
          </property>
          <property name="topMargin">
           <number>0</number>
          </property>
          <property name="rightMargin">
-          <number>2</number>
+          <number>6</number>
          </property>
          <property name="bottomMargin">
           <number>2</number>
@@ -285,6 +282,12 @@
       </item>
       <item row="2" column="6">
        <widget class="QFrame" name="frame">
+        <property name="maximumSize">
+         <size>
+          <width>305</width>
+          <height>70</height>
+         </size>
+        </property>
         <property name="frameShape">
          <enum>QFrame::StyledPanel</enum>
         </property>
@@ -293,13 +296,13 @@
         </property>
         <layout class="QGridLayout" name="gridLayout">
          <property name="leftMargin">
-          <number>2</number>
+          <number>6</number>
          </property>
          <property name="topMargin">
           <number>0</number>
          </property>
          <property name="rightMargin">
-          <number>2</number>
+          <number>6</number>
          </property>
          <property name="bottomMargin">
           <number>2</number>
@@ -394,6 +397,12 @@
            <property name="enabled">
             <bool>false</bool>
            </property>
+           <property name="maximumSize">
+            <size>
+             <width>104</width>
+             <height>26</height>
+            </size>
+           </property>
           </widget>
          </item>
          <item row="0" column="1">
@@ -421,16 +430,7 @@
          <property name="spacing">
           <number>1</number>
          </property>
-         <property name="leftMargin">
-          <number>2</number>
-         </property>
-         <property name="topMargin">
-          <number>2</number>
-         </property>
-         <property name="rightMargin">
-          <number>2</number>
-         </property>
-         <property name="bottomMargin">
+         <property name="margin">
           <number>2</number>
          </property>
          <item>
