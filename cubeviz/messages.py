@@ -45,7 +45,8 @@ class RedshiftUpdateMessage(Message):
 
 class FluxUnitsUpdateMessage(Message):
 
-    def __init__(self, sender, flux_units, component_id, tag=None):
+    def __init__(self, sender, cubeviz_unit, component_id, tag=None):
         super(FluxUnitsUpdateMessage, self).__init__(sender, tag=tag)
-        self.flux_units = flux_units
+        self.cubeviz_unit = cubeviz_unit
+        self.flux_units = cubeviz_unit.unit
         self.component_id = component_id

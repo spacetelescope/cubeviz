@@ -65,13 +65,14 @@ class CubevizManager(HubListener):
     def handle_new_component(self, message):
         component_id = message.component_id
         data = component_id.parent
-        if data is self._layout._flux_unit_controller.data:
-            units = data.get_component(component_id).units
-            self._layout._flux_unit_controller.add_component_unit(component_id, units)
+        units = data.get_component(component_id).units
+        self._layout._flux_unit_controller.add_component_unit(component_id, units)
         self._layout.display_component(component_id)
 
     def handle_remove_component(self, message):
-        self._layout.remove_data_component(message.component_id)
+        component_id = message.component_id
+        self._layout.remove_data_component(component_id)
+        self._layout._flux_unit_controller.remove_component_unit(component_id)
 
     def handle_settings_change(self, message):
         if self._layout is not None:
