@@ -31,19 +31,18 @@ env:
         - NUMPY_VERSION=stable
         - ASTROPY_VERSION=stable
         # Pull specviz from github until it is released on PyPi and/or conda
-        - SPECVIZ_GIT='git+https://github.com/spacetelescope/specviz#egg=specviz'
         - MAIN_CMD='pytest'
         - SETUP_CMD=''
         - EVENT_TYPE='pull_request push'
 
         # List other runtime dependencies for the package that are available as
         # conda packages here.
-        - CONDA_DEPENDENCIES='pyqt matplotlib scipy glue-core>=0.12 asdf'
+        - CONDA_DEPENDENCIES='pyqt matplotlib scipy glue-core>=0.12 asdf specviz=0.5'
         - CONDA_VERSION=4.3.31
 
         # List other runtime dependencies for the package that are available as
         # pip packages here.
-        - PIP_DEPENDENCIES="pytest-qt $SPECVIZ_GIT"
+        - PIP_DEPENDENCIES="pytest-qt"
 
         # Conda packages for affiliated packages are hosted in channel
         # "astropy" while builds for astropy LTS with recent numpy versions
