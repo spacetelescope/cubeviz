@@ -616,9 +616,11 @@ class CubevizImageViewer(ImageViewer):
 
         # If the active widget is synced then we need to update the image
         # in all the other synced views.
-        if (active_widget.synced and self.synced and not \
-            self.cubeviz_layout._single_viewer_mode) or \
-                active_widget is self:
+        if (active_widget.synced and
+            self.synced and not
+            self.cubeviz_layout._single_viewer_mode and not
+            self._has_2d_data) or \
+            active_widget is self:
             if message.slider_down:
                 self.fast_draw_slice_at_index(index)
             else:
