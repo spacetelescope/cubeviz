@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1133</width>
-    <height>531</height>
+    <width>1126</width>
+    <height>565</height>
    </rect>
   </property>
   <property name="maximumSize">
@@ -60,7 +60,7 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>1125</width>
+        <width>1118</width>
         <height>58</height>
        </rect>
       </property>
@@ -72,7 +72,7 @@
         <widget class="QFrame" name="frame">
          <property name="minimumSize">
           <size>
-           <width>980</width>
+           <width>1050</width>
            <height>50</height>
           </size>
          </property>
@@ -323,13 +323,13 @@
            <widget class="QFrame" name="frame_2">
             <property name="minimumSize">
              <size>
-              <width>360</width>
+              <width>430</width>
               <height>50</height>
              </size>
             </property>
             <property name="maximumSize">
              <size>
-              <width>16777215</width>
+              <width>430</width>
               <height>50</height>
              </size>
             </property>
@@ -371,8 +371,14 @@
                </property>
                <property name="minimumSize">
                 <size>
-                 <width>160</width>
+                 <width>180</width>
                  <height>0</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>180</width>
+                 <height>16777215</height>
                 </size>
                </property>
                <property name="font">
@@ -431,7 +437,7 @@
               <widget class="QLineEdit" name="wavelength_textbox">
                <property name="maximumSize">
                 <size>
-                 <width>150</width>
+                 <width>180</width>
                  <height>22</height>
                 </size>
                </property>
