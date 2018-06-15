@@ -48,7 +48,7 @@ class SliceController(HubListener):
         # We are not going to enforce what the name should be at this level.
         self._wavelength_label_text = OBS_WAVELENGTH_TEXT
 
-        self._wavelength_format = '{:.3}'
+        self._wavelength_format = '{:.4e}'
         self._wavelength_units = None
         self._wavelengths = None
 
