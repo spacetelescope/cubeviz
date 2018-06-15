@@ -356,7 +356,7 @@
               <number>2</number>
              </property>
              <property name="horizontalSpacing">
-              <number>9</number>
+              <number>6</number>
              </property>
              <property name="verticalSpacing">
               <number>0</number>
@@ -470,13 +470,13 @@
               <widget class="QSlider" name="slice_slider">
                <property name="minimumSize">
                 <size>
-                 <width>150</width>
+                 <width>170</width>
                  <height>0</height>
                 </size>
                </property>
                <property name="maximumSize">
                 <size>
-                 <width>300</width>
+                 <width>170</width>
                  <height>16777215</height>
                 </size>
                </property>
