@@ -75,6 +75,11 @@ class SliceController(HubListener):
 
         self._slice_slider.setMinimum(0)
 
+    def format_wavelength(self, wavelength):
+        string = self._wavelength_format.format(wavelength)
+        string = string.replace("e+00", "")
+        return string
+
     def _handle_wavelength_units_update(self, message):
 
         # Store the wavelength units and format
@@ -96,7 +101,7 @@ class SliceController(HubListener):
             self.synced_index = middle_index
 
         index = self._cv_layout._active_cube._widget.slice_index
-        self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[index]))
+        self._wavelength_textbox.setText(self.format_wavelength(self._wavelengths[index]))
 
     def _handle_redshift_update(self, message):
 
@@ -137,7 +142,7 @@ class SliceController(HubListener):
             wavelength = -1
             wv_index = -1
 
-        self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[index]))
+        self._wavelength_textbox.setText(self.format_wavelength(self._wavelengths[index]))
 
         slider_index = self._slice_slider.value()
         if slider_index != index:
@@ -204,7 +209,7 @@ class SliceController(HubListener):
         self._slice_textbox.setText(str(index))
 
         # Update the wavelength for the corresponding slice number.
-        self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[index]))
+        self._wavelength_textbox.setText(self.format_wavelength(self._wavelengths[index]))
 
     def _on_text_slice_change(self, event=None):
         """
