@@ -69,7 +69,7 @@ def test_wavelength_slider(cubeviz_layout, slice_index, cube_bounds):
     assert_all_viewer_indices(cubeviz_layout, slice_index)
 
     # Make sure that wavelength text matches slice value
-    wavelength_text = "{:.3}".format(cube_bounds['wavelengths'][slice_index])
+    wavelength_text = "{:.4e}".format(cube_bounds['wavelengths'][slice_index])
     assert_wavelength_text(cubeviz_layout, wavelength_text)
 
 # These wavelengths are tuned to test the data file data_cube.fits.gz
@@ -85,7 +85,7 @@ def test_nearest_slice_index(qtbot, cubeviz_layout, wavelength, cube_bounds):
     slice_index = find_nearest_slice(wavelengths, wavelength)
     assert_all_viewer_indices(cubeviz_layout, slice_index)
     assert_slice_text(cubeviz_layout, slice_index)
-    wavelength_text = "{:.3}".format(wavelengths[slice_index])
+    wavelength_text = "{:.4e}".format(wavelengths[slice_index])
     assert_wavelength_text(cubeviz_layout, wavelength_text)
 
 def test_enter_oob_wavelength_text(qtbot, cubeviz_layout, cube_bounds):
