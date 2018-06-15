@@ -336,22 +336,22 @@ def test_wavelength_ui(qtbot, cubeviz_layout, slice_index=1000):
     # First move to the a specific slice
     enter_slice_text(qtbot, cubeviz_layout, slice_index)
     assert_slice_text(cubeviz_layout, slice_index)
-    assert_wavelength_text(cubeviz_layout, '2.21e-06')
+    assert_wavelength_text(cubeviz_layout, '2.2058e-06')
 
     # Now change the units
     wui.do_calculation(wavelength_redshift=0, wavelength_units='um')
-    assert_wavelength_text(cubeviz_layout, '2.21')
+    assert_wavelength_text(cubeviz_layout, '2.2058')
 
     # Units and redshift
     wui.do_calculation(wavelength_redshift=1, wavelength_units='um')
-    assert_wavelength_text(cubeviz_layout, '1.1')
+    assert_wavelength_text(cubeviz_layout, '1.1029')
 
     # Units and negative redshift
     wui.do_calculation(wavelength_redshift=-3, wavelength_units='um')
-    assert_wavelength_text(cubeviz_layout, '-1.1')
+    assert_wavelength_text(cubeviz_layout, '-1.1029')
 
     # with the units and redshift, go to another slice
     enter_slice_text(qtbot, cubeviz_layout, 2000)
-    assert_wavelength_text(cubeviz_layout, '-1.24')
+    assert_wavelength_text(cubeviz_layout, '-1.2433')
 
     wui.do_calculation(wavelength_redshift=0, wavelength_units='m')

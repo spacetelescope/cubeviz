@@ -1,6 +1,7 @@
 import numpy as np
 
 from glue.core import HubListener
+from glue.utils.array import format_minimal
 from specviz.third_party.glue.data_viewer import dispatch as specviz_dispatch
 
 from ..messages import (SliceIndexUpdateMessage, WavelengthUpdateMessage,
@@ -85,6 +86,7 @@ class SliceController(HubListener):
 
         # Grab the wavelengths so they can be displayed in the text box
         self._wavelengths = message.wavelengths
+        self._wavelength_format = format_minimal(self._wavelengths)[0]
         self._slice_slider.setMaximum(len(self._wavelengths) - 1)
 
         if self.synced_index is None:
