@@ -1,6 +1,7 @@
 import numpy as np
 
 from glue.core import HubListener
+from glue.utils.array import format_minimal
 from specviz.third_party.glue.data_viewer import dispatch as specviz_dispatch
 
 from ..messages import (SliceIndexUpdateMessage, WavelengthUpdateMessage,
@@ -48,7 +49,7 @@ class SliceController(HubListener):
         # We are not going to enforce what the name should be at this level.
         self._wavelength_label_text = OBS_WAVELENGTH_TEXT
 
-        self._wavelength_format = '{:.3}'
+        self._wavelength_format = '{:.4e}'
         self._wavelength_units = None
         self._wavelengths = None
 
@@ -74,6 +75,11 @@ class SliceController(HubListener):
 
         self._slice_slider.setMinimum(0)
 
+    def format_wavelength(self, wavelength):
+        string = self._wavelength_format.format(wavelength)
+        string = string.replace("e+00", "")
+        return string
+
     def _handle_wavelength_units_update(self, message):
 
         # Store the wavelength units and format
@@ -85,6 +91,7 @@ class SliceController(HubListener):
 
         # Grab the wavelengths so they can be displayed in the text box
         self._wavelengths = message.wavelengths
+        self._wavelength_format = format_minimal(self._wavelengths)[0]
         self._slice_slider.setMaximum(len(self._wavelengths) - 1)
 
         if self.synced_index is None:
@@ -94,7 +101,7 @@ class SliceController(HubListener):
             self.synced_index = middle_index
 
         index = self._cv_layout._active_cube._widget.slice_index
-        self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[index]))
+        self._wavelength_textbox.setText(self.format_wavelength(self._wavelengths[index]))
 
     def _handle_redshift_update(self, message):
 
@@ -135,7 +142,7 @@ class SliceController(HubListener):
             wavelength = -1
             wv_index = -1
 
-        self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[index]))
+        self._wavelength_textbox.setText(self.format_wavelength(self._wavelengths[index]))
 
         slider_index = self._slice_slider.value()
         if slider_index != index:
@@ -202,7 +209,7 @@ class SliceController(HubListener):
         self._slice_textbox.setText(str(index))
 
         # Update the wavelength for the corresponding slice number.
-        self._wavelength_textbox.setText(self._wavelength_format.format(self._wavelengths[index]))
+        self._wavelength_textbox.setText(self.format_wavelength(self._wavelengths[index]))
 
     def _on_text_slice_change(self, event=None):
         """
