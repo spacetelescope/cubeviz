@@ -470,6 +470,8 @@ class AbortWindow(QDialog):
 
         self.abort_flag = False
 
+        self.info_box = None
+
         # vbl is short for Vertical Box Layout
         vbl = QVBoxLayout()
         vbl.addWidget(self.label_a_1)
@@ -514,6 +516,14 @@ class AbortWindow(QDialog):
         self.abort_flag = True
         self.parent.clean_up()
 
+    def show_error_message(self, message, title, parent=None):
+        self.info_box = QMessageBox(parent=parent)
+        self.info_box.setIcon(QMessageBox.Information)
+        self.info_box.setText(message)
+        self.info_box.setWindowTitle(title)
+        self.info_box.setStandardButtons(QMessageBox.Ok)
+        self.info_box.show()
+
     def smoothing_done(self, component_id=None):
         """Notify user success"""
         self.hide()
@@ -527,7 +537,7 @@ class AbortWindow(QDialog):
                       " \"{0}\" and can be selected" \
                       " in the viewer drop-down menu.".format(component_id)
 
-        info = QMessageBox.information(self, "Success", message)
+        self.show_error_message(message, "Success", self)
         self.clean_up()
 
     def print_error(self, exception):
@@ -538,7 +548,7 @@ class AbortWindow(QDialog):
         else:
             message = "Smoothing Failed!\n\n" + str(exception)
 
-        info = QMessageBox.critical(self, "Error", message)
+        self.show_error_message(message, "Error", self)
         self.clean_up()
 
     def clean_up(self):
