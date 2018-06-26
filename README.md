@@ -4,12 +4,12 @@
 
 For documentation see http://cubeviz.readthedocs.io/en/latest/
 
-## Release 0.2.0
+## Release 0.2.1
 
-We are pleased to announce the release of CubeViz, a visualization and analysis tool for data cubes from integral field units (IFUs). This is an early release (v0.2.0) and we would appreciate your feedback.  It is built on top of the "glue" visualization tool.
+We are pleased to announce the release of CubeViz, a visualization and analysis tool for data cubes from integral field units (IFUs). This is an early release (v0.2.1) and we would appreciate your feedback.  It is built on top of the "glue" visualization tool.
 
 To install:
-  * Install [Minconda3](https://conda.io/miniconda.html) if it is not on your system
+  * Install [Minconda3](https://conda.io/miniconda.html) if it is not on your system (**)
   * To install, type: `$ conda create -n cubeviz020 -c glueviz cubeviz`
   
 To run:
@@ -26,6 +26,8 @@ More info on glue: http://glueviz.org
 If you run into any issues or have suggestions for new features, we encourage you to create issues on GitHub or send comments to https://www.susankassin.com/contact/
 
 This release requires Python 3.5 or 3.6.
+
+** Note: There have been some issues with Miniconda3 with conda version less than 4.5.  If you see any problems with installation or running cubeviz and your conda version is less than 4.5 it is best to update to 4.5.  See [upgrade instructions](https://conda.io/miniconda.html) for more information.
 
 ![](/docs/images/CubeViz_splitviewer.png)
 
