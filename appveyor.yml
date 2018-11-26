@@ -22,7 +22,6 @@ environment:
       # add the channels to CONDA_CHANNELS along with any other channels
       # you want to use.
       CONDA_CHANNELS: "glueviz/label/dev glueviz astropy-ci-extras astropy"
-      CONDA_VERSION: "4.3.31"
 
   matrix:
 
