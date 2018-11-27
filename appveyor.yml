@@ -26,7 +26,8 @@ environment:
   matrix:
 
       - PYTHON_VERSION: "3.5"
-        ASTROPY_VERSION: "stable"
+        ASTROPY_VERSION: "3.0.4"
+        MATPLOTLIB_VERSION: "2.2"
 
       - PYTHON_VERSION: "3.6"
         ASTROPY_VERSION: "stable"
