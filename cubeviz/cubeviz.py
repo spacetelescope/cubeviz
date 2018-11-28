@@ -5,7 +5,7 @@ import argparse
 import os
 
 from glue.app.qt import GlueApplication
-from glue.main import restore_session, get_splash, load_data_files, load_plugins
+from glue.main import get_splash, load_data_files, load_plugins
 from qtpy.QtCore import QTimer
 from qtpy import QtGui, QtWidgets
 
