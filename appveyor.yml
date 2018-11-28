@@ -12,7 +12,7 @@ environment:
                         # to the matrix section.
 
       NUMPY_VERSION: "stable"
-      CONDA_DEPENDENCIES: "pyqt matplotlib scipy glue-core>=0.12 asdf specviz=0.5"
+      CONDA_DEPENDENCIES: "pyqt scipy glue-core>=0.13 asdf specviz==0.5 specutils=0.2.2"
       PIP_DEPENDENCIES: "pytest-qt"
 
       # Conda packages for affiliated packages are hosted in channel
@@ -21,12 +21,8 @@ environment:
       # add the channels to CONDA_CHANNELS along with any other channels
       # you want to use.
       CONDA_CHANNELS: "glueviz/label/dev glueviz astropy-ci-extras astropy"
-      CONDA_VERSION: "4.3.31"
 
   matrix:
-
-      - PYTHON_VERSION: "3.5"
-        ASTROPY_VERSION: "stable"
 
       - PYTHON_VERSION: "3.6"
         ASTROPY_VERSION: "stable"
