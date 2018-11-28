@@ -37,7 +37,7 @@ env:
 
         # List other runtime dependencies for the package that are available as
         # conda packages here.
-        - CONDA_DEPENDENCIES='pyqt matplotlib scipy glue-core=0.13 asdf specviz=0.5 specutils=0.2.2'
+        - CONDA_DEPENDENCIES='pyqt matplotlib scipy glue-core>=0.13 asdf specviz=0.5 specutils=0.2.2'
         - CONDA_VERSION=4.3.31
 
         # List other runtime dependencies for the package that are available as
