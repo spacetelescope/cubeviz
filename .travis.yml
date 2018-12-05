@@ -65,8 +65,10 @@ matrix:
     fast_finish: true
 
     include:
-        # Try MacOS X
+        # Try MacOS X and Windows
         - os: osx
+
+        - os: windows
 
         # Do a coverage test.
         # os: linux
