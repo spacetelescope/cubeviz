@@ -37,7 +37,7 @@ env:
 
         # List other runtime dependencies for the package that are available as
         # conda packages here.
-        - CONDA_DEPENDENCIES='pyqt matplotlib scipy glue-core>=0.12 asdf specviz=0.5'
+        - CONDA_DEPENDENCIES='pyqt matplotlib scipy glue-core>=0.13 asdf specviz=0.5 specutils=0.2.2'
         - CONDA_VERSION=4.3.31
 
         # List other runtime dependencies for the package that are available as
@@ -57,7 +57,6 @@ env:
 
     matrix:
         # Make sure that egg_info works without dependencies
-        - PYTHON_VERSION=3.5 MAIN_CMD='python setup.py' SETUP_CMD='egg_info'
         - PYTHON_VERSION=3.6 MAIN_CMD='python setup.py' SETUP_CMD='egg_info'
 
 matrix:
@@ -73,9 +72,9 @@ matrix:
         # os: linux
         #  env: SETUP_CMD='--coverage'
 
-        # Test against Python 3.5
-        - os: linux
-          env: PYTHON_VERSION=3.5
+        # Test against Python 3.7
+        #- os: linux
+        #  env: PYTHON_VERSION=3.7
 
         # Check for sphinx doc build warnings - we do this first because it
         # may run for a long time
