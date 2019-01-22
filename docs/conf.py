@@ -47,8 +47,6 @@ setup_cfg = dict(conf.items('metadata'))
 
 # -- General configuration ----------------------------------------------------
 
-extensions += ['recommonmark']
-
 # By default, highlight as Python 3.
 highlight_language = 'python3'
 
