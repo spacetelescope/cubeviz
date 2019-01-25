@@ -16,8 +16,7 @@ from ...tests.helpers import (toggle_viewer, select_viewer, left_click,
 DATA_LABELS = ['018.DATA', '018.NOISE']
 
 
-@pytest.fixture(scope='module')
-def collapse_cube(cubeviz_layout):
+def create_collapsed_cube(cubeviz_layout):
     cl = cubeviz_layout
 
     wavelengths = cubeviz_layout._wavelength_controller.wavelengths
@@ -28,13 +27,18 @@ def collapse_cube(cubeviz_layout):
     return cc
 
 
+@pytest.fixture(scope='module')
+def collapse_cube_gui(cubeviz_layout):
+    return create_collapsed_cube(cubeviz_layout)
+
+
 def assert_red_stylesheet(widget):
     assert widget.styleSheet() == "color: rgba(255, 0, 0, 128)"
 
 
-def test_collapse_ui(qtbot, collapse_cube):
+def test_collapse_ui(qtbot, collapse_cube_gui):
 
-    cc = collapse_cube
+    cc = collapse_cube_gui
     cc.ui.start_input.setText('a')
     qtbot.mouseClick(cc.ui.calculate_button, QtCore.Qt.LeftButton)
     assert_red_stylesheet(cc.ui.start_label)
@@ -69,9 +73,9 @@ def test_collapse_ui(qtbot, collapse_cube):
     assert_red_stylesheet(cc.ui.advanced_sigma_lower_label)
     assert_red_stylesheet(cc.ui.advanced_sigma_upper_label)
 
-def test_starting_state(cubeviz_layout):
+def test_starting_state(collapse_cube_gui, cubeviz_layout):
 
-    cc = collapse_cube(cubeviz_layout)
+    cc = collapse_cube_gui
 
     # No clipping
     data_name = DATA_LABELS[0]
@@ -131,7 +135,9 @@ def test_regions(qtbot, cubeviz_layout):
     # Create a pretty arbitrary circular ROI
     viewer.apply_roi(roi.CircularROI(xc=6, yc=10, radius=3))
 
-    cc = collapse_cube(cubeviz_layout)
+    # Don't use the fixture here since we modified the underlying viewer state
+    # above first.
+    cc = create_collapsed_cube(cubeviz_layout)
 
     start_index = 682
     end_index = 1364
