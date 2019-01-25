@@ -17,7 +17,7 @@ DATA_LABELS = ['018.DATA', '018.NOISE']
 
 
 @pytest.fixture(scope='module')
-def moment_maps(cubeviz_layout):
+def moment_maps_gui(cubeviz_layout):
     cl = cubeviz_layout
 
     mm = MomentMapsGUI(cl._data, cl.session.data_collection, parent=cl)
@@ -29,9 +29,9 @@ def assert_red_stylesheet(widget):
     assert widget.styleSheet() == "color: rgba(255, 0, 0, 128)"
 
 
-def test_moment_maps_1(cubeviz_layout):
+def test_moment_maps_1(moment_maps_gui, cubeviz_layout):
     # Create GUI
-    mm = moment_maps(cubeviz_layout)
+    mm = moment_maps_gui
     mm.display()
     mm.order_combobox.setCurrentIndex(0)
     mm.data_combobox.setCurrentIndex(0)
@@ -50,9 +50,9 @@ def test_moment_maps_1(cubeviz_layout):
 
     assert np.allclose(cube_moment, np_result, rtol=0.01, equal_nan=True)
 
-def test_moment_maps_2(cubeviz_layout):
+def test_moment_maps_2(moment_maps_gui, cubeviz_layout):
     # Create GUI
-    mm = moment_maps(cubeviz_layout)
+    mm = moment_maps_gui
     mm.display()
     mm.order_combobox.setCurrentIndex(1)
     mm.data_combobox.setCurrentIndex(0)
