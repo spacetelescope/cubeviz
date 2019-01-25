@@ -1,6 +1,8 @@
-conda:
-  file: test-environment.yml
+build:
+  image: latest
+
+requirements_file: pip-requirements-docs
 
 python:
-   setup_py_install: true
-   version: 3.5
+   setup_py_install: false
+   version: 3.6
