@@ -18,7 +18,7 @@ from glue.core.message import (SettingsChangeMessage, SubsetUpdateMessage,
 from glue.utils.matplotlib import freeze_margins
 from glue.dialogs.component_arithmetic.qt import ArithmeticEditorWidget
 
-from specviz.third_party.glue.data_viewer import SpecVizViewer
+from specviz.third_party.glue.viewer import SpecVizViewer
 from specviz.core.events import dispatch
 
 from .toolbar import CubevizToolbar
