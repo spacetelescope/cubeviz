@@ -1,6 +1,7 @@
 # CubeViz
 
 ![](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)
+[![Coverage Status](https://coveralls.io/repos/github/spacetelescope/cubeviz/badge.svg?branch=master)](https://coveralls.io/github/spacetelescope/cubeviz?branch=master)
 
 For documentation see http://cubeviz.readthedocs.io/en/latest/
 
