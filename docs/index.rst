@@ -1,7 +1,18 @@
 CubeViz: Visualization & Analysis Tool for Data Cubes from Integral Field Units (IFUs)
 ======================================================================================
 
-CubeViz is an visualization and analysis toolbox for data cubes from `integral field units (IFUs) <https://jwst-docs.stsci.edu/display/JPP/Introduction+to+IFU+Spectroscopy>`_.  It is built as part of the `glue visualiztion tool <http://glueviz.org>`_.  CubeViz is designed to work with data cubes from the `NIRSpec <https://jwst-docs.stsci.edu/display/JTI/NIRSpec+IFU+Spectroscopy>`_ and `MIRI <https://jwst-docs.stsci.edu/display/JTI/MIRI+Medium-Resolution+Spectroscopy>`_ instruments on `JWST <https://jwst-docs.stsci.edu/display/HOM/JWST+User+Documentation+Home>`_, and will work with data cubes from any IFU.  It uses the `specutils <https://specutils.readthedocs.io/en/latest/>`_ package from `Astropy <http://www.astropy.org>`_.
+CubeViz is an visualization and analysis toolbox for data cubes from `integral
+field units (IFUs)
+<https://jwst-docs.stsci.edu/display/JPP/Introduction+to+IFU+Spectroscopy>`__.
+It is built as part of the `glue visualiztion tool <http://glueviz.org>`__.
+CubeViz is designed to work with data cubes from the `NIRSpec
+<https://jwst-docs.stsci.edu/display/JTI/NIRSpec+IFU+Spectroscopy>`__ and `MIRI
+<https://jwst-docs.stsci.edu/display/JTI/MIRI+Medium-Resolution+Spectroscopy>`__
+instruments on `JWST
+<https://jwst-docs.stsci.edu/display/HOM/JWST+User+Documentation+Home>`__, and
+will work with data cubes from any IFU.  It uses the `specutils
+<https://specutils.readthedocs.io/en/latest/>`__ package from `Astropy
+<http://www.astropy.org>`__.
 
 The core functionality of CubeViz currently includes the ability to:
   * view the wavelength slices (RA, DEC) in a data cube,
@@ -16,7 +27,7 @@ Future functionality will include the ability to:
   * create moment maps,
   * create kinematic maps (rotation velocity and velocity dispersion),
   * create RGB images from regions collapsed in wavelength space (i.e., linemaps),
-  * perform continuum subtraction,  
+  * perform continuum subtraction,
   * overlay spectral line lists,
   * save edited cubes,
   * create publication quality figures,
