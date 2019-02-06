@@ -105,8 +105,7 @@ matrix:
 
         # Add in coveralls coverage run
         - os: linux
-          env: MAIN_CMD='test --coverage --open-files --remote-data'
-
+          env: MAIN_CMD='coveralls --rcfile="cubeviz/tests/coveragerc"'
 
     allow_failures:
         # Allow failures against numpy dev
@@ -151,4 +150,4 @@ script:
 after_success:
     # If coveralls.io is set up for this package, uncomment the line below.
     # The coveragerc file may be customized as needed for your package.
-    - if [[ $SETUP_CMD == *coverage* ]]; then coveralls --rcfile='cubeviz/tests/coveragerc'; fi
+    #- if [[ $SETUP_CMD == *coverage* ]]; then coveralls --rcfile='cubeviz/tests/coveragerc'; fi
