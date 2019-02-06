@@ -103,6 +103,11 @@ matrix:
         - os: linux
           env: MAIN_CMD='pycodestyle cubeviz --count' SETUP_CMD=''
 
+        # Add in coveralls coverage run
+        - os: linux
+          env: SETUP_CMD='test --coverage --open-files --remote-data'
+
+
     allow_failures:
         # Allow failures against numpy dev
         - os: linux
