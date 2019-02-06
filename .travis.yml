@@ -105,7 +105,7 @@ matrix:
 
         # Add in coveralls coverage run
         - os: linux
-          env: SETUP_CMD='test --coverage --open-files --remote-data'
+          env: MAIN_CMD='test --coverage --open-files --remote-data'
 
 
     allow_failures:
