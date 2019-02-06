@@ -58,6 +58,9 @@ matrix:
         - os: windows
           env: TOXENV='py36'
 
+        # Test against Py37 (expected to fail for now)
+        - env: TOXENV='py37'
+
         # Try building against Astropy dev
         - env: TOXENV='py36-astrodev'
 
@@ -69,6 +72,7 @@ matrix:
 
     allow_failures:
         - env: TOXENV='style' TOX_ARGS=''
+        - env: TOXENV='py37'
         - env: TOXENV='py36-astrodev'
         - env: TOXENV='py36-numpydev'
         - env: TOXENV='py36-gluedev'
