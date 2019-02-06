@@ -68,6 +68,7 @@ matrix:
         - env: TOXENV='py36-gluedev'
 
     allow_failures:
+        - env: TOXENV='style' TOX_ARGS=''
         - env: TOXENV='py36-astrodev'
         - env: TOXENV='py36-numpydev'
         - env: TOXENV='py36-gluedev'
