@@ -55,6 +55,9 @@ matrix:
         - os: osx
           env: TOXENV='py36'
 
+        - os: windows
+          env: TOXENV='py36'
+
         # Test against Py37 (expected to fail for now)
         - env: TOXENV='py37'
 
