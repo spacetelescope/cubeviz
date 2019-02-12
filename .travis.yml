@@ -55,9 +55,6 @@ matrix:
         - os: osx
           env: TOXENV='py36'
 
-        - os: windows
-          env: TOXENV='py36'
-
         # Test against Py37 (expected to fail for now)
         - env: TOXENV='py37'
 
@@ -76,6 +73,10 @@ matrix:
         - env: TOXENV='py36-astrodev'
         - env: TOXENV='py36-numpydev'
         - env: TOXENV='py36-gluedev'
+
+        # Moved this here temporarily #479
+        - os: windows
+          env: TOXENV='py36'
 
 install:
     - git clone git://github.com/astropy/ci-helpers.git
