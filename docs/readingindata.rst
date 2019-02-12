@@ -20,6 +20,24 @@ should appear.  In the dialog box, select the data cube you wish to load and
 select the relevant data loader using the drop down menu on the bottom.
 For the MaNGA cube, select "manga (*)."  The data cube should load.
 
+Create an Data Cube
+===================
+
+CubeViz has several expectations on the format of the FITS file in order to
+easily read in IFU data from a FITS file.  At a bare minimum, the FITS file
+must have at least one data extension that has an extension name. If there is
+more than one data extension that is expected to be read in, then they must all
+be of the same size. If the extension name is not set, then it will be auto-set
+to be the HDU number.
+
+The CTYPE1 should be set to `RA---TAN`, CTYPE2 should be set to `DEC---TAN` and
+CTYPE3 should be set to one of the valid spectral coordinate types
+`SPECTRAL_COORD_TYPE_CODES` listed at the top of the [reader
+file](https://github.com/spacetelescope/cubeviz/blob/master/cubeviz/data_factories/ifucube.py).
+
+The CUNIT1 and CUNIT2 should be set to `'deg'` and CUNIT3 must be set to a
+valid Astropy units spectral_axis compatible unit (e.g., `m`, `um`, or `AA`).
+
 Reading in an Unsupported Data Cube
 ===================================
 
