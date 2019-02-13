@@ -2,7 +2,7 @@ import numpy as np
 
 from glue.core import HubListener
 from glue.utils.array import format_minimal
-from specviz.third_party.glue.data_viewer import dispatch as specviz_dispatch
+# from specviz.third_party.glue.data_viewer import dispatch as specviz_dispatch
 
 from ..messages import (SliceIndexUpdateMessage, WavelengthUpdateMessage,
                         WavelengthUnitUpdateMessage, RedshiftUpdateMessage)
@@ -58,7 +58,7 @@ class SliceController(HubListener):
 
         # Connect this class to specviz's event dispatch so methods can listen
         # to specviz events
-        specviz_dispatch.setup(self)
+        # specviz_dispatch.setup(self)
 
     def enable(self):
         """
@@ -122,7 +122,7 @@ class SliceController(HubListener):
         new_index = self._slice_slider.value() + amount
         self._slice_slider.setValue(new_index)
 
-        specviz_dispatch.changed_dispersion_position.emit(pos=new_index)
+        # specviz_dispatch.changed_dispersion_position.emit(pos=new_index)
 
     def _handle_index_update(self, message):
         index = message.index
@@ -151,7 +151,7 @@ class SliceController(HubListener):
         if self._cv_layout._active_cube._widget.synced:
             self.synced_index = index
 
-        specviz_dispatch.changed_dispersion_position.emit(pos=index)
+        # specviz_dispatch.changed_dispersion_position.emit(pos=index)
 
     def _on_slider_change(self, event):
         """
@@ -178,7 +178,7 @@ class SliceController(HubListener):
         # Which will redraw sliced images quickly
         self._slider_flag = True
 
-    @specviz_dispatch.register_listener("finished_position_change")
+    # @specviz_dispatch.register_listener("finished_position_change")
     def _on_slider_released(self):
         """
         Callback for slider released (includes specviz slider).
@@ -193,7 +193,7 @@ class SliceController(HubListener):
 
         index = self._slice_slider.value()
         self._send_index_message(index)
-        specviz_dispatch.changed_dispersion_position.emit(pos=index)
+        # specviz_dispatch.changed_dispersion_position.emit(pos=index)
 
     #@glue_subscribe(SliceIndexUpdateMessage)
     def _update_slice_textboxes(self, message):
@@ -265,7 +265,7 @@ class SliceController(HubListener):
 
         self._send_index_message(index)
 
-    @specviz_dispatch.register_listener("change_dispersion_position")
+    # @specviz_dispatch.register_listener("change_dispersion_position")
     def specviz_wavelength_slider_change(self, event=None, pos=None):
         """
         SpecViz slider index changed callback

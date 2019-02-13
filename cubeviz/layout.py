@@ -18,8 +18,7 @@ from glue.core.message import (SettingsChangeMessage, SubsetUpdateMessage,
 from glue.utils.matplotlib import freeze_margins
 from glue.dialogs.component_arithmetic.qt import ArithmeticEditorWidget
 
-from specviz.third_party.glue.data_viewer import SpecVizViewer
-from specviz.core.events import dispatch
+from specviz.third_party.glue.viewer import SpecvizDataViewer
 
 from .toolbar import CubevizToolbar
 from .image_viewer import CubevizImageViewer
@@ -159,7 +158,7 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         # Create specviz viewer and register to the hub.
         self.specviz = WidgetWrapper(
-            SpecVizViewer(self.session, layout=self), tab_widget=self, toolbar=False)
+            SpecvizDataViewer(self.session, layout=self), tab_widget=self, toolbar=False)
         self.specviz._widget.register_to_hub(self.session.hub)
 
         self.single_view = self.cube_views[0]
@@ -223,7 +222,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.ui.button_toggle_image_mode.setText('Single Image Viewer')
 
         # Add this class to the specviz dispatcher watcher
-        dispatch.setup(self)
+        # dispatch.setup(self)
 
     def _init_menu_buttons(self):
         """
@@ -396,11 +395,13 @@ class CubeVizLayout(QtWidgets.QWidget):
     def refresh_flux_units(self, message):
         # TODO: eventually specviz should be able to respond to a
         # FluxUnitsUpdateMessage on its own.
-        comp = self.specviz._widget._options_widget.file_att
-        if message.component_id == comp:
-            unit = message.flux_units
-            if unit is not None:
-                dispatch.changed_units.emit(y=unit)
+        pass
+        # comp = self.specviz._widget._options_widget.file_att
+        # if message.component_id == comp:
+        #     unit = message.flux_units
+        #     if unit is not None:
+        #         pass
+                # dispatch.changed_units.emit(y=unit)
 
     def _toggle_all_coords_in_degrees(self):
         """
@@ -429,7 +430,7 @@ class CubeVizLayout(QtWidgets.QWidget):
         for i, helper in enumerate(self._viewer_combo_helpers):
             helper.refresh()
 
-    @dispatch.register_listener("apply_operations")
+    # @dispatch.register_listener("apply_operations")
     def apply_to_cube(self, stack):
         """
         Listen for messages from specviz about possible spectral analysis
@@ -640,10 +641,12 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.specviz._widget.add_data(data)
         self._flux_unit_controller.set_data(data)
 
-        comp = self.specviz._widget._options_widget.file_att
-        specviz_unit = self._flux_unit_controller[comp].unit
-        if specviz_unit is not None:
-            dispatch.changed_units.emit(y=specviz_unit)
+        pass
+        # comp = self.specviz._widget._options_widget.file_att
+        # specviz_unit = self._flux_unit_controller[comp].unit
+        # if specviz_unit is not None:
+        #     pass
+            # dispatch.changed_units.emit(y=specviz_unit)
 
         for checkbox in self._synced_checkboxes:
             checkbox.setEnabled(True)
