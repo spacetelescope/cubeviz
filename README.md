@@ -1,7 +1,7 @@
 # CubeViz
 
 ![](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)
-[![Coverage Status](https://coveralls.io/repos/github/spacetelescope/cubeviz/badge.svg?branch=master)](https://coveralls.io/github/spacetelescope/cubeviz?branch=master)
+[![Coverage Status](https://codecov.io/gh/spacetelescope/cubeviz/branch/master/graph/badge.svg)](https://codecov.io/gh/spacetelescope/cubeviz)
 
 For documentation see http://cubeviz.readthedocs.io/en/latest/
 
@@ -12,7 +12,7 @@ We are pleased to announce the release of CubeViz, a visualization and analysis 
 To install:
   * Install [Minconda3](https://conda.io/miniconda.html) if it is not on your system (**)
   * To install, type: `$ conda create -n cubeviz020 -c glueviz cubeviz`
-  
+
 To run:
   * Activate the environment: `$ source activate cubeviz020`
   * Run cubeviz: `$ cubeviz`
