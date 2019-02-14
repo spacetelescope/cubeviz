@@ -3,7 +3,12 @@ Reading-in Data
 
 CubeViz will be able to read in NIRSpec and MIRI IFU data straight from the pipeline or archive.  It includes data loaders for many but not all ground-based IFUs.
 
-CubeViz uses simple `yaml <https://learn.getgrav.org/advanced/yaml>`_ files to specify the information needed to load the data files.  Examples are given below.  In short, the yaml file tells CubeViz which axes in the cube are RA, DEC, and wavelength, and the units used, among other things.
+CubeViz uses simple `yaml <https://learn.getgrav.org/advanced/yaml>`_ files to
+specify the information needed to load the data files (e.g., `JWST FITS YAML
+configuration file
+<https://github.com/spacetelescope/cubeviz/blob/master/cubeviz/data_factories/configurations/jwst-fits.yaml>`_.
+Examples are given below.  In short, the yaml file tells CubeViz which axes in
+the cube are RA, DEC, and wavelength, and the units used, among other things.
 
 If you have trouble loading your data cube into CubeViz, please either login to `Stars <https://stsci.service-now.com/stars>`_ or `create an issue <https://github.com/spacetelescope/cubeviz/issues/new`_.  It would be helpfu a link to your data cube is provided.
 
@@ -32,8 +37,8 @@ number.
 
 The CTYPE1 should be set to `RA---TAN`, CTYPE2 should be set to `DEC---TAN` and
 CTYPE3 should be set to one of the valid spectral coordinate types
-`SPECTRAL_COORD_TYPE_CODES` listed at the top of the [reader
-file](https://github.com/spacetelescope/cubeviz/blob/master/cubeviz/data_factories/ifucube.py).
+`SPECTRAL_COORD_TYPE_CODES` listed at the top of the `reader file
+<https://github.com/spacetelescope/cubeviz/blob/master/cubeviz/data_factories/ifucube.py>`_.
 
 The CUNIT1 and CUNIT2 should be set to `'deg'` and CUNIT3 must be set to a
 valid FITS compatible units (e.g., `m`, `um`, or `AA`). You can check if a unit
