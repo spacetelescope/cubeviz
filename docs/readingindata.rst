@@ -3,9 +3,9 @@ Reading-in Data
 
 CubeViz will be able to read in NIRSpec and MIRI IFU data straight from the pipeline or archive.  It includes data loaders for many but not all ground-based IFUs.
 
-CubeViz uses simple `yaml <https://learn.getgrav.org/advanced/yaml>`_ files as data loaders.  Examples are given below.  In short, the yaml file tells CubeViz which axes in the cube are RA, DEC, and wavelength, and the units used, among other things.
+CubeViz uses simple `yaml <https://learn.getgrav.org/advanced/yaml>`_ files to specify the information needed to load the data files.  Examples are given below.  In short, the yaml file tells CubeViz which axes in the cube are RA, DEC, and wavelength, and the units used, among other things.
 
-If you have trouble loading your data cube into CubeViz, please email `Susan Kassin <https://www.susankassin.com/contact/>`_.  It would be helpfu a link to your data cube is provided.
+If you have trouble loading your data cube into CubeViz, please either login to `Stars <https://stsci.service-now.com/stars>`_ or `create an issue <https://github.com/spacetelescope/cubeviz/issues/new`_.  It would be helpfu a link to your data cube is provided.
 
 Reading in an Example Data Cube
 ===============================
@@ -24,11 +24,11 @@ Create an Data Cube
 ===================
 
 CubeViz has several expectations on the format of the FITS file in order to
-easily read in IFU data from a FITS file.  At a bare minimum, the FITS file
-must have at least one data extension that has an extension name. If there is
-more than one data extension that is expected to be read in, then they must all
-be of the same size. If the extension name is not set, then it will be auto-set
-to be the HDU number.
+easily read in IFU data.  At a bare minimum, the FITS file must have at least
+one data extension that has an extension name. If there is more than one data
+extension that is expected to be read in, then they must all be of the same
+size. If the extension name is not set, then it will be auto-set to be the HDU
+number.
 
 The CTYPE1 should be set to `RA---TAN`, CTYPE2 should be set to `DEC---TAN` and
 CTYPE3 should be set to one of the valid spectral coordinate types
