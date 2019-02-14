@@ -138,7 +138,7 @@ class CubevizImageLayerState(ImageLayerState):
     # Override glue default
     global_sync = DDCProperty(False)
 
-    def get_sliced_data(self, view=None):
+    def get_sliced_data(self, view=None, bounds=None):
         """
         Override and modify ImageLayerState.get_sliced_data so that if
         CubevizImageLayerState.preview_function is defined, it is applied to the

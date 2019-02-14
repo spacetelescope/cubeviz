@@ -97,18 +97,19 @@ class IFUCube(object):
         for ii, hdu in enumerate(self._fits):
 
             # Check the EXTNAME field for this HDU
-            if not 'EXTNAME' in hdu.header:
+            if 'EXTNAME' not in self._fits[ii].header:
                 log.warning(' HDU {} has no EXTNAME field'.format(ii))
-
+                extname = '{}_{}'.format(self._filename, ii)
                 if fix:
-                    self._fits[ii].header['EXTNAME'] = '{}_{}'.format(self._filename, ii)
-                    log.info(' Setting HDU {} EXTNAME field to {}'.format(ii, self._fits[ii].header['EXTNAME']))
-                    self._log_text[hdu.name]['data'] = 'Setting HDU {} EXTNAME field to {}\n'.format(ii, self._fits[ii].header['EXTNAME'])
+                    self._fits[ii].header['EXTNAME'] = extname
+                    log.info(' Setting HDU {} EXTNAME field to {}'.format(ii, extname))
+                    self._log_text[hdu.name]['data'] = 'Setting HDU {} EXTNAME field to {}\n'.format(ii, extname)
+            else:
+                extname = self._fits[ii].header['EXTNAME']
 
             if hasattr(hdu, 'data') and hdu.data is not None and len(hdu.data.shape) == 3:
                 good = True
                 self.good_check(good)
-                extname = self._fits[ii].header['EXTNAME']
 
                 log.info('  data exists in HDU ({}, {}) and is of shape {}'.format(
                     ii, extname, hdu.data.shape))
