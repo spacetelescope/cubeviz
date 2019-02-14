@@ -10,7 +10,7 @@ configuration file
 Examples are given below.  In short, the yaml file tells CubeViz which axes in
 the cube are RA, DEC, and wavelength, and the units used, among other things.
 
-If you have trouble loading your data cube into CubeViz, please either login to `Stars <https://stsci.service-now.com/stars>`_ or `create an issue <https://github.com/spacetelescope/cubeviz/issues/new`_.  It would be helpfu a link to your data cube is provided.
+If you have trouble loading your data cube into CubeViz, please either login to `Stars <https://stsci.service-now.com/stars>`_ or `create an issue <https://github.com/spacetelescope/cubeviz/issues/new>`_.  It would be helpful to include a link to your data cube is provided.
 
 Reading in an Example Data Cube
 ===============================
