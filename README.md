@@ -2,6 +2,7 @@
 
 ![](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)
 [![Coverage Status](https://codecov.io/gh/spacetelescope/cubeviz/branch/master/graph/badge.svg)](https://codecov.io/gh/spacetelescope/cubeviz)
+[![DOI](https://zenodo.org/badge/36305330.svg)](https://zenodo.org/badge/latestdoi/36305330)
 
 For documentation see http://cubeviz.readthedocs.io/en/latest/
 

@@ -4,6 +4,8 @@
 New Features
 ------------
 
+- Added DOI badge to the README file.
+
 Bug Fixes
 ---------
 
