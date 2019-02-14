@@ -4,6 +4,8 @@
 This is an Astropy affiliated package.
 """
 
+__minimum_python_version__ = "3.6"
+
 # Affiliated packages may add whatever they like to this file, but
 # should keep this content at the top.
 # ----------------------------------------------------------------------------
