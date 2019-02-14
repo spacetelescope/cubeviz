@@ -36,7 +36,15 @@ CTYPE3 should be set to one of the valid spectral coordinate types
 file](https://github.com/spacetelescope/cubeviz/blob/master/cubeviz/data_factories/ifucube.py).
 
 The CUNIT1 and CUNIT2 should be set to `'deg'` and CUNIT3 must be set to a
-valid Astropy units spectral_axis compatible unit (e.g., `m`, `um`, or `AA`).
+valid FITS compatible units (e.g., `m`, `um`, or `AA`). You can check if a unit
+is FITS-compatible by using Astropy's Unit class:
+
+.. code-block:: console
+
+   from astropy.units import Unit
+   unit = Unit('m', format='fits')
+
+This will crash for units not compatible with the FITS standard.
 
 Reading in an Unsupported Data Cube
 ===================================
