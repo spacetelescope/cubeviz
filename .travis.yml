@@ -67,6 +67,9 @@ matrix:
         # Test against numpy dev
         - env: TOXENV='py36-numpydev'
 
+        # Test against oldest supported version of Glue
+        - env: TOXENV='py36-glueold'
+
         # Test against latest development version of Glue
         - env: TOXENV='py36-gluedev'
 
