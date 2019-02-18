@@ -29,20 +29,26 @@ Create an Data Cube
 ===================
 
 CubeViz has several expectations on the format of the FITS file in order to
-easily read in IFU data.  At a bare minimum, the FITS file must have at least
-one data extension that has an extension name. If there is more than one data
-extension that is expected to be read in, then they must all be of the same
-size. If the extension name is not set, then it will be auto-set to be the HDU
-number.
+easily read in IFU data. At a bare minimum, the FITS file must contain an image
+HDU that contains the three-dimensional science data. By convention this
+extension is often named `'SCI'`.
 
-The CTYPE1 should be set to `RA---TAN`, CTYPE2 should be set to `DEC---TAN` and
+CubeViz is able to display multiple components from a single data set. Some
+files might wish to provide error and data quality information, for exaple.
+If the FITS file provides these, each must be stored in a separate image HDU
+These are often named `'ERR'` and `'DQ'` by convention. The data components of
+these HDUs must match those of the HDU containing science data.
+
+Each HDU header must contain several keywords with WCS information. The CTYPE1
+keyword should be set to `RA---TAN`, CTYPE2 should be set to `DEC---TAN` and
 CTYPE3 should be set to one of the valid spectral coordinate types
 `SPECTRAL_COORD_TYPE_CODES` listed at the top of the `reader file
 <https://github.com/spacetelescope/cubeviz/blob/master/cubeviz/data_factories/ifucube.py>`_.
 
-The CUNIT1 and CUNIT2 should be set to `'deg'` and CUNIT3 must be set to a
-valid FITS compatible units (e.g., `m`, `um`, or `AA`). You can check if a unit
-is FITS-compatible by using Astropy's Unit class:
+The CUNIT1 and CUNIT2 keywords should be set to `'deg'` and CUNIT3 must be set
+to a valid FITS compatible unit that represents wavelength (e.g., `m`, `um`, or
+`AA`). You can check if a unit is FITS-compatible by using Astropy's Unit
+class:
 
 .. code-block:: console
 
