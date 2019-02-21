@@ -51,7 +51,6 @@ elif os.path.exists('LONG_DESCRIPTION.rst'):
 elif len(glob.glob(readme_glob)) > 0:
     with open(glob.glob(readme_glob)[0]) as f:
         LONG_DESCRIPTION = f.read()
-
 else:
     # Get the long description from the package's docstring
     __import__(PACKAGENAME)
@@ -97,18 +96,6 @@ package_info['package_data'][PACKAGENAME].append('data/ui/*')
 package_info['package_data'][PACKAGENAME].append('data/resources/*')
 package_info['package_data'][PACKAGENAME].append('controls/*yaml')
 
-# Define entry points for command-line scripts
-entry_points = {
-    'gui_scripts': ['cubeviz=cubeviz.cubeviz:main'],
-    'glue.plugins': ['cubeviz=cubeviz.cubeviz:setup']
-}
-
-if conf.has_section('entry_points'):
-    entry_point_list = conf.items('entry_points')
-    for entry_point in entry_point_list:
-        entry_points['console_scripts'].append('{0} = {1}'.format(
-            entry_point[0], entry_point[1]))
-
 install_requires = metadata.get('install_requires', '').strip().split()
 
 # Note that requires and provides should not be included in the call to
@@ -128,6 +115,5 @@ setup(name=PACKAGENAME,
       cmdclass=cmdclassd,
       zip_safe=False,
       use_2to3=False,
-      entry_points=entry_points,
       **package_info
 )
