@@ -222,8 +222,9 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._single_viewer_mode = False
         self.ui.button_toggle_image_mode.setText('Single Image Viewer')
 
-        # Add this class to the specviz dispatcher watcher
-        # dispatch.setup(self)
+        # Listen for unit changes in specviz
+        self.specviz._widget.hub.plot_widget.spectral_axis_unit_changed.connect(
+            self._wavelength_controller.update_units)
 
     def _init_menu_buttons(self):
         """
@@ -394,15 +395,9 @@ class CubeVizLayout(QtWidgets.QWidget):
             WavelengthUI(self._wavelength_controller, parent=self)
 
     def refresh_flux_units(self, message):
-        # TODO: eventually specviz should be able to respond to a
-        # FluxUnitsUpdateMessage on its own.
-        pass
-        # comp = self.specviz._widget._options_widget.file_att
-        # if message.component_id == comp:
-        #     unit = message.flux_units
-        #     if unit is not None:
-        #         pass
-                # dispatch.changed_units.emit(y=unit)
+        unit = message.unit
+
+        self.specviz._widget.hub.plot_item.data_units = unit
 
     def _toggle_all_coords_in_degrees(self):
         """
@@ -641,13 +636,6 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._data = data
         self.specviz._widget.add_data(data)
         self._flux_unit_controller.set_data(data)
-
-        pass
-        # comp = self.specviz._widget._options_widget.file_att
-        # specviz_unit = self._flux_unit_controller[comp].unit
-        # if specviz_unit is not None:
-        #     pass
-            # dispatch.changed_units.emit(y=specviz_unit)
 
         for checkbox in self._synced_checkboxes:
             checkbox.setEnabled(True)
