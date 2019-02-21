@@ -28,11 +28,6 @@ conf.read(['setup.cfg'])
 metadata = dict(conf.items('metadata'))
 
 PACKAGENAME = metadata.get('package_name', 'cubeviz')
-DESCRIPTION = metadata.get('description', 'Data analysis package for cubes.')
-AUTHOR = metadata.get('author', 'JDADF Developers')
-AUTHOR_EMAIL = metadata.get('author_email', '')
-LICENSE = metadata.get('license', 'unknown')
-URL = metadata.get('url', 'https://github.com/spacetelescope/cubeviz')
 
 # Store the package name in a built-in variable so it's easy
 # to get from other parts of the setup infrastructure
@@ -76,12 +71,7 @@ install_requires = metadata.get('install_requires', '').strip().split()
 
 setup(name=PACKAGENAME,
       version=VERSION,
-      description=DESCRIPTION,
       install_requires=install_requires,
-      author=AUTHOR,
-      author_email=AUTHOR_EMAIL,
-      license=LICENSE,
-      url=URL,
       cmdclass=cmdclassd,
       zip_safe=False,
       use_2to3=False,
