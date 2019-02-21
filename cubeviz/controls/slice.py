@@ -56,9 +56,11 @@ class SliceController(HubListener):
         # Tracks the index of the synced viewers
         self.synced_index = None
 
-        # Connect this class to specviz's event dispatch so methods can listen
-        # to specviz events
-        # specviz_dispatch.setup(self)
+        # Connect specviz slice indicator move events to cubeviz
+        self._cv_layout.specviz._widget._slice_indicator.sigPositionChanged.connect(
+            lambda: self.spectral_slider_change(
+                self._cv_layout.specviz._widget._slice_indicator.value()
+            ))
 
     def enable(self):
         """
@@ -151,7 +153,8 @@ class SliceController(HubListener):
         if self._cv_layout._active_cube._widget.synced:
             self.synced_index = index
 
-        # specviz_dispatch.changed_dispersion_position.emit(pos=index)
+        self._cv_layout.specviz._widget._slice_indicator.setPos(
+            self._wavelengths[index])
 
     def _on_slider_change(self, event):
         """
@@ -240,7 +243,7 @@ class SliceController(HubListener):
 
         self._send_index_message(index)
 
-    def _on_text_wavelength_change(self, event=None, pos=None):
+    def _on_text_wavelength_change(self, pos=None):
         """
         Callback for a change in wavelength input box. We want to find the
         closest wavelength and use the index of it.  We will need to update the
@@ -265,8 +268,7 @@ class SliceController(HubListener):
 
         self._send_index_message(index)
 
-    # @specviz_dispatch.register_listener("change_dispersion_position")
-    def specviz_wavelength_slider_change(self, event=None, pos=None):
+    def spectral_slider_change(self, pos=None):
         """
         SpecViz slider index changed callback
         """
@@ -289,7 +291,7 @@ class SliceController(HubListener):
             # Pos is a wavelength and not an index for the call back for specviz
             pos = self._wavelengths[pos]
 
-        self._on_text_wavelength_change(event, pos)
+        self._on_text_wavelength_change(pos)
 
         if deactivate_flag:
             self._slider_flag = False
