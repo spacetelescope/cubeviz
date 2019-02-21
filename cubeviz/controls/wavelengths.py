@@ -86,8 +86,7 @@ class WavelengthController:
         self._send_wavelength_unit_message(units)
         self._send_wavelength_message(self._wavelengths)
 
-        # Update specviz units
-        self._cv_layout.specviz._widget.hub.plot_widget.spectral_axis_unit = u.Unit(units.name)
+        self._cv_layout.specviz._widget.hub.plot_widget.spectral_axis_unit = units
         self._cv_layout.specviz._widget._slice_indicator.setPos(
             self._wavelengths[self._cv_layout._active_cube._widget.slice_index])
 
