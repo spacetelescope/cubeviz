@@ -28,8 +28,6 @@ class WavelengthController:
         # This is the label for the wavelength units
         self._wavelength_textbox_label = ui.wavelength_textbox_label.text()
 
-        # specviz_dispatch.setup(self)
-
     def enable(self, units, wavelength):
         self._wavelengths = wavelength
         self._original_wavelengths = wavelength
@@ -88,7 +86,10 @@ class WavelengthController:
         self._send_wavelength_unit_message(units)
         self._send_wavelength_message(self._wavelengths)
 
-        # specviz_dispatch.changed_units.emit(x=units)
+        # Update specviz units
+        self._cv_layout.specviz._widget.hub.plot_widget.spectral_axis_unit = u.Unit(units.name)
+        self._cv_layout.specviz._widget._slice_indicator.setPos(
+            self._wavelengths[self._cv_layout._active_cube._widget.slice_index])
 
     def update_redshift(self, redshift, label=''):
         # If the input redshift is the current value we have then we are not
