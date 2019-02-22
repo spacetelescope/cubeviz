@@ -86,8 +86,9 @@ class CollapseCube(QDialog):
         self.ui.spatial_region_combobox.addItems(spatial_regions)
 
         # Get the Specviz regions and add them in to the Combo box
-        for roi in self.parent.specviz._widget.roi_bounds:
-            self.ui.region_combobox.addItem("Specviz ROI ({:.4e}, {:.4e})".format(roi[0], roi[1]))
+        for roi in self.parent.specviz._widget.hub.regions:
+            x1, x2 = roi.getRegion()
+            self.ui.region_combobox.addItem("Specviz ROI ({:.4e}, {:.4e})".format(x1, x2))
 
         self.ui.region_combobox.addItems(["Custom (Wavelengths)", "Custom (Indices)"])
         self.ui.region_combobox.setMinimumWidth(200)
