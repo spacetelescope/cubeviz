@@ -1,37 +1,32 @@
 import os
 from collections import OrderedDict
 
-from astropy.wcs.utils import wcs_to_celestial_frame
 from astropy.coordinates import BaseRADecFrame
-
-from qtpy import QtWidgets, QtCore, QtGui
-from qtpy.QtWidgets import QMenu, QAction, QInputDialog, QActionGroup
-
-from glue.utils.qt import load_ui
-from glue.utils.qt import get_qapp
+from astropy.wcs.utils import wcs_to_celestial_frame
 from glue.config import qt_fixed_layout_tab
-from glue.external.echo import keep_in_sync, SelectionCallbackProperty
-from glue.external.echo.qt.connect import connect_combo_selection, UserDataWrapper, _find_combo_data, _find_combo_text
 from glue.core.data_combo_helper import ComponentIDComboHelper
-from glue.core.message import (SettingsChangeMessage, SubsetUpdateMessage,
-                               SubsetDeleteMessage, EditSubsetMessage)
-from glue.utils.matplotlib import freeze_margins
+from glue.core.message import (EditSubsetMessage, SettingsChangeMessage,
+                               SubsetDeleteMessage, SubsetUpdateMessage)
 from glue.dialogs.component_arithmetic.qt import ArithmeticEditorWidget
-
+from glue.external.echo import SelectionCallbackProperty, keep_in_sync
+from glue.external.echo.qt.connect import (UserDataWrapper, _find_combo_data,
+                                           _find_combo_text,
+                                           connect_combo_selection)
+from glue.utils.matplotlib import freeze_margins
+from glue.utils.qt import get_qapp, load_ui
+from qtpy import QtCore, QtGui, QtWidgets
+from qtpy.QtWidgets import QAction, QActionGroup, QMenu
 from specviz.third_party.glue.viewer import SpecvizDataViewer
 
-from .toolbar import CubevizToolbar
-from .image_viewer import CubevizImageViewer
-
-from .controls.slice import SliceController
-from .controls.overlay import OverlayController
-
 from .controls.flux_units import FluxUnitController
+from .controls.overlay import OverlayController
+from .controls.slice import SliceController
 from .controls.wavelengths import WavelengthController
-from .tools import collapse_cube
-from .tools import moment_maps, smoothing
+from .image_viewer import CubevizImageViewer
+from .messages import FluxUnitsUpdateMessage
+from .toolbar import CubevizToolbar
+from .tools import collapse_cube, moment_maps, smoothing
 from .tools.wavelengths_ui import WavelengthUI
-
 
 DEFAULT_NUM_SPLIT_VIEWERS = 3
 DEFAULT_TOOLBAR_ICON_SIZE = 18
@@ -225,6 +220,21 @@ class CubeVizLayout(QtWidgets.QWidget):
         self.specviz._widget.hub.plot_widget.spectral_axis_unit_changed.connect(
             self._wavelength_controller.update_units)
 
+        def _update_displayed_units(unit):
+            """
+            Re-create minimum flux unit change functionality without having to
+            spawn the ``QDialog`` object in cubeviz.
+            """
+            component_id = self.specviz._widget.layers[0].state.attribute
+            cubeviz_unit = self._flux_unit_controller.add_component_unit(
+                component_id, unit)
+            self._flux_unit_controller.data.get_component(component_id).units = unit
+            msg = FluxUnitsUpdateMessage(self, cubeviz_unit, component_id)
+            self._wavelength_controller._hub.broadcast(msg)
+
+        self.specviz._widget.hub.plot_widget.data_unit_changed.connect(
+            _update_displayed_units)
+
     def _init_menu_buttons(self):
         """
         Add the two menu buttons to the tool bar. Currently two are defined:
@@ -394,9 +404,13 @@ class CubeVizLayout(QtWidgets.QWidget):
             WavelengthUI(self._wavelength_controller, parent=self)
 
     def refresh_flux_units(self, message):
-        unit = message.unit
-
-        self.specviz._widget.hub.plot_item.data_units = unit
+        """
+        Listens for flux unit update messages (this is called from
+        `listeners`) and updates the displayed spectral units in the specviz
+        data viewer.
+        """
+        unit = message.flux_units
+        self.specviz._widget.hub.plot_widget.data_unit = unit.to_string()
 
     def _toggle_all_coords_in_degrees(self):
         """

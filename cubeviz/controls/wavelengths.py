@@ -110,8 +110,6 @@ class WavelengthController:
         self._send_redshift_message(redshift)
         self._send_wavelength_message(self._wavelengths)
 
-        # specviz_dispatch.change_redshift.emit(redshift=redshift)
-
     def _send_wavelength_message(self, wavelengths):
         msg = WavelengthUpdateMessage(self, wavelengths)
         self._hub.broadcast(msg)
