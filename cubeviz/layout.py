@@ -31,7 +31,6 @@ from .controls.wavelengths import WavelengthController
 from .tools import collapse_cube
 from .tools import moment_maps, smoothing
 from .tools.wavelengths_ui import WavelengthUI
-from .tools.spectral_operations import SpectralOperationHandler
 
 
 DEFAULT_NUM_SPLIT_VIEWERS = 3
@@ -425,20 +424,6 @@ class CubeVizLayout(QtWidgets.QWidget):
     def refresh_viewer_combo_helpers(self):
         for i, helper in enumerate(self._viewer_combo_helpers):
             helper.refresh()
-
-    # @dispatch.register_listener("apply_operations")
-    def apply_to_cube(self, stack):
-        """
-        Listen for messages from specviz about possible spectral analysis
-        operations that may be applied to the entire cube.
-        """
-
-        # Retrieve the current cube data object
-        operation_handler = SpectralOperationHandler(self._data,
-                                                     stack=stack,
-                                                     session=self.session,
-                                                     parent=self)
-        operation_handler.exec_()
 
     def remove_data_component(self, component_id):
         pass
