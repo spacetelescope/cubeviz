@@ -14,7 +14,7 @@ try:
 except ImportError:
     from glue.utils.decorators import die_on_error
 
-from .version import version as cubeviz_version
+from . import __version__ as cubeviz_version
 from .data_factories import DataFactoryConfiguration
 
 CUBEVIZ_ICON_PATH = os.path.abspath(

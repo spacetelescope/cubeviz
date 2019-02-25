@@ -50,7 +50,7 @@ import os
 # This is to figure out the package version, rather than
 # using Astropy's
 try:
-    from .version import version
+    from . import __version__ as version
 except ImportError:
     version = 'dev'
 
