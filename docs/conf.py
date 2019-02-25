@@ -78,10 +78,10 @@ copyright = '{0}, {1}'.format(
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 
-# The short X.Y version.
-version = setup_cfg['version'].split('-', 1)[0]
-# The full version, including alpha/beta/rc tags.
-release = setup_cfg['version']
+from pkg_resources import get_distribution
+release = get_distribution(project).version
+# for example take major/minor
+version = '.'.join(release.split('.')[:2])
 
 
 # -- Options for HTML output --------------------------------------------------
