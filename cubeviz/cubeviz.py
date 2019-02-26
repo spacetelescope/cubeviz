@@ -3,10 +3,13 @@ import sys
 import os
 import argparse
 
-from glue.app.qt import GlueApplication
-from glue.main import get_splash, load_data_files, load_plugins
 from qtpy.QtCore import QTimer
 from qtpy import QtGui, QtWidgets
+
+import glue
+from glue.utils.qt import get_qapp
+from glue.app.qt import GlueApplication
+from glue.main import get_splash, load_data_files, load_plugins
 
 try:
     from glue.utils.qt.decorators import die_on_error
@@ -15,6 +18,7 @@ except ImportError:
 
 from . import __version__ as cubeviz_version
 from .data_factories import DataFactoryConfiguration
+
 
 CUBEVIZ_ICON_PATH = os.path.abspath(
     os.path.join(
@@ -41,6 +45,24 @@ def setup():
     from . import startup  # noqa
 
 
+
+def _check_datafiles_exist(datafiles):
+    for fileparam in datafiles:
+        for filename in fileparam.split(','):
+            if not os.path.isfile(filename.strip()):
+                raise IOError('The file {} does not exist'.format(filename))
+
+
+def _create_glue_app(data_collection, hub):
+    session = glue.core.Session(data_collection=data_collection, hub=hub)
+    ga = GlueApplication(session=session)
+    ga.setWindowTitle('cubeviz ({})'.format(cubeviz_version))
+    qapp = QtWidgets.QApplication.instance()
+    qapp.setWindowIcon(QtGui.QIcon(CUBEVIZ_ICON_PATH))
+    ga.setWindowIcon(QtGui.QIcon(CUBEVIZ_ICON_PATH))
+    return ga
+
+
 def create_app(datafiles=[], data_configs=[], data_configs_show=False,
                interactive=True):
     """
@@ -57,8 +79,6 @@ def create_app(datafiles=[], data_configs=[], data_configs_show=False,
     interactive : `bool`
         Flag to indicate whether session is interactive or not (i.e. for testing)
     """
-    import glue
-    from glue.utils.qt import get_qapp
     app = get_qapp()
 
     # Splash screen
@@ -79,10 +99,7 @@ def create_app(datafiles=[], data_configs=[], data_configs_show=False,
 
     # Check to make sure each file exists and raise an Exception
     # that will show in the popup if it does not exist.
-    for fileparam in datafiles:
-        for filename in fileparam.split(','):
-            if not os.path.isfile(filename.strip()):
-                raise IOError('The file {} does not exist'.format(filename))
+    _check_datafiles_exist(datafiles)
 
     # Show the splash screen for 1 second
     if interactive:
@@ -98,13 +115,7 @@ def create_app(datafiles=[], data_configs=[], data_configs_show=False,
     if interactive:
         splash.set_progress(100)
 
-    session = glue.core.Session(data_collection=data_collection, hub=hub)
-    ga = GlueApplication(session=session)
-    ga.setWindowTitle('cubeviz ({})'.format(cubeviz_version))
-    qapp = QtWidgets.QApplication.instance()
-    qapp.setWindowIcon(QtGui.QIcon(CUBEVIZ_ICON_PATH))
-    ga.setWindowIcon(QtGui.QIcon(CUBEVIZ_ICON_PATH))
-
+    ga = _create_glue_app(data_collection, hub)
     ga.run_startup_action('cubeviz')
 
     # Load the data files.
