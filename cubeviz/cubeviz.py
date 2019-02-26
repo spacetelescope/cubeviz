@@ -2,7 +2,6 @@
 import sys
 import os
 import argparse
-import os
 
 from glue.app.qt import GlueApplication
 from glue.main import get_splash, load_data_files, load_plugins
@@ -38,70 +37,66 @@ CUBEVIZ_LOGO_PATH = os.path.abspath(
 )
 
 def setup():
-
     from . import layout  # noqa
     from . import startup  # noqa
 
 
-@die_on_error("Error starting up Cubeviz")
-def main(argv=sys.argv):
+def create_app(datafiles=[], data_configs=[], data_configs_show=False,
+               interactive=True):
     """
-    The majority of the code in this function was taken from start_glue() in main.py after a discussion with
-    Tom Robataille. We wanted the ability to get command line arguments and use them in here and this seemed
-    to be the cleanest way to do it.
+    Create and initialize a cubeviz application instance
 
-    :param argv:
-    :return:
+    Parameters
+    ----------
+    datafiles : `list`
+        A list of filenames representing data files to be loaded
+    data_configs : `list`
+        A list of filenames representing data configuration files to be used
+    data_configs_show : `bool`
+        Display matching info about data configuration files
+    interactive : `bool`
+        Flag to indicate whether session is interactive or not (i.e. for testing)
     """
-
-    # # Parse the arguments, ignore any unkonwn
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--data-configs", help="Directory or file for data configuration YAML files", action='append', default=[])
-    parser.add_argument("--data-configs-show", help="Show the matching info", action="store_true", default=False)
-    parser.add_argument('data_files', nargs=argparse.REMAINDER)
-    args = parser.parse_known_args(argv[1:])
-
-    # Store the args for each ' --data-configs' found on the commandline
-    data_configs = args[0].data_configs
-    data_configs_show = args[0].data_configs_show
-
     import glue
     from glue.utils.qt import get_qapp
     app = get_qapp()
 
     # Splash screen
-    splash = get_splash()
-    splash.image = QtGui.QPixmap(CUBEVIZ_LOGO_PATH)
-    splash.show()
+    if interactive:
+        splash = get_splash()
+        splash.image = QtGui.QPixmap(CUBEVIZ_LOGO_PATH)
+        splash.show()
+    else:
+        splash = None
 
     # Start off by loading plugins. We need to do this before restoring
     # the session or loading the configuration since these may use existing
     # plugins.
     load_plugins(splash=splash)
 
-    # Load the
-    DataFactoryConfiguration(data_configs, data_configs_show, remove_defaults=True)
-
-    datafiles = args[0].data_files
+    dfc_kwargs = dict(remove_defaults=True, check_ifu_valid=interactive)
+    DataFactoryConfiguration(data_configs, data_configs_show, **dfc_kwargs)
 
     # Check to make sure each file exists and raise an Exception
     # that will show in the popup if it does not exist.
     for fileparam in datafiles:
-        for filename in  fileparam.split(','):
+        for filename in fileparam.split(','):
             if not os.path.isfile(filename.strip()):
                 raise IOError('The file {} does not exist'.format(filename))
 
     # Show the splash screen for 1 second
-    timer = QTimer()
-    timer.setInterval(1000)
-    timer.setSingleShot(True)
-    timer.timeout.connect(splash.close)
-    timer.start()
+    if interactive:
+        timer = QTimer()
+        timer.setInterval(1000)
+        timer.setSingleShot(True)
+        timer.timeout.connect(splash.close)
+        timer.start()
 
     data_collection = glue.core.DataCollection()
     hub = data_collection.hub
 
-    splash.set_progress(100)
+    if interactive:
+        splash.set_progress(100)
 
     session = glue.core.Session(data_collection=data_collection, hub=hub)
     ga = GlueApplication(session=session)
@@ -117,5 +112,36 @@ def main(argv=sys.argv):
         datasets = load_data_files(datafiles)
         ga.add_datasets(data_collection, datasets, auto_merge=False)
 
+    return ga
 
-    ga.start(maximized=True)
+
+@die_on_error("Error starting up Cubeviz")
+def main(argv=sys.argv):
+    """
+    The majority of the code in this function was taken from start_glue() in
+    main.py. We wanted the ability to get command line arguments and use them
+    in here and this seemed to be the cleanest way to do it.
+
+    :param argv:
+    :return:
+    """
+
+    # # Parse the arguments, ignore any unkonwn
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--data-configs",
+        help="Directory or file for data configuration YAML files",
+        action='append', default=[])
+    parser.add_argument(
+        "--data-configs-show", help="Show the matching info",
+        action="store_true", default=False)
+    parser.add_argument('data_files', nargs=argparse.REMAINDER)
+    args = parser.parse_known_args(argv[1:])
+
+    datafiles = args[0].data_files
+    # Store the args for each ' --data-configs' found on the commandline
+    data_configs = args[0].data_configs
+    data_configs_show = args[0].data_configs_show
+
+    app = create_app(datafiles, data_configs, data_configs_show)
+    app.start(maximized=True)
