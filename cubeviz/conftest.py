@@ -65,7 +65,7 @@ import pytest
 from .tests.helpers import (toggle_viewer, select_viewer, create_glue_app,
                             reset_app_state)
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='module')
 def cubeviz_layout():
     app = create_glue_app()
     layout = app.tab(0)
