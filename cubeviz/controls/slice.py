@@ -2,7 +2,6 @@ import numpy as np
 
 from glue.core import HubListener
 from glue.utils.array import format_minimal
-# from specviz.third_party.glue.data_viewer import dispatch as specviz_dispatch
 
 from ..messages import (SliceIndexUpdateMessage, WavelengthUpdateMessage,
                         WavelengthUnitUpdateMessage, RedshiftUpdateMessage)
@@ -181,7 +180,6 @@ class SliceController(HubListener):
         # Which will redraw sliced images quickly
         self._slider_flag = True
 
-    # @specviz_dispatch.register_listener("finished_position_change")
     def _on_slider_released(self):
         """
         Callback for slider released (includes specviz slider).

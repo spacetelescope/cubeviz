@@ -1,5 +1,4 @@
 from astropy import units as u
-# from specviz.third_party.glue.data_viewer import dispatch as specviz_dispatch
 
 from ..messages import WavelengthUpdateMessage, WavelengthUnitUpdateMessage, RedshiftUpdateMessage
 
@@ -67,7 +66,6 @@ class WavelengthController:
         """
         return self._redshift_z
 
-    # @specviz_dispatch.register_listener("change_redshift")
     def specviz_change_redshift(self, redshift):
         """
         Change the redshift based on a message from specviz.
