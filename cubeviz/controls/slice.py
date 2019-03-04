@@ -150,8 +150,13 @@ class SliceController(HubListener):
         if self._cv_layout._active_cube._widget.synced:
             self.synced_index = index
 
+        new_pos = self._wavelengths[index]
+
+        if hasattr(new_pos, "unit"):
+            new_pos = new_pos.value
+
         self._cv_layout.specviz._widget._slice_indicator.setPos(
-            self._wavelengths[index])
+            new_pos)
 
     def _on_slider_change(self, event):
         """
