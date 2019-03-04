@@ -84,10 +84,6 @@ class WavelengthController:
         self._send_wavelength_unit_message(units)
         self._send_wavelength_message(self._wavelengths)
 
-        self._cv_layout.specviz._widget.hub.plot_widget.spectral_axis_unit = units
-        self._cv_layout.specviz._widget._slice_indicator.setPos(
-            self._wavelengths[self._cv_layout._active_cube._widget.slice_index])
-
     def update_redshift(self, redshift, label=''):
         # If the input redshift is the current value we have then we are not
         # going to do anything.

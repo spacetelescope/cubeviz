@@ -123,8 +123,6 @@ class SliceController(HubListener):
         new_index = self._slice_slider.value() + amount
         self._slice_slider.setValue(new_index)
 
-        # specviz_dispatch.changed_dispersion_position.emit(pos=new_index)
-
     def _handle_index_update(self, message):
         index = message.index
 
@@ -194,7 +192,6 @@ class SliceController(HubListener):
 
         index = self._slice_slider.value()
         self._send_index_message(index)
-        # specviz_dispatch.changed_dispersion_position.emit(pos=index)
 
     #@glue_subscribe(SliceIndexUpdateMessage)
     def _update_slice_textboxes(self, message):
