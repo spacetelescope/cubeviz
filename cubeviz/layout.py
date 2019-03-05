@@ -410,7 +410,9 @@ class CubeVizLayout(QtWidgets.QWidget):
         data viewer.
         """
         unit = message.flux_units
-        self.specviz._widget.hub.plot_widget.data_unit = unit.to_string()
+
+        if unit is not None:
+            self.specviz._widget.hub.plot_widget.data_unit = unit.to_string()
 
     def _toggle_all_coords_in_degrees(self):
         """
