@@ -241,6 +241,8 @@ class CubevizImageViewer(ImageViewer):
         self._hub.subscribe(self, WavelengthUpdateMessage, handler=self._update_wavelengths)
         self._hub.subscribe(self, WavelengthUnitUpdateMessage, handler=self._update_wavelength_units)
         self._hub.subscribe(self, FluxUnitsUpdateMessage, handler=self._update_flux_units)
+        self._hub.subscribe(self, WavelengthUnitUpdateMessage,
+                            handler=lambda msg: self.cubeviz_layout.specviz._widget.update_units(spectral_axis_unit=msg.units))
 
     @property
     def cubeviz_unit(self):

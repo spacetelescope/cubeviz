@@ -1,39 +1,32 @@
 import os
 from collections import OrderedDict
 
-from astropy.wcs.utils import wcs_to_celestial_frame
 from astropy.coordinates import BaseRADecFrame
-
-from qtpy import QtWidgets, QtCore, QtGui
-from qtpy.QtWidgets import QMenu, QAction, QInputDialog, QActionGroup
-
-from glue.utils.qt import load_ui
-from glue.utils.qt import get_qapp
+from astropy.wcs.utils import wcs_to_celestial_frame
 from glue.config import qt_fixed_layout_tab
-from glue.external.echo import keep_in_sync, SelectionCallbackProperty
-from glue.external.echo.qt.connect import connect_combo_selection, UserDataWrapper, _find_combo_data, _find_combo_text
 from glue.core.data_combo_helper import ComponentIDComboHelper
-from glue.core.message import (SettingsChangeMessage, SubsetUpdateMessage,
-                               SubsetDeleteMessage, EditSubsetMessage)
-from glue.utils.matplotlib import freeze_margins
+from glue.core.message import (EditSubsetMessage, SettingsChangeMessage,
+                               SubsetDeleteMessage, SubsetUpdateMessage)
 from glue.dialogs.component_arithmetic.qt import ArithmeticEditorWidget
-
-from specviz.third_party.glue.data_viewer import SpecVizViewer
-from specviz.core.events import dispatch
-
-from .toolbar import CubevizToolbar
-from .image_viewer import CubevizImageViewer
-
-from .controls.slice import SliceController
-from .controls.overlay import OverlayController
+from glue.external.echo import SelectionCallbackProperty, keep_in_sync
+from glue.external.echo.qt.connect import (UserDataWrapper, _find_combo_data,
+                                           _find_combo_text,
+                                           connect_combo_selection)
+from glue.utils.matplotlib import freeze_margins
+from glue.utils.qt import get_qapp, load_ui
+from qtpy import QtCore, QtGui, QtWidgets
+from qtpy.QtWidgets import QAction, QActionGroup, QMenu
+from specviz.third_party.glue.viewer import SpecvizDataViewer
 
 from .controls.flux_units import FluxUnitController
+from .controls.overlay import OverlayController
+from .controls.slice import SliceController
 from .controls.wavelengths import WavelengthController
-from .tools import collapse_cube
-from .tools import moment_maps, smoothing
+from .image_viewer import CubevizImageViewer
+from .messages import FluxUnitsUpdateMessage
+from .toolbar import CubevizToolbar
+from .tools import collapse_cube, moment_maps, smoothing
 from .tools.wavelengths_ui import WavelengthUI
-from .tools.spectral_operations import SpectralOperationHandler
-
 
 DEFAULT_NUM_SPLIT_VIEWERS = 3
 DEFAULT_TOOLBAR_ICON_SIZE = 18
@@ -159,7 +152,8 @@ class CubeVizLayout(QtWidgets.QWidget):
 
         # Create specviz viewer and register to the hub.
         self.specviz = WidgetWrapper(
-            SpecVizViewer(self.session, layout=self), tab_widget=self, toolbar=False)
+            SpecvizDataViewer(self.session, layout=self, include_line=True),
+            tab_widget=self, toolbar=False)
         self.specviz._widget.register_to_hub(self.session.hub)
 
         self.single_view = self.cube_views[0]
@@ -222,8 +216,24 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._single_viewer_mode = False
         self.ui.button_toggle_image_mode.setText('Single Image Viewer')
 
-        # Add this class to the specviz dispatcher watcher
-        dispatch.setup(self)
+        # Listen for unit changes in specviz
+        self.specviz._widget.hub.plot_widget.spectral_axis_unit_changed.connect(
+            self._wavelength_controller.update_units)
+
+        def _update_displayed_units(unit):
+            """
+            Re-create minimum flux unit change functionality without having to
+            spawn the ``QDialog`` object in cubeviz.
+            """
+            component_id = self.specviz._widget.layers[0].state.attribute
+            cubeviz_unit = self._flux_unit_controller.add_component_unit(
+                component_id, unit)
+            self._flux_unit_controller.data.get_component(component_id).units = unit
+            msg = FluxUnitsUpdateMessage(self, cubeviz_unit, component_id)
+            self._wavelength_controller._hub.broadcast(msg)
+
+        self.specviz._widget.hub.plot_widget.data_unit_changed.connect(
+            _update_displayed_units)
 
     def _init_menu_buttons(self):
         """
@@ -394,13 +404,13 @@ class CubeVizLayout(QtWidgets.QWidget):
             WavelengthUI(self._wavelength_controller, parent=self)
 
     def refresh_flux_units(self, message):
-        # TODO: eventually specviz should be able to respond to a
-        # FluxUnitsUpdateMessage on its own.
-        comp = self.specviz._widget._options_widget.file_att
-        if message.component_id == comp:
-            unit = message.flux_units
-            if unit is not None:
-                dispatch.changed_units.emit(y=unit)
+        """
+        Listens for flux unit update messages (this is called from
+        `listeners`) and updates the displayed spectral units in the specviz
+        data viewer.
+        """
+        unit = message.flux_units
+        self.specviz._widget.hub.plot_widget.data_unit = unit.to_string()
 
     def _toggle_all_coords_in_degrees(self):
         """
@@ -428,20 +438,6 @@ class CubeVizLayout(QtWidgets.QWidget):
     def refresh_viewer_combo_helpers(self):
         for i, helper in enumerate(self._viewer_combo_helpers):
             helper.refresh()
-
-    @dispatch.register_listener("apply_operations")
-    def apply_to_cube(self, stack):
-        """
-        Listen for messages from specviz about possible spectral analysis
-        operations that may be applied to the entire cube.
-        """
-
-        # Retrieve the current cube data object
-        operation_handler = SpectralOperationHandler(self._data,
-                                                     stack=stack,
-                                                     session=self.session,
-                                                     parent=self)
-        operation_handler.exec_()
 
     def remove_data_component(self, component_id):
         pass
@@ -639,11 +635,6 @@ class CubeVizLayout(QtWidgets.QWidget):
         self._data = data
         self.specviz._widget.add_data(data)
         self._flux_unit_controller.set_data(data)
-
-        comp = self.specviz._widget._options_widget.file_att
-        specviz_unit = self._flux_unit_controller[comp].unit
-        if specviz_unit is not None:
-            dispatch.changed_units.emit(y=specviz_unit)
 
         for checkbox in self._synced_checkboxes:
             checkbox.setEnabled(True)
