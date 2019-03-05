@@ -30,11 +30,12 @@ env:
 
     matrix:
         # Make sure that installation does not fail
-        - TOXENV='py36' TOX_CMD='tox --notest' TOX_ARGS=''
+        - TOXENV='py37' TOX_CMD='tox --notest' TOX_ARGS=''
         # Make sure README will display properly on pypi
         - TOXENV='checkdocs'
         # Run a test with stable dependencies
         - TOXENV='py36'
+        - TOXENV='py37'
 
 matrix:
 
@@ -57,33 +58,25 @@ matrix:
 
         # Try MacOS X and Windows
         - os: osx
-          env: TOXENV='py36'
+          env: TOXENV='py37'
 
         - os: windows
-          env: TOXENV='py36'
-
-        # Test against Py37 (expected to fail for now)
-        - env: TOXENV='py37'
+          env: TOXENV='py37'
 
         # Try building against Astropy dev
-        - env: TOXENV='py36-astrodev'
+        - env: TOXENV='py37-astrodev'
 
         # Test against numpy dev
-        - env: TOXENV='py36-numpydev'
+        - env: TOXENV='py37-numpydev'
 
         # Test against latest development version of Glue
-        - env: TOXENV='py36-gluedev'
+        - env: TOXENV='py37-gluedev'
 
     allow_failures:
         - env: TOXENV='style' TOX_ARGS=''
-        - env: TOXENV='py37'
-        - env: TOXENV='py36-astrodev'
-        - env: TOXENV='py36-numpydev'
-        - env: TOXENV='py36-gluedev'
-
-        # Moved this here temporarily #479
-        - os: windows
-          env: TOXENV='py36'
+        - env: TOXENV='py37-astrodev'
+        - env: TOXENV='py37-numpydev'
+        - env: TOXENV='py37-gluedev'
 
 install:
     - git clone git://github.com/astropy/ci-helpers.git
