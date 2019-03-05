@@ -670,8 +670,7 @@ class CubeVizLayout(QtWidgets.QWidget):
 
     def eventFilter(self, obj, event):
 
-        if event.type() == QtCore.QEvent.MouseButtonPress:
-
+        if isinstance(event, QtGui.QMouseEvent):
             if not (self.isVisible() and self.isActiveWindow()):
                 return super(CubeVizLayout, self).eventFilter(obj, event)
 
