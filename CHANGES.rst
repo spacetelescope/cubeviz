@@ -5,6 +5,7 @@ New Features
 ------------
 
 - Added DOI badge to the README file.
+- Integrate new SpecViz (#484)
 
 Bug Fixes
 ---------
