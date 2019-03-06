@@ -112,9 +112,6 @@ def create_app(datafiles=[], data_configs=[], data_configs_show=False,
     data_collection = glue.core.DataCollection()
     hub = data_collection.hub
 
-    if interactive:
-        splash.set_progress(100)
-
     ga = _create_glue_app(data_collection, hub)
     ga.run_startup_action('cubeviz')
 
@@ -122,6 +119,9 @@ def create_app(datafiles=[], data_configs=[], data_configs_show=False,
     if datafiles:
         datasets = load_data_files(datafiles)
         ga.add_datasets(data_collection, datasets, auto_merge=False)
+
+    if interactive:
+        splash.set_progress(100)
 
     return ga
 
