@@ -3,6 +3,9 @@ import os
 from qtpy import QtCore
 from glue.app.qt import GlueApplication
 
+from cubeviz.cubeviz import create_app
+from cubeviz.data_factories import DataFactoryConfiguration
+
 
 __all__ = ['toggle_viewer', 'select_viewer', 'create_glue_app',
            'enter_slice_text', 'enter_wavelength_text', 'reset_app_state',
@@ -61,21 +64,11 @@ def assert_slice_text(layout, text):
 def create_glue_app():
     filename = os.path.join(TEST_DATA_PATH, 'data_cube.fits.gz')
 
-    # We need to make sure that the data factories have been instantiated
-    # before creating the glue application below. Otherwise the test data file
-    # will not be recognized and the application will hang waiting for user input.
-    from ..data_factories import DataFactoryConfiguration
-
-    # We don't want the IFU checker dialog to popup during testing
-    # so set check_ifu_valid to False
-    dfc = DataFactoryConfiguration(check_ifu_valid=False)
-
-    app = GlueApplication()
-    app.run_startup_action('cubeviz')
+    app = create_app(interactive=False)
     app.load_data(filename)
     app.setVisible(True)
-
     return app
+
 
 def reset_app_state(qtbot, layout):
     sync_all_viewers(qtbot, layout)
