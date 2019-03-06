@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 from qtpy.QtWidgets import QMessageBox
 
-from glue.core import Data
+from glue.core import Data, Component
 from glue.core.link_helpers import LinkSame
 from glue.core.coordinates import WCSCoordinates
 
@@ -24,7 +24,9 @@ def add_to_2d_container(cubeviz_layout, data, component_data, label):
         coords = WCSCoordinates(wcs=data.coords.wcs.celestial)
         data.container_2d = Data(label=data.label + " [2d]", coords=coords)
 
-        data.container_2d.add_component(component_data, label)
+        # manually create the component so we can add the units too
+        new_component_data_with_units = Component(component_data.value, component_data.unit)
+        data.container_2d.add_component(new_component_data_with_units, label)
 
         cubeviz_layout.session.data_collection.append(data.container_2d)
 

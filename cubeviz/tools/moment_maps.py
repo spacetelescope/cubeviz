@@ -102,8 +102,8 @@ class MomentMapsGUI(QDialog):
         # Add new overlay/component to cubeviz. We add this both to the 2D
         # container Data object and also as an overlay. In future we might be
         # able to use the 2D container Data object for the overlays directly.
-        add_to_2d_container(self.parent, self.data, cube_moment.value, self.label)
-        self.parent.add_overlay(cube_moment.value, self.label, display_now=False)
+        add_to_2d_container(self.parent, self.data, cube_moment, self.label)
+        self.parent.add_overlay(cube_moment, self.label, display_now=False)
 
     def calculate_callback(self):
         """
