@@ -9,18 +9,20 @@ def test_stats_box_with_subset(cubeviz_layout):
     cl_viewer = cubeviz_layout.split_views[1]._widget
 
     # Create a subset (ROI) if there is none
-    if cl_viewer._subset is None:
-        cl_viewer.apply_roi(roi.CircularROI(xc=6, yc=10, radius=3))
+    cl_viewer.apply_roi(roi.CircularROI(xc=6, yc=10, radius=3))
 
     assert cl_viewer._subset is not None
 
-    # Need to make parameters for the calculate_stats method
     mask = cl_viewer._subset.to_mask()[cl_viewer._slice_index]
     data = cl_viewer._data[0][cl_viewer.current_component_id][cl_viewer._slice_index][mask]
 
-    assert data is not None
-    assert cl_viewer._calculate_stats(data) == cl_viewer.show_roi_stats(cl_viewer.current_component_id,
-                                                                        cl_viewer._subset)
+    wave = cl_viewer.cubeviz_layout.get_wavelength(cl_viewer.slice_index)
+    data_wave = cl_viewer.cubeviz_unit.convert_value(data, wave=wave)
+
+    assert data_wave is not None
+
+    results = (np.nanmin(data_wave), np.nanmax(data_wave), np.median(data_wave), data_wave.mean(), data_wave.std())
+    assert results == cl_viewer.show_roi_stats(cl_viewer.current_component_id, cl_viewer._subset)
 
 
 def test_stats_box_without_subset(cubeviz_layout):
@@ -29,13 +31,16 @@ def test_stats_box_without_subset(cubeviz_layout):
     """
     cl_viewer = cubeviz_layout.split_views[1]._widget
 
-    if cl_viewer._subset is not None:
-        cl_viewer._subset = None
+    cl_viewer._subset = None
 
     data = cl_viewer._data[0][cl_viewer.current_component_id][cl_viewer._slice_index]
 
-    assert data is not None
+    wave = cl_viewer.cubeviz_layout.get_wavelength(cl_viewer.slice_index)
+    data_wave = cl_viewer.cubeviz_unit.convert_value(data, wave=wave)
 
-    # Creating copy since that is how it is done in image_viewer.py
+    assert data_wave is not None
+
+    results = (np.nanmin(data_wave), np.nanmax(data_wave), np.median(data_wave), data_wave.mean(), data_wave.std())
+
     # Using allclose because the NaN values in the two arrays will cause the assert to fail otherwise
-    assert np.allclose(cl_viewer._calculate_stats(data.copy()), cl_viewer.show_slice_stats(), equal_nan=True)
+    assert np.allclose(results, cl_viewer.show_slice_stats(), equal_nan=True)
