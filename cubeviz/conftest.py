@@ -1,6 +1,7 @@
 # This file is used to configure the behavior of pytest when using the Astropy
 # test infrastructure.
 
+import os
 import sys
 
 from astropy.version import version as astropy_version
@@ -65,21 +66,22 @@ import pytest
 from .tests.helpers import (toggle_viewer, select_viewer, create_glue_app,
                             reset_app_state)
 
-@pytest.fixture(scope='session')
-def cubeviz_layout():
-    app = create_glue_app()
-    layout = app.tab(0)
+if not os.environ.get('JWST_DATA_TEST', False):
+    @pytest.fixture(scope='session')
+    def cubeviz_layout():
+        app = create_glue_app()
+        layout = app.tab(0)
 
-    # Cheap workaround for Windows test environment
-    if sys.platform.startswith('win'):
-        layout._cubeviz_toolbar._toggle_sidebar()
+        # Cheap workaround for Windows test environment
+        if sys.platform.startswith('win'):
+            layout._cubeviz_toolbar._toggle_sidebar()
 
-    return app.tab(0)
+        return app.tab(0)
 
-@pytest.fixture(autouse=True)
-def reset_state(qtbot, cubeviz_layout):
-    # This yields the test itself
-    yield
+    @pytest.fixture(autouse=True)
+    def reset_state(qtbot, cubeviz_layout):
+        # This yields the test itself
+        yield
 
-    # Make sure to return the application to this state between tests
-    reset_app_state(qtbot, cubeviz_layout)
+        # Make sure to return the application to this state between tests
+        reset_app_state(qtbot, cubeviz_layout)
