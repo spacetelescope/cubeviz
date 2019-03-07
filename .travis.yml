@@ -87,7 +87,7 @@ install:
 script:
     - conda info
     - $TOX_CMD $TOX_ARGS
-    - if [[ $TOXENV == *-test ]]; then
+    - if [[ $TRAVIS_OS_NAME != windows && $TOXENV == *-test ]]; then
         JWST_DATA_TEST=1 $TOX_CMD cubeviz/tests/test_load_data.py $TOX_ARGS;
       fi
     - find cubeviz -name "*.ui" -exec grep "pointsize" {} \; >& font.log
