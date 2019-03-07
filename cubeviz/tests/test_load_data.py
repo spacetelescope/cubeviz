@@ -31,6 +31,8 @@ def run_cubeviz_test(q, _, tmpdir, url, *args):
         fname = download_test_data(tmpdir, url)
         app = create_app(interactive=False)
         app.load_data([fname])
+        assert len(app.data_collection) == 1
+        assert app.data_collection[0].label.startswith('jwst-fits-cube')
     except Exception:
         ex_type, ex_value, tb = sys.exc_info()
         error = ex_type, ex_value, ''.join(traceback.format_tb(tb))
