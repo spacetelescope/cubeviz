@@ -3,6 +3,8 @@ import traceback
 import multiprocessing
 from urllib.parse import urljoin
 
+import pytest
+
 from specviz.tests.test_load_data import (BOX_PREFIX, jwst_data_test,
                                           download_test_data,
                                           run_subprocess_test)
@@ -22,18 +24,14 @@ JWST_DATA_FILES = [
 JWST_DATA_PATHS = [urljoin(BOX_PREFIX, name) for name in JWST_DATA_FILES]
 
 
-def run_cubeviz_test(q, _, tmpdir, *args):
-    print('in callback')
+def run_cubeviz_test(q, _, tmpdir, url, *args):
     app = None
 
     try:
-        fname = download_test_data(tmpdir, JWST_DATA_PATHS[0])
+        fname = download_test_data(tmpdir, url)
         app = create_app(interactive=False)
-        print('created app')
         app.load_data([fname])
-        print('loaded data')
     except Exception:
-        print('there was an error')
         ex_type, ex_value, tb = sys.exc_info()
         error = ex_type, ex_value, ''.join(traceback.format_tb(tb))
     else:
@@ -41,14 +39,12 @@ def run_cubeviz_test(q, _, tmpdir, *args):
     finally:
         if app is not None:
             app.app.quit()
-            print('quit app')
 
-    print('putting on the queue')
     q.put(error)
-    print('done')
 
 
 @jwst_data_test
-def test_load_jwst_data(tmpdir):
-    multiprocessing.set_start_method('spawn')
-    run_subprocess_test(None, tmpdir, callback=run_cubeviz_test)
+@pytest.mark.parametrize('url', JWST_DATA_PATHS)
+def test_load_jwst_data(tmpdir, url):
+    multiprocessing.set_start_method('spawn', force=True)
+    run_subprocess_test(None, tmpdir, url, callback=run_cubeviz_test)
