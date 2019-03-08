@@ -46,3 +46,4 @@ Reference/API
   installation.rst
   functionality.rst
   readingindata.rst
+  developer_guide.rst
