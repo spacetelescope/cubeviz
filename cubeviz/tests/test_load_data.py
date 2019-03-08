@@ -19,6 +19,8 @@ JWST_DATA_FILES = [
     'k4kwyn1t5zcjw7wg4xv9ub3fgg07lwl7.fits',
     # det_image_ch2-short_s3d.fits
     'kpye05xrwcpllzlju0l96nw0lmtwom98.fits',
+    # ditherunity_CLEAR_PRISM_M1_m1_noiseless_NRS1_modified_updatedHDR_fixintarget_s3d.fits
+    'f3bozjgdgtv0n1fqdt002ufmf1z97qup.fits',
 ]
 
 JWST_DATA_PATHS = [urljoin(BOX_PREFIX, name) for name in JWST_DATA_FILES]
