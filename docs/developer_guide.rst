@@ -39,6 +39,10 @@ those tests, use the following command:
 
    $ JWST_DATA_TEST=1 pytest cubeviz/tests/test_load_data.py
 
+.. warning::
+   When running the test suite, the ``cubeviz`` window must remain active and
+   be the top window on your desktop, or else test failures will occur.
+
 Using Tox
 ^^^^^^^^^
 
