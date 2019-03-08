@@ -298,8 +298,6 @@ class CubevizImageViewer(ImageViewer):
         label = '{} Statistics:'.format(subset.label)
         self._update_stats_text(label, *results)
 
-        return results
-
     def show_slice_stats(self):
 
         if self._has_2d_data:
@@ -311,8 +309,6 @@ class CubevizImageViewer(ImageViewer):
         data = self._data[0][self.current_component_id][self._slice_index]
         results = self._calculate_stats(data.copy())
         self._update_stats_text('Slice Statistics:', *results)
-
-        return results
 
     def update_stats(self):
 
