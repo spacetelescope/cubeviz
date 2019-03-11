@@ -22,11 +22,10 @@ def add_to_2d_container(cubeviz_layout, data, component_data, label):
         # For now, we assume that the 2D maps are always computed along the
         # spectral axis, so that the resulting WCS is always celestial
         coords = WCSCoordinates(wcs=data.coords.wcs.celestial)
-        data.container_2d = Data(label=data.label + " [2d]", coords=coords)
 
         # manually create the component so we can add the units too
         new_component_data_with_units = Component(component_data.value, component_data.unit)
-        data.container_2d.add_component(new_component_data_with_units, label)
+        component_id = data.add_component(new_component_data_with_units, label)
 
         cubeviz_layout.session.data_collection.append(data.container_2d)
 

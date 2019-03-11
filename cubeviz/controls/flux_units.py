@@ -327,6 +327,22 @@ class FluxUnitController:
         if wcs is not None:
             self.wcs = wcs
 
+
+    def add_data(self, data):
+        """
+        Add glue data and its components to controller.
+        glue components' units attribute should contain a
+        string with desired units for that component. This
+        controller will use the string in that attribute
+        to construct and assign units.
+        :param data: glue data
+        :return:
+        """
+        # self.data = data
+        for comp in data.visible_components:
+            self.add_component_unit(comp, data.get_component(comp).units)
+
+
     def converter(self, parent=None, convert_data=False):
         """
         Launch Converter GUI

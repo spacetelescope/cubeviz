@@ -6,6 +6,9 @@ from qtpy.QtWidgets import (QDialog, QComboBox, QPushButton,
                             QLabel, QWidget, QHBoxLayout, QVBoxLayout)
 
 from .common import add_to_2d_container, show_error_message
+from glue.core import Data
+
+from ..messages import FluxUnitsUpdateMessage
 
 
 # TODO: In the future, it might be nice to be able to work across data_collection elements
@@ -102,8 +105,15 @@ class MomentMapsGUI(QDialog):
         # Add new overlay/component to cubeviz. We add this both to the 2D
         # container Data object and also as an overlay. In future we might be
         # able to use the 2D container Data object for the overlays directly.
-        add_to_2d_container(self.parent, self.data, cube_moment, self.label)
         self.parent.add_overlay(cube_moment, self.label, display_now=False)
+
+        add_to_2d_container(self.parent, self.data, cube_moment, self.label)
+
+        cubeviz_unit = self.parent._flux_unit_controller.add_component_unit(self.label,
+                                                                            str(cube_moment.unit))
+
+        msg = FluxUnitsUpdateMessage(self, cubeviz_unit, self.label)
+        self.parent.session.hub.broadcast(msg)
 
     def calculate_callback(self):
         """
