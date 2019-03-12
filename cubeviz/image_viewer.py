@@ -175,7 +175,7 @@ class CubevizImageViewer(ImageViewer):
     tools = ['save', 'mpl:home', 'mpl:pan', 'mpl:zoom',
              'select:rectangle', 'select:xrange', 'select:yrange',
              'select:circle', 'select:polygon', 'image:contrast_bias',
-             'cubeviz:contour']
+             'cubeviz:contour', 'slice']
     subtools = {'save': ['mpl:save']}
     _inherit_tools = False
 
