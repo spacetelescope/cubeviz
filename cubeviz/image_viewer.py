@@ -172,9 +172,12 @@ class CubevizImageLayerArtist(ImageLayerArtist):
 
 class CubevizImageViewer(ImageViewer):
 
-    tools = ['select:rectangle', 'select:xrange', 'select:yrange',
+    tools = ['save', 'mpl:home', 'mpl:pan', 'mpl:zoom',
+             'select:rectangle', 'select:xrange', 'select:yrange',
              'select:circle', 'select:polygon', 'image:contrast_bias',
              'cubeviz:contour']
+    subtools = {'save': ['mpl:save']}
+    _inherit_tools = False
 
     _state_cls = CubevizImageViewerState
     _close_on_last_layer_removed = False
