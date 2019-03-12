@@ -59,6 +59,10 @@ def test_stats_box_with_subset(cubeviz_layout):
 
     assert results_string == cl_viewer.parent().stats_text.text()
 
+    # Remove the ROI/subset
+    dc = cubeviz_layout.session.application.data_collection
+    dc.remove_subset_group(dc.subset_groups[0])
+
 
 def test_overlay(moment_maps_gui, cubeviz_layout):
     # Only "No Overlay" option available in combobox
