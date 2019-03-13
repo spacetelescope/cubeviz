@@ -41,3 +41,17 @@ def test_cubeviz_roi(cubeviz_layout):
     dc.remove_subset_group(dc.subset_groups[0])
 
     assert len(specviz._layer_artist_container.layers) == 1
+
+
+def test_wavelength_units_update(cubeviz_layout):
+    """
+    Make sure wavelength unit changes in specviz are reflected in cubeviz.
+    """
+    specviz = cubeviz_layout.specviz._widget
+    current_units = str(cubeviz_layout._wavelength_controller.current_units)
+
+    specviz.hub.plot_widget.set_spectral_axis_unit('Angstrom')
+    assert cubeviz_layout._wavelength_controller.current_units == 'Angstrom'
+
+    specviz.hub.plot_widget.set_spectral_axis_unit(current_units)
+    assert cubeviz_layout._wavelength_controller.current_units == current_units
