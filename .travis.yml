@@ -63,6 +63,9 @@ matrix:
         - os: windows
           env: TOXENV='py37-test'
 
+        # Test against oldest compatible versions of core dependencies
+        - env: TOXENV='py36-legacy-test'
+
         # Try building against Astropy dev
         - env: TOXENV='py37-astrodev-test'
 
