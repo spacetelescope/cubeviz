@@ -10,6 +10,7 @@ from ...tests.helpers import (enter_slice_text, enter_wavelength_text,
                               assert_all_viewer_indices,
                               assert_wavelength_text, assert_slice_text)
 
+from cubeviz.messages import FluxUnitsUpdateMessage
 from ..flux_units import CubeVizUnit, FluxUnitController
 
 
@@ -69,3 +70,28 @@ def test_flux_unit_controller(qtbot, cubeviz_layout):
 
     # 2) To the controller in the layout
     add_get_remove_units(cubeviz_layout, cubeviz_layout._flux_unit_controller)
+
+
+def test_change_flux_units_specviz(cubeviz_layout):
+    """
+    Make sure that updates to flux units in cubeviz propagate to specviz.
+    """
+    specviz = cubeviz_layout.specviz._widget
+    flux_controller = cubeviz_layout._flux_unit_controller
+    hub = cubeviz_layout.session.hub
+
+    component_id = cubeviz_layout.data_components[0]
+    component = cubeviz_layout._data.get_component(component_id)
+    current_units = component.units
+
+    cvu = flux_controller.add_component_unit(component_id, 'mJy')
+    flux_controller.data.get_component(component_id).units = 'mJy'
+    msg = FluxUnitsUpdateMessage(flux_controller, cvu, component_id)
+    hub.broadcast(msg)
+    assert specviz.hub.plot_widget.data_unit == 'mJy'
+
+    cvu = flux_controller.add_component_unit(component_id, current_units)
+    flux_controller.data.get_component(component_id).units = current_units
+    msg = FluxUnitsUpdateMessage(flux_controller, cvu, component_id)
+    hub.broadcast(msg)
+    assert specviz.hub.plot_widget.data_unit == current_units
