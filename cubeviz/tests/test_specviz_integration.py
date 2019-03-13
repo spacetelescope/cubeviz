@@ -55,3 +55,20 @@ def test_wavelength_units_update(cubeviz_layout):
 
     specviz.hub.plot_widget.set_spectral_axis_unit(current_units)
     assert cubeviz_layout._wavelength_controller.current_units == current_units
+
+
+def test_flux_units_update(cubeviz_layout):
+    """
+    Make sure flux unit changes in specviz are reflected in cubeviz
+    """
+    specviz = cubeviz_layout.specviz._widget
+
+    component_id = cubeviz_layout.data_components[0]
+    component = cubeviz_layout._data.get_component(component_id)
+    current_units = component.units
+
+    specviz.hub.plot_widget.set_data_unit('mJy')
+    assert component.units == 'mJy'
+
+    specviz.hub.plot_widget.set_data_unit(current_units)
+    assert component.units == current_units
