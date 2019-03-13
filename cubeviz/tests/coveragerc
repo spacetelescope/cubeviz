@@ -1,16 +1,16 @@
 [run]
 source = {packagename}
 omit =
-   {packagename}/_astropy_init*
-   {packagename}/conftest*
-   {packagename}/cython_version*
-   {packagename}/setup_package*
-   {packagename}/*/setup_package*
-   {packagename}/*/*/setup_package*
-   {packagename}/tests/*
-   {packagename}/*/tests/*
-   {packagename}/*/*/tests/*
-   {packagename}/version*
+   cubeviz/_astropy_init*
+   cubeviz/conftest*
+   cubeviz/cython_version*
+   cubeviz/setup_package*
+   cubeviz/*/setup_package*
+   cubeviz/*/*/setup_package*
+   cubeviz/tests/*
+   cubeviz/*/tests/*
+   cubeviz/*/*/tests/*
+   cubeviz/version*
 
 [report]
 exclude_lines =
