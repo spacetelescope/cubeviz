@@ -24,6 +24,9 @@ class MomentMapsGUI(QDialog):
 
         self.label = ''
 
+        self.calculateButton = None
+        self.cancelButton = None
+
     def display(self):
         """
         Create the popup box with the calculation input area and buttons.
