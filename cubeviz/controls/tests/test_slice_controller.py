@@ -71,10 +71,15 @@ def test_wavelength_slider(cubeviz_layout, slice_index, cube_bounds):
     assert_all_viewer_indices(cubeviz_layout, slice_index)
 
     # Make sure that wavelength text matches slice value
+    wavelength = cube_bounds['wavelengths'][slice_index]
     wavelength_format = format_minimal(cube_bounds['wavelengths'])[0]
-    wavelength_text = wavelength_format.format(cube_bounds['wavelengths'][slice_index])
+    wavelength_text = wavelength_format.format(wavelength)
 
     assert_wavelength_text(cubeviz_layout, wavelength_text)
+
+    # Make sure specviz slider is updated appropriately
+    specviz = cubeviz_layout.specviz._widget
+    assert specviz._slice_indicator.getPos()[0] == wavelength
 
 # These wavelengths are tuned to test the data file data_cube.fits.gz
 @pytest.mark.parametrize('wavelength',
