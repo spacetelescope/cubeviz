@@ -90,3 +90,10 @@ def test_overlay(moment_maps_gui, cubeviz_layout):
     cubeviz_layout._overlay_controller._overlay_image_combo.setCurrentIndex(0)
 
     assert len(cl_viewer.axes.images) == 1
+
+    # Remove the moment map data set
+    for cid in cubeviz_layout._data.container_2d.component_ids():
+        cubeviz_layout._data.container_2d.remove(cid)
+    del cubeviz_layout._data.container_2d
+    dc = cubeviz_layout.session.data_collection
+    dc.remove(dc[1])
