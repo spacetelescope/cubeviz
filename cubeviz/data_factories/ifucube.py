@@ -180,7 +180,7 @@ class IFUCube(object):
         log.debug("Correct value(s) to be used: {}".format(correct))
 
         for ii, hdu in enumerate(self._fits):
-            if ii == 0 or (hasattr(hdu, 'data') and hdu.data is not None and len(hdu.data.shape) == 3):
+            if ii > 0 or (hasattr(hdu, 'data') and hdu.data is not None and len(hdu.data.shape) == 3):
                 if key not in hdu.header:
                     hdu.header[key] = "NONE"
                     self.good_and_fix(hdu, key, correct, fix, ii)
