@@ -69,7 +69,10 @@ def test_flux_unit_controller(qtbot, cubeviz_layout):
     add_get_remove_units(cubeviz_layout)
 
     # 2) To the controller in the layout
-    add_get_remove_units(cubeviz_layout, cubeviz_layout._flux_unit_controller)
+    # This has been disabled because it modifies application state in a way
+    # that affects other tests. Eventually it may be useful to have a
+    # workaround
+    #add_get_remove_units(cubeviz_layout, cubeviz_layout._flux_unit_controller)
 
 
 def test_change_flux_units_specviz(cubeviz_layout):

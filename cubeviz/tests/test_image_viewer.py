@@ -103,3 +103,55 @@ def test_overlay(moment_maps_gui, cubeviz_layout):
     del cubeviz_layout._data.container_2d
     dc = cubeviz_layout.session.data_collection
     dc.remove(dc[1])
+
+
+def check_viewer_title(cubeviz_layout, viewer_idx, component_idx):
+    viewer = cubeviz_layout.cube_views[viewer_idx]._widget
+
+    combo = cubeviz_layout.get_viewer_combo(viewer_idx)
+    combo.setCurrentIndex(component_idx)
+
+    component_id = cubeviz_layout.data_components[component_idx]
+    component = cubeviz_layout._data.get_component(component_id)
+
+    title = '{} [{}]'.format(component_id, component.units)
+    assert viewer.axes.title.get_text() == title
+
+
+def test_viewer_title(cubeviz_layout):
+    """
+    Test whether viewer titles accurately reflect data component and flux unit
+    """
+    for idx in range(len(cubeviz_layout.cube_views[1:])):
+        combo = cubeviz_layout.get_viewer_combo(idx)
+        current_idx = combo.currentIndex()
+
+        check_viewer_title(cubeviz_layout, idx, 0)
+        check_viewer_title(cubeviz_layout, idx, 1)
+
+        # Reset the combo when we're done
+        combo = cubeviz_layout.get_viewer_combo(idx)
+        combo.setCurrentIndex(current_idx)
+
+
+def test_viewer_title_units_change(cubeviz_layout):
+    """
+    Test whether viewer titles update appropriately with flux unit changes
+    """
+    # Test after flux units change
+    specviz = cubeviz_layout.specviz._widget
+    current_units = specviz.hub.plot_widget.data_unit
+    specviz.hub.plot_widget.set_data_unit('mJy')
+
+    for idx in range(len(cubeviz_layout.cube_views)):
+        combo = cubeviz_layout.get_viewer_combo(idx)
+        current_idx = combo.currentIndex()
+
+        check_viewer_title(cubeviz_layout, idx, 0)
+
+        # Reset the combo when we're done
+        combo = cubeviz_layout.get_viewer_combo(idx)
+        combo.setCurrentIndex(current_idx)
+
+    # Restore original units
+    specviz.hub.plot_widget.set_data_unit(current_units)
