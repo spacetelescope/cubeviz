@@ -160,23 +160,33 @@ def test_default_contour(cubeviz_layout):
     """
     Make sure that default contour works
     """
+    # Keep track of children in viewer to check that number increases later
     cl_viewer = cubeviz_layout.split_views[1]._widget
+    cl_viewer_children = len(cl_viewer.axes.get_children())
 
     # Create a subset (ROI) if there is none
     cl_viewer.apply_roi(roi.CircularROI(xc=6, yc=10, radius=3))
     cl_viewer.default_contour()
 
+    assert len(cl_viewer.axes.get_children()) > cl_viewer_children
     assert cl_viewer.is_contour_active
 
     cl_viewer.remove_contour()
 
+    # Remove the ROI/subset
+    dc = cubeviz_layout.session.application.data_collection
+    dc.remove_subset_group(dc.subset_groups[0])
+
     assert cl_viewer.is_contour_active == False
+    assert len(cl_viewer.axes.get_children()) == cl_viewer_children
 
 def test_contour_preview(cubeviz_layout):
     """
     Create contour preview from code
     """
+    # Keep track of children in viewer to check that number increases later
     cl_viewer = cubeviz_layout.split_views[1]._widget
+    cl_viewer_children = len(cl_viewer.axes.get_children())
 
     preview_settings = ContourSettings(cl_viewer)
     preview_settings.default_options()
@@ -185,20 +195,25 @@ def test_contour_preview(cubeviz_layout):
 
     assert cl_viewer.is_contour_preview_active
     assert cl_viewer.contour_preview_settings == preview_settings
+    assert len(cl_viewer.axes.get_children()) > cl_viewer_children
 
     cl_viewer.end_contour_preview()
 
     assert cl_viewer.is_contour_preview_active == False
     assert cl_viewer.contour_preview_settings is None
+    assert len(cl_viewer.axes.get_children()) == cl_viewer_children
 
 def test_change_contour_settings(cubeviz_layout):
     """
     Create default contour, open settings menu, change settings, press preview, press ok
     """
+    # Keep track of children in viewer to check that number increases later
     cl_viewer = cubeviz_layout.split_views[1]._widget
+    cl_viewer_children = len(cl_viewer.axes.get_children())
 
     cl_viewer.default_contour()
     assert cl_viewer.is_contour_active
+    assert len(cl_viewer.axes.get_children()) > cl_viewer_children
 
     contour_dialog = cl_viewer.edit_contour_settings()
 
@@ -230,3 +245,4 @@ def test_change_contour_settings(cubeviz_layout):
     cl_viewer.remove_contour()
 
     assert cl_viewer.is_contour_active == False
+    assert len(cl_viewer.axes.get_children()) == cl_viewer_children
