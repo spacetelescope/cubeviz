@@ -217,6 +217,7 @@ def test_change_contour_settings(cubeviz_layout):
 
     contour_dialog = cl_viewer.edit_contour_settings()
 
+    # Set settings in dialog box
     contour_dialog.contour_label_checkBox.setChecked(True)
     contour_dialog.font_size_input.setText("12")
 
