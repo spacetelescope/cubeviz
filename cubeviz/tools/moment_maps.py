@@ -103,7 +103,10 @@ class MomentMapsGUI(QDialog):
         # able to use the 2D container Data object for the overlays directly.
         add_to_2d_container(self.parent, self.data, cube_moment.value, cube_moment.unit, self.label)
 
-        self.parent.add_overlay(cube_moment, self.label, display_now=False)
+        # Going to pass in just the value into the overlay as the units aren't
+        # currently used for the overlay area.  BUT, this is probably not the
+        # best way to do this.
+        self.parent.add_overlay(cube_moment.value, self.label, display_now=False)
 
     def calculate_callback(self):
         """
