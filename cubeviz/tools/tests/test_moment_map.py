@@ -49,6 +49,7 @@ def test_moment_maps_1(moment_maps_gui, cubeviz_layout):
     cube_moment = np.asarray(cube.moment(order=order, axis=0))
 
     assert np.allclose(cube_moment, np_result, rtol=0.01, equal_nan=True)
+    assert cubeviz_layout.cube_views[1]._widget.cubeviz_unit.unit == 'm'
 
 def test_moment_maps_2(moment_maps_gui, cubeviz_layout):
     # Create GUI
@@ -71,3 +72,4 @@ def test_moment_maps_2(moment_maps_gui, cubeviz_layout):
 
     # cube_moment - np_result <= atol + rtol * absolute(np_result)
     assert np.allclose(cube_moment, np_result, rtol=0.01, equal_nan=True)
+    assert cubeviz_layout.cube_views[1]._widget.cubeviz_unit.unit == 'm2'
