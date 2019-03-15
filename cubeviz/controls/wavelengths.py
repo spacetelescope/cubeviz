@@ -84,6 +84,9 @@ class WavelengthController:
         self._send_wavelength_unit_message(units)
         self._send_wavelength_message(self._wavelengths)
 
+        specviz = self._cv_layout.specviz._widget
+        specviz.update_units(spectral_axis_unit=units)
+
     def update_redshift(self, redshift, label=''):
         # If the input redshift is the current value we have then we are not
         # going to do anything.
