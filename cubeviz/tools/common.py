@@ -1,11 +1,9 @@
 from qtpy.QtWidgets import QMessageBox
 
-from glue.core import Data
-from glue.core.link_helpers import LinkSame
+from glue.core import Data, Component
 from glue.core.coordinates import WCSCoordinates
 
-
-def add_to_2d_container(cubeviz_layout, data, component_data, label):
+def add_to_2d_container(cubeviz_layout, data, component_data, component_unit, label):
     """
     Given the cubeviz layout, a data object, a new 2D layer and a label, add
     the 2D layer to the data object and update the cubeviz layout accordingly.
@@ -20,12 +18,19 @@ def add_to_2d_container(cubeviz_layout, data, component_data, label):
         # For now, we assume that the 2D maps are always computed along the
         # spectral axis, so that the resulting WCS is always celestial
         coords = WCSCoordinates(wcs=data.coords.wcs.celestial)
+
         data.container_2d = Data(label=data.label + " [2d]", coords=coords)
 
-        data.container_2d.add_component(component_data, label)
+        # manually create the component so we can add the units too
+        new_component_data_with_units = Component(component_data, component_unit)
+
+        component_id = data.container_2d.add_component(new_component_data_with_units, label)
+
+        cubeviz_layout._flux_unit_controller.add_component_unit(component_id,
+                                                                str(component_unit))
 
         cubeviz_layout.session.data_collection.append(data.container_2d)
-
+    
         # NOTE: the following is disabled for now but can be uncommented once
         # we are ready to use the glue overlay infrastructure.
         # Set up pixel links so that selections in the image plane propagate
@@ -50,7 +55,14 @@ def add_to_2d_container(cubeviz_layout, data, component_data, label):
             raise ValueError("Data component with label '{}' already exists, "
                              "and cannot be created again".format(label))
 
-        data.container_2d.add_component(component_data, label)
+        new_component_data_with_units = Component(component_data, component_unit)
+        component_id = data.container_2d.add_component(new_component_data_with_units, label)
+
+        cubeviz_layout._flux_unit_controller.add_component_unit(component_id,
+                                                                str(component_unit))
+
+
+
 
 def show_error_message(message, title, parent=None):
 

@@ -86,13 +86,14 @@ def test_starting_state(collapse_cube_gui, cubeviz_layout):
     sigma_selection = 'No Sigma Clipping'
     sigma_parameter = None
 
-    new_wavelengths, new_component, label = cc._calculate_collapse(data_name,
+    new_wavelengths, new_component, new_component_unit, label = cc._calculate_collapse(data_name,
             operation, spatial_region, sigma_selection, sigma_parameter, start_index, end_index)
 
     assert label == '018.DATA-collapse-Sum (1.9531e-06, 2.0092e-06)'
 
     output = np.array([[0, 0, 0, 0], [139.281, 1088, 844.167, 739.379]])
     assert np.allclose(new_component[:2,:4], output, atol=1)
+    assert cubeviz_layout.cube_views[1]._widget.cubeviz_unit.unit == new_component_unit 
 
 
     # Simple Sigma Clipping
@@ -104,13 +105,14 @@ def test_starting_state(collapse_cube_gui, cubeviz_layout):
     sigma_selection = 'Simple Sigma Clipping'
     sigma_parameter = 3.0
 
-    new_wavelengths, new_component, label = cc._calculate_collapse(data_name,
+    new_wavelengths, new_component, new_component_unit, label = cc._calculate_collapse(data_name,
             operation, spatial_region, sigma_selection, sigma_parameter, start_index, end_index)
 
     assert label == '018.DATA-collapse-Sum (2.0092e-06, 2.0373e-06) sigma=3.0'
 
     output = np.array([[0, 0, 0, 0], [845.868, 886.972, 726.566, 976.271]])
     assert np.allclose(new_component[:2,:4], output, atol=1)
+    assert cubeviz_layout.cube_views[1]._widget.cubeviz_unit.unit == new_component_unit 
 
     # Advanced Sigma Clipping
     data_name = DATA_LABELS[0]
@@ -121,13 +123,14 @@ def test_starting_state(collapse_cube_gui, cubeviz_layout):
     sigma_selection = 'Advanced Sigma Clipping'
     sigma_parameter = [3.0, 1.0, 4.0, 2]
 
-    new_wavelengths, new_component, label = cc._calculate_collapse(data_name,
+    new_wavelengths, new_component, new_component_unit, label = cc._calculate_collapse(data_name,
             operation, spatial_region, sigma_selection, sigma_parameter, start_index, end_index)
 
     assert label == '018.DATA-collapse-Sum (2.0092e-06, 2.0373e-06) sigma=3.0 sigma_lower=1.0 sigma_upper=4.0 sigma_iters=2'
 
     output = np.array([[0, 0, 0, 0], [867.687, 956.132, 775.984, 1008]])
     assert np.allclose(new_component[:2,:4], output, atol=1)
+    assert cubeviz_layout.cube_views[1]._widget.cubeviz_unit.unit == new_component_unit 
 
 def test_regions(qtbot, cubeviz_layout):
 

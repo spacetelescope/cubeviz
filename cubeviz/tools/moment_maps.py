@@ -5,7 +5,6 @@ from qtpy.QtWidgets import (QDialog, QComboBox, QPushButton,
 
 from .common import add_to_2d_container, show_error_message
 
-
 # TODO: In the future, it might be nice to be able to work across data_collection elements
 
 class MomentMapsGUI(QDialog):
@@ -100,7 +99,11 @@ class MomentMapsGUI(QDialog):
         # Add new overlay/component to cubeviz. We add this both to the 2D
         # container Data object and also as an overlay. In future we might be
         # able to use the 2D container Data object for the overlays directly.
-        add_to_2d_container(self.parent, self.data, cube_moment.value, self.label)
+        add_to_2d_container(self.parent, self.data, cube_moment.value, cube_moment.unit, self.label)
+
+        # Going to pass in just the value into the overlay as the units aren't
+        # currently used for the overlay area.  BUT, this is probably not the
+        # best way to do this.
         self.parent.add_overlay(cube_moment.value, self.label, display_now=False)
 
     def calculate_callback(self):
@@ -116,7 +119,6 @@ class MomentMapsGUI(QDialog):
         try:
             self.do_calculation(order, data_name)
         except Exception as e:
-            print('Error: {}'.format(e))
             show_error_message(str(e), 'Moment Map Error', parent=self)
 
         self.close()

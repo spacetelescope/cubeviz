@@ -7,6 +7,8 @@ from astropy import units as u
 from astropy.units.quantity import Quantity
 from astropy.wcs.utils import proj_plane_pixel_area
 
+from glue.core.data import ComponentID
+
 from qtpy.QtWidgets import QMessageBox
 
 from .flux_unit_registry import (FLUX_UNIT_REGISTRY, AREA_UNIT_REGISTRY, FORMATTED_UNITS,
@@ -249,6 +251,10 @@ class FluxUnitController:
         :param unit: string or astropy unit
         :return: CubeVizUnit
         """
+
+        if not isinstance(component_id, ComponentID):
+            raise Exception('component_id must be of type ComponentID, but was {}'.format(type(component_id)))
+
         if isinstance(unit, CubeVizUnit):
             unit.controller = self
             self._components[component_id] = unit

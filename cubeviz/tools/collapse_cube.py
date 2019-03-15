@@ -539,7 +539,9 @@ class CollapseCube(QDialog):
         new_wavelengths, new_component = collapse_cube(input_data, data_name, self.data.coords.wcs,
                                              operation, start_index, end_index)
 
-        return new_wavelengths, new_component, label
+        new_component_unit = self.data.get_component(data_name).units
+
+        return new_wavelengths, new_component, new_component_unit, label
 
     def clear_stylesheets(self):
         self.ui.start_label.setStyleSheet("color: rgba(0, 0, 0, 255)")
@@ -615,7 +617,7 @@ class CollapseCube(QDialog):
             sigma_parameter = None
 
         # Do the actual call.
-        new_wavelengths, new_component, label = self._calculate_collapse(
+        new_wavelengths, new_component, new_component_unit, label = self._calculate_collapse(
                 data_name, operation, spatial_region,
                 sigma_selection, sigma_parameter,
                 start_index, end_index)
@@ -625,7 +627,8 @@ class CollapseCube(QDialog):
         # able to use the 2D container Data object for the overlays directly.
 
         try:
-            add_to_2d_container(self.parent, self.data, new_component, label)
+            add_to_2d_container(self.parent, self.data, new_component, new_component_unit, label)
+
             self.parent.add_overlay(new_component, label, display_now=False)
         except Exception as e:
             show_error_message(str(e), 'Collapse Cube Error', parent=self)
