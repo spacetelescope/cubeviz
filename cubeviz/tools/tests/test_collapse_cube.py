@@ -93,6 +93,7 @@ def test_starting_state(collapse_cube_gui, cubeviz_layout):
 
     output = np.array([[0, 0, 0, 0], [139.281, 1088, 844.167, 739.379]])
     assert np.allclose(new_component[:2,:4], output, atol=1)
+    assert cubeviz_layout.cube_views[1]._widget.cubeviz_unit.unit == new_component_unit 
 
 
     # Simple Sigma Clipping
@@ -111,6 +112,7 @@ def test_starting_state(collapse_cube_gui, cubeviz_layout):
 
     output = np.array([[0, 0, 0, 0], [845.868, 886.972, 726.566, 976.271]])
     assert np.allclose(new_component[:2,:4], output, atol=1)
+    assert cubeviz_layout.cube_views[1]._widget.cubeviz_unit.unit == new_component_unit 
 
     # Advanced Sigma Clipping
     data_name = DATA_LABELS[0]
@@ -128,6 +130,7 @@ def test_starting_state(collapse_cube_gui, cubeviz_layout):
 
     output = np.array([[0, 0, 0, 0], [867.687, 956.132, 775.984, 1008]])
     assert np.allclose(new_component[:2,:4], output, atol=1)
+    assert cubeviz_layout.cube_views[1]._widget.cubeviz_unit.unit == new_component_unit 
 
 def test_regions(qtbot, cubeviz_layout):
 
