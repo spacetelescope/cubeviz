@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, print_function
-
 from qtpy.QtWidgets import QMessageBox
 
 from glue.core import Data
