@@ -134,7 +134,7 @@ def test_viewer_title(cubeviz_layout):
         combo.setCurrentIndex(current_idx)
 
 
-def test_viewer_title_units_change(cubeviz_layout):
+def test_viewer_flux_units_change(cubeviz_layout):
     """
     Test whether viewer titles update appropriately with flux unit changes
     """
@@ -149,12 +149,40 @@ def test_viewer_title_units_change(cubeviz_layout):
 
         check_viewer_title(cubeviz_layout, idx, 0)
 
+        # Check whether the flux units associated with this viewer is correct.
+        # This is reflected in the mouseover display of flux values
+        assert cubeviz_layout.cube_views[idx]._widget.cubeviz_unit.unit == 'mJy'
+
         # Reset the combo when we're done
         combo = cubeviz_layout.get_viewer_combo(idx)
         combo.setCurrentIndex(current_idx)
 
     # Restore original units
     specviz.hub.plot_widget.set_data_unit(current_units)
+
+
+def test_viewer_wavelength_units_change(cubeviz_layout):
+    """
+    Test whether image viewer wavelength units are updated appropriately
+
+    These units are used by the viewer to populate the viewer status bar during
+    mouseover.
+    """
+
+    current_units = str(cubeviz_layout._wavelength_controller.current_units)
+
+    for viewer in cubeviz_layout.cube_views:
+        assert viewer._widget._wavelength_units == current_units
+
+    specviz = cubeviz_layout.specviz._widget
+    specviz.hub.plot_widget.set_spectral_axis_unit('Angstrom')
+
+    for viewer in cubeviz_layout.cube_views:
+        assert viewer._widget._wavelength_units == 'Angstrom'
+
+    # Restore original wavelength units
+    specviz.hub.plot_widget.set_spectral_axis_unit(current_units)
+
 
 def test_default_contour(cubeviz_layout):
     """
