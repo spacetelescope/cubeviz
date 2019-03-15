@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, print_function
-
 from qtpy.QtCore import Qt
 from qtpy import QtGui
 from qtpy.QtWidgets import (
