@@ -20,22 +20,26 @@ The core functionality of CubeViz currently includes the ability to:
   * view spectra from selected spatial (RA, DEC) regions,
   * smooth cubes spactially (RA, DEC) and spectrally (wavelength), and
   * create and display contour maps.
-
-Future functionality will include the ability to:
   * collapse cubes over selected wavelength regions,
   * fit spectral lines,
   * create moment maps,
-  * create kinematic maps (rotation velocity and velocity dispersion),
-  * create RGB images from regions collapsed in wavelength space (i.e., linemaps),
   * perform continuum subtraction,
+  * cube arithmetic,
   * overlay spectral line lists,
   * save edited cubes,
-  * create publication quality figures,
+  * save figures,
+  * mock slit observations,
+  * accurate spectro-photometry,
+  * fit models to every spaxel
+
+Future functionality will include the ability to:
+  * save and restore a session,
+  * create kinematic maps (rotation velocity and velocity dispersion),
+  * create RGB images from regions collapsed in wavelength space (i.e., linemaps),
+  * output python scripts for making figures,
   * output astropy commands,
   * match spatial resolution among selected data cubes,
-  * bin data into constant signal-to-noise regions,
-  * mock slit observations
-  * accurate spectro-photometry
+  * bin data into constant signal-to-noise regions
 
 Reference/API
 =============
@@ -45,5 +49,7 @@ Reference/API
 
   installation.rst
   functionality.rst
+  image_viewers.rst
+  spectrum_viewer.rst
   readingindata.rst
   developer_guide.rst
