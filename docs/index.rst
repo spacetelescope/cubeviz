@@ -51,5 +51,6 @@ Reference/API
   functionality.rst
   image_viewers.rst
   spectrum_viewer.rst
+  analysis.rst
   readingindata.rst
   developer_guide.rst

@@ -1,7 +1,9 @@
 The Spectrum Viewer
 ===================
 
-The 1D spectrum viewer, or :ref:`specviz <specviz>` viewer, displays one-dimensional spectra. 
+The 1D spectrum viewer, or 
+`specviz <https://specviz.readthedocs.io/en/stable/>`__
+viewer, displays one-dimensional spectra. 
 These are typically extracted from regions in the data cube by making selections
 in the image viewers. But they could also be imported as separate data sets
 or computed via model fitting or mathematical operations on other spectra. 
@@ -30,7 +32,9 @@ if one is selected.
 
 The common workflow would be to select a region of the spectrum (using the `Add Region`
 option on the specviz menu) and do some operations on it (e.g. measure line fluxes). 
-Please refer to the :ref:`specviz <specviz>` for descriptions of all the available
+Please refer to the 
+`specviz <https://specviz.readthedocs.io/en/stable/>`__
+documentation for descriptions of all the available
 operations.
 
 It is possible to apply some operations back to the cube, spaxel by spaxel. These

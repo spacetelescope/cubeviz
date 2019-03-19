@@ -29,14 +29,16 @@ Basic Workflow
 --------------
 
 The image viewer and spectrum viewer are both implemented as plugins for
-:ref:`glue <glueviz>`. This is a flexible tool for visualizing linked
+`glue <http://docs.glueviz.org/en/stable/>`__ . 
+This is a flexible tool for visualizing linked
 data sets. There is a lot of power and customizability available in this 
 underlying glue architecture, which we will largely ignore in this introduction. 
 
 The basic workflow within cubeviz generally involves going back and forth between 1D views of spectra 
 and 2D views of planes of the cube. (It is common to refer to pixels in the 2D image
 plane as "spaxels".) The 1D view is an embedded version of 
-:ref:`specviz <specviz>`, with the full functionality for smoothing, math, measurements,
+`specviz <https://specviz.readthedocs.io/en/stable/>`__, 
+with the full functionality for smoothing, math, measurements,
 fitting, etc. Please refer to the specviz manual for much more detailed descriptions
 of the functionality of that viewer. We will call this the 1D-spectrum window or the specviz
 window, interchangeably. Various side panels will change depending on whether your mouse

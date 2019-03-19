@@ -52,8 +52,9 @@ a region of interest from the specviz top menu and then accessing
 the menu, you can select different components for your fit (e.g. 
 linear or polynomial). The initial guess will be plotted on the 
 screen. If it is not reasonably close, it is best to adjust the parameters
-by hand from the right-hand menu. See the :ref:`specviz <specviz>` documentation
-for more information on fitting and saving models.
+by hand from the right-hand menu. See the 
+`specviz <https://specviz.readthedocs.io/en/stable/>`__
+documentation for more information on fitting and saving models.
 
 Simple Line Maps 
 ----------------
@@ -87,8 +88,8 @@ Creating Moment Maps
 
 To create moment maps, select select `Data Processing -> Moment Maps`
 menu from the upper right, above the image viewers. This uses the
-:ref:`spectral-cube <spectral-cube>` library under the hood. The formulae
-for the moments are given there :ref:`moments formlae <spectral-cube.SpectralCube.moment>`.
+`spectral-cube <https://spectral-cube.readthedocs.io/en/stable/>`__
+library under the hood. The formulae for the moments are given there.
 
 Mock long-slit Observations
 ---------------------------
