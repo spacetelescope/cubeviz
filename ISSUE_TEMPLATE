@@ -1,16 +1,17 @@
 ## Describe the bug / feature
 
   <!--- If describing a bug:                                                          -->
-  <!----   - tell us what happened instead of the expected behavior                   -->
-  <!---    - include the steps to reproduce the bug                                   -->
-  <!---    - if a Traceback is available, include the complete Traceback in the Issue -->
-  <!---    - include as many relevant details about the environment                   -->
-  <!---        - package version used                                                 -->
-  <!---        - operating system and version                                         -->
-  <!---        - versions of other packages in conda or python virtual environment    -->
+  <!----   - Is this a SpecViz bug?  If so, create a SpecViz issue and link back here -->
+  <!----   - Tell us what happened instead of the expected behavior                   -->
+  <!---    - Include the steps to reproduce the bug                                   -->
+  <!---    - If a Traceback is available, include the complete Traceback in the Issue -->
+  <!---    - Include as many relevant details about the environment                   -->
+  <!---        - Package version used                                                 -->
+  <!---        - Operating system and version                                         -->
+  <!---        - Versions of other packages in conda or python virtual environment    -->
 
   <!--- If a change/improvement/feature                                               -->
-  <!---    - explain the idea and/or the difference from current behavior             -->
+  <!---    - Explain the idea and/or the difference from current behavior             -->
 
 ## Possible Solution
 
