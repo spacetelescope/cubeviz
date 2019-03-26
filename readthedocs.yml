@@ -4,5 +4,7 @@ build:
 requirements_file: pip-requirements-docs
 
 python:
-   setup_py_install: false
-   version: 3.6
+  pip_install: true
+  version: 3.6
+  install:
+    - requirements: setuptools==40.8.0
