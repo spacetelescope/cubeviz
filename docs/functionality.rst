@@ -29,7 +29,7 @@ Basic Workflow
 --------------
 
 The image viewer and spectrum viewer are both implemented as plugins for
-`glue <http://docs.glueviz.org/en/stable/>`__ . 
+`glue <http://docs.glueviz.org/en/stable/>`__. 
 This is a flexible tool for visualizing linked
 data sets. There is a lot of power and customizability available in this 
 underlying glue architecture, which we will largely ignore in this introduction. 
