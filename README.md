@@ -6,16 +6,16 @@
 
 For documentation see http://cubeviz.readthedocs.io/en/latest/
 
-## Release 0.2.1
+## Release 0.3
 
-We are pleased to announce the release of CubeViz, a visualization and analysis tool for data cubes from integral field units (IFUs). This is an early release (v0.2.1) and we would appreciate your feedback.  It is built on top of the "glue" visualization tool.
+We are pleased to announce the release of CubeViz, a visualization and analysis tool for data cubes from integral field units (IFUs). This is an early release (v0.3) and we would appreciate your feedback.  It is built on top of the "glue" visualization tool.
 
 To install:
   * Install [Minconda3](https://conda.io/miniconda.html) if it is not on your system (**)
-  * To install, type: `$ conda create -n cubeviz020 -c glueviz cubeviz`
+  * To install, type: `$ conda create -n cubeviz030 python=3.6`, activate the environment `$ conda activate cubeviz030` and pip install cubeviz `$ pip install cubeviz`.
 
 To run:
-  * Activate the environment: `$ source activate cubeviz020`
+  * Activate the environment: `$ source activate cubeviz030`
   * Run cubeviz: `$ cubeviz`
   * Once done, deactivate the environment: `source deactivate`
 
@@ -25,9 +25,9 @@ Read the Docs: http://cubeviz.readthedocs.io/en/latest/
 
 More info on glue: http://glueviz.org
 
-If you run into any issues or have suggestions for new features, we encourage you to create issues on GitHub or send comments to https://www.susankassin.com/contact/
+If you run into any issues or have suggestions for new features, we encourage you to create issues on GitHub.
 
-This release requires Python 3.5 or 3.6.
+This release requires Python 3.6.
 
 ** Note: There have been some issues with Miniconda3 with conda version less than 4.5.  If you see any problems with installation or running cubeviz and your conda version is less than 4.5 it is best to update to 4.5.  See [upgrade instructions](https://conda.io/miniconda.html) for more information.
 
