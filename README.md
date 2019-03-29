@@ -12,10 +12,10 @@ We are pleased to announce the release of CubeViz, a visualization and analysis 
 
 To install:
   * Install [Minconda3](https://conda.io/miniconda.html) if it is not on your system (**)
-  * To install, type: `$ conda create -n cubeviz030 python=3.6`, `$ source activate cubeviz030` and then `$ pip install cubeviz`
+  * To install, type: `$ conda create -n cubeviz030 python=3.6`, `$ conda activate cubeviz030` and then `$ pip install cubeviz`
 
 To run:
-  * Activate the environment: `$ source activate cubeviz030`
+  * Activate the environment: `$ conda activate cubeviz030`
   * Run cubeviz: `$ cubeviz`
   * Once done, deactivate the environment: `source deactivate`
 
