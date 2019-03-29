@@ -17,13 +17,13 @@ Once Miniconda is installed, you can install CubeViz by typing the command:
 
 .. code-block:: console
 
-    $ conda create -n <environment name> -c glueviz cubeviz
+    $ conda create -n <environment name> python=3.6
 
 where the <environment name> is the name of the Conda environment you want to create for the new CubeViz installation.  For example:
 
 .. code-block:: console
 
-    $ conda create -n cubeviz02 -c glueviz cubeviz
+    $ conda create -n cubeviz03 python=3.6
 
 Once you have created the environment, you will need to activate it with the command:
 
@@ -35,8 +35,15 @@ and for the example above:
 
 .. code-block:: console
 
-    $ source activate cubeviz02
+    $ source activate cubeviz03
   
+and then install cubeviz using pip
+
+.. code-block:: console
+
+    $ pip install cubeviz
+  
+ 
 Once the Conda environment is activated you can start CubeViz with:
 
 .. code-block:: console
