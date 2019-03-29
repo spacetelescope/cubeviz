@@ -70,8 +70,7 @@ Image-viewer menus
 Each individual image viewer has a small menu bar. These provide controls for saving images, zooming and panning, 
 and selecting subsets (often called regions of interest or ROIs) for extraction from the cube. The >> at the right side of the menu expands it to show all the options. 
 
-As of v0.3, not all of the features are fully implemented: (1) it is not possible to save a Python script to reproduce the plot,
-(2) Not all of the controls or labeling are available in the custom-slice view.
+As of v0.3, not all of the features are fully implemented: (1) it is not possible to save a Python script to reproduce the plot, (2) not all of the controls or labeling are available in the custom-slice view.
 
 .. image:: images/image_viewer_menu.png
 
