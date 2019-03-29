@@ -1,7 +1,7 @@
 Keyboard Shortcuts
 ------------------
 
-There are some keyboard shortcuts available:
+There are some cubeviz-specific keyboard shortcuts available:
 
 .. list-table:: Keyboard Shortcuts
    :header-rows: 1

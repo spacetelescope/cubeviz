@@ -52,5 +52,6 @@ Reference/API
   image_viewers.rst
   spectrum_viewer.rst
   analysis.rst
+  shortcuts.rst
   readingindata.rst
   developer_guide.rst
