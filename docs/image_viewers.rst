@@ -58,7 +58,7 @@ This is below the very top glue menu bar.  From left to right on this menu, the 
 
        * **Collapse Cube:** Mathematical operations (e.g. sum, mean, median, etc) that reduce the 3D cube to a 2D image
        * **Spatial Smoothing:** Smoothing in the spatial dimension. This operation applies to every plane in the 3D cube, resulting in a new 3D cube, which can be selected from the image-viewer drop-down menus.
-       * **Moment Maps:** This calculates moments in the spectral axis over the entire cube, resulting in a 2D image. See :ref:`spectral-cube <spectral-cube:SpectralCube.moment>` spectral-cube for mathematical details. 
+       * **Moment Maps:** This calculates moments in the spectral axis over the entire cube, resulting in a 2D image. Mathematical details are given in the documentation for `spectral-cube <https://spectral-cube.readthedocs.io/en/stable/>`__.
        * **Arithmetic Operations:** Allows simple arithmetic on components of the data (e.g. change the wavelengths).
 
     * **View:** Controls of the view for the image viewers (e.g. hide and show labels, axes, menus; adjust formats and units).
