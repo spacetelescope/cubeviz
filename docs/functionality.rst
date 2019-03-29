@@ -5,74 +5,81 @@ CubeViz has two main "modes:" Split Image Viewer and Single Image Viewer.
 CubeViz starts in the Split Image Viewer which shows the flux, error,
 and data quality extensions of the input data cube.  If the error
 and/or data quality extensions are not present in the data cube loaded,
-those views are blank.  The Single Image Viewer shows only the flux
-extension.  A button in the upper left us used to switch between the
-two modes.  It is labeled "Single Image Viewer" when the split image
-viewer is shown, and conversely, "Split Image Viewer" when the single
-image viewer is shown.  Screen shots of the two modes are shown below.
-
-In addition to the image viewers which display the data cube in
+those views are blank. The Single Image Viewer shows only the flux
+extension.  In addition to the image viewers which display the data cube in
 its spatial axes (RA, DEC), a spectrum viewer shows the spectral axis
 (wavelength).
 
-.. figure:: images/CubeViz_splitviewer.png
+The figure below shows the split-image view, with various
+panels labeled. 
 
-.. figure:: images/CubeViz_singleviewer.png
+.. figure:: images/CubeViz_labeled_layout.png
 
-   Screen shots of the split image viewer (top) and single
-   image viewer (bottom) are shown.
+   Labeled screen shot of the split image viewer. Areas labeled in yellow
+   refer to the image viewers. Areas labeled in blue refer to the spectrum
+   viewer. The menus labeled in both blue and yellow affect both kinds of
+   viewers. 
 
 Upon loading a data cube, an image of the central wavelength channel
 is displayed in the image viewer, and a spectrum of the entire cube
 (collapsed wavelength space using an average) is shown in black in the
 spectrum viewer.
 
-Using the Image Viewers
------------------------
+Basic Workflow
+--------------
 
-To manipulate an image displayed in an image viewer, the user should
-click on that image and then the "Show viewer options" button in the
-upper left of CubeViz.  Clicking on this button reveals a hidden
-control panel.  This panel allows the user to edit the limits displayed,
-image display scale (linear, log, etc.), color map, and contrast/bias.
-The user can hide the control panel again by clicking on the
-"Show viewer options" button in the upper left.
+The image viewer and spectrum viewer are both implemented as plugins for
+`glue <http://docs.glueviz.org/en/stable/>`__. 
+This is a flexible tool for visualizing linked
+data sets. There is a lot of power and customizability available in this 
+underlying glue architecture, which we will largely ignore in this introduction. 
 
-The user can also interact with the image panels using the menu bar
-across the top:
+The basic workflow within cubeviz generally involves going back and forth between 1D views of spectra 
+and 2D views of planes of the cube. (It is common to refer to pixels in the 2D image
+plane as "spaxels".) The 1D view is an embedded version of 
+`specviz <https://specviz.readthedocs.io/en/stable/>`__, 
+with the full functionality for smoothing, math, measurements,
+fitting, etc. Please refer to the specviz manual for much more detailed descriptions
+of the functionality of that viewer. We will call this the 1D-spectrum window or the specviz
+window, interchangeably. Various side panels will change depending on whether your mouse
+focus is in an image window or the specviz window. To change the focus, click on the 
+window of iterest. The window with the mouse focus has a blue outline around it.
 
-.. image:: images/upper_panel.png
+In the 2D image view, you may select rectangular, circular, 
+or arbitrary-shaped sub-regions of the image using the menu bar above the image.
+That operation will create a new *subset*, which will then be listed in the ``Data Collection``
+window at the top left and in the ``Plot Layers`` window right below that. 
+You can toggle the overlays of subsets on and off, and adjust colors and transparency. 
+The 1D spectrum of that sub-region will automatically be overlayed into the specviz window.
+In the specviz window, you can can do operations on the 1D spectrum. You can also
+use this window to prototype an operation that you would like to have applied,
+spaxel-by-spaxel, to the cube. For example, you can fit a spectral line and then
+select `Cube Operations` from the menu above the 1D spectrum, and have it perform that
+same fit on each spaxel in the cube. 
 
-This is below the very top glue menu bar.  The left-most part of the menu
-bar shows three pull-down menus which list the extension of the loaded
-data cube that is currently displayed in each of the image panels
-(or image panel if the Single Image Viewer is being used).  The user
-can choose to change the extensions displayed using these pull-down menus.
-The viewers can be synced spatially with each other by clicking
-on each check box.  With synced viewers, the user can zoom in and out and
-pan on one image (e.g., flux) and the other images (e.g., error
-and data quality) will automatically zoom in and out and pan in the same manner.
+In the standard layout, there are three viewers for 2D images, which start out
+showing the science, uncertainty, and data-quality images, if they are available.
+But as you create new 2D or 3D components, these become available from the top 
+menus. You can either display them in the windows side-by-side, or overlay one as
+an image or contour map on top of another. You can adjust the labeling in the 2D windows
+using the ``View`` menu at the upper right.  You can also select certain mathematical
+operations on the cube from the ``Data Processing`` menu. 
 
-The next panel to the right in the menu bar includes the "Slice Navigator."
-This allows the user to dislpay different slices/wavelength channels in
-the data cube.  It can be used with the mouse by moving the circular
-button, or with the arrow keys.  The slice displayed and its wavelegth
-are also displayed in this panel.
+Saving data cubes
+-----------------
 
-The third panel shows the controls to display an overlay.  This is not
-yet implemented and therefore greyed out.
+Select `Export Data/Subsets` from the glue menu at the top of the screen.
+You will be prompted for details on what you want to save and your output
+filename.
 
-The last part of this menu bar shows three drop-down menus.  The first,
-"View," allows the user to change the components of the cube displayed
-(RA, DEC, wavelength) in all the image viewers.  It also gives options
-to hide the coordinate axes and tool bars on the image viewers.
-(Finally, there is another button to sync the viewers?)
+Saving figures
+--------------
 
+Image window views can be saved with the little floppy-disk icon at the top
+of each image viewer. The spectrum viewer plot can be saved with the
+`Export Plot` icon in the menu at the top-right of the spectrum viewer.
 
-Selecting a Region in the Image Viewers      
----------------------------------------
+Saving a Session
+----------------
 
-Regions can be selected in the image viewers. If they are spatial
-regions (RA, DEC), the cube will be collapsed in wavelength space
-over the regions, and the resulting spectrum displayed in the spectrum viewer.
-Below we describe how to do this.
+The Export Session button does not yet work for Cubeviz. This is coming soon. 
