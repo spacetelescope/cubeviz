@@ -16,7 +16,7 @@ panels labeled.
 .. figure:: images/CubeViz_labeled_layout.png
 
    Labeled screen shot of the split image viewer. Areas labeled in yellow
-   refer to the image viewers. Areas labeled in blew refer to the spectrum
+   refer to the image viewers. Areas labeled in blue refer to the spectrum
    viewer. The menus labeled in both blue and yellow affect both kinds of
    viewers. 
 
