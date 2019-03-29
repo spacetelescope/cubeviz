@@ -18,7 +18,7 @@ Reading in an Example Data Cube
 An example data cube from the `MaNGA Survey <http://www.sdss.org/surveys/manga/>`_ can be found on the bottom of `this website <http://skyserver.sdss.org/dr13/en/tools/explore/summary.aspx?ra=205.4384&dec=27.004754>`_.  To download the data cube, click on "LIN Data Cube" or "LOG Data Cube" to dowload a data cube with a linear or log wavelength axis, respectively.
 
 Start up CubeViz by typing "cubeviz" on the command line, following the
-installation instructions (:ref:'installation.rst').  CubeViz should start
+installation instructions (:ref:`installation`).  CubeViz should start
 up and you will be shown the user interface.  Next, to load the cube, click
 on the "Open Data" red folder in the upper left of CubeViz, and a dialog box
 should appear.  In the dialog box, select the data cube you wish to load and
