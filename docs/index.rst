@@ -47,11 +47,11 @@ Reference/API
 .. toctree::
   :maxdepth: 2
 
-  installation.rst
-  functionality.rst
-  image_viewers.rst
-  spectrum_viewer.rst
-  analysis.rst
-  shortcuts.rst
-  readingindata.rst
-  developer_guide.rst
+  installation
+  functionality
+  image_viewers
+  spectrum_viewer
+  analysis
+  shortcuts
+  readingindata
+  developer_guide
