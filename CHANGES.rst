@@ -1,11 +1,15 @@
-0.3 (unreleased)
+0.4 (in development)
+====================
+
+
+0.3 (2019-03-29)
 ================
 
 New Features
 ------------
 
 - Added DOI badge to the README file.
-- Integrate new SpecViz (#484)
+- Integrate new SpecViz
 
 Bug Fixes
 ---------
