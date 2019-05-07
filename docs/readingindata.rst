@@ -50,7 +50,7 @@ to a valid FITS compatible unit that represents wavelength (e.g., `m`, `um`, or
 `AA`). You can check if a unit is FITS-compatible by using Astropy's Unit
 class:
 
-.. code-block:: console
+.. code-block:: python
 
    from astropy.units import Unit
    unit = Unit('m', format='fits')
