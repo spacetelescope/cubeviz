@@ -6,6 +6,13 @@
 
 For documentation see http://cubeviz.readthedocs.io/en/latest/
 
+Current Status
+--------------
+
+Please note that this version of MOSViz is no longer being actively supported
+or maintained. The functionality of MOSViz is now available and being actively
+developed as part of `Jdaviz <https://github.com/spacetelescope/jdaviz>`.
+
 ## Release 0.3
 
 We are pleased to announce the release of CubeViz, a visualization and analysis tool for data cubes from integral field units (IFUs). This is an early release (v0.3) and we would appreciate your feedback.  It is built on top of the "glue" visualization tool.
