@@ -9,9 +9,9 @@ For documentation see http://cubeviz.readthedocs.io/en/latest/
 Current Status
 --------------
 
-Please note that this version of MOSViz is no longer being actively supported
-or maintained. The functionality of MOSViz is now available and being actively
-developed as part of `Jdaviz <https://github.com/spacetelescope/jdaviz>`.
+Please note that this version of CubeViz is no longer being actively supported
+or maintained. The functionality of CubeViz is now available and being actively
+developed as part of [Jdaviz](https://github.com/spacetelescope/jdaviz).
 
 ## Release 0.3
 
