@@ -1,6 +1,12 @@
 CubeViz: Visualization & Analysis Tool for Data Cubes from Integral Field Units (IFUs)
 ======================================================================================
 
+.. DANGER:: 
+
+      Please note that this version of CubeViz is **no longer being actively supported
+      or maintained**. The functionality of CubeViz is now available and being actively
+      developed as part of `Jdaviz <https://github.com/spacetelescope/jdaviz>`_.
+
 CubeViz is an visualization and analysis toolbox for data cubes from `integral
 field units (IFUs)
 <https://jwst-docs.stsci.edu/display/JPP/Introduction+to+IFU+Spectroscopy>`__.

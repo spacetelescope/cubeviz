@@ -1,3 +1,8 @@
+.. DANGER:: 
+
+      Please note that this version of CubeViz is **no longer being actively supported
+      or maintained**. The functionality of CubeViz is now available and being actively
+      developed as part of `Jdaviz <https://github.com/spacetelescope/jdaviz>`_.
 
 The Image Viewers
 =================
