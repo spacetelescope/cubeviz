@@ -12,5 +12,5 @@ except Exception:
 __all__ = ['__version__']
 
 print('cubeviz is no longer supported, please use jdaviz. '
-      'If you must use cubeviz, please try the 0.3.x series '
+      'If you must use legacy cubeviz, please try v0.3 '
       'in Python 3.6.')
