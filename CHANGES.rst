@@ -1,5 +1,5 @@
-0.4 (in development)
-====================
+0.4 (2021-07-20)
+================
 
 cubeviz is no longer supported, please use jdaviz. If you must use legacy
 cubeviz, please try v0.3 in Python 3.6.
