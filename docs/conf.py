@@ -36,10 +36,7 @@ except ImportError:
     sys.exit(1)
 
 # Get configuration information from setup.cfg
-try:
-    from ConfigParser import ConfigParser
-except ImportError:
-    from configparser import ConfigParser
+from configparser import ConfigParser
 conf = ConfigParser()
 
 conf.read([os.path.join(os.path.dirname(__file__), '..', 'setup.cfg')])
@@ -152,11 +149,7 @@ man_pages = [('index', project.lower(), project + u' Documentation',
 # -- Resolving issue number to links in changelog -----------------------------
 github_issues_url = 'https://github.com/{0}/issues/'.format(setup_cfg['github_project'])
 
-# intersphinx setup 
+# intersphinx setup
 # we don't want to cyclically reference cubeviz in its
 # own build so we remove it here.
 #del intersphinx_mapping['cubeviz']
-
-# add any custom intersphinx for cubeviz
-intersphinx_mapping['specviz'] = ('https://specviz.readthedocs.io/en/stable/', None)
-intersphinx_mapping['glueviz'] = ('http://docs.glueviz.org/en/stable/', None)

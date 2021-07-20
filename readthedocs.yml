@@ -1,10 +1,20 @@
-build:
-  image: latest
+# .readthedocs.yaml
+# Read the Docs configuration file
+# See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
 
-requirements_file: pip-requirements-docs
+# Required
+version: 2
+
+# Build documentation in the docs/ directory with Sphinx
+sphinx:
+   configuration: docs/conf.py
 
 python:
-  pip_install: true
-  version: 3.6
+  version: 3.8
   install:
-    - requirements: setuptools==40.8.0
+    - method: pip
+      path: .
+      extra_requirements:
+        - docs
+
+formats: []
